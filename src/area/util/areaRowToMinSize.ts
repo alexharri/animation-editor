@@ -12,10 +12,6 @@ export const computeAreaRowToMinSize = (areaState: AreaState) => {
 	function compute(id: string): { height: number; width: number } {
 		const layout = areaState.layout[id];
 
-		if (!layout) {
-			console.log(id);
-		}
-
 		if (layout.type === "area") {
 			return { width: 1, height: 1 };
 		}

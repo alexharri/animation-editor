@@ -111,8 +111,6 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 			const row = state.layout[areaRowId] as AreaRowLayout;
 			const { area, removedAreaId } = joinAreas(row, areaIndex, mergeInto);
 
-			console.log({ area, removedAreaId, row, areaIndex, mergeInto });
-
 			const shouldRemoveRow = row.areas.length === 2;
 			const areaToParentRow = computeAreaToParentRow(state);
 
@@ -152,7 +150,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 				}, {}),
 				joinPreview: null,
 			};
-			console.log({ newState });
+
 			return newState;
 		}
 
@@ -198,8 +196,6 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 			const newAreaId = (state._id + 1).toString();
 
 			areas.splice(insertIndex, 0, { id: newAreaId, size: 0 });
-
-			console.log(row, areas, newAreaId);
 
 			return {
 				...state,

@@ -40,7 +40,6 @@ export const requestAction = ({}: Options, callback: Callback) => {
 	let onCompleteCallback: (() => void) | null = null;
 
 	const onComplete = () => {
-		console.log("onComplete called");
 		cancelTokens.forEach(cancelToken => removeListener(cancelToken));
 
 		if (onCompleteCallback) {
