@@ -1,11 +1,12 @@
 import { requestAction } from "~/listener/requestAction";
 import { AreaRowLayout } from "~/types/areaTypes";
 import { capToRange, interpolate } from "~/util/math";
-import { AREA_MIN_CONTENT_WIDTH, GlobalElementIds } from "~/constants";
+import { AREA_MIN_CONTENT_WIDTH } from "~/constants";
 import { areaActions } from "~/area/state/areaActions";
 import { computeAreaRowToMinSize } from "~/area/util/areaRowToMinSize";
 import { getActionState } from "~/state/stateUtils";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
+import { getAreaRootViewport } from "~/area/util/getAreaRootViewport";
 
 export const handleDragAreaResize = (
 	e: React.MouseEvent,
@@ -16,14 +17,8 @@ export const handleDragAreaResize = (
 	requestAction({}, ({ addListener, dispatch, submitAction, cancelAction }) => {
 		e.preventDefault();
 
-		const areaRoot = document.getElementById(GlobalElementIds.AreaViewportRoot);
-
-		if (!areaRoot) {
-			throw new Error(`Cannot find element with id '${GlobalElementIds.AreaViewportRoot}'.`);
-		}
-
 		const areaState = getActionState().area;
-		const areaToViewport = computeAreaToViewport(areaState, areaRoot.getBoundingClientRect());
+		const areaToViewport = computeAreaToViewport(areaState, getAreaRootViewport());
 
 		const getMinSize = (id: string) => {
 			const layout = areaState.layout[id];

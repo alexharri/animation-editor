@@ -1,6 +1,4 @@
 import React from "react";
-import { useRef } from "react";
-import { useRefRect } from "~/hook/useRefRect";
 import { Area } from "~/area/components/Area";
 import { connectActionState } from "~/state/stateUtils";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
@@ -8,18 +6,10 @@ import { AreaState } from "~/area/state/areaReducer";
 import { JoinAreaPreview } from "~/area/components/JoinAreaPreview";
 import { compileStylesheet } from "~/util/stylesheets";
 import { AreaRowSeparators } from "~/area/components/AreaRowSeparators";
-import { GlobalElementIds } from "~/constants";
+import { TOOLBAR_HEIGHT } from "~/constants";
 import { cssZIndex } from "~/cssVariables";
 
 const s = compileStylesheet(({ css }) => ({
-	root: css`
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100vw;
-		height: 100vh;
-	`,
-
 	cursorCapture: css`
 		display: none;
 
@@ -42,14 +32,18 @@ interface StateProps {
 type Props = StateProps;
 
 const AreaRootComponent: React.FC<Props> = props => {
-	const root = useRef<HTMLDivElement>(null);
-	const viewport = useRefRect(root);
 	const { joinPreview } = props.areaState;
 
+	const viewport: Rect = {
+		top: TOOLBAR_HEIGHT,
+		left: 0,
+		height: window.innerHeight - TOOLBAR_HEIGHT,
+		width: window.innerWidth,
+	};
 	const areaToViewport = (viewport && computeAreaToViewport(props.areaState, viewport)) || {};
 
 	return (
-		<div id={GlobalElementIds.AreaViewportRoot} className={s("root")} ref={root}>
+		<div data-area-root>
 			{viewport &&
 				Object.keys(props.areaState.layout).map(id => {
 					const layout = props.areaState.layout[id];

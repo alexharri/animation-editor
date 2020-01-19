@@ -1,4 +1,4 @@
-import { keys } from "~/constants";
+import { keys, modifierKeys } from "~/constants";
 
 type Key = keyof typeof keys;
 
@@ -27,4 +27,17 @@ export const isKeyDown = (key: Key) => {
 	return !!keyPressMap[keys[key].toString() as Key];
 };
 
+export const isAnyModifierKeyDown = (): boolean => {
+	for (let i = 0; i < modifierKeys.length; i += 1) {
+		if (isKeyDown(modifierKeys[i])) {
+			return true;
+		}
+	}
+	return false;
+};
+
 export const isKeyCodeOf = (key: Key, keyCode: number) => keys[key] === keyCode;
+
+export const getKeyFromKeyCode = (keyCode: number): Key | null => {
+	return keyCodes[keyCode];
+};

@@ -1,6 +1,6 @@
 import { requestAction } from "~/listener/requestAction";
 import { exceedsDirectionVector } from "~/util/math/exceedsDirectionVector";
-import { AREA_MIN_CONTENT_WIDTH, GlobalElementIds } from "~/constants";
+import { AREA_MIN_CONTENT_WIDTH } from "~/constants";
 import { getActionState } from "~/state/stateUtils";
 import { areaActions } from "~/area/state/areaActions";
 import { CardinalDirection, IntercardinalDirection } from "~/types";
@@ -9,6 +9,7 @@ import { AreaRowLayout } from "~/types/areaTypes";
 import { AreaState } from "~/area/state/areaReducer";
 import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
+import { getAreaRootViewport } from "~/area/util/getAreaRootViewport";
 
 const directionVectors = {
 	n: { x: 0, y: 1 },
@@ -53,15 +54,9 @@ export const handleAreaDragFromCorner = (
 	requestAction({}, ({ addListener, dispatch, submitAction, cancelAction }) => {
 		e.preventDefault();
 
-		const areaRoot = document.getElementById(GlobalElementIds.AreaViewportRoot);
-
-		if (!areaRoot) {
-			throw new Error(`Cannot find element with id '${GlobalElementIds.AreaViewportRoot}'.`);
-		}
-
 		const areaState = getActionState().area;
 		const areaToRow = computeAreaToParentRow(areaState);
-		const areaToViewport = computeAreaToViewport(areaState, areaRoot.getBoundingClientRect());
+		const areaToViewport = computeAreaToViewport(areaState, getAreaRootViewport());
 
 		// Row does not exist if the area we are operating on is the root area
 		const row = areaState.layout[areaToRow[areaId]] as AreaRowLayout | null;

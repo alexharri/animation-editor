@@ -38,6 +38,17 @@ export const compileStylesheet = <T extends StylesheetFn, K = keyof ReturnType<T
 	return createGetterFn<K>(stylesheet({ css, keyframes }));
 };
 
+export const compileStylesheetLabelled = <T extends StylesheetFn, K = keyof ReturnType<T>>(
+	stylesheet: T,
+) => {
+	const obj = stylesheet({ css: (...args: any[]) => args as any, keyframes });
+	const newObj = Object.keys(obj).reduce<any>((newObj, key) => {
+		newObj[key] = `${key} ${css(...obj[key])}`;
+		return newObj;
+	}, {});
+	return createGetterFn<K>(newObj);
+};
+
 export const useStylesheet = <T extends StylesheetFn, K = keyof ReturnType<T>>(
 	stylesheet: T,
 ): GetClassnameFunction<T, K> => {

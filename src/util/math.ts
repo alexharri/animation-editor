@@ -78,5 +78,12 @@ export const isVecInRect = (vec: Vec2, rect: Rect) =>
 	vec.y >= rect.top &&
 	vec.y <= rect.top + rect.height;
 
+export const panRect = (rect: Rect, vec: Vec2): Rect => ({
+	left: rect.left + vec.x,
+	top: rect.top + vec.y,
+	width: rect.width,
+	height: rect.height,
+});
+
 export const capToRange = (low: number, high: number, value: number) =>
 	Math.min(high, Math.max(low, value));

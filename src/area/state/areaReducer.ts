@@ -1,5 +1,5 @@
-import { ActionType } from "typesafe-actions";
-import { areaActions as actions } from "~/area/state/areaActions";
+import { ActionType, getType } from "typesafe-actions";
+import { areaActions as actions, areaActions } from "~/area/state/areaActions";
 import { AreaRowLayout, AreaLayout } from "~/types/areaTypes";
 import { windowRegistry } from "~/area/windows";
 import { joinAreas } from "~/area/util/joinArea";
@@ -27,7 +27,7 @@ export interface AreaState {
 	};
 }
 
-export const initialAreaState: AreaState = Object.freeze({
+export const initialAreaState: AreaState = {
 	_id: 11,
 	layout: {
 		0: {
@@ -90,11 +90,11 @@ export const initialAreaState: AreaState = Object.freeze({
 	},
 	joinPreview: null,
 	rootId: "0",
-});
+};
 
 export const areaReducer = (state: AreaState, action: AreaAction): AreaState => {
 	switch (action.type) {
-		case "area/SET_JOIN_PREVIEW": {
+		case getType(areaActions.setJoinAreasPreview): {
 			const { areaId, from, eligibleAreaIds } = action.payload;
 			return {
 				...state,
@@ -105,7 +105,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 				},
 			};
 		}
-		case "area/JOIN": {
+		case getType(areaActions.joinAreas): {
 			const { areaRowId, areaIndex, mergeInto } = action.payload;
 
 			const row = state.layout[areaRowId] as AreaRowLayout;
@@ -154,7 +154,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 			return newState;
 		}
 
-		case "area/CONVERT_TO_ROW": {
+		case getType(areaActions.convertAreaToRow): {
 			const { cornerParts, areaId, horizontal } = action.payload;
 
 			const newState: AreaState = {
@@ -186,7 +186,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 			return newState;
 		}
 
-		case "area/INSERT_INTO_ROW": {
+		case getType(areaActions.insertAreaIntoRow): {
 			const { rowId, basedOnId, insertIndex } = action.payload;
 
 			const row = state.layout[rowId] as AreaRowLayout;
@@ -220,7 +220,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 			};
 		}
 
-		case "area/SET_ROW_SIZES": {
+		case getType(areaActions.setRowSizes): {
 			const { rowId, sizes } = action.payload;
 			const row = state.layout[rowId];
 

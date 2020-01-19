@@ -1,32 +1,31 @@
-import { action } from "typesafe-actions";
+import { createAction } from "typesafe-actions";
 import { CardinalDirection } from "~/types";
 
 export const areaActions = {
-	setJoinAreasPreview: (
-		areaId: string | null,
-		from: CardinalDirection | null,
-		eligibleAreaIds: string[],
-	) => {
-		return action("area/SET_JOIN_PREVIEW", { areaId, from, eligibleAreaIds });
-	},
+	setJoinAreasPreview: createAction("area/SET_JOIN_PREVIEW", action => {
+		return (areaId: string | null, from: CardinalDirection | null, eligibleAreaIds: string[]) =>
+			action({ areaId, from, eligibleAreaIds });
+	}),
 
-	joinAreas: (areaRowId: string, areaIndex: number, mergeInto: -1 | 1) => {
-		return action("area/JOIN", { areaRowId, areaIndex, mergeInto });
-	},
+	joinAreas: createAction("area/JOIN_AREAS", action => {
+		return (areaRowId: string, areaIndex: number, mergeInto: -1 | 1) =>
+			action({ areaRowId, areaIndex, mergeInto });
+	}),
 
-	insertAreaIntoRow: (rowId: string, basedOnId: string, insertIndex: number) => {
-		return action("area/INSERT_INTO_ROW", { rowId, basedOnId, insertIndex });
-	},
+	insertAreaIntoRow: createAction("area/INSERT_AREA_INTO_ROW", action => {
+		return (rowId: string, basedOnId: string, insertIndex: number) =>
+			action({ rowId, basedOnId, insertIndex });
+	}),
 
-	convertAreaToRow: (
-		areaId: string,
-		cornerParts: [CardinalDirection, CardinalDirection],
-		horizontal: boolean,
-	) => {
-		return action("area/CONVERT_TO_ROW", { areaId, cornerParts, horizontal });
-	},
+	convertAreaToRow: createAction("area/CONVERT_AREA_TO_ROW", action => {
+		return (
+			areaId: string,
+			cornerParts: [CardinalDirection, CardinalDirection],
+			horizontal: boolean,
+		) => action({ areaId, cornerParts, horizontal });
+	}),
 
-	setRowSizes: (rowId: string, sizes: number[]) => {
-		return action("area/SET_ROW_SIZES", { rowId, sizes });
-	},
+	setRowSizes: createAction("area/SET_ROW_SIZES", action => {
+		return (rowId: string, sizes: number[]) => action({ rowId, sizes });
+	}),
 };
