@@ -28,4 +28,8 @@ export const areaActions = {
 	setRowSizes: createAction("area/SET_ROW_SIZES", action => {
 		return (rowId: string, sizes: number[]) => action({ rowId, sizes });
 	}),
+
+	dispatchToAreaState: createAction("area/DISPATCH_TO_AREA_STATE", _action => {
+		return (areaId: string, action: any) => _action({ areaId, action });
+	}),
 };

@@ -72,3 +72,9 @@ export const toolGroups: Array<Array<{ tool: Tool }>> = [
 	[{ tool: Tool.rectangle }, { tool: Tool.ellipse }, { tool: Tool.polygon }],
 	[{ tool: Tool.fill }, { tool: Tool.intersection }],
 ];
+
+export enum AreaWindow {
+	VectorEditor,
+	NodeEditor,
+	Temp,
+}

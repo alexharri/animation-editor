@@ -12,6 +12,8 @@ export type AreaRowLayout = {
 
 export type AreaLayoutType = AreaLayout["type"] | AreaRowLayout["type"];
 
-export interface AreaComponentProps {
+export interface AreaWindowProps<T> {
 	viewport: Rect;
+	areaState: T;
+	areaId: string;
 }

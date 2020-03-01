@@ -1,6 +1,16 @@
-export const windowRegistry = {
-  A: () => <h1>A</h1>,
-  B: () => <h1>B</h1>,
-  C: () => <h1>C</h1>,
-  D: () => <h1>D</h1>
+import { VectorEditor } from "~/vectorEditor/VectorEditor";
+import { AreaWindow } from "~/constants";
+import { NodeEditor } from "~/nodeEditor/NodeEditor";
+import { nodeEditorAreaReducer } from "~/nodeEditor/nodeEditorAreaReducer";
+
+export const areaComponentRegistry = {
+	[AreaWindow.VectorEditor]: VectorEditor,
+	[AreaWindow.NodeEditor]: NodeEditor,
+	[AreaWindow.Temp]: () => <p>Test</p>,
+};
+
+export const areaStateReducerRegistry = {
+	[AreaWindow.VectorEditor]: () => ({} as any),
+	[AreaWindow.NodeEditor]: nodeEditorAreaReducer,
+	[AreaWindow.Temp]: () => ({} as any),
 };

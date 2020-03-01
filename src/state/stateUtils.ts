@@ -21,4 +21,9 @@ export function connectActionState<TStateProps = {}, TOwnProps = {}>(
 
 export const getActionState = () => getActionStateFromApplicationState(store.getState());
 
+export const getAreaActionState = <T>(areaId: string): T => {
+	const actionState = getActionState();
+	return actionState.area.areas[areaId].state;
+};
+
 export const getActionId = () => store.getState().area.action?.id || null;

@@ -1,11 +1,13 @@
 import { ActionType, getType } from "typesafe-actions";
 import { areaActions as actions, areaActions } from "~/area/state/areaActions";
 import { AreaRowLayout, AreaLayout } from "~/types/areaTypes";
-import { windowRegistry } from "~/area/windows";
+import { areaStateReducerRegistry } from "~/area/windows";
 import { joinAreas } from "~/area/util/joinArea";
 import { areaToRow } from "~/area/util/areaToRow";
 import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { CardinalDirection } from "~/types";
+import { AreaWindow } from "~/constants";
+import { initialNodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 
 type AreaAction = ActionType<typeof actions>;
 
@@ -22,7 +24,8 @@ export interface AreaState {
 	};
 	areas: {
 		[key: string]: {
-			component: React.ComponentType;
+			type: AreaWindow;
+			state: any;
 		};
 	};
 }
@@ -79,14 +82,14 @@ export const initialAreaState: AreaState = {
 		11: { id: "11", type: "area" },
 	},
 	areas: {
-		2: { component: windowRegistry.A },
-		3: { component: windowRegistry.A },
-		5: { component: windowRegistry.A },
-		6: { component: windowRegistry.A },
-		7: { component: windowRegistry.A },
-		9: { component: windowRegistry.A },
-		10: { component: windowRegistry.A },
-		11: { component: windowRegistry.A },
+		2: { type: AreaWindow.NodeEditor, state: initialNodeEditorAreaState },
+		3: { type: AreaWindow.VectorEditor, state: {} },
+		5: { type: AreaWindow.VectorEditor, state: {} },
+		6: { type: AreaWindow.VectorEditor, state: {} },
+		7: { type: AreaWindow.VectorEditor, state: {} },
+		9: { type: AreaWindow.VectorEditor, state: {} },
+		10: { type: AreaWindow.VectorEditor, state: {} },
+		11: { type: AreaWindow.VectorEditor, state: {} },
 	},
 	joinPreview: null,
 	rootId: "0",
@@ -239,6 +242,23 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 					[row.id]: {
 						...row,
 						areas: row.areas.map((area, i) => ({ ...area, size: sizes[i] })),
+					},
+				},
+			};
+		}
+
+		case getType(areaActions.dispatchToAreaState): {
+			const { areaId, action: _action } = action.payload;
+
+			const area = state.areas[areaId];
+
+			return {
+				...state,
+				areas: {
+					...state.areas,
+					[areaId]: {
+						...area,
+						state: areaStateReducerRegistry[area.type](area.state, _action),
 					},
 				},
 			};

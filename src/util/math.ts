@@ -1,13 +1,21 @@
 export const interpolate = (a: number, b: number, t: number) => a * (1 - t) + b * t;
 
 export class Vec2 {
-	public static new(vec: { x: number; y: number }): Vec2;
+	public static new(vec: { x: number; y: number } | { left: number; top: number }): Vec2;
 	public static new(x: number, y: number): Vec2;
-	public static new(vecOrX: number | { x: number; y: number }, y?: number) {
+	public static new(
+		vecOrX: number | { x: number; y: number } | { left: number; top: number },
+		y?: number,
+	) {
 		if (typeof vecOrX === "number") {
 			return new Vec2(vecOrX, y!);
 		}
-		return new Vec2(vecOrX.x, vecOrX.y);
+
+		if (typeof (vecOrX as any).left === "number") {
+			return new Vec2((vecOrX as any).left, (vecOrX as any).top);
+		}
+
+		return new Vec2((vecOrX as any).x, (vecOrX as any).y);
 	}
 
 	public static fromEvent(e: MouseEvent): Vec2 {
@@ -49,7 +57,7 @@ export class Vec2 {
 
 declare global {
 	class Vec2 {
-		public static new(vec: { x: number; y: number }): Vec2;
+		public static new(vec: { x: number; y: number } | { left: number; top: number }): Vec2;
 		public static new(x: number, y: number): Vec2;
 		public static fromEvent(e: { clientX: number; clientY: number }): Vec2;
 
@@ -83,6 +91,13 @@ export const panRect = (rect: Rect, vec: Vec2): Rect => ({
 	top: rect.top + vec.y,
 	width: rect.width,
 	height: rect.height,
+});
+
+export const scaleRect = (rect: Rect, scale: number): Rect => ({
+	left: rect.left,
+	top: rect.top,
+	width: rect.width * scale,
+	height: rect.height * scale,
 });
 
 export const capToRange = (low: number, high: number, value: number) =>

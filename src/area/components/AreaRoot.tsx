@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Area } from "~/area/components/Area";
 import { connectActionState } from "~/state/stateUtils";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
@@ -8,6 +8,7 @@ import { compileStylesheet } from "~/util/stylesheets";
 import { AreaRowSeparators } from "~/area/components/AreaRowSeparators";
 import { TOOLBAR_HEIGHT } from "~/constants";
 import { cssZIndex } from "~/cssVariables";
+import { getAreaRootViewport } from "~/area/util/getAreaRootViewport";
 
 const s = compileStylesheet(({ css }) => ({
 	cursorCapture: css`
@@ -34,12 +35,14 @@ type Props = StateProps;
 const AreaRootComponent: React.FC<Props> = props => {
 	const { joinPreview } = props.areaState;
 
-	const viewport: Rect = {
-		top: TOOLBAR_HEIGHT,
-		left: 0,
-		height: window.innerHeight - TOOLBAR_HEIGHT,
-		width: window.innerWidth,
-	};
+	const [viewport, setViewport] = useState(getAreaRootViewport());
+
+	useEffect(() => {
+		const fn = () => setViewport(getAreaRootViewport());
+		window.addEventListener("resize", fn);
+		return () => window.removeEventListener("resize", fn);
+	});
+
 	const areaToViewport = (viewport && computeAreaToViewport(props.areaState, viewport)) || {};
 
 	return (

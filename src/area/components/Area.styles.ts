@@ -15,14 +15,14 @@ export default ({ css }: StyleParams) => ({
 
 	area__content: css`
 		border-radius: 8px;
-		background: ${cssVariables.gray400};
+		background: ${cssVariables.gray500};
 		position: absolute;
-		padding: 8px;
 		z-index: 1;
 		top: ${AREA_BORDER_WIDTH}px;
 		left: ${AREA_BORDER_WIDTH}px;
 		bottom: ${AREA_BORDER_WIDTH}px;
 		right: ${AREA_BORDER_WIDTH}px;
+		overflow: hidden;
 	`,
 
 	area__corner: css`
