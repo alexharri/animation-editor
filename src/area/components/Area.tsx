@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { connectActionState } from "~/state/stateUtils";
 import { handleAreaDragFromCorner } from "~/area/handlers/areaDragFromCorner";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -11,7 +11,6 @@ import { PenIcon } from "~/components/icons/PenIcon";
 import { requestAction } from "~/listener/requestAction";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { areaActions } from "~/area/state/areaActions";
-import { store } from "~/state/store";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -60,23 +59,21 @@ const AreaComponent: React.FC<Props> = props => {
 						{
 							icon: EditIcon,
 							label: "Vector Editor",
-							onSelect: () => {
-								console.log(id, AreaType.VectorEditor);
-								dispatch(areaActions.setAreaType(id, AreaType.VectorEditor));
-								dispatch(contextMenuActions.closeContextMenu());
-								submitAction("Update area type");
-							},
+							type: AreaType.VectorEditor,
 						},
 						{
 							label: "Node Editor",
-							onSelect: () => {
-								console.log(id, AreaType.NodeEditor);
-								dispatch(areaActions.setAreaType(id, AreaType.NodeEditor));
-								dispatch(contextMenuActions.closeContextMenu());
-								submitAction("Update area type");
-							},
+							type: AreaType.NodeEditor,
 						},
-					],
+					].map(item => ({
+						icon: item.icon,
+						label: item.label,
+						onSelect: () => {
+							dispatch(areaActions.setAreaType(id, item.type));
+							dispatch(contextMenuActions.closeContextMenu());
+							submitAction("Update area type");
+						},
+					})),
 					pos,
 					cancelAction,
 				),

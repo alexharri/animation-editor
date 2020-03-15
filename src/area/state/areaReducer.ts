@@ -253,8 +253,6 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 
 			const area = state.areas[areaId];
 
-			console.log(area);
-
 			return {
 				...state,
 				areas: {

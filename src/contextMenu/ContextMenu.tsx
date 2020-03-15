@@ -44,8 +44,6 @@ const ContextMenuComponent: React.FC<Props> = props => {
 		}
 	};
 
-	console.log(props.options);
-
 	return (
 		<>
 			<div
@@ -64,13 +62,7 @@ const ContextMenuComponent: React.FC<Props> = props => {
 					const Icon = option.icon;
 
 					return (
-						<button
-							className={s("option")}
-							key={i}
-							onClick={() => {
-								option.onSelect();
-							}}
-						>
+						<button className={s("option")} key={i} onClick={option.onSelect}>
 							{Icon && (
 								<i className={s("option__icon")}>
 									<Icon />
