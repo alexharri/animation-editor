@@ -3,12 +3,15 @@ import { TOOLBAR_HEIGHT } from "~/constants";
 export const cssVariables = {
 	primary400: "#2840bb",
 	primary500: "#355dd4",
+	gray700: "#989898",
+	gray600: "#777",
 	gray500: "#666",
 	gray400: "#3d3d3d",
 	gray300: "#333",
 	gray200: "#222",
 	gray100: "#111",
 	toolbarHeight: `${TOOLBAR_HEIGHT}px`,
+	fontFamily: "'Open sans', sans-serif",
 };
 
 export const cssCursors = {
@@ -29,4 +32,6 @@ export const cssZIndex = {
 		joinPreview: 25,
 	},
 	toolbar: 100,
+	contextMenuBackground: 500,
+	contextMenu: 501,
 };

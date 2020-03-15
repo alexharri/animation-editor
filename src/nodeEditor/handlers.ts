@@ -4,6 +4,7 @@ import { nodeEditorAreaActions } from "~/nodeEditor/nodeEditorAreaActions";
 import { getAreaActionState } from "~/state/stateUtils";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { isKeyDown } from "~/listener/keyboard";
+import { isLeftClick } from "~/util/mouse";
 
 export const nodeEditorHandlers = {
 	onPanStart: (areaId: string, e: React.MouseEvent) => {
@@ -26,6 +27,10 @@ export const nodeEditorHandlers = {
 
 	onZoomClick: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
 		e.preventDefault();
+
+		if (!isLeftClick(e)) {
+			return;
+		}
 
 		const areaState = getAreaActionState<NodeEditorAreaState>(areaId);
 

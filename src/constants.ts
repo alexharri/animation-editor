@@ -73,8 +73,8 @@ export const toolGroups: Array<Array<{ tool: Tool }>> = [
 	[{ tool: Tool.fill }, { tool: Tool.intersection }],
 ];
 
-export enum AreaWindow {
-	VectorEditor,
-	NodeEditor,
-	Temp,
+export enum AreaType {
+	VectorEditor = "vector_editor",
+	NodeEditor = "node_editor",
+	Temp = "temp",
 }

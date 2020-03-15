@@ -1,16 +1,16 @@
 import { VectorEditor } from "~/vectorEditor/VectorEditor";
-import { AreaWindow } from "~/constants";
+import { AreaType } from "~/constants";
 import { NodeEditor } from "~/nodeEditor/NodeEditor";
 import { nodeEditorAreaReducer } from "~/nodeEditor/nodeEditorAreaReducer";
 
 export const areaComponentRegistry = {
-	[AreaWindow.VectorEditor]: VectorEditor,
-	[AreaWindow.NodeEditor]: NodeEditor,
-	[AreaWindow.Temp]: () => <p>Test</p>,
+	[AreaType.VectorEditor]: VectorEditor,
+	[AreaType.NodeEditor]: NodeEditor,
+	[AreaType.Temp]: () => <p>Test</p>,
 };
 
 export const areaStateReducerRegistry = {
-	[AreaWindow.VectorEditor]: () => ({} as any),
-	[AreaWindow.NodeEditor]: nodeEditorAreaReducer,
-	[AreaWindow.Temp]: () => ({} as any),
+	[AreaType.VectorEditor]: () => ({} as any),
+	[AreaType.NodeEditor]: nodeEditorAreaReducer,
+	[AreaType.Temp]: () => ({} as any),
 };

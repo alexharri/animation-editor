@@ -1,5 +1,6 @@
 import { createAction } from "typesafe-actions";
 import { CardinalDirection } from "~/types";
+import { AreaType } from "~/constants";
 
 export const areaActions = {
 	setJoinAreasPreview: createAction("area/SET_JOIN_PREVIEW", action => {
@@ -27,6 +28,10 @@ export const areaActions = {
 
 	setRowSizes: createAction("area/SET_ROW_SIZES", action => {
 		return (rowId: string, sizes: number[]) => action({ rowId, sizes });
+	}),
+
+	setAreaType: createAction("area/SET_TYPE", action => {
+		return (areaId: string, type: AreaType) => action({ areaId, type });
 	}),
 
 	dispatchToAreaState: createAction("area/DISPATCH_TO_AREA_STATE", _action => {

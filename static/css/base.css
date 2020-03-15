@@ -1,14 +1,18 @@
 * {
-    box-sizing: border-box;
-  }
-  
-  html {
-    font-family: sans-serif;
-    font-size: 12px;
-    font-weight: 300;
-  }
-  
-  html, body {
-    margin: 0;
-    padding: 0;
-  }
+	box-sizing: border-box;
+}
+
+html {
+	font-family: "Open Sans", sans-serif;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	font-size: 12px;
+	font-weight: 400;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}

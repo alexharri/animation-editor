@@ -5,11 +5,13 @@ import { store } from "~/state/store";
 
 import { Toolbar } from "~/toolbar/Toolbar";
 import { AreaRoot } from "~/area/components/AreaRoot";
+import { ContextMenu } from "~/contextMenu/ContextMenu";
 
 export const AppComponent: React.FC = () => {
 	return (
 		<>
 			<Provider store={store}>
+				<ContextMenu />
 				<Toolbar />
 				<AreaRoot />
 			</Provider>

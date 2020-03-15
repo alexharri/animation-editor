@@ -6,6 +6,7 @@ import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { nodeEditorHandlers } from "~/nodeEditor/handlers";
 import styles from "~/nodeEditor/NodeEditor.styles";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
+import { separateLeftRightMouse } from "~/util/mouse";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -50,12 +51,16 @@ const NodeEditorComponent: React.FC<Props> = props => {
 			<div
 				className={s("panTarget")}
 				ref={panTarget}
-				onMouseDown={e => nodeEditorHandlers.onPanStart(props.areaId, e)}
+				onMouseDown={separateLeftRightMouse({
+					left: e => nodeEditorHandlers.onPanStart(props.areaId, e),
+				})}
 			/>
 			<div
 				className={s("zoomTarget")}
 				ref={zoomTarget}
-				onMouseDown={e => nodeEditorHandlers.onZoomClick(e, props.areaId, props.viewport)}
+				onMouseDown={separateLeftRightMouse({
+					left: e => nodeEditorHandlers.onZoomClick(e, props.areaId, props.viewport),
+				})}
 			/>
 		</>
 	);

@@ -6,8 +6,9 @@ import { joinAreas } from "~/area/util/joinArea";
 import { areaToRow } from "~/area/util/areaToRow";
 import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { CardinalDirection } from "~/types";
-import { AreaWindow } from "~/constants";
+import { AreaType } from "~/constants";
 import { initialNodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
+import { areaInitialStates } from "~/area/state/areaInitialStates";
 
 type AreaAction = ActionType<typeof actions>;
 
@@ -24,7 +25,7 @@ export interface AreaState {
 	};
 	areas: {
 		[key: string]: {
-			type: AreaWindow;
+			type: AreaType;
 			state: any;
 		};
 	};
@@ -82,14 +83,14 @@ export const initialAreaState: AreaState = {
 		11: { id: "11", type: "area" },
 	},
 	areas: {
-		2: { type: AreaWindow.NodeEditor, state: initialNodeEditorAreaState },
-		3: { type: AreaWindow.VectorEditor, state: {} },
-		5: { type: AreaWindow.VectorEditor, state: {} },
-		6: { type: AreaWindow.VectorEditor, state: {} },
-		7: { type: AreaWindow.VectorEditor, state: {} },
-		9: { type: AreaWindow.VectorEditor, state: {} },
-		10: { type: AreaWindow.VectorEditor, state: {} },
-		11: { type: AreaWindow.VectorEditor, state: {} },
+		2: { type: AreaType.NodeEditor, state: initialNodeEditorAreaState },
+		3: { type: AreaType.VectorEditor, state: {} },
+		5: { type: AreaType.VectorEditor, state: {} },
+		6: { type: AreaType.VectorEditor, state: {} },
+		7: { type: AreaType.VectorEditor, state: {} },
+		9: { type: AreaType.VectorEditor, state: {} },
+		10: { type: AreaType.VectorEditor, state: {} },
+		11: { type: AreaType.VectorEditor, state: {} },
 	},
 	joinPreview: null,
 	rootId: "0",
@@ -242,6 +243,26 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 					[row.id]: {
 						...row,
 						areas: row.areas.map((area, i) => ({ ...area, size: sizes[i] })),
+					},
+				},
+			};
+		}
+
+		case getType(areaActions.setAreaType): {
+			const { areaId, type } = action.payload;
+
+			const area = state.areas[areaId];
+
+			console.log(area);
+
+			return {
+				...state,
+				areas: {
+					...state.areas,
+					[areaId]: {
+						...area,
+						type,
+						state: areaInitialStates[type],
 					},
 				},
 			};
