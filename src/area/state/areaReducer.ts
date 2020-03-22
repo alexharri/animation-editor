@@ -84,7 +84,7 @@ export const initialAreaState: AreaState = {
 	},
 	areas: {
 		2: { type: AreaType.NodeEditor, state: initialNodeEditorAreaState },
-		3: { type: AreaType.VectorEditor, state: {} },
+		3: { type: AreaType.History, state: {} },
 		5: { type: AreaType.VectorEditor, state: {} },
 		6: { type: AreaType.VectorEditor, state: {} },
 		7: { type: AreaType.VectorEditor, state: {} },

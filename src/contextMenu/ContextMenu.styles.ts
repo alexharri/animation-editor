@@ -16,15 +16,15 @@ export default ({ css }: StyleParams) => ({
 		position: fixed;
 		top: 0;
 		left: 0;
-		background: ${cssVariables.gray100};
-		border: 1px solid ${cssVariables.gray500};
+		background: ${cssVariables.dark300};
+		border: 1px solid ${cssVariables.gray800};
 		width: 180px;
 		padding: 2px;
 		z-index: ${cssZIndex.contextMenu};
 	`,
 
 	name: css`
-		color: ${cssVariables.gray700};
+		color: ${cssVariables.light400};
 		padding-left: 32px;
 		line-height: 22px;
 		font-size: 12px;
@@ -33,7 +33,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	separator: css`
-		background: ${cssVariables.gray400};
+		background: ${cssVariables.gray500};
 		height: 1px;
 		display: block;
 		margin: 2px 0;

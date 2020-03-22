@@ -4,7 +4,7 @@ import { AREA_BORDER_WIDTH } from "~/constants";
 
 export default ({ css }: StyleParams) => ({
 	area: css`
-		background: ${cssVariables.gray200};
+		background: ${cssVariables.dark500};
 		position: absolute;
 		z-index: ${cssZIndex.area.areaBase};
 
@@ -15,7 +15,7 @@ export default ({ css }: StyleParams) => ({
 
 	area__content: css`
 		border-radius: 8px;
-		background: ${cssVariables.gray400};
+		background: ${cssVariables.gray500};
 		position: absolute;
 		z-index: 1;
 		top: ${AREA_BORDER_WIDTH}px;
@@ -62,10 +62,10 @@ export default ({ css }: StyleParams) => ({
 		padding: 2px 6px;
 		border-radius: 4px;
 		outline: none;
-		background: ${cssVariables.gray200};
+		background: ${cssVariables.dark500};
 
 		svg {
-			fill: ${cssVariables.gray500};
+			fill: ${cssVariables.gray800};
 			width: 12px;
 			height: 12px;
 		}
@@ -81,8 +81,8 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	selectArea__inner: css`
-		border: 1px solid ${cssVariables.gray500};
-		background: ${cssVariables.gray300};
+		border: 1px solid ${cssVariables.gray800};
+		background: ${cssVariables.dark700};
 	`,
 
 	selectArea__item: css`
@@ -90,7 +90,7 @@ export default ({ css }: StyleParams) => ({
 		border: none;
 		border-radius: 4px;
 		padding: 0 24px;
-		background: ${cssVariables.gray300};
+		background: ${cssVariables.dark700};
 		display: block;
 		width: 128px;
 	`,

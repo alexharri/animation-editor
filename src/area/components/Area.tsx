@@ -37,6 +37,11 @@ const areaTypeOptions: Array<{ icon: React.ComponentType; type: AreaType; label:
 		type: AreaType.NodeEditor,
 		label: "Node Editor",
 	},
+	{
+		icon: EditIcon,
+		type: AreaType.History,
+		label: "History",
+	},
 ];
 
 const typeToIndex = areaTypeOptions.reduce<{ [key: string]: number }>((obj, { type }, i) => {
@@ -64,6 +69,10 @@ const AreaComponent: React.FC<Props> = props => {
 						{
 							label: "Node Editor",
 							type: AreaType.NodeEditor,
+						},
+						{
+							label: "History",
+							type: AreaType.History,
 						},
 					].map(item => ({
 						icon: item.icon,

@@ -3,6 +3,6 @@ import { cssVariables } from "~/cssVariables";
 
 export default ({ css }: StyleParams) => ({
 	canvas: css`
-		background: ${cssVariables.gray300};
+		background: ${cssVariables.dark700};
 	`,
 });

@@ -9,7 +9,7 @@ export default ({ css }: StyleParams) => ({
 		right: 0;
 		height: 32px;
 		padding: 0 32px;
-		background: ${cssVariables.gray200};
+		background: ${cssVariables.dark500};
 		overflow: visible;
 		z-index: ${cssZIndex.toolbar};
 	`,
@@ -44,7 +44,7 @@ export default ({ css }: StyleParams) => ({
 			&:before {
 				opacity: 1;
 				transform: scale(1);
-				background: ${cssVariables.gray100};
+				background: ${cssVariables.dark300};
 				transition: none;
 			}
 		}
@@ -123,8 +123,8 @@ export default ({ css }: StyleParams) => ({
 		position: absolute;
 		top: 100%;
 		left: 0;
-		background: ${cssVariables.gray200};
-		border: 1px solid ${cssVariables.gray100};
+		background: ${cssVariables.dark500};
+		border: 1px solid ${cssVariables.dark300};
 		box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
 	`,
 
@@ -139,7 +139,7 @@ export default ({ css }: StyleParams) => ({
 		padding: 0 10px 0 0;
 
 		&:hover {
-			background: ${cssVariables.gray300};
+			background: ${cssVariables.dark700};
 		}
 	`,
 

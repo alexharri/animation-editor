@@ -10,13 +10,21 @@ import { nodeEditorGraphActions } from "~/nodeEditor/nodeEditorGraphActions";
 
 export const nodeEditorHandlers = {
 	onLeftClickOutside: (graphId: string) => {
-		requestAction({ history: true }, ({ dispatch: _dispatch, submitAction }) => {
-			const dispatch = (action: any) =>
-				_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+		const shouldAddToStack = (prevState: ActionState, _nextState: ActionState): boolean => {
+			const nKeys = Object.keys(prevState.nodeEditor.graphs[graphId].selection.nodes).length;
+			return nKeys !== 0;
+		};
 
-			dispatch(nodeEditorGraphActions.clearNodeSelection());
-			submitAction("Clear selection");
-		});
+		requestAction(
+			{ history: true, shouldAddToStack },
+			({ dispatch: _dispatch, submitAction }) => {
+				const dispatch = (action: any) =>
+					_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+
+				dispatch(nodeEditorGraphActions.clearNodeSelection());
+				submitAction("Clear selection");
+			},
+		);
 	},
 
 	onPanStart: (areaId: string, e: React.MouseEvent) => {
