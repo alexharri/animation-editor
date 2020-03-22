@@ -53,6 +53,10 @@ export class Vec2 {
 	public lerp(vec: Vec2, t: number): Vec2 {
 		return new Vec2(interpolate(this.x, vec.x, t), interpolate(this.y, vec.y, t));
 	}
+
+	public round(): Vec2 {
+		return Vec2.new(Math.round(this.x), Math.round(this.y));
+	}
 }
 
 declare global {
@@ -70,6 +74,7 @@ declare global {
 		public add(vec: Vec2): Vec2;
 		public lerp(vec: Vec2, t: number): Vec2;
 		public sub(vec: Vec2): Vec2;
+		public round(): Vec2;
 		public lerp(vec: Vec2, t: number): Vec2;
 	}
 }
@@ -102,3 +107,7 @@ export const scaleRect = (rect: Rect, scale: number): Rect => ({
 
 export const capToRange = (low: number, high: number, value: number) =>
 	Math.min(high, Math.max(low, value));
+
+export function getDistance(a: Vec2, b: Vec2) {
+	return Math.hypot(b.x - a.x, b.y - a.y);
+}

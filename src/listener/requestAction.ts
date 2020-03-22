@@ -1,14 +1,17 @@
 import { store } from "~/state/store";
 import { removeListener, addListener as _addListener } from "~/listener/addListener";
 import { historyActions } from "~/state/history/historyActions";
-import { getActionId } from "~/state/stateUtils";
+import { getActionId, getActionState, getCurrentState } from "~/state/stateUtils";
 
 let _n = 0;
 let _activeRequestToken: null | string = null;
 
 export const getActiveRequestToken = () => _activeRequestToken;
 
-interface Options {}
+interface Options {
+	history?: boolean;
+	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
+}
 
 interface Callback {
 	(params: {
@@ -20,7 +23,10 @@ interface Callback {
 	}): void;
 }
 
-export const requestAction = ({}: Options, callback: Callback) => {
+export const requestAction = (
+	{ history = false, shouldAddToStack }: Options,
+	callback: Callback,
+) => {
 	if (getActionId()) {
 		return;
 	}
@@ -57,11 +63,21 @@ export const requestAction = ({}: Options, callback: Callback) => {
 
 	callback({
 		dispatch: action => {
-			store.dispatch(historyActions.dispatchToAction(actionId, action));
+			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 		},
 
 		submitAction: (name: string) => {
-			store.dispatch(historyActions.submitAction(actionId, name));
+			if (
+				typeof shouldAddToStack === "function"
+					? !shouldAddToStack(getCurrentState(), getActionState())
+					: false
+			) {
+				store.dispatch(historyActions.cancelAction(actionId));
+				onComplete();
+				return;
+			}
+
+			store.dispatch(historyActions.submitAction(actionId, name, history));
 			onComplete();
 		},
 

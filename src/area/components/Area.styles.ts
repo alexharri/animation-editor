@@ -15,7 +15,7 @@ export default ({ css }: StyleParams) => ({
 
 	area__content: css`
 		border-radius: 8px;
-		background: ${cssVariables.gray500};
+		background: ${cssVariables.gray400};
 		position: absolute;
 		z-index: 1;
 		top: ${AREA_BORDER_WIDTH}px;

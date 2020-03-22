@@ -7,11 +7,16 @@ import { nodeEditorHandlers } from "~/nodeEditor/handlers";
 import styles from "~/nodeEditor/NodeEditor.styles";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { separateLeftRightMouse } from "~/util/mouse";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorGraphReducer";
+import { Node } from "~/nodeEditor/nodes/Node";
 
 const s = compileStylesheetLabelled(styles);
 
 type OwnProps = AreaWindowProps<NodeEditorAreaState>;
-type Props = OwnProps;
+interface StateProps {
+	graph: NodeEditorGraphState;
+}
+type Props = OwnProps & StateProps;
 
 const NodeEditorComponent: React.FC<Props> = props => {
 	const panTarget = useRef<HTMLDivElement>(null);
@@ -36,16 +41,37 @@ const NodeEditorComponent: React.FC<Props> = props => {
 		}
 	});
 
+	const { graph } = props;
+	const nodeIds = Object.keys(graph.nodes);
+
 	return (
 		<>
 			<div
-				style={{
-					transform: `translate(${pan.x + props.viewport.width / 2}px, ${pan.y +
-						props.viewport.height / 2}px)`,
-				}}
+				className={s("container")}
+				onMouseDown={separateLeftRightMouse({
+					left: () => nodeEditorHandlers.onLeftClickOutside(props.areaState.graphId),
+				})}
 			>
-				<div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
-					<div style={{ background: "red", height: 50, width: 50 }}>Hello</div>
+				<div
+					style={{
+						transform: `translate(${pan.x + props.viewport.width / 2}px, ${pan.y +
+							props.viewport.height / 2}px)`,
+					}}
+				>
+					<div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
+						{nodeIds.map(nodeId => {
+							return (
+								<div key={nodeId}>
+									<Node
+										nodeId={nodeId}
+										areaId={props.areaId}
+										viewport={props.viewport}
+										graphId={props.areaState.graphId}
+									/>
+								</div>
+							);
+						})}
+					</div>
 				</div>
 			</div>
 			<div
@@ -66,4 +92,8 @@ const NodeEditorComponent: React.FC<Props> = props => {
 	);
 };
 
-export const NodeEditor = connectActionState(() => ({}))(NodeEditorComponent);
+const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ nodeEditor }, props) => {
+	return { graph: nodeEditor.graphs[props.areaState.graphId] };
+};
+
+export const NodeEditor = connectActionState(mapStateToProps)(NodeEditorComponent);

@@ -52,7 +52,11 @@ export function createReducerWithHistory<S>(
 			}
 
 			case "history/DISPATCH_TO_ACTION": {
-				const { actionId, actionToDispatch } = action.payload;
+				const { actionId, actionToDispatch, modifiesHistory } = action.payload;
+
+				if (!modifiesHistory) {
+					return state;
+				}
 
 				if (!state.action) {
 					console.warn("Attempted to dispatch to an action that does not exist.");
@@ -81,7 +85,14 @@ export function createReducerWithHistory<S>(
 			}
 
 			case "history/SUBMIT_ACTION": {
-				const { actionId, name } = action.payload;
+				const { actionId, name, modifiesHistory } = action.payload;
+
+				if (!modifiesHistory) {
+					return {
+						...state,
+						action: null,
+					};
+				}
 
 				if (!state.action) {
 					console.warn("Attempted to submit an action that does not exist.");

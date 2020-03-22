@@ -5,8 +5,20 @@ import { getAreaActionState } from "~/state/stateUtils";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { isKeyDown } from "~/listener/keyboard";
 import { isLeftClick } from "~/util/mouse";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
+import { nodeEditorGraphActions } from "~/nodeEditor/nodeEditorGraphActions";
 
 export const nodeEditorHandlers = {
+	onLeftClickOutside: (graphId: string) => {
+		requestAction({ history: true }, ({ dispatch: _dispatch, submitAction }) => {
+			const dispatch = (action: any) =>
+				_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+
+			dispatch(nodeEditorGraphActions.clearNodeSelection());
+			submitAction("Clear selection");
+		});
+	},
+
 	onPanStart: (areaId: string, e: React.MouseEvent) => {
 		e.preventDefault();
 

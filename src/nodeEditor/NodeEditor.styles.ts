@@ -1,8 +1,12 @@
 import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
-	canvas: css`
-		background: red;
+	container: css`
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
 	`,
 
 	panTarget: css`

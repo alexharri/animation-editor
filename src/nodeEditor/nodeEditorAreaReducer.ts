@@ -7,11 +7,13 @@ type ToolAction = ActionType<typeof nodeEditorAreaActions>;
 export interface NodeEditorAreaState {
 	pan: Vec2;
 	scale: number;
+	graphId: string;
 }
 
 export const initialNodeEditorAreaState: NodeEditorAreaState = {
 	pan: Vec2.new(0, 0),
 	scale: 1,
+	graphId: "0",
 };
 
 export const nodeEditorAreaReducer = (

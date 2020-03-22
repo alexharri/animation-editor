@@ -7,12 +7,16 @@ export const historyActions = {
 		return action("history/START_ACTION", { actionId });
 	},
 
-	dispatchToAction: (actionId: string, actionToDispatch: number) => {
-		return action("history/DISPATCH_TO_ACTION", { actionId, actionToDispatch });
+	dispatchToAction: (actionId: string, actionToDispatch: number, modifiesHistory: boolean) => {
+		return action("history/DISPATCH_TO_ACTION", {
+			actionId,
+			actionToDispatch,
+			modifiesHistory,
+		});
 	},
 
-	submitAction: (actionId: string, name: string) => {
-		return action("history/SUBMIT_ACTION", { actionId, name });
+	submitAction: (actionId: string, name: string, modifiesHistory: boolean) => {
+		return action("history/SUBMIT_ACTION", { actionId, name, modifiesHistory });
 	},
 
 	cancelAction: (actionId: string) => {
