@@ -20,6 +20,7 @@ export default ({ css }: StyleParams) => ({
 		border: 1px solid ${cssVariables.gray800};
 		width: 180px;
 		padding: 2px;
+		border-radius: 4px;
 		z-index: ${cssZIndex.contextMenu};
 	`,
 

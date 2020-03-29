@@ -1,16 +1,19 @@
-import { GraphEditorNode } from "~/types";
 import { ActionType, getType } from "typesafe-actions";
 import { nodeEditorGraphActions as actions } from "~/nodeEditor/nodeEditorGraphActions";
+import { NodeEditorNode, nodeEditorNodeInputsMap } from "~/nodeEditor/nodeEditorInputs";
+import { NodeEditorNodeType } from "~/types";
 
 export type NodeEditorGraphAction = ActionType<typeof actions>;
+
+type Selection = { [id: string]: true };
 
 export interface NodeEditorGraphState {
 	moveVector: Vec2;
 	nodes: {
-		[nodeId: string]: GraphEditorNode;
+		[nodeId: string]: NodeEditorNode<NodeEditorNodeType>;
 	};
 	selection: {
-		nodes: { [nodeId: string]: true };
+		nodes: Selection;
 	};
 }
 
@@ -19,8 +22,20 @@ export const initialNodeEditorGraphState: NodeEditorGraphState = {
 	nodes: {
 		0: {
 			id: "0",
+			type: NodeEditorNodeType.add_vec2,
 			position: Vec2.new(0, 0),
-			type: "add",
+			width: 128,
+			inputs: nodeEditorNodeInputsMap.add_vec2,
+			inputPointers: nodeEditorNodeInputsMap.add_vec2.map(() => null),
+		},
+		1: {
+			id: "1",
+			type: NodeEditorNodeType.translate_rect,
+			position: Vec2.new(100, 100),
+			width: 128,
+			inputs: nodeEditorNodeInputsMap.translate_rect,
+			// inputPointers: nodeEditorNodeInputsMap.translate_rect.map(() => null),
+			inputPointers: [null, { nodeId: "0", outputIndex: 0 }],
 		},
 	},
 	selection: {
@@ -53,15 +68,12 @@ export function nodeEditorGraphReducer(
 				...state,
 				selection: {
 					...state.selection,
-					nodes: Object.keys(state.selection.nodes).reduce<{ [key: string]: true }>(
-						(obj, id) => {
-							if (nodeId !== id) {
-								obj[id] = true;
-							}
-							return obj;
-						},
-						{},
-					),
+					nodes: Object.keys(state.selection.nodes).reduce<Selection>((obj, id) => {
+						if (nodeId !== id) {
+							obj[id] = true;
+						}
+						return obj;
+					}, {}),
 				},
 			};
 		}
@@ -101,6 +113,30 @@ export function nodeEditorGraphReducer(
 							? { ...node, position: node.position.add(moveVector) }
 							: node;
 
+						return obj;
+					},
+					{},
+				),
+			};
+		}
+
+		case getType(actions.removeNode): {
+			const { nodeId } = action.payload;
+			return {
+				...state,
+				selection: {
+					nodes: Object.keys(state.selection.nodes).reduce<Selection>((obj, key) => {
+						if (key !== nodeId) {
+							obj[key] = state.selection.nodes[key];
+						}
+						return obj;
+					}, {}),
+				},
+				nodes: Object.keys(state.nodes).reduce<NodeEditorGraphState["nodes"]>(
+					(obj, key) => {
+						if (key !== nodeId) {
+							obj[key] = state.nodes[key];
+						}
 						return obj;
 					},
 					{},

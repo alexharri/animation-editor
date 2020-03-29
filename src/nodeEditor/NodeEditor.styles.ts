@@ -1,4 +1,5 @@
 import { StyleParams } from "~/util/stylesheets";
+import { cssVariables } from "~/cssVariables";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
@@ -7,6 +8,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		right: 0;
 		bottom: 0;
+		background: ${cssVariables.dark700};
 	`,
 
 	panTarget: css`

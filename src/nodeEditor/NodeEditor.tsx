@@ -9,6 +9,7 @@ import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorGraphReducer";
 import { Node } from "~/nodeEditor/nodes/Node";
+import { NodeEditorConnections } from "~/nodeEditor/NodeEditorConnections";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -52,6 +53,11 @@ const NodeEditorComponent: React.FC<Props> = props => {
 					left: () => nodeEditorHandlers.onLeftClickOutside(props.areaState.graphId),
 				})}
 			>
+				<NodeEditorConnections
+					areaState={props.areaState}
+					graphId={props.areaState.graphId}
+					viewport={props.viewport}
+				/>
 				<div
 					style={{
 						transform: `translate(${pan.x + props.viewport.width / 2}px, ${pan.y +

@@ -3,6 +3,7 @@ import { TOOLBAR_HEIGHT } from "~/constants";
 export const cssVariables = {
 	primary400: "#2840bb",
 	primary500: "#355dd4",
+	white500: "#f3f3f3",
 	light500: "#adadad",
 	light400: "#989898",
 	light300: "#777",

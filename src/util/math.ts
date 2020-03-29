@@ -45,6 +45,10 @@ export class Vec2 {
 		return new Vec2(this.x - vec.x, this.y - vec.y);
 	}
 
+	public scale(scale: number): Vec2 {
+		return new Vec2(this.x * scale, this.y * scale);
+	}
+
 	/**
 	 * Linear interpolation
 	 *
@@ -74,6 +78,7 @@ declare global {
 		public add(vec: Vec2): Vec2;
 		public lerp(vec: Vec2, t: number): Vec2;
 		public sub(vec: Vec2): Vec2;
+		public scale(scale: number): Vec2;
 		public round(): Vec2;
 		public lerp(vec: Vec2, t: number): Vec2;
 	}

@@ -6,8 +6,35 @@ import { getDistance } from "~/util/math";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
+import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 
 export const nodeHandlers = {
+	onRightClick: (e: React.MouseEvent, graphId: string, nodeId: string) => {
+		requestAction({ history: true }, ({ submitAction, dispatch, cancelAction }) => {
+			const dispatchToGraph = (action: any) =>
+				dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+
+			dispatch(
+				contextMenuActions.openContextMenu(
+					"Node",
+					[
+						{
+							label: "Delete",
+							onSelect: () => {
+								dispatch(contextMenuActions.closeContextMenu());
+								dispatchToGraph(nodeEditorGraphActions.removeNode(nodeId));
+								submitAction("Remove node");
+							},
+							default: true,
+						},
+					],
+					Vec2.fromEvent(e),
+					cancelAction,
+				),
+			);
+		});
+	},
+
 	mouseDown: (
 		e: React.MouseEvent,
 		areaId: string,
