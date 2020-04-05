@@ -7,22 +7,135 @@ import { isKeyDown } from "~/listener/keyboard";
 import { isLeftClick } from "~/util/mouse";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { nodeEditorGraphActions } from "~/nodeEditor/nodeEditorGraphActions";
+import { contextMenuActions } from "~/contextMenu/contextMenuActions";
+import { NodeEditorNodeType } from "~/types";
+import {
+	transformGlobalToNodeEditorPosition,
+	transformGlobalToNodeEditorRect,
+} from "~/nodeEditor/nodeEditorUtils";
+import { getDistance, rectOfTwoVecs } from "~/util/math";
 
 export const nodeEditorHandlers = {
-	onLeftClickOutside: (graphId: string) => {
+	onLeftClickOutside: (
+		e: React.MouseEvent,
+		graphId: string,
+		viewport: Rect,
+		scale: number,
+		pan: Vec2,
+	) => {
+		e.preventDefault();
+
 		const shouldAddToStack = (prevState: ActionState, _nextState: ActionState): boolean => {
+			return true;
 			const nKeys = Object.keys(prevState.nodeEditor.graphs[graphId].selection.nodes).length;
 			return nKeys !== 0;
 		};
 
 		requestAction(
 			{ history: true, shouldAddToStack },
-			({ dispatch: _dispatch, submitAction }) => {
+			({ addListener, dispatch: _dispatch, submitAction }) => {
 				const dispatch = (action: any) =>
 					_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
 
-				dispatch(nodeEditorGraphActions.clearNodeSelection());
-				submitAction("Clear selection");
+				const initialMousePos = Vec2.fromEvent(e);
+
+				let hasMoved = false;
+
+				addListener.repeated("mousemove", e => {
+					const mousePos = Vec2.fromEvent(e);
+					if (!hasMoved) {
+						// We don't consider the mouse to be "moved" until the mouse has moved at least
+						// 5px from where it was initially.
+						if (getDistance(initialMousePos, mousePos) > 5 / scale) {
+							hasMoved = true;
+						} else {
+							return;
+						}
+					}
+
+					const rect = transformGlobalToNodeEditorRect(
+						rectOfTwoVecs(initialMousePos, mousePos),
+						viewport,
+						scale,
+						pan,
+					);
+					dispatch(nodeEditorGraphActions.setDragSelectRect(rect));
+				});
+
+				addListener.once("mouseup", () => {
+					if (hasMoved) {
+						const isAdditiveSelection = isKeyDown("Shift");
+						dispatch(nodeEditorGraphActions.submitDragSelectRect(isAdditiveSelection));
+						submitAction("Modify selection");
+					} else {
+						dispatch(nodeEditorGraphActions.clearNodeSelection());
+						submitAction("Modify selection");
+					}
+				});
+			},
+		);
+	},
+
+	onRightClickOutside: (
+		e: React.MouseEvent,
+		graphId: string,
+		viewport: Rect,
+		scale: number,
+		pan: Vec2,
+		setClickCapture: (fn: { fn: ((e: React.MouseEvent) => void) | null }) => void,
+	) => {
+		const pos = Vec2.fromEvent(e);
+
+		let didAddNode = false;
+
+		requestAction(
+			{ history: true, shouldAddToStack: () => didAddNode },
+			({ cancelAction, dispatch: _dispatch, submitAction, execOnComplete }) => {
+				// Cleanup click capture on completion
+				execOnComplete(() => setClickCapture({ fn: null }));
+
+				const onAddSelect = (type: NodeEditorNodeType) => {
+					didAddNode = true;
+					const dispatch = (action: any) =>
+						_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+
+					dispatch(nodeEditorGraphActions.startAddNode(type));
+					_dispatch(contextMenuActions.closeContextMenu());
+					const fn = (e: React.MouseEvent) => {
+						if (!e) {
+							return;
+						}
+						const pos = transformGlobalToNodeEditorPosition(
+							Vec2.fromEvent(e),
+							viewport,
+							scale,
+							pan,
+						);
+						dispatch(nodeEditorGraphActions.submitAddNode(pos));
+						submitAction("Add node");
+					};
+					setClickCapture({ fn });
+				};
+
+				const createAddNodeOption = (type: NodeEditorNodeType, label: string) => ({
+					label,
+					onSelect: () => onAddSelect(type),
+				});
+
+				_dispatch(
+					contextMenuActions.openContextMenu(
+						"Node Editor",
+						[
+							{
+								label: "Vec2 Nodes",
+								options: [createAddNodeOption(NodeEditorNodeType.add_vec2, "Add")],
+								default: true,
+							},
+						],
+						pos,
+						cancelAction,
+					),
+				);
 			},
 		);
 	},

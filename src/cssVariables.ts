@@ -28,6 +28,12 @@ export const cssCursors = {
 };
 
 export const cssZIndex = {
+	nodeEditor: {
+		dragSelectPreview: 45,
+		panTarget: 50,
+		zoomTarget: 55,
+		clickCaptureTarget: 60,
+	},
 	area: {
 		areaBase: 5,
 		separator: 10,

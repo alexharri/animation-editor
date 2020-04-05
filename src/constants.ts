@@ -79,3 +79,8 @@ export enum AreaType {
 	History = "history",
 	Temp = "temp",
 }
+
+export const DEFAULT_NODE_EDITOR_NODE_WIDTH = 128;
+
+export const DEFAULT_CONTEXT_MENU_WIDTH = 180;
+export const CONTEXT_MENU_OPTION_HEIGHT = 22;

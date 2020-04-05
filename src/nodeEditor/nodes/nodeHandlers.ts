@@ -1,4 +1,4 @@
-import { requestAction } from "~/listener/requestAction";
+import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { isKeyDown } from "~/listener/keyboard";
 import { nodeEditorGraphActions } from "~/nodeEditor/nodeEditorGraphActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
@@ -7,6 +7,67 @@ import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
+import {
+	calculateNodeOutputPosition,
+	calculateNodeInputPosition,
+} from "~/nodeEditor/util/calculateNodeHeight";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorGraphReducer";
+
+const getAllInputsOfType = (graph: NodeEditorGraphState, nodeId: string, outputIndex: number) => {
+	const allNodeInputsOfType: Array<{
+		nodeId: string;
+		inputIndex: number;
+		position: Vec2;
+	}> = [];
+
+	const output = graph.nodes[nodeId].outputs[outputIndex];
+
+	for (const key in graph.nodes) {
+		if (key === nodeId) {
+			continue;
+		}
+
+		const node = graph.nodes[key];
+
+		for (let i = 0; i < node.inputs.length; i += 1) {
+			const input = node.inputs[i];
+			if (input.type === output.type) {
+				const position = calculateNodeInputPosition(node, i);
+				allNodeInputsOfType.push({ inputIndex: i, nodeId: key, position });
+			}
+		}
+	}
+
+	return allNodeInputsOfType;
+};
+
+const getAllOutputsOfType = (graph: NodeEditorGraphState, nodeId: string, inputIndex: number) => {
+	const allNodeOutputsOfType: Array<{
+		nodeId: string;
+		outputIndex: number;
+		position: Vec2;
+	}> = [];
+
+	const input = graph.nodes[nodeId].inputs[inputIndex];
+
+	for (const key in graph.nodes) {
+		if (key === nodeId) {
+			continue;
+		}
+
+		const node = graph.nodes[key];
+
+		for (let i = 0; i < node.outputs.length; i += 1) {
+			const output = node.outputs[i];
+			if (output.type === input.type) {
+				const position = calculateNodeOutputPosition(node, i);
+				allNodeOutputsOfType.push({ outputIndex: i, nodeId: key, position });
+			}
+		}
+	}
+
+	return allNodeOutputsOfType;
+};
 
 export const nodeHandlers = {
 	onRightClick: (e: React.MouseEvent, graphId: string, nodeId: string) => {
@@ -103,7 +164,7 @@ export const nodeHandlers = {
 				const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
 				let hasMoved = false;
 
-				addListener.repeated("mousemove", e => {
+				addListener.repeated("mousemove", (e) => {
 					const mousePos = transformMousePosition(Vec2.fromEvent(e));
 					if (!hasMoved) {
 						// We don't consider the mouse to be "moved" until the mouse has moved at least
@@ -133,5 +194,237 @@ export const nodeHandlers = {
 				});
 			},
 		);
+	},
+
+	onOutputMouseDown: (
+		_: React.MouseEvent,
+		areaId: string,
+		graphId: string,
+		nodeId: string,
+		outputIndex: number,
+		viewport: Rect,
+	) => {
+		requestAction(
+			{ history: true },
+			({ dispatch: _dispatch, addListener, submitAction, cancelAction }) => {
+				const dispatch = (action: any) =>
+					_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+
+				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
+				const graph = getActionState().nodeEditor.graphs[graphId];
+
+				const transformMousePosition = (mousePosition: Vec2) =>
+					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+
+				const allNodeInputsOfType = getAllInputsOfType(graph, nodeId, outputIndex);
+
+				let hasInit = false;
+
+				addListener.repeated("mousemove", (e) => {
+					const mousePos = transformMousePosition(Vec2.fromEvent(e));
+
+					if (!hasInit) {
+						dispatch(
+							nodeEditorGraphActions.initDragOutputTo(mousePos, {
+								outputIndex,
+								nodeId,
+							}),
+						);
+						hasInit = true;
+					}
+
+					let dist = -1;
+					let wouldConnectTo: { nodeId: string; inputIndex: number } | null = null;
+
+					for (let i = 0; i < allNodeInputsOfType.length; i += 1) {
+						const { nodeId, inputIndex, position } = allNodeInputsOfType[i];
+						const currDist = getDistance(position, mousePos);
+
+						if ((dist === -1 || currDist < dist) && currDist < 15 / scale) {
+							dist = currDist;
+							wouldConnectTo = { nodeId, inputIndex };
+						}
+					}
+
+					dispatch(nodeEditorGraphActions.setDragOutputTo(mousePos, wouldConnectTo));
+				});
+
+				addListener.once("mouseup", () => {
+					const graph = getActionState().nodeEditor.graphs[graphId];
+
+					if (graph._dragOutputTo?.wouldConnectToInput) {
+						dispatch(nodeEditorGraphActions.submitDragOutputTo());
+						submitAction("Connect output to input");
+						return;
+					}
+
+					cancelAction();
+				});
+			},
+		);
+	},
+
+	onInputMouseDown: (
+		_: React.MouseEvent,
+		areaId: string,
+		graphId: string,
+		nodeId: string,
+		inputIndex: number,
+		viewport: Rect,
+	) => {
+		const cb: RequestActionCallback = ({
+			dispatch: _dispatch,
+			addListener,
+			submitAction,
+			cancelAction,
+		}) => {
+			const dispatch = (action: any) =>
+				_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+
+			const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
+			const graph = getActionState().nodeEditor.graphs[graphId];
+
+			const transformMousePosition = (mousePosition: Vec2) =>
+				transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+
+			const allNodeOutputsOfType = getAllOutputsOfType(graph, nodeId, inputIndex);
+
+			let hasInit = false;
+
+			addListener.repeated("mousemove", (e) => {
+				const mousePos = transformMousePosition(Vec2.fromEvent(e));
+
+				if (!hasInit) {
+					dispatch(
+						nodeEditorGraphActions.initDragInputTo(mousePos, {
+							inputIndex,
+							nodeId,
+						}),
+					);
+					hasInit = true;
+				}
+
+				let dist = -1;
+				let wouldConnectTo: { nodeId: string; outputIndex: number } | null = null;
+
+				for (let i = 0; i < allNodeOutputsOfType.length; i += 1) {
+					const { nodeId, outputIndex, position } = allNodeOutputsOfType[i];
+					const currDist = getDistance(position, mousePos);
+
+					if ((dist === -1 || currDist < dist) && currDist < 15 / scale) {
+						dist = currDist;
+						wouldConnectTo = { nodeId, outputIndex };
+					}
+				}
+
+				dispatch(nodeEditorGraphActions.setDragInputTo(mousePos, wouldConnectTo));
+			});
+
+			addListener.once("mouseup", () => {
+				const graph = getActionState().nodeEditor.graphs[graphId];
+
+				if (graph._dragInputTo?.wouldConnectToOutput) {
+					dispatch(nodeEditorGraphActions.submitDragInputTo());
+					submitAction("Connect input to output");
+					return;
+				}
+
+				cancelAction();
+			});
+		};
+		requestAction({ history: true }, cb);
+	},
+
+	onInputWithPointerMouseDown: (
+		_: React.MouseEvent,
+		areaId: string,
+		graphId: string,
+		nodeId: string,
+		inputIndex: number,
+		viewport: Rect,
+	) => {
+		const cb: RequestActionCallback = ({
+			dispatch: _dispatch,
+			addListener,
+			submitAction,
+			cancelAction,
+		}) => {
+			const dispatch = (action: any) =>
+				_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+
+			const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
+			const graph = getActionState().nodeEditor.graphs[graphId];
+
+			const transformMousePosition = (mousePosition: Vec2) =>
+				transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+
+			const pointer = graph.nodes[nodeId].inputs[inputIndex].pointer;
+
+			if (!pointer) {
+				console.warn(`No pointer for '${nodeId}' input at index '${inputIndex}'`);
+				cancelAction();
+				return;
+			}
+
+			const allNodeInputsOfType = getAllInputsOfType(
+				graph,
+				pointer.nodeId,
+				pointer.outputIndex,
+			);
+
+			let hasInit = false;
+
+			addListener.repeated("mousemove", (e) => {
+				const mousePos = Vec2.fromEvent(e).apply(transformMousePosition);
+
+				if (!hasInit) {
+					dispatch(nodeEditorGraphActions.removeInputPointer(nodeId, inputIndex));
+					dispatch(
+						nodeEditorGraphActions.initDragOutputTo(mousePos, {
+							outputIndex: pointer.outputIndex,
+							nodeId: pointer.nodeId,
+						}),
+					);
+					hasInit = true;
+				}
+
+				let dist = -1;
+				let wouldConnectTo: { nodeId: string; inputIndex: number } | null = null;
+
+				for (let i = 0; i < allNodeInputsOfType.length; i += 1) {
+					const { nodeId, inputIndex, position } = allNodeInputsOfType[i];
+					const currDist = getDistance(position, mousePos);
+
+					if ((dist === -1 || currDist < dist) && currDist < 15 / scale) {
+						dist = currDist;
+						wouldConnectTo = { nodeId, inputIndex };
+					}
+				}
+
+				dispatch(nodeEditorGraphActions.setDragOutputTo(mousePos, wouldConnectTo));
+			});
+
+			addListener.once("mouseup", () => {
+				const graph = getActionState().nodeEditor.graphs[graphId];
+
+				if (graph._dragOutputTo?.wouldConnectToInput) {
+					if (
+						graph._dragOutputTo.wouldConnectToInput.inputIndex === inputIndex &&
+						graph._dragOutputTo.wouldConnectToInput.nodeId === nodeId
+					) {
+						cancelAction();
+						return;
+					}
+
+					dispatch(nodeEditorGraphActions.submitDragOutputTo());
+					submitAction("Move input to output");
+				} else {
+					dispatch(nodeEditorGraphActions.clearDragOutputTo());
+					submitAction("Disconnect input");
+				}
+			});
+		};
+
+		requestAction({ history: true }, cb);
 	},
 };

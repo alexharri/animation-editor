@@ -6,7 +6,7 @@ import { AreaState } from "~/area/state/areaReducer";
 import { JoinAreaPreview } from "~/area/components/JoinAreaPreview";
 import { compileStylesheet } from "~/util/stylesheets";
 import { AreaRowSeparators } from "~/area/components/AreaRowSeparators";
-import { TOOLBAR_HEIGHT } from "~/constants";
+
 import { cssZIndex } from "~/cssVariables";
 import { getAreaRootViewport } from "~/area/util/getAreaRootViewport";
 
@@ -32,7 +32,7 @@ interface StateProps {
 }
 type Props = StateProps;
 
-const AreaRootComponent: React.FC<Props> = props => {
+const AreaRootComponent: React.FC<Props> = (props) => {
 	const { joinPreview } = props.areaState;
 
 	const [viewport, setViewport] = useState(getAreaRootViewport());
@@ -48,7 +48,7 @@ const AreaRootComponent: React.FC<Props> = props => {
 	return (
 		<div data-area-root>
 			{viewport &&
-				Object.keys(props.areaState.layout).map(id => {
+				Object.keys(props.areaState.layout).map((id) => {
 					const layout = props.areaState.layout[id];
 
 					if (layout.type === "area_row") {

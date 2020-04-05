@@ -41,6 +41,14 @@ export class Vec2 {
 		return new Vec2(this.x + vec.x, this.y + vec.y);
 	}
 
+	public addX(x: number): Vec2 {
+		return new Vec2(this.x + x, this.y);
+	}
+
+	public addY(y: number): Vec2 {
+		return new Vec2(this.x, this.y + y);
+	}
+
 	public sub(vec: Vec2): Vec2 {
 		return new Vec2(this.x - vec.x, this.y - vec.y);
 	}
@@ -61,6 +69,10 @@ export class Vec2 {
 	public round(): Vec2 {
 		return Vec2.new(Math.round(this.x), Math.round(this.y));
 	}
+
+	public apply(fn: (vec: Vec2) => Vec2): Vec2 {
+		return fn(this);
+	}
 }
 
 declare global {
@@ -76,11 +88,14 @@ declare global {
 		constructor(x: number, y: number);
 
 		public add(vec: Vec2): Vec2;
+		public addX(x: number): Vec2;
+		public addY(y: number): Vec2;
 		public lerp(vec: Vec2, t: number): Vec2;
 		public sub(vec: Vec2): Vec2;
 		public scale(scale: number): Vec2;
 		public round(): Vec2;
 		public lerp(vec: Vec2, t: number): Vec2;
+		public apply(fn: (vec2: Vec2) => Vec2): Vec2;
 	}
 }
 
@@ -116,3 +131,50 @@ export const capToRange = (low: number, high: number, value: number) =>
 export function getDistance(a: Vec2, b: Vec2) {
 	return Math.hypot(b.x - a.x, b.y - a.y);
 }
+
+export const rectOfTwoVecs = (a: Vec2, b: Vec2): Rect => {
+	const xMin = Math.min(a.x, b.x);
+	const xMax = Math.max(a.x, b.x);
+	const yMin = Math.min(a.y, b.y);
+	const yMax = Math.max(a.y, b.y);
+	return {
+		height: yMax - yMin,
+		width: xMax - xMin,
+		left: xMin,
+		top: yMin,
+	};
+};
+
+export const sortRectTopLeft = (a: Rect, b: Rect, acceptableVariance = 0): number => {
+	return Math.abs(a.top - b.top) <= acceptableVariance ? a.left - b.left : a.top - b.top;
+};
+
+export const sortVecTopLeft = (a: Vec2, b: Vec2, acceptableVariance = 0): number => {
+	return Math.abs(a.y - b.y) <= acceptableVariance ? a.x - b.x : a.y - b.y;
+};
+
+export const rectsIntersect = (a: Rect, b: Rect): boolean => {
+	// If one rect is on the left of the other
+	if (a.left > b.left + b.width || b.left > a.left + a.width) {
+		return false;
+	}
+
+	// If one rect is above the other
+	if (a.top > b.top + b.height || b.top > a.top + a.height) {
+		return false;
+	}
+
+	return true;
+};
+
+export const boundingRect = (rects: Rect[]): Rect =>
+	rects.slice(1).reduce<Rect>((a, b) => {
+		const xMin = Math.min(a.left, b.left);
+		const yMin = Math.min(a.top, b.top);
+		return {
+			left: xMin,
+			top: yMin,
+			height: Math.max(a.top + a.height, b.top + b.height) - yMin,
+			width: Math.max(a.left + a.width, b.left + b.width) - xMin,
+		};
+	}, rects[0]);

@@ -13,7 +13,7 @@ interface Options {
 	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
 }
 
-interface Callback {
+export interface RequestActionCallback {
 	(params: {
 		dispatch: (action: any) => void;
 		cancelAction: () => void;
@@ -25,7 +25,7 @@ interface Callback {
 
 export const requestAction = (
 	{ history = false, shouldAddToStack }: Options,
-	callback: Callback,
+	callback: RequestActionCallback,
 ) => {
 	if (getActionId()) {
 		return;
@@ -46,7 +46,7 @@ export const requestAction = (
 	let onCompleteCallback: (() => void) | null = null;
 
 	const onComplete = () => {
-		cancelTokens.forEach(cancelToken => removeListener(cancelToken));
+		cancelTokens.forEach((cancelToken) => removeListener(cancelToken));
 
 		if (onCompleteCallback) {
 			onCompleteCallback();
@@ -62,7 +62,7 @@ export const requestAction = (
 	store.dispatch(historyActions.startAction(actionId));
 
 	callback({
-		dispatch: action => {
+		dispatch: (action) => {
 			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 		},
 
@@ -88,7 +88,7 @@ export const requestAction = (
 
 		addListener,
 
-		execOnComplete: cb => {
+		execOnComplete: (cb) => {
 			onCompleteCallback = cb;
 		},
 	});

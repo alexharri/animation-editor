@@ -2,7 +2,11 @@ import React from "react";
 import { connectActionState } from "~/state/stateUtils";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorGraphReducer";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
-import { nodeEditorOutputsMap } from "~/nodeEditor/nodeEditorInputs";
+import {
+	calculateNodeOutputPosition,
+	calculateNodeInputPosition,
+} from "~/nodeEditor/util/calculateNodeHeight";
+import { nodeEditorPositionToViewport } from "~/nodeEditor/nodeEditorUtils";
 
 interface OwnProps {
 	graphId: string;
@@ -19,41 +23,99 @@ class NodeEditorConnectionsComponent extends React.Component<Props> {
 		const { props } = this;
 
 		const { areaState, viewport, graph } = props;
+		const { pan, scale } = areaState;
+		const opts = { viewport, pan, scale };
 
 		const lines: React.ReactNode[] = [];
+
+		if (graph._dragOutputTo) {
+			const { fromOutput, wouldConnectToInput } = graph._dragOutputTo;
+			const fromNode = graph.nodes[fromOutput.nodeId];
+			const outputIndex = fromOutput.outputIndex;
+			const outputPos = nodeEditorPositionToViewport(
+				calculateNodeOutputPosition(fromNode, outputIndex),
+				opts,
+			);
+
+			let position = graph._dragOutputTo.position;
+
+			if (wouldConnectToInput) {
+				const targetNode = graph.nodes[wouldConnectToInput.nodeId];
+				position = calculateNodeInputPosition(targetNode, wouldConnectToInput.inputIndex);
+			}
+
+			const targetPos = nodeEditorPositionToViewport(position, opts);
+
+			lines.push(
+				<line
+					key="drag-output-to"
+					x1={outputPos.x}
+					y1={outputPos.y}
+					x2={targetPos.x}
+					y2={targetPos.y}
+					style={{ stroke: "#ff0000", strokeWidth: 2 * areaState.scale }}
+				/>,
+			);
+		}
+
+		if (graph._dragInputTo) {
+			const { fromInput, wouldConnectToOutput } = graph._dragInputTo;
+			const inputNode = graph.nodes[fromInput.nodeId];
+			const inputIndex = fromInput.inputIndex;
+			const inputPos = calculateNodeInputPosition(inputNode, inputIndex).apply((vec) =>
+				nodeEditorPositionToViewport(vec, opts),
+			);
+
+			let position = graph._dragInputTo.position;
+
+			if (wouldConnectToOutput) {
+				const targetNode = graph.nodes[wouldConnectToOutput.nodeId];
+				position = calculateNodeOutputPosition(
+					targetNode,
+					wouldConnectToOutput.outputIndex,
+				);
+			}
+
+			const targetPos = nodeEditorPositionToViewport(position, opts);
+
+			lines.push(
+				<line
+					key="drag-output-to"
+					x1={inputPos.x}
+					y1={inputPos.y}
+					x2={targetPos.x}
+					y2={targetPos.y}
+					style={{ stroke: "#ff0000", strokeWidth: 2 * areaState.scale }}
+				/>,
+			);
+		}
 
 		const nodeIds = Object.keys(graph.nodes);
 		for (let i = 0; i < nodeIds.length; i += 1) {
 			const node = graph.nodes[nodeIds[i]];
 
-			for (let j = 0; j < node.inputPointers.length; j += 1) {
-				const pointer = node.inputPointers[j];
+			for (let j = 0; j < node.inputs.length; j += 1) {
+				const pointer = node.inputs[j].pointer;
 
 				if (!pointer) {
 					continue;
 				}
 
 				const targetNode = graph.nodes[pointer.nodeId];
-				const outputs = nodeEditorOutputsMap[node.type];
 
-				let nodePos = graph.selection.nodes[node.id]
-					? node.position.add(props.graph.moveVector)
-					: node.position;
-				let targetPos = graph.selection.nodes[targetNode.id]
-					? targetNode.position.add(props.graph.moveVector)
-					: targetNode.position;
+				const targetPos = calculateNodeOutputPosition(targetNode, pointer.outputIndex)
+					.apply((vec) =>
+						graph.selection.nodes[targetNode.id]
+							? vec.add(props.graph.moveVector)
+							: vec,
+					)
+					.apply((vec) => nodeEditorPositionToViewport(vec, opts));
 
-				targetPos = targetPos
-					.add(Vec2.new(targetNode.width, 28 + pointer.outputIndex * 20 + 10))
-					.scale(areaState.scale)
-					.add(areaState.pan)
-					.add(Vec2.new(viewport.width / 2, viewport.height / 2));
-
-				nodePos = nodePos
-					.add(Vec2.new(0, 28 + outputs.length * 20 + 8 + i * 20 + 11))
-					.scale(areaState.scale)
-					.add(areaState.pan)
-					.add(Vec2.new(viewport.width / 2, viewport.height / 2));
+				const nodePos = calculateNodeInputPosition(node, j)
+					.apply((vec) =>
+						graph.selection.nodes[node.id] ? vec.add(props.graph.moveVector) : vec,
+					)
+					.apply((vec) => nodeEditorPositionToViewport(vec, opts));
 
 				lines.push(
 					<line

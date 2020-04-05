@@ -1,5 +1,6 @@
 import { StyleParams } from "~/util/stylesheets";
 import { cssZIndex, cssVariables } from "~/cssVariables";
+import { DEFAULT_CONTEXT_MENU_WIDTH, CONTEXT_MENU_OPTION_HEIGHT } from "~/constants";
 
 export default ({ css }: StyleParams) => ({
 	background: css`
@@ -18,7 +19,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		background: ${cssVariables.dark300};
 		border: 1px solid ${cssVariables.gray800};
-		width: 180px;
+		width: ${DEFAULT_CONTEXT_MENU_WIDTH}px;
 		padding: 2px;
 		border-radius: 4px;
 		z-index: ${cssZIndex.contextMenu};
@@ -27,7 +28,7 @@ export default ({ css }: StyleParams) => ({
 	name: css`
 		color: ${cssVariables.light400};
 		padding-left: 32px;
-		line-height: 22px;
+		line-height: ${CONTEXT_MENU_OPTION_HEIGHT}px;
 		font-size: 12px;
 		font-family: ${cssVariables.fontFamily};
 		cursor: default;
@@ -47,12 +48,21 @@ export default ({ css }: StyleParams) => ({
 		background: transparent;
 		display: block;
 		width: 100%;
-		height: 22px;
+		height: ${CONTEXT_MENU_OPTION_HEIGHT}px;
 		text-align: left;
 		position: relative;
 		outline: none;
+		pointer-events: none;
 
-		&:hover {
+		&--eligible {
+			pointer-events: initial;
+
+			&:hover {
+				background: ${cssVariables.primary500};
+			}
+		}
+
+		&--active {
 			background: ${cssVariables.primary500};
 		}
 	`,
@@ -66,17 +76,45 @@ export default ({ css }: StyleParams) => ({
 		transform: translate(0, -50%);
 
 		svg {
-			fill: white;
+			fill: ${cssVariables.white500};
 			width: 14px;
 			height: 14px;
 		}
 	`,
 
 	option__label: css`
-		color: white;
+		color: ${cssVariables.white500};
 		font-size: 12px;
 		font-weight: 400;
-		line-height: 22px;
+		line-height: ${CONTEXT_MENU_OPTION_HEIGHT}px;
 		font-family: ${cssVariables.fontFamily};
+		cursor: default;
+	`,
+
+	option__arrowRight: css`
+		width: 14px;
+		height: 14px;
+		position: absolute;
+		top: 0;
+		right: 8px;
+
+		&:before,
+		&:after {
+			content: "";
+			position: absolute;
+			top: 0;
+			left: 3px;
+			right: 3px;
+			height: 1px;
+			background: ${cssVariables.white500};
+		}
+
+		&:before {
+			transform: translateY(7.5px) rotate(45deg);
+		}
+
+		&:after {
+			transform: translateY(12.5px) rotate(-45deg);
+		}
 	`,
 });

@@ -3,12 +3,21 @@ import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 
 type ContextMenuAction = ActionType<typeof contextMenuActions>;
 
-export interface ContextMenuOption {
+export interface ContextMenuActionOption {
 	label: string;
 	onSelect: () => void;
 	default?: boolean;
 	icon?: React.ComponentType;
 }
+
+export interface ContextMenuListOption {
+	label: string;
+	options: ContextMenuOption[];
+	default?: boolean;
+	icon?: React.ComponentType;
+}
+
+export type ContextMenuOption = ContextMenuActionOption | ContextMenuListOption;
 
 export interface ContextMenuState {
 	name: string;
