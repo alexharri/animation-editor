@@ -41,7 +41,7 @@ export const nodeEditorHandlers = {
 
 				let hasMoved = false;
 
-				addListener.repeated("mousemove", e => {
+				addListener.repeated("mousemove", (e) => {
 					const mousePos = Vec2.fromEvent(e);
 					if (!hasMoved) {
 						// We don't consider the mouse to be "moved" until the mouse has moved at least
@@ -147,7 +147,7 @@ export const nodeEditorHandlers = {
 		const initialPos = Vec2.fromEvent(e);
 
 		requestAction({}, ({ addListener, dispatch, submitAction }) => {
-			addListener.repeated("mousemove", e => {
+			addListener.repeated("mousemove", (e) => {
 				const pos = Vec2.fromEvent(e);
 				const diff = pos.sub(initialPos);
 				const action = nodeEditorAreaActions.setPan(areaState.pan.add(diff));

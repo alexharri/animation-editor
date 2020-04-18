@@ -13,14 +13,17 @@ interface Options {
 	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
 }
 
+export interface RequestActionParams {
+	dispatch: (action: any) => void;
+	cancelAction: () => void;
+	submitAction: (name?: string) => void;
+	addListener: typeof _addListener;
+	removeListener: typeof removeListener;
+	execOnComplete: (callback: () => void) => void;
+}
+
 export interface RequestActionCallback {
-	(params: {
-		dispatch: (action: any) => void;
-		cancelAction: () => void;
-		submitAction: (name: string) => void;
-		addListener: typeof _addListener;
-		execOnComplete: (callback: () => void) => void;
-	}): void;
+	(params: RequestActionParams): void;
 }
 
 export const requestAction = (
@@ -66,7 +69,7 @@ export const requestAction = (
 			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 		},
 
-		submitAction: (name: string) => {
+		submitAction: (name = "Unknown action") => {
 			if (
 				typeof shouldAddToStack === "function"
 					? !shouldAddToStack(getCurrentState(), getActionState())
@@ -87,6 +90,8 @@ export const requestAction = (
 		},
 
 		addListener,
+
+		removeListener,
 
 		execOnComplete: (cb) => {
 			onCompleteCallback = cb;

@@ -9,6 +9,8 @@ import { CardinalDirection } from "~/types";
 import { AreaType } from "~/constants";
 import { initialNodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
+import { getSavedAreaState, saveAreaState } from "~/area/state/localAreaState";
+import { store } from "~/state/store";
 
 type AreaAction = ActionType<typeof actions>;
 
@@ -31,7 +33,12 @@ export interface AreaState {
 	};
 }
 
-export const initialAreaState: AreaState = {
+(window as any).saveAreaState = () => {
+	const state = store.getState();
+	saveAreaState(state.area.state);
+};
+
+export const initialAreaState: AreaState = getSavedAreaState() || {
 	_id: 11,
 	layout: {
 		0: {
@@ -133,7 +140,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 					if (id === areaToParentRow[row.id]) {
 						obj[id] = {
 							...state.layout[id],
-							areas: (state.layout[id] as AreaRowLayout).areas.map(x =>
+							areas: (state.layout[id] as AreaRowLayout).areas.map((x) =>
 								x.id === row.id ? { id: area.id, size: x.size } : x,
 							),
 						} as AreaRowLayout;

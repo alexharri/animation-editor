@@ -5,7 +5,7 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 import styles from "~/area/components/Area.styles";
 import { AreaWindowProps } from "~/types/areaTypes";
 import { areaComponentRegistry } from "~/area/windows";
-import { AreaType } from "~/constants";
+import { AreaType, AREA_BORDER_WIDTH } from "~/constants";
 import { EditIcon } from "~/components/icons/EditIcon";
 import { PenIcon } from "~/components/icons/PenIcon";
 import { requestAction } from "~/listener/requestAction";
@@ -39,6 +39,11 @@ const areaTypeOptions: Array<{ icon: React.ComponentType; type: AreaType; label:
 	},
 	{
 		icon: EditIcon,
+		type: AreaType.Timeline,
+		label: "Timeline",
+	},
+	{
+		icon: EditIcon,
 		type: AreaType.History,
 		label: "History",
 	},
@@ -49,7 +54,7 @@ const typeToIndex = areaTypeOptions.reduce<{ [key: string]: number }>((obj, { ty
 	return obj;
 }, {});
 
-const AreaComponent: React.FC<Props> = props => {
+const AreaComponent: React.FC<Props> = (props) => {
 	const { id, raised, viewport, Component, type } = props;
 
 	const { icon: Icon } = areaTypeOptions[typeToIndex[type]];
@@ -71,10 +76,14 @@ const AreaComponent: React.FC<Props> = props => {
 							type: AreaType.NodeEditor,
 						},
 						{
+							label: "Timeline",
+							type: AreaType.Timeline,
+						},
+						{
 							label: "History",
 							type: AreaType.History,
 						},
-					].map(item => ({
+					].map((item) => ({
 						icon: item.icon,
 						label: item.label,
 						onSelect: () => {
@@ -90,20 +99,27 @@ const AreaComponent: React.FC<Props> = props => {
 		});
 	};
 
+	const componentViewport: Rect = {
+		left: viewport.left + AREA_BORDER_WIDTH,
+		top: viewport.top + AREA_BORDER_WIDTH,
+		width: viewport.width - AREA_BORDER_WIDTH * 2,
+		height: viewport.height - AREA_BORDER_WIDTH * 2,
+	};
+
 	return (
 		<div data-areaid={id} className={s("area", { raised })} style={viewport}>
-			{["ne", "nw", "se", "sw"].map(dir => (
+			{["ne", "nw", "se", "sw"].map((dir) => (
 				<div
 					key={dir}
 					className={s("area__corner", { [dir]: true })}
-					onMouseDown={e => handleAreaDragFromCorner(e, dir as "ne", id, viewport)}
+					onMouseDown={(e) => handleAreaDragFromCorner(e, dir as "ne", id, viewport)}
 				/>
 			))}
 			<button className={s("selectAreaButton")} onMouseDown={openSelectArea}>
 				<Icon />
 			</button>
 			<div className={s("area__content")}>
-				<Component areaId={props.id} viewport={viewport} areaState={props.state} />
+				<Component areaId={props.id} viewport={componentViewport} areaState={props.state} />
 			</div>
 		</div>
 	);

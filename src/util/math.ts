@@ -1,104 +1,5 @@
 export const interpolate = (a: number, b: number, t: number) => a * (1 - t) + b * t;
 
-export class Vec2 {
-	public static new(vec: { x: number; y: number } | { left: number; top: number }): Vec2;
-	public static new(x: number, y: number): Vec2;
-	public static new(
-		vecOrX: number | { x: number; y: number } | { left: number; top: number },
-		y?: number,
-	) {
-		if (typeof vecOrX === "number") {
-			return new Vec2(vecOrX, y!);
-		}
-
-		if (typeof (vecOrX as any).left === "number") {
-			return new Vec2((vecOrX as any).left, (vecOrX as any).top);
-		}
-
-		return new Vec2((vecOrX as any).x, (vecOrX as any).y);
-	}
-
-	public static fromEvent(e: MouseEvent): Vec2 {
-		return new Vec2(e.clientX, e.clientY);
-	}
-
-	public x: number;
-	public y: number;
-
-	constructor(vec: { x: number; y: number });
-	constructor(x: number, y: number);
-	constructor(vecOrX: number | { x: number; y: number }, y?: number) {
-		if (typeof vecOrX === "number") {
-			this.x = vecOrX;
-			this.y = y!;
-		} else {
-			this.x = vecOrX.x;
-			this.y = vecOrX.y;
-		}
-	}
-
-	public add(vec: Vec2): Vec2 {
-		return new Vec2(this.x + vec.x, this.y + vec.y);
-	}
-
-	public addX(x: number): Vec2 {
-		return new Vec2(this.x + x, this.y);
-	}
-
-	public addY(y: number): Vec2 {
-		return new Vec2(this.x, this.y + y);
-	}
-
-	public sub(vec: Vec2): Vec2 {
-		return new Vec2(this.x - vec.x, this.y - vec.y);
-	}
-
-	public scale(scale: number): Vec2 {
-		return new Vec2(this.x * scale, this.y * scale);
-	}
-
-	/**
-	 * Linear interpolation
-	 *
-	 * A `t` value of `0` is this vector, 1 is `vec`
-	 */
-	public lerp(vec: Vec2, t: number): Vec2 {
-		return new Vec2(interpolate(this.x, vec.x, t), interpolate(this.y, vec.y, t));
-	}
-
-	public round(): Vec2 {
-		return Vec2.new(Math.round(this.x), Math.round(this.y));
-	}
-
-	public apply(fn: (vec: Vec2) => Vec2): Vec2 {
-		return fn(this);
-	}
-}
-
-declare global {
-	class Vec2 {
-		public static new(vec: { x: number; y: number } | { left: number; top: number }): Vec2;
-		public static new(x: number, y: number): Vec2;
-		public static fromEvent(e: { clientX: number; clientY: number }): Vec2;
-
-		public x: number;
-		public y: number;
-
-		constructor(vec: { x: number; y: number });
-		constructor(x: number, y: number);
-
-		public add(vec: Vec2): Vec2;
-		public addX(x: number): Vec2;
-		public addY(y: number): Vec2;
-		public lerp(vec: Vec2, t: number): Vec2;
-		public sub(vec: Vec2): Vec2;
-		public scale(scale: number): Vec2;
-		public round(): Vec2;
-		public lerp(vec: Vec2, t: number): Vec2;
-		public apply(fn: (vec2: Vec2) => Vec2): Vec2;
-	}
-}
-
 export const addVec2 = (a: { x: number; y: number }, b: { x: number; y: number }): Vec2 =>
 	Vec2.new(a.x + b.x, a.y + b.y);
 
@@ -178,3 +79,68 @@ export const boundingRect = (rects: Rect[]): Rect =>
 			width: Math.max(a.left + a.width, b.left + b.width) - xMin,
 		};
 	}, rects[0]);
+
+/**
+ * @param value - The value to interpolate
+ * @param rangeMin - Left side of viewport
+ * @param rangeMax - Right side of viewport
+ * @param viewportWidth - Width of the viewport (canvas)
+ */
+export const translateToRange = (
+	value: number,
+	rangeMin: number,
+	rangeMax: number,
+	viewportWidth: number,
+) => {
+	const diff = rangeMax - rangeMin;
+	const cutoff = rangeMax - diff;
+
+	return interpolate(0, viewportWidth, (value - cutoff) / diff);
+};
+
+/**
+ * @param vec - Vec2 to rotate
+ * @param angle - Angle to rotate CCW in radians
+ * @param anchor - `vec` is rotated around the anchor
+ */
+export function rotateVec2CCW(vec: Vec2, angle: number, anchor = { x: 0, y: 0 }): Vec2 {
+	const sin = Math.sin(angle);
+	const cos = Math.cos(angle);
+
+	const newVec = vec.copy();
+
+	newVec.x -= anchor.x;
+	newVec.y -= anchor.y;
+
+	const newX = newVec.x * cos - newVec.y * sin;
+	const newY = newVec.x * sin + newVec.y * cos;
+
+	newVec.x = newX + anchor.x;
+	newVec.y = newY + anchor.y;
+
+	return newVec;
+}
+
+export const positiveAngleRadians = (angle: number) => {
+	if (angle >= 0) {
+		return angle;
+	}
+	return Math.PI * 2 - Math.abs(angle);
+};
+
+export function getAngleRadians(from: Vec2, to: Vec2): number {
+	const vec = to.sub(from);
+	const angle = Math.atan2(vec.y, vec.x);
+	return angle;
+}
+export function getAngleRadiansPositive(from: Vec2, to: Vec2): number {
+	const vec = to.sub(from);
+	const angle = Math.atan2(vec.y, vec.x);
+	return positiveAngleRadians(angle);
+}
+
+export function rotateVecToAngleRadians(vec: Vec2, targetAngle: number): Vec2 {
+	const angle = getAngleRadians(Vec2.new(0, 0), vec);
+	const diff = Math.abs(angle - targetAngle);
+	return rotateVec2CCW(vec, diff);
+}

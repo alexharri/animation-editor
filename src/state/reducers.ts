@@ -13,12 +13,14 @@ import {
 	nodeEditorReducer,
 } from "~/nodeEditor/nodeEditorReducers";
 import { HistoryState, createReducerWithHistory } from "~/state/history/historyReducer";
+import { initialTimelineState, timelineReducer, TimelineState } from "~/timeline/timelineReducer";
 
 declare global {
 	interface ApplicationState {
 		area: ActionBasedState<AreaState>;
 		nodeEditor: HistoryState<NodeEditorState>;
 		contextMenu: ActionBasedState<ContextMenuState>;
+		timelines: HistoryState<TimelineState>;
 		tool: ActionBasedState<ToolState>;
 	}
 
@@ -26,6 +28,7 @@ declare global {
 		area: AreaState;
 		nodeEditor: NodeEditorState;
 		contextMenu: ContextMenuState;
+		timelines: TimelineState;
 		tool: ToolState;
 	}
 
@@ -44,6 +47,7 @@ const reducers = {
 	area: createActionBasedReducer(initialAreaState, areaReducer),
 	nodeEditor: createReducerWithHistory(initialNodeEditorState, nodeEditorReducer),
 	contextMenu: createActionBasedReducer(initialContextMenuState, contextMenuReducer),
+	timelines: createReducerWithHistory(initialTimelineState, timelineReducer),
 	tool: createActionBasedReducer(initialToolState, toolReducer),
 };
 

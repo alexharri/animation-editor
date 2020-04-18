@@ -18,7 +18,7 @@ type Props = ContextMenuState;
 const CLOSE_MENU_BUFFER = 100;
 const REDUCE_STACK_BUFFER = 64;
 
-const ContextMenuComponent: React.FC<Props> = props => {
+const ContextMenuComponent: React.FC<Props> = (props) => {
 	const [rect, setRect] = useState<Rect | null>(null);
 	const [reduceStackRect, setReduceStackRect] = useState<Rect | null>(null);
 	const [stack, setStack] = useState<
@@ -54,7 +54,7 @@ const ContextMenuComponent: React.FC<Props> = props => {
 		setTimeout(() => {
 			const els = document.querySelectorAll("[data-option-list]");
 			const rects: Rect[] = [];
-			els.forEach(el => rects.push(el.getBoundingClientRect()));
+			els.forEach((el) => rects.push(el.getBoundingClientRect()));
 			setRect(boundingRect(rects));
 
 			if (rects.length > 1) {
@@ -169,7 +169,7 @@ const ContextMenuComponent: React.FC<Props> = props => {
 										key={j}
 										data-option={`${i}-${j}`}
 										className={s("option", { active, eligible })}
-										onMouseMove={e => e.stopPropagation()}
+										onMouseMove={(e) => e.stopPropagation()}
 										onMouseOver={() => onListMouseOver(options, i, j)}
 										onMouseOut={() => onListMouseOut(i)}
 									>
@@ -187,7 +187,7 @@ const ContextMenuComponent: React.FC<Props> = props => {
 							return (
 								<button
 									className={s("option", { eligible: i === stack.length - 1 })}
-									key={i}
+									key={j}
 									onClick={(option as ContextMenuActionOption).onSelect}
 								>
 									{Icon && (
@@ -206,4 +206,4 @@ const ContextMenuComponent: React.FC<Props> = props => {
 	);
 };
 
-export const ContextMenu = connectActionState(state => state.contextMenu)(ContextMenuComponent);
+export const ContextMenu = connectActionState((state) => state.contextMenu)(ContextMenuComponent);

@@ -13,3 +13,9 @@ export enum NodeEditorValueType {
 	Vec2,
 	Rect,
 }
+
+export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
+export interface JsonArray extends Array<Json> {}
+export interface JsonObject {
+	[property: string]: Json;
+}
