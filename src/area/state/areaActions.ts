@@ -37,9 +37,4 @@ export const areaActions = {
 	dispatchToAreaState: createAction("area/DISPATCH_TO_AREA_STATE", (_action) => {
 		return (areaId: string, action: any) => _action({ areaId, action });
 	}),
-
-	createChildArea: createAction("area/CREATE_CHILD_AREA", (action) => {
-		return (areaId: string, key: string, areaType: AreaType) =>
-			action({ areaId, key, areaType });
-	}),
 };

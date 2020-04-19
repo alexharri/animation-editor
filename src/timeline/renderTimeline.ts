@@ -12,6 +12,7 @@ import {
 } from "~/timeline/timelineUtils";
 import { Timeline } from "~/timeline/timelineTypes";
 import { cssVariables } from "~/cssVariables";
+import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 
 interface RenderTimelineOptions {
 	ctx: Ctx;
@@ -20,6 +21,7 @@ interface RenderTimelineOptions {
 	viewBounds: [number, number];
 	length: number;
 	timeline: Timeline;
+	selection: TimelineSelectionState;
 }
 
 export const createToTimelineViewportX = (options: {
@@ -63,7 +65,7 @@ export const createToTimelineViewport = (options: RenderTimelineOptions): ((vec:
 };
 
 export const renderTimeline = (options: RenderTimelineOptions) => {
-	const { ctx, timeline, width, height } = options;
+	const { ctx, timeline, width, height, selection } = options;
 
 	const toViewportY = createToTimelineViewportY(options);
 	const toViewportX = createToTimelineViewportX(options);
@@ -142,7 +144,7 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 	 */
 	keyframes.forEach((k) => {
 		const vec = toViewport(Vec2.new(k.index, k.value));
-		const selected = timeline.selection.keyframes[k.id];
+		const selected = selection.timelineId === timeline.id && selection.keyframes[k.id];
 		renderDiamond(ctx, vec, {
 			fillColor: selected ? "#2f9eff" : "#333",
 			width: 7.5,

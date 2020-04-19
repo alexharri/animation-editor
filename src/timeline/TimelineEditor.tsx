@@ -5,6 +5,7 @@ import { separateLeftRightMouse } from "~/util/mouse";
 import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
 import { connectActionState } from "~/state/stateUtils";
 import { timelineHandlers } from "~/timeline/timelineHandlers";
+import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 
 interface OwnProps {
 	id: string;
@@ -14,11 +15,12 @@ interface OwnProps {
 }
 interface StateProps {
 	timeline: TimelineState[string];
+	selection: TimelineSelectionState;
 }
 type Props = OwnProps & StateProps;
 
 const TimelineEditorComponent: React.FC<Props> = (props) => {
-	const { viewport, length } = props;
+	const { viewport, length, selection } = props;
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -31,7 +33,7 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 
 		const { width, height } = viewport;
 
-		const timeline = applyTimelineIndexAndValueShifts(props.timeline);
+		const timeline = applyTimelineIndexAndValueShifts(props.timeline, props.selection);
 
 		renderTimeline({
 			ctx,
@@ -40,6 +42,7 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 			height,
 			timeline,
 			viewBounds,
+			selection,
 		});
 	}, [props]);
 
@@ -66,8 +69,12 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ timelines }, ownProps) => ({
+const mapStateToProps: MapActionState<StateProps, OwnProps> = (
+	{ timelines, timelineSelection },
+	ownProps,
+) => ({
 	timeline: timelines[ownProps.id],
+	selection: timelineSelection,
 });
 
 export const TimelineEditor = connectActionState(mapStateToProps)(TimelineEditorComponent);

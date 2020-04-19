@@ -1,5 +1,6 @@
 import { connect, DispatchProp, InferableComponentEnhancerWithProps } from "react-redux";
 import { store } from "~/state/store";
+import { HistoryState } from "~/state/history/historyReducer";
 
 const getCurrentStateFromApplicationState = (_state: ApplicationState): ActionState => {
 	const state: any = _state;
@@ -23,7 +24,12 @@ const getActionStateFromApplicationState = (_state: ApplicationState): ActionSta
 		if (state[key].action) {
 			obj[key] = state[key].action.state;
 		} else if (state[key].list) {
-			obj[key] = state[key].list[state[key].index].state;
+			const s = state[key] as HistoryState<any>;
+			const shiftForward =
+				s.type === "selection" &&
+				s.indexDirection === -1 &&
+				s.list[s.index + 1].modifiedRelated;
+			obj[key] = s.list[s.index + (shiftForward ? 1 : 0)].state;
 		} else {
 			obj[key] = state[key].state;
 		}

@@ -14,6 +14,7 @@ import { NumberInput } from "~/components/common/NumberInput";
 const s = compileStylesheetLabelled(styles);
 
 interface OwnProps {
+	compositionId: string;
 	id: string;
 }
 interface StateProps {
@@ -31,11 +32,11 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 			const { dispatch, submitAction } = params;
 
 			if (isKeyDown("Shift")) {
-				dispatch(compositionActions.togglePropertySelection(props.id));
+				dispatch(compositionActions.togglePropertySelection(props.compositionId, props.id));
 				submitAction("Toggle selection");
 			} else {
-				dispatch(compositionActions.clearPropertySelection());
-				dispatch(compositionActions.togglePropertySelection(props.id));
+				dispatch(compositionActions.clearPropertySelection(props.compositionId));
+				dispatch(compositionActions.togglePropertySelection(props.compositionId, props.id));
 				submitAction("Select property");
 			}
 		});
@@ -74,9 +75,12 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ compositions }, { id }) => {
+const mapStateToProps: MapActionState<StateProps, OwnProps> = (
+	{ compositions, compositionSelection },
+	{ id },
+) => {
 	const property = compositions.properties[id];
-	const isSelected = !!compositions.selection.properties[id];
+	const isSelected = !!compositionSelection.properties[id];
 	return { isSelected, property };
 };
 

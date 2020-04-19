@@ -114,10 +114,10 @@ export default ({ css }: StyleParams) => ({
 		background: #999;
 		border-radius: 50%;
 		transform: translateY(-50%);
-		opacity: 0;
 
 		&--active {
 			opacity: 1;
+			background: red;
 		}
 	`,
 });

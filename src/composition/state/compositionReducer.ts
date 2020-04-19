@@ -15,9 +15,6 @@ export interface CompositionState {
 	properties: {
 		[propertyId: string]: CompositionLayerProperty;
 	};
-	selection: {
-		properties: Partial<{ [key: string]: true }>;
-	};
 }
 
 export const initialCompositionState: CompositionState = {
@@ -48,24 +45,21 @@ export const initialCompositionState: CompositionState = {
 			value: 100,
 		},
 		"1": {
-			timelineId: "1",
+			timelineId: "",
 			name: "Y Position",
 			type: "number",
 			value: 50,
 		},
 	},
-	selection: {
-		properties: {},
-	},
 };
 
 export const compositionActions = {
 	togglePropertySelection: createAction("compTimeline/TOGGLE_PROPERTY_SELECTED", (action) => {
-		return (propertyId: string) => action({ propertyId });
+		return (compositionId: string, propertyId: string) => action({ compositionId, propertyId });
 	}),
 
 	clearPropertySelection: createAction("compTimeline/CLEAR_PROPERTY_SELECTED", (action) => {
-		return () => action({});
+		return (compositionId: string) => action({ compositionId });
 	}),
 
 	setFrameIndex: createAction("compTimeline/SET_FRAME_INDEX", (action) => {
@@ -80,42 +74,6 @@ export const compositionReducer = (
 	action: Action,
 ): CompositionState => {
 	switch (action.type) {
-		case getType(compositionActions.togglePropertySelection): {
-			const { propertyId } = action.payload;
-
-			if (state.selection.properties[propertyId]) {
-				return {
-					...state,
-					selection: {
-						...state.selection,
-						properties: Object.keys(state.selection.properties).reduce<{
-							[key: string]: true;
-						}>((obj, key) => {
-							if (propertyId !== key) {
-								obj[key] = true;
-							}
-							return obj;
-						}, {}),
-					},
-				};
-			}
-
-			return {
-				...state,
-				selection: {
-					...state.selection,
-					properties: {
-						...state.selection.properties,
-						[propertyId]: true,
-					},
-				},
-			};
-		}
-
-		case getType(compositionActions.clearPropertySelection): {
-			return { ...state, selection: { ...state.selection, properties: {} } };
-		}
-
 		case getType(compositionActions.setFrameIndex): {
 			const { compositionId, frameIndex } = action.payload;
 			return {

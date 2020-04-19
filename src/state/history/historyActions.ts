@@ -15,8 +15,13 @@ export const historyActions = {
 		});
 	},
 
-	submitAction: (actionId: string, name: string, modifiesHistory: boolean) => {
-		return action("history/SUBMIT_ACTION", { actionId, name, modifiesHistory });
+	submitAction: (
+		actionId: string,
+		name: string,
+		modifiesHistory: boolean,
+		modifiedKeys: string[],
+	) => {
+		return action("history/SUBMIT_ACTION", { actionId, name, modifiesHistory, modifiedKeys });
 	},
 
 	cancelAction: (actionId: string) => {

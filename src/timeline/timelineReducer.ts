@@ -70,9 +70,6 @@ export const initialTimelineState: TimelineState = {
 			}
 			return k;
 		}),
-		selection: {
-			keyframes: {},
-		},
 		_yBounds: null,
 		_yPan: 0,
 		_indexShift: null,
@@ -142,62 +139,11 @@ export function timelineReducer(state: TimelineState, action: Action): TimelineS
 		}
 
 		case getType(timelineActions.submitIndexAndValueShift): {
-			const { timelineId } = action.payload;
-			const timeline = applyTimelineIndexAndValueShifts(state[timelineId]);
+			const { timelineId, selection } = action.payload;
+			const timeline = applyTimelineIndexAndValueShifts(state[timelineId], selection);
 			return {
 				...state,
 				[timelineId]: timeline,
-			};
-		}
-
-		case getType(timelineActions.clearSelection): {
-			const { timelineId } = action.payload;
-			return {
-				...state,
-				[timelineId]: {
-					...state[timelineId],
-					selection: {
-						keyframes: {},
-					},
-				},
-			};
-		}
-
-		case getType(timelineActions.toggleKeyframeSelection): {
-			const { timelineId, keyframeId } = action.payload;
-
-			if (state[timelineId].selection.keyframes[keyframeId]) {
-				return {
-					...state,
-					[timelineId]: {
-						...state[timelineId],
-						selection: {
-							...state[timelineId].selection,
-							keyframes: Object.keys(state[timelineId].selection.keyframes).reduce<{
-								[key: string]: true;
-							}>((obj, key) => {
-								if (key !== keyframeId) {
-									obj[key] = true;
-								}
-								return obj;
-							}, {}),
-						},
-					},
-				};
-			}
-
-			return {
-				...state,
-				[timelineId]: {
-					...state[timelineId],
-					selection: {
-						...state[timelineId].selection,
-						keyframes: {
-							...state[timelineId].selection.keyframes,
-							[keyframeId]: true,
-						},
-					},
-				},
 			};
 		}
 

@@ -3,6 +3,7 @@ import {
 	getTimelineYBoundsFromPaths,
 	timelineKeyframesToPathList,
 	getControlPointAsVector,
+	getTimelineSelection,
 } from "~/timeline/timelineUtils";
 import { Timeline, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
 import {
@@ -35,13 +36,14 @@ const actions = {
 		},
 	) => {
 		const { timeline, viewport } = options;
+		const selection = getTimelineSelection(timeline.id);
 		const keyframe = timeline.keyframes[index];
 
 		const shiftKeyDownAtMouseDown = isKeyDown("Shift");
 
 		if (shiftKeyDownAtMouseDown) {
 			dispatch(timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id));
-		} else if (!timeline.selection.keyframes[keyframe.id]) {
+		} else if (!selection.keyframes[keyframe.id]) {
 			// If the current node is not selected, we clear the node selectction state
 			// and add the clicked node to the selection.
 			dispatch(timelineActions.clearSelection(timeline.id));
@@ -50,9 +52,6 @@ const actions = {
 
 		const paths = timelineKeyframesToPathList(timeline.keyframes);
 		const yBounds = getTimelineYBoundsFromPaths(paths);
-
-		dispatch(timelineActions.setYBounds(timeline.id, yBounds));
-		dispatch(timelineActions.setYPan(timeline.id, 0));
 
 		let yPan = 0;
 		let hasMoved = false;
@@ -64,6 +63,8 @@ const actions = {
 		addListener.repeated("mousemove", (e) => {
 			if (!hasMoved) {
 				hasMoved = true;
+				dispatch(timelineActions.setYBounds(timeline.id, yBounds));
+				dispatch(timelineActions.setYPan(timeline.id, 0));
 			}
 
 			mousePos = Vec2.fromEvent(e);
@@ -132,10 +133,21 @@ const actions = {
 
 		addListener.once("mouseup", () => {
 			hasSubmitted = true;
+
+			if (!hasMoved) {
+				submitAction("Select keyframe");
+				return;
+			}
+
 			dispatch(timelineActions.setYBounds(timeline.id, null));
 			dispatch(timelineActions.setYPan(timeline.id, 0));
-			dispatch(timelineActions.submitIndexAndValueShift(timeline.id));
-			submitAction("Select keyframe");
+			dispatch(
+				timelineActions.submitIndexAndValueShift(
+					timeline.id,
+					getTimelineSelection(timeline.id),
+				),
+			);
+			submitAction("Move selected keyframes");
 		});
 	},
 

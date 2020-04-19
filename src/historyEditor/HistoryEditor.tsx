@@ -122,7 +122,7 @@ class HistoryEditor extends React.Component<ApplicationState, State> {
               active: fields.saved && fields.undo[fields.undo.length - 1].state === fields.current,
             })}
           /> */}
-					&nbsp;({index + 1})&nbsp;Current state
+					&nbsp;({index + 1})&nbsp;{list[index].name}
 				</div>
 				<div className={s("stack")}>
 					<i className={s("stackIcon", { redo: true })}>

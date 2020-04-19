@@ -2,6 +2,7 @@ import { store } from "~/state/store";
 import { removeListener, addListener as _addListener } from "~/listener/addListener";
 import { historyActions } from "~/state/history/historyActions";
 import { getActionId, getActionState, getCurrentState } from "~/state/stateUtils";
+import { HistoryState } from "~/state/history/historyReducer";
 
 let _n = 0;
 let _activeRequestToken: null | string = null;
@@ -80,7 +81,24 @@ export const requestAction = (
 				return;
 			}
 
-			store.dispatch(historyActions.submitAction(actionId, name, history));
+			const modifiedKeys: string[] = [];
+			{
+				const state: any = store.getState();
+				const keys = Object.keys(state) as Array<keyof ApplicationState>;
+				for (let i = 0; i < keys.length; i += 1) {
+					const key = keys[i];
+					if (!state[key].list) {
+						continue;
+					}
+
+					const s = state[key] as HistoryState<any>;
+					if (s.action!.state !== s.list[s.index].state) {
+						modifiedKeys.push(key);
+					}
+				}
+			}
+
+			store.dispatch(historyActions.submitAction(actionId, name, history, modifiedKeys));
 			onComplete();
 		},
 

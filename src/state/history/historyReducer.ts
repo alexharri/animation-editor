@@ -4,21 +4,32 @@ import { historyActions } from "~/state/history/historyActions";
 type HistoryAction = ActionType<typeof historyActions>;
 
 export interface HistoryState<S> {
-	list: Array<{ state: S; name: string }>;
+	type: "normal" | "selection";
+	list: Array<{ state: S; name: string; modifiedRelated: boolean }>;
 	index: number;
+	indexDirection: -1 | 1;
 	action: null | {
 		id: string;
 		state: S;
 	};
 }
 
+interface Options {
+	selectionForKey?: string;
+}
+
 export function createReducerWithHistory<S>(
 	initialState: S,
 	reducer: (state: S, action: any) => S,
+	options: Options = {},
 ) {
+	const { selectionForKey = "" } = options;
+
 	const initState: HistoryState<S> = {
-		list: [{ state: initialState, name: "Initial state" }],
+		type: selectionForKey ? "selection" : "normal",
+		list: [{ state: initialState, name: "Initial state", modifiedRelated: false }],
 		index: 0,
+		indexDirection: 1,
 		action: null,
 	};
 
@@ -31,7 +42,11 @@ export function createReducerWithHistory<S>(
 				}
 
 				const { index } = action.payload;
-				return { ...state, index };
+				return {
+					...state,
+					index,
+					indexDirection: index > state.index ? 1 : -1,
+				};
 			}
 
 			case "history/START_ACTION": {
@@ -42,11 +57,16 @@ export function createReducerWithHistory<S>(
 
 				const { actionId } = action.payload;
 
+				const shiftForward =
+					state.type === "selection" &&
+					state.indexDirection === -1 &&
+					state.list[state.index + 1].modifiedRelated;
+
 				return {
 					...state,
 					action: {
 						id: actionId,
-						state: state.list[state.index].state,
+						state: state.list[state.index + (shiftForward ? 1 : 0)].state,
 					},
 				};
 			}
@@ -85,7 +105,7 @@ export function createReducerWithHistory<S>(
 			}
 
 			case "history/SUBMIT_ACTION": {
-				const { actionId, name, modifiesHistory } = action.payload;
+				const { actionId, name, modifiesHistory, modifiedKeys } = action.payload;
 
 				if (!modifiesHistory) {
 					return {
@@ -111,9 +131,11 @@ export function createReducerWithHistory<S>(
 						{
 							state: state.action.state,
 							name,
+							modifiedRelated: modifiedKeys.indexOf(selectionForKey) !== -1,
 						},
 					],
 					index: state.index + 1,
+					indexDirection: 1,
 					action: null,
 				};
 			}

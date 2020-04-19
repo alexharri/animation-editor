@@ -19,3 +19,5 @@ export interface JsonArray extends Array<Json> {}
 export interface JsonObject {
 	[property: string]: Json;
 }
+
+export type KeySelectionMap = Partial<{ [key: string]: true }>;

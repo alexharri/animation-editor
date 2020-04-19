@@ -7,6 +7,7 @@ import { connectActionState } from "~/state/stateUtils";
 
 interface OwnProps {
 	id: string;
+	compositionId: string;
 }
 interface StateProps {
 	layer: CompositionLayer;
@@ -23,7 +24,13 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 				<div className={s("label")}>{layer.name}</div>
 			</div>
 			{layer.properties.map((propertyId, i) => {
-				return <CompositionTimelineLayerProperty id={propertyId} key={i} />;
+				return (
+					<CompositionTimelineLayerProperty
+						compositionId={props.compositionId}
+						id={propertyId}
+						key={i}
+					/>
+				);
 			})}
 		</>
 	);

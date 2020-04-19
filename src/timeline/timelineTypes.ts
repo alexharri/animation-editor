@@ -1,11 +1,6 @@
 export interface Timeline {
 	id: string;
 	keyframes: TimelineKeyframe[];
-	selection: {
-		keyframes: {
-			[keyframeId: string]: true;
-		};
-	};
 	_yBounds: [number, number] | null;
 	_yPan: number;
 	_indexShift: number | null;

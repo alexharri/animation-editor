@@ -30,6 +30,8 @@ export const getControlPointAsVector = (
 };
 import { TimelineKeyframe, Timeline } from "~/timeline/timelineTypes";
 import { interpolate } from "~/util/math";
+import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { getActionState } from "~/state/stateUtils";
 
 export const timelineKeyframesToPathList = (
 	keyframes: TimelineKeyframe[],
@@ -124,7 +126,10 @@ export const transformGlobalToTimelinePosition = (
 	return pos;
 };
 
-export const applyTimelineIndexAndValueShifts = (timeline: Timeline): Timeline => {
+export const applyTimelineIndexAndValueShifts = (
+	timeline: Timeline,
+	selection: TimelineSelectionState,
+): Timeline => {
 	const { _indexShift, _valueShift } = timeline;
 
 	if (typeof _indexShift !== "number" || typeof _valueShift !== "number") {
@@ -136,7 +141,7 @@ export const applyTimelineIndexAndValueShifts = (timeline: Timeline): Timeline =
 	if (_indexShift !== 0) {
 		for (let i = 0; i < timeline.keyframes.length; i += 1) {
 			const keyframe = timeline.keyframes[i];
-			if (timeline.selection.keyframes[keyframe.id]) {
+			if (selection.keyframes[keyframe.id]) {
 				removeKeyframesAtIndex.add(keyframe.index + _indexShift);
 			}
 		}
@@ -145,7 +150,7 @@ export const applyTimelineIndexAndValueShifts = (timeline: Timeline): Timeline =
 	const keyframes = [...timeline.keyframes]
 		.filter((keyframe) => !removeKeyframesAtIndex.has(keyframe.index))
 		.map<TimelineKeyframe>((keyframe) => {
-			if (timeline.selection.keyframes[keyframe.id]) {
+			if (selection.keyframes[keyframe.id]) {
 				return {
 					...keyframe,
 					index: keyframe.index + _indexShift,
@@ -199,3 +204,11 @@ export const generateTimelineTicksFromBounds = ([a, b]: [number, number]) => {
 
 	return ticks.map((tick) => Number(tick.toFixed(10)));
 };
+
+export function getTimelineSelection(timelineId: string): TimelineSelectionState {
+	const selection = getActionState().timelineSelection;
+	if (selection.timelineId !== timelineId) {
+		return { timelineId, keyframes: {} };
+	}
+	return selection;
+}

@@ -21,7 +21,6 @@ interface OwnProps {
 interface StateProps {
 	state: any;
 	type: AreaType;
-	childAreas: { [key: string]: string };
 	raised: boolean;
 	Component: React.ComponentType<AreaWindowProps<any>>;
 }
@@ -124,28 +123,8 @@ const AreaComponent: React.FC<Props> = (props) => {
 				<Icon />
 			</button>
 			<div className={s("area__content")}>
-				<Component
-					areaId={props.id}
-					viewport={componentViewport}
-					areaState={props.state}
-					childAreas={props.childAreas}
-				/>
+				<Component areaId={props.id} viewport={componentViewport} areaState={props.state} />
 			</div>
-		</div>
-	);
-};
-
-const ChildAreaComponent: React.FC<Props> = (props) => {
-	const { id, viewport, Component } = props;
-
-	return (
-		<div data-areaid={id} style={viewport}>
-			<Component
-				areaId={props.id}
-				viewport={viewport}
-				areaState={props.state}
-				childAreas={props.childAreas}
-			/>
 		</div>
 	);
 };
@@ -157,16 +136,16 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	const isEligibleForJoin = joinPreview && joinPreview.eligibleAreaIds.indexOf(id) !== -1;
 	const isBeingJoined = joinPreview && joinPreview.areaId === id;
 
-	const component = areaComponentRegistry[areas[id].type];
+	const component = areaComponentRegistry[areas[id].type] as React.ComponentType<
+		AreaWindowProps<any>
+	>;
 
 	return {
 		type: areas[id].type,
 		state: areas[id].state,
-		childAreas: areas[id].childAreas,
 		raised: !!(isEligibleForJoin || isBeingJoined),
 		Component: component,
 	};
 };
 
 export const Area = connectActionState(mapStateToProps)(AreaComponent);
-export const ChildArea = connectActionState(mapStateToProps)(ChildAreaComponent);

@@ -75,7 +75,13 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 			<div className={s("left")} style={viewportLeft}>
 				<div className={s("header")} />
 				{composition.layers.map((layerId, i) => {
-					return <CompositionTimelineLayer id={layerId} key={i} />;
+					return (
+						<CompositionTimelineLayer
+							compositionId={props.composition.id}
+							id={layerId}
+							key={i}
+						/>
+					);
 				})}
 			</div>
 			<div
@@ -156,18 +162,16 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 								}),
 						})}
 					/>
-					{props.childAreas.timeline && (
-						<TimelineEditor
-							id="0"
-							viewport={{
-								...viewportRight,
-								height: viewportRight.height - 32,
-								top: viewportRight.top + 32,
-							}}
-							viewBounds={props.viewBounds}
-							length={props.composition.length}
-						/>
-					)}
+					<TimelineEditor
+						id="0"
+						viewport={{
+							...viewportRight,
+							height: viewportRight.height - 32,
+							top: viewportRight.top + 32,
+						}}
+						viewBounds={props.viewBounds}
+						length={props.composition.length}
+					/>
 				</div>
 			</div>
 		</div>
