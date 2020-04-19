@@ -14,10 +14,16 @@ import {
 } from "~/nodeEditor/nodeEditorReducers";
 import { HistoryState, createReducerWithHistory } from "~/state/history/historyReducer";
 import { initialTimelineState, timelineReducer, TimelineState } from "~/timeline/timelineReducer";
+import {
+	CompositionState,
+	initialCompositionState,
+	compositionReducer,
+} from "~/composition/state/compositionReducer";
 
 declare global {
 	interface ApplicationState {
 		area: ActionBasedState<AreaState>;
+		compositions: HistoryState<CompositionState>;
 		nodeEditor: HistoryState<NodeEditorState>;
 		contextMenu: ActionBasedState<ContextMenuState>;
 		timelines: HistoryState<TimelineState>;
@@ -26,6 +32,7 @@ declare global {
 
 	interface ActionState {
 		area: AreaState;
+		compositions: CompositionState;
 		nodeEditor: NodeEditorState;
 		contextMenu: ContextMenuState;
 		timelines: TimelineState;
@@ -45,6 +52,7 @@ declare global {
 
 const reducers = {
 	area: createActionBasedReducer(initialAreaState, areaReducer),
+	compositions: createReducerWithHistory(initialCompositionState, compositionReducer),
 	nodeEditor: createReducerWithHistory(initialNodeEditorState, nodeEditorReducer),
 	contextMenu: createActionBasedReducer(initialContextMenuState, contextMenuReducer),
 	timelines: createReducerWithHistory(initialTimelineState, timelineReducer),

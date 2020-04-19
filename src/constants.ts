@@ -1,5 +1,6 @@
 export const keys = {
 	Backspace: 8,
+	Tab: 9,
 	Enter: 13,
 	Shift: 16,
 	Control: 17,
@@ -76,6 +77,7 @@ export const toolGroups: Array<Array<{ tool: Tool }>> = [
 export enum AreaType {
 	VectorEditor = "vector_editor",
 	NodeEditor = "node_editor",
+	CompositionTimeline = "composition_timeline",
 	Timeline = "timeline",
 	History = "history",
 	Temp = "temp",

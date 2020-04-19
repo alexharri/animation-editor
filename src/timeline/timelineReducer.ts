@@ -13,7 +13,6 @@ export interface TimelineState {
 export const initialTimelineState: TimelineState = {
 	0: {
 		id: "0",
-		length: 300,
 		keyframes: [
 			{
 				id: "0",

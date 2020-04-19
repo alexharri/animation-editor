@@ -7,8 +7,7 @@ import { areaToRow } from "~/area/util/areaToRow";
 import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { CardinalDirection } from "~/types";
 import { AreaType } from "~/constants";
-import { initialNodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
-import { areaInitialStates } from "~/area/state/areaInitialStates";
+import { areaInitialStates, areaInitialChildAreas } from "~/area/state/areaInitialStates";
 import { getSavedAreaState, saveAreaState } from "~/area/state/localAreaState";
 import { store } from "~/state/store";
 
@@ -29,6 +28,9 @@ export interface AreaState {
 		[key: string]: {
 			type: AreaType;
 			state: any;
+			childAreas: {
+				[key: string]: string;
+			};
 		};
 	};
 }
@@ -39,68 +41,49 @@ export interface AreaState {
 };
 
 export const initialAreaState: AreaState = getSavedAreaState() || {
-	_id: 11,
+	_id: 15,
 	layout: {
-		0: {
-			id: "0",
+		"2": {
 			type: "area_row",
+			id: "2",
 			areas: [
-				{ id: "2", size: 0.75 },
-				{ id: "1", size: 0.25 },
-				{ id: "8", size: 0.5 },
-				{ id: "9", size: 0.25 },
-			],
-			orientation: "horizontal",
-		},
-		1: {
-			id: "1",
-			type: "area_row",
-			areas: [
-				{ id: "3", size: 0.5 },
-				{ id: "4", size: 0.25 },
-				{ id: "5", size: 0.25 },
+				{ size: 0.6997578692493946, id: "12" },
+				{ size: 0.30024213075060535, id: "13" },
 			],
 			orientation: "vertical",
 		},
-		2: { id: "2", type: "area" },
-		3: { id: "3", type: "area" },
-		4: {
-			id: "4",
+		"12": {
 			type: "area_row",
+			id: "12",
 			areas: [
-				{ id: "6", size: 0.5 },
-				{ id: "7", size: 0.5 },
+				{ size: 0.5820198482194979, id: "14" },
+				{ size: 0.4179801517805021, id: "15" },
 			],
 			orientation: "horizontal",
 		},
-		5: { id: "5", type: "area" },
-		6: { id: "6", type: "area" },
-		7: { id: "7", type: "area" },
-		8: {
-			id: "8",
-			type: "area_row",
-			areas: [
-				{ id: "10", size: 0.1 },
-				{ id: "11", size: 0.9 },
-			],
-			orientation: "vertical",
-		},
-		9: { id: "9", type: "area" },
-		10: { id: "10", type: "area" },
-		11: { id: "11", type: "area" },
+		"13": { type: "area", id: "13" },
+		"14": { type: "area", id: "14" },
+		"15": { type: "area", id: "15" },
 	},
 	areas: {
-		2: { type: AreaType.NodeEditor, state: initialNodeEditorAreaState },
-		3: { type: AreaType.History, state: {} },
-		5: { type: AreaType.VectorEditor, state: {} },
-		6: { type: AreaType.VectorEditor, state: {} },
-		7: { type: AreaType.VectorEditor, state: {} },
-		9: { type: AreaType.VectorEditor, state: {} },
-		10: { type: AreaType.VectorEditor, state: {} },
-		11: { type: AreaType.VectorEditor, state: {} },
+		"13": {
+			type: AreaType.Timeline,
+			state: { timelineId: "0", viewBounds: [0.2, 1] },
+			childAreas: {},
+		},
+		"14": {
+			type: AreaType.NodeEditor,
+			state: { pan: Vec2.new(-92, -63), scale: 1, graphId: "0" },
+			childAreas: {},
+		},
+		"15": {
+			type: AreaType.History,
+			state: {},
+			childAreas: {},
+		},
 	},
 	joinPreview: null,
-	rootId: "0",
+	rootId: "2",
 };
 
 export const areaReducer = (state: AreaState, action: AreaAction): AreaState => {
@@ -260,15 +243,53 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 
 			const area = state.areas[areaId];
 
+			let _id = state._id;
+
+			/**
+			 * @todo Handle nested child areas
+			 */
+			const childAreasToRemove = Object.keys(area.childAreas).map(
+				(key) => area.childAreas[key],
+			);
+
+			const initialChildAreas = areaInitialChildAreas[type];
+			const childAreaKeys = Object.keys(initialChildAreas);
+			const childAreaIds = childAreaKeys.map(() => (++_id).toString());
+			const childAreas = childAreaKeys.map((key) => {
+				const item = initialChildAreas[key];
+				const initialState = item.initialState(areaInitialStates[type]);
+				return {
+					type: item.type,
+					state: initialState,
+					childAreas: {},
+				};
+			});
+
 			return {
 				...state,
 				areas: {
-					...state.areas,
+					...Object.keys(state.areas).reduce<AreaState["areas"]>((obj, key) => {
+						if (childAreasToRemove.indexOf(key) === -1) {
+							obj[key] = state.areas[key];
+						}
+						return obj;
+					}, {}),
 					[areaId]: {
 						...area,
 						type,
 						state: areaInitialStates[type],
+						childAreas: childAreaKeys.reduce<{ [key: string]: string }>(
+							(obj, key, i) => {
+								obj[key] = childAreaIds[i];
+								return obj;
+							},
+							{},
+						),
 					},
+					...childAreas.reduce<AreaState["areas"]>((obj, childArea, i) => {
+						obj[childAreaIds[i]] = childArea;
+						return obj;
+					}, {}),
 				},
 			};
 		}
@@ -285,6 +306,34 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 					[areaId]: {
 						...area,
 						state: areaStateReducerRegistry[area.type](area.state, _action),
+					},
+				},
+			};
+		}
+
+		case getType(areaActions.createChildArea): {
+			const { areaId, key, areaType } = action.payload;
+
+			const area = state.areas[areaId];
+
+			const _id = state._id + 1;
+			const idForNewArea = _id.toString();
+
+			return {
+				...state,
+				_id,
+				areas: {
+					...state.areas,
+					[areaId]: {
+						...area,
+						childAreas: {
+							[key]: idForNewArea,
+						},
+					},
+					[idForNewArea]: {
+						state: areaInitialStates[areaType],
+						type: areaType,
+						childAreas: {},
 					},
 				},
 			};

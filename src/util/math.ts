@@ -144,3 +144,57 @@ export function rotateVecToAngleRadians(vec: Vec2, targetAngle: number): Vec2 {
 	const diff = Math.abs(angle - targetAngle);
 	return rotateVec2CCW(vec, diff);
 }
+
+export const translateRect = (rect: Rect, translationVector: Vec2): Rect => {
+	return {
+		width: rect.width,
+		height: rect.height,
+		left: rect.left + translationVector.x,
+		top: rect.top + translationVector.y,
+	};
+};
+
+export const splitRect = (
+	type: "horizontal" | "vertical",
+	rect: Rect,
+	t: number,
+	margin = 0,
+): [Rect, Rect] => {
+	if (type === "horizontal") {
+		const w = rect.width - margin;
+		const lw = w * t;
+		const rw = w * (1 - t);
+		return [
+			{
+				left: rect.left,
+				height: rect.height,
+				width: lw,
+				top: rect.top,
+			},
+			{
+				left: rect.left + lw + margin,
+				height: rect.height,
+				width: rw,
+				top: rect.top,
+			},
+		];
+	}
+
+	const h = rect.height - margin;
+	const th = h * t;
+	const bh = h * (1 - t);
+	return [
+		{
+			top: rect.top,
+			height: th,
+			width: rect.width,
+			left: rect.left,
+		},
+		{
+			top: rect.top + th + margin,
+			height: bh,
+			width: rect.width,
+			left: rect.left,
+		},
+	];
+};

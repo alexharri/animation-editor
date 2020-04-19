@@ -18,20 +18,21 @@ interface RenderTimelineOptions {
 	width: number;
 	height: number;
 	viewBounds: [number, number];
+	length: number;
 	timeline: Timeline;
 }
 
 export const createToTimelineViewportX = (options: {
-	timeline: Timeline;
+	length: number;
 	viewBounds: [number, number];
 	width: number;
 }): ((value: number) => number) => {
-	const { timeline, viewBounds, width } = options;
+	const { viewBounds, width } = options;
 
 	const [tMin, tMax] = viewBounds;
 
 	return (index: number) => {
-		const length = timeline.length;
+		const length = options.length;
 		return translateToRange((index / length) * width, tMin * width, tMax * width, width);
 	};
 };

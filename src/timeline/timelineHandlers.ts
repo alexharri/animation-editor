@@ -16,15 +16,10 @@ import {
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { timelineActions } from "~/timeline/timelineActions";
 import { isKeyDown } from "~/listener/keyboard";
-import { animate } from "~/util/animation/animate";
-import { areaActions } from "~/area/state/areaActions";
-import { timelineEditorAreaActions } from "~/timeline/timelineEditorAreaState";
 import { createToTimelineViewportY, createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { getActionState } from "~/state/stateUtils";
-import { TIMELINE_CANVAS_HEIGHT_REDUCTION } from "~/timeline/TimelineEditor.styles";
 
 const PAN_FAC = 0.0004;
-const ZOOM_FAC = 0.25;
 const MIN_DIST = 6;
 
 const actions = {
@@ -33,6 +28,7 @@ const actions = {
 		initialMousePos: Vec2,
 		index: number,
 		options: {
+			length: number;
 			timeline: Timeline;
 			viewBounds: [number, number];
 			viewport: Rect;
@@ -148,6 +144,7 @@ const actions = {
 		index: number,
 		initialPos: Vec2,
 		options: {
+			length: number;
 			timeline: Timeline;
 			viewBounds: [number, number];
 			viewport: Rect;
@@ -189,6 +186,7 @@ const actions = {
 		options: {
 			reflect?: boolean;
 			reflectLength?: boolean;
+			length: number;
 			timeline: Timeline;
 			viewBounds: [number, number];
 			viewport: Rect;
@@ -312,8 +310,9 @@ const actions = {
 			const _dist = _k1.index - _k0.index;
 
 			const renderOptions = {
+				length: options.length,
 				timeline: getActionState().timelines[timeline.id],
-				height: viewport.height - TIMELINE_CANVAS_HEIGHT_REDUCTION,
+				height: viewport.height,
 				width: viewport.width,
 				viewBounds,
 			};
@@ -345,7 +344,7 @@ const actions = {
 				const _moveVector = Vec2.new(amplitude, 0)
 					.add(kpost)
 					.apply((vec) => rotateVec2CCW(vec, angle - Math.PI, kpost))
-					.addY(viewport.top + TIMELINE_CANVAS_HEIGHT_REDUCTION)
+					.addY(viewport.top)
 					.addX(viewport.left)
 					.apply((vec) => transformGlobalToTimelinePosition(vec, options))
 					.addY(yPan);
@@ -408,6 +407,7 @@ export const timelineHandlers = {
 	onMouseDown: (
 		e: React.MouseEvent,
 		options: {
+			length: number;
 			timeline: Timeline;
 			viewBounds: [number, number];
 			viewport: Rect;
@@ -459,7 +459,6 @@ export const timelineHandlers = {
 		for (let i = 0; i < keyframes.length; i += 1) {
 			const keyframe = keyframes[i];
 			const keyframePos = Vec2.new(keyframe.index, keyframe.value);
-			console.log(i, getDistanceInPx(keyframePos, mousePos));
 			if (getDistanceInPx(keyframePos, mousePos) < MIN_DIST) {
 				if (isKeyDown("Alt")) {
 					requestAction({ history: true }, (params) => {
@@ -484,6 +483,7 @@ export const timelineHandlers = {
 		direction: "left" | "right",
 		options: {
 			reflect?: boolean;
+			length: number;
 			timeline: Timeline;
 			viewBounds: [number, number];
 			viewport: Rect;
@@ -498,6 +498,7 @@ export const timelineHandlers = {
 		initialMousePos: Vec2,
 		index: number,
 		options: {
+			length: number;
 			timeline: Timeline;
 			viewBounds: [number, number];
 			viewport: Rect;
@@ -505,48 +506,6 @@ export const timelineHandlers = {
 	) => {
 		requestAction({ history: true }, (params) => {
 			actions.keyframeMouseDown(params, initialMousePos, index, options);
-		});
-	},
-
-	onZoomClick: (
-		e: React.MouseEvent,
-		areaId: string,
-		options: {
-			timeline: Timeline;
-			viewBounds: [number, number];
-			viewport: Rect;
-		},
-	) => {
-		const { viewBounds, viewport } = options;
-
-		const mousePos = Vec2.fromEvent(e).subX(viewport.left);
-		const t = mousePos.x / viewport.width;
-
-		let newBounds: [number, number];
-
-		if (isKeyDown("Alt")) {
-			const add = Math.abs(viewBounds[0] - viewBounds[1]) * ZOOM_FAC;
-			newBounds = [
-				capToRange(0, 1, viewBounds[0] - add * t),
-				capToRange(0, 1, viewBounds[1] + add * (1 - t)),
-			];
-		} else {
-			const remove = Math.abs(viewBounds[0] - viewBounds[1]) * ZOOM_FAC;
-			newBounds = [viewBounds[0] + remove * t, viewBounds[1] - remove * (1 - t)];
-		}
-
-		requestAction({ history: false }, ({ dispatch, submitAction }) => {
-			animate({ duration: 0 }, (t) => {
-				dispatch(
-					areaActions.dispatchToAreaState(
-						areaId,
-						timelineEditorAreaActions.setViewBounds([
-							interpolate(viewBounds[0], newBounds[0], t),
-							interpolate(viewBounds[1], newBounds[1], t),
-						]),
-					),
-				);
-			}).then(() => submitAction());
 		});
 	},
 };

@@ -21,6 +21,7 @@ interface OwnProps {
 interface StateProps {
 	state: any;
 	type: AreaType;
+	childAreas: { [key: string]: string };
 	raised: boolean;
 	Component: React.ComponentType<AreaWindowProps<any>>;
 }
@@ -31,6 +32,11 @@ const areaTypeOptions: Array<{ icon: React.ComponentType; type: AreaType; label:
 		icon: PenIcon,
 		type: AreaType.VectorEditor,
 		label: "Vector Editor",
+	},
+	{
+		icon: PenIcon,
+		type: AreaType.CompositionTimeline,
+		label: "Composition Timeline",
 	},
 	{
 		icon: EditIcon,
@@ -67,9 +73,8 @@ const AreaComponent: React.FC<Props> = (props) => {
 					"Area type",
 					[
 						{
-							icon: EditIcon,
-							label: "Vector Editor",
-							type: AreaType.VectorEditor,
+							label: "Composition Timeline",
+							type: AreaType.CompositionTimeline,
 						},
 						{
 							label: "Node Editor",
@@ -84,7 +89,7 @@ const AreaComponent: React.FC<Props> = (props) => {
 							type: AreaType.History,
 						},
 					].map((item) => ({
-						icon: item.icon,
+						// icon: item.icon,
 						label: item.label,
 						onSelect: () => {
 							dispatch(areaActions.setAreaType(id, item.type));
@@ -119,8 +124,28 @@ const AreaComponent: React.FC<Props> = (props) => {
 				<Icon />
 			</button>
 			<div className={s("area__content")}>
-				<Component areaId={props.id} viewport={componentViewport} areaState={props.state} />
+				<Component
+					areaId={props.id}
+					viewport={componentViewport}
+					areaState={props.state}
+					childAreas={props.childAreas}
+				/>
 			</div>
+		</div>
+	);
+};
+
+const ChildAreaComponent: React.FC<Props> = (props) => {
+	const { id, viewport, Component } = props;
+
+	return (
+		<div data-areaid={id} style={viewport}>
+			<Component
+				areaId={props.id}
+				viewport={viewport}
+				areaState={props.state}
+				childAreas={props.childAreas}
+			/>
 		</div>
 	);
 };
@@ -137,9 +162,11 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	return {
 		type: areas[id].type,
 		state: areas[id].state,
+		childAreas: areas[id].childAreas,
 		raised: !!(isEligibleForJoin || isBeingJoined),
 		Component: component,
 	};
 };
 
 export const Area = connectActionState(mapStateToProps)(AreaComponent);
+export const ChildArea = connectActionState(mapStateToProps)(ChildAreaComponent);

@@ -30,7 +30,6 @@ export const getControlPointAsVector = (
 };
 import { TimelineKeyframe, Timeline } from "~/timeline/timelineTypes";
 import { interpolate } from "~/util/math";
-import { TIMELINE_CANVAS_HEIGHT_REDUCTION } from "~/timeline/TimelineEditor.styles";
 
 export const timelineKeyframesToPathList = (
 	keyframes: TimelineKeyframe[],
@@ -84,9 +83,22 @@ export const getTimelineYBoundsFromPaths = (paths: Array<CubicBezier | Line>): [
 	return [yUpper + diff * 0.1, yLower - diff * 0.1];
 };
 
+export const transformGlobalToTimelineX = (
+	vecX: number,
+	viewBounds: [number, number],
+	left: number,
+	width: number,
+	length: number,
+): number => {
+	const xt = (vecX - left) / width;
+	const [xMin, xMax] = viewBounds;
+	return (xMin + (xMax - xMin) * xt) * length;
+};
+
 export const transformGlobalToTimelinePosition = (
 	vec: Vec2,
 	options: {
+		length: number;
 		timeline: Timeline;
 		viewBounds: [number, number];
 		viewport: Rect;
@@ -94,16 +106,16 @@ export const transformGlobalToTimelinePosition = (
 ): Vec2 => {
 	const { timeline, viewBounds, viewport } = options;
 
-	let pos = vec.subY(viewport.top + TIMELINE_CANVAS_HEIGHT_REDUCTION).subX(viewport.left);
+	let pos = vec.subY(viewport.top).subX(viewport.left);
 
 	const xt = pos.x / viewport.width;
-	const yt = pos.y / (viewport.height - TIMELINE_CANVAS_HEIGHT_REDUCTION);
+	const yt = pos.y / viewport.height;
 
 	const paths = timelineKeyframesToPathList(timeline.keyframes);
 	const [yUp, yLow] = getTimelineYBoundsFromPaths(paths);
 	const [xMin, xMax] = viewBounds;
 
-	const x = (xMin + (xMax - xMin) * xt) * timeline.length;
+	const x = (xMin + (xMax - xMin) * xt) * options.length;
 	pos.x = x;
 
 	const y = interpolate(yUp, yLow, yt);

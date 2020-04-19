@@ -16,4 +16,7 @@ export interface AreaWindowProps<T> {
 	viewport: Rect;
 	areaState: T;
 	areaId: string;
+	childAreas: {
+		[key: string]: string;
+	};
 }

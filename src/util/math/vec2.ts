@@ -95,12 +95,12 @@ export class Vec2 {
 	}
 
 	// @ts-ignore
-	private toJSON(): string {
-		return JSON.stringify({
+	private toJSON() {
+		return {
 			x: this.x,
 			y: this.y,
 			__objectType: "vec2",
-		});
+		};
 	}
 }
 

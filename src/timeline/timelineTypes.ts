@@ -1,6 +1,5 @@
 export interface Timeline {
 	id: string;
-	length: number;
 	keyframes: TimelineKeyframe[];
 	selection: {
 		keyframes: {
