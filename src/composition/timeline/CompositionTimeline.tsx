@@ -7,7 +7,7 @@ import {
 	compositionTimelineAreaActions,
 } from "~/composition/timeline/compositionTimelineAreaReducer";
 import CompositionTimelineStyles from "~/composition/timeline/CompositionTimeline.styles";
-import { Composition } from "~/composition/compositionTypes";
+import { Composition, CompositionLayerProperty } from "~/composition/compositionTypes";
 import { splitRect, capToRange } from "~/util/math";
 import { RequestActionCallback, requestAction } from "~/listener/requestAction";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -18,12 +18,16 @@ import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
 import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { createToTimelineViewportX } from "~/timeline/renderTimeline";
+import { CompositionState } from "~/composition/state/compositionReducer";
+import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 
 const SEPARATOR_WIDTH = 4;
 
 type OwnProps = AreaWindowProps<CompositionTimelineAreaState>;
 interface StateProps {
 	composition: Composition;
+	selection: CompositionSelectionState;
+	compositionState: CompositionState;
 	viewBounds: [number, number];
 }
 type Props = OwnProps & StateProps;
@@ -69,6 +73,30 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 		viewBounds: props.viewBounds,
 		width: viewportRight.width,
 	});
+
+	let timelineId = "";
+	if (props.selection.compositionId === props.composition.id) {
+		const layers = props.composition.layers.map((id) => props.compositionState.layers[id]);
+
+		const properties: CompositionLayerProperty[] = [];
+
+		for (let i = 0; i < layers.length; i += 1) {
+			const propertyIds = layers[i].properties;
+			for (let j = 0; j < propertyIds.length; j += 1) {
+				if (!props.selection.properties[propertyIds[j]]) {
+					continue;
+				}
+				properties.push(props.compositionState.properties[propertyIds[j]]);
+			}
+		}
+
+		for (let i = 0; i < properties.length; i += 1) {
+			if (properties[i].timelineId) {
+				timelineId = properties[i].timelineId;
+				break;
+			}
+		}
+	}
 
 	return (
 		<div className={s("wrapper")}>
@@ -162,23 +190,30 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 								}),
 						})}
 					/>
-					<TimelineEditor
-						id="0"
-						viewport={{
-							...viewportRight,
-							height: viewportRight.height - 32,
-							top: viewportRight.top + 32,
-						}}
-						viewBounds={props.viewBounds}
-						length={props.composition.length}
-					/>
+					{timelineId && (
+						<TimelineEditor
+							id={timelineId}
+							viewport={{
+								...viewportRight,
+								height: viewportRight.height - 32,
+								top: viewportRight.top + 32,
+							}}
+							viewBounds={props.viewBounds}
+							length={props.composition.length}
+						/>
+					)}
 				</div>
 			</div>
 		</div>
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ compositions }, ownProps) => ({
+const mapStateToProps: MapActionState<StateProps, OwnProps> = (
+	{ compositions, compositionSelection },
+	ownProps,
+) => ({
+	compositionState: compositions,
+	selection: compositionSelection,
 	composition: compositions.compositions[ownProps.areaState.compositionId],
 	viewBounds: ownProps.areaState.viewBounds,
 });

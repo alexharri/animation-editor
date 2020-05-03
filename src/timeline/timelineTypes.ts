@@ -5,6 +5,7 @@ export interface Timeline {
 	_yPan: number;
 	_indexShift: number | null;
 	_valueShift: number | null;
+	_dragSelectRect: Rect | null;
 }
 
 export interface TimelineKeyframeControlPoint {

@@ -16,6 +16,7 @@ export interface CompositionLayer {
 }
 
 export interface CompositionLayerProperty {
+	id: string;
 	name: string;
 	type: "number";
 	value: number;

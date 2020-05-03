@@ -74,23 +74,30 @@ export const initialTimelineState: TimelineState = {
 		_yPan: 0,
 		_indexShift: null,
 		_valueShift: null,
+		_dragSelectRect: null,
 	},
 };
 
 export function timelineReducer(state: TimelineState, action: Action): TimelineState {
 	switch (action.type) {
-		case getType(timelineActions.addKeyframeToTimeline): {
+		case getType(timelineActions.setKeyframe): {
 			const { keyframe, timelineId } = action.payload;
 
 			const timeline = state[timelineId];
-
-			const insertIndex = getInsertIndex(
-				timeline.keyframes,
-				keyframe,
-				(a, b) => a.index - b.index,
-			);
-
 			const keyframes = [...timeline.keyframes];
+			const keyframeIds = keyframes.map((k) => k.id);
+
+			const currentIndex = keyframeIds.indexOf(keyframe.id);
+			if (currentIndex !== -1) {
+				keyframes.splice(currentIndex, 1);
+			}
+
+			const indexOfKeyframeAtIndex = keyframes.map((k) => k.index).indexOf(keyframe.index);
+			if (indexOfKeyframeAtIndex !== -1) {
+				keyframes.splice(indexOfKeyframeAtIndex, 1);
+			}
+
+			const insertIndex = getInsertIndex(keyframes, keyframe, (a, b) => a.index - b.index);
 			keyframes.splice(insertIndex, 0, keyframe);
 
 			return {

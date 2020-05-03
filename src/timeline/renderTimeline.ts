@@ -93,7 +93,7 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 			color: cssVariables.dark600,
 			strokeWidth: 1,
 		});
-		ctx.font = cssVariables.fontFamily;
+		ctx.font = `10px ${cssVariables.fontFamily}`;
 		ctx.fillStyle = cssVariables.light500;
 		ctx.fillText(ticks[i].toString(), 8, y);
 	}

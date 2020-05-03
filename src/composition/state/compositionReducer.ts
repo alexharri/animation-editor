@@ -39,12 +39,14 @@ export const initialCompositionState: CompositionState = {
 	},
 	properties: {
 		"0": {
+			id: "0",
 			timelineId: "0",
 			name: "X Position",
 			type: "number",
 			value: 100,
 		},
 		"1": {
+			id: "1",
 			timelineId: "",
 			name: "Y Position",
 			type: "number",
@@ -65,6 +67,10 @@ export const compositionActions = {
 	setFrameIndex: createAction("compTimeline/SET_FRAME_INDEX", (action) => {
 		return (compositionId: string, frameIndex: number) => action({ compositionId, frameIndex });
 	}),
+
+	setPropertyValue: createAction("compTimeline/SET_PROPERTY_VALUE", (action) => {
+		return (propertyId: string, value: number) => action({ propertyId, value });
+	}),
 };
 
 type Action = ActionType<typeof compositionActions>;
@@ -83,6 +89,20 @@ export const compositionReducer = (
 					[compositionId]: {
 						...state.compositions[compositionId],
 						frameIndex,
+					},
+				},
+			};
+		}
+
+		case getType(compositionActions.setPropertyValue): {
+			const { propertyId, value } = action.payload;
+			return {
+				...state,
+				properties: {
+					...state.properties,
+					[propertyId]: {
+						...state.properties[propertyId],
+						value,
 					},
 				},
 			};

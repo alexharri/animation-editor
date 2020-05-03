@@ -13,6 +13,7 @@ import {
 	getDistance,
 	getAngleRadians,
 	rotateVec2CCW,
+	rectOfTwoVecs,
 } from "~/util/math";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { timelineActions } from "~/timeline/timelineActions";
@@ -24,6 +25,57 @@ const PAN_FAC = 0.0004;
 const MIN_DIST = 6;
 
 const actions = {
+	onLeftClickOutside: (
+		e: React.MouseEvent,
+		options: {
+			length: number;
+			timeline: Timeline;
+			viewBounds: [number, number];
+			viewport: Rect;
+		},
+	) => {
+		const { timeline } = options;
+
+		e.preventDefault();
+
+		requestAction({ history: true }, ({ addListener, dispatch, submitAction }) => {
+			const initialMousePos = Vec2.fromEvent(e);
+
+			let hasMoved = false;
+
+			addListener.repeated("mousemove", (e) => {
+				const mousePos = Vec2.fromEvent(e);
+				if (!hasMoved) {
+					// We don't consider the mouse to be "moved" until the mouse has moved at least
+					// 5px from where it was initially.
+					if (getDistance(initialMousePos, mousePos) > 5) {
+						hasMoved = true;
+					} else {
+						return;
+					}
+				}
+
+				const p0 = transformGlobalToTimelinePosition(initialMousePos, options);
+				const p1 = transformGlobalToTimelinePosition(mousePos, options);
+				const rect = rectOfTwoVecs(p0, p1);
+				dispatch(timelineActions.setDragSelectRect(timeline.id, rect));
+			});
+
+			addListener.once("mouseup", () => {
+				if (hasMoved) {
+					const isAdditiveSelection = isKeyDown("Shift");
+					dispatch(
+						timelineActions.submitDragSelectRect(timeline.id, isAdditiveSelection),
+					);
+					submitAction("Modify selection");
+				} else {
+					dispatch(timelineActions.clearSelection(timeline.id));
+					submitAction("Modify selection");
+				}
+			});
+		});
+	},
+
 	keyframeMouseDown: (
 		{ dispatch, addListener, submitAction }: RequestActionParams,
 		initialMousePos: Vec2,
@@ -90,7 +142,7 @@ const actions = {
 
 			const buffer = 5;
 			const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
-			const yUpper = Math.max(0, viewport.top + 40 - (mousePos.y - buffer));
+			const yUpper = Math.max(0, viewport.top - (mousePos.y - buffer));
 			const yLower = Math.max(0, mousePos.y + buffer - (viewport.top + viewport.height));
 
 			if (yLower) {
@@ -269,7 +321,7 @@ const actions = {
 
 			const buffer = 5;
 			const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
-			const yUpper = Math.max(0, viewport.top + 40 - (mousePos.y - buffer));
+			const yUpper = Math.max(0, viewport.top - (mousePos.y - buffer));
 			const yLower = Math.max(0, mousePos.y + buffer - (viewport.top + viewport.height));
 
 			if (yLower) {

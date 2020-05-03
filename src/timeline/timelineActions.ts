@@ -3,9 +3,18 @@ import { TimelineKeyframe, TimelineKeyframeControlPoint } from "~/timeline/timel
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 
 export const timelineActions = {
-	addKeyframeToTimeline: createAction("timeline/ADD_KEYFRAME", (resolve) => {
+	setKeyframe: createAction("timeline/SET_KEYFRAME", (resolve) => {
 		return (timelineId: string, keyframe: TimelineKeyframe) =>
 			resolve({ timelineId, keyframe });
+	}),
+
+	setDragSelectRect: createAction("timeline/SET_DRAG_SELECT_RECT", (resolve) => {
+		return (timelineId: string, rect: Rect) => resolve({ timelineId, rect });
+	}),
+
+	submitDragSelectRect: createAction("timeline/SUBMIT_DRAG_SELECT", (action) => {
+		return (timelineId: string, additiveSelection: boolean) =>
+			action({ timelineId, additiveSelection });
 	}),
 
 	setIndexAndValueShift: createAction("timeline/SET_SHIFT", (resolve) => {

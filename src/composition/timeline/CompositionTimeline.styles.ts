@@ -48,6 +48,7 @@ export default ({ css }: StyleParams) => ({
 		left: 8px;
 		width: 1px;
 		background: red;
+		pointer-events: none;
 	`,
 
 	separator: css`
