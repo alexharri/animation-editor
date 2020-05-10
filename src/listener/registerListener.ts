@@ -73,15 +73,6 @@ const addListener = <T extends keyof TypeToEventMap, E = TypeToEventMap[T]>(
 	listenerMap[cancelToken] = { type, listener };
 };
 
-const removeListener = (cancelToken: string) => {
-	listenerMap = Object.keys(listenerMap).reduce((obj: typeof listenerMap, key) => {
-		if (key !== cancelToken) {
-			obj[key] = listenerMap[key];
-		}
-		return obj;
-	}, {});
-};
-
 export const removeListenerExecuted = (cancelToken: string) => {
 	if (!listenerMap[cancelToken]) {
 		return;
@@ -90,7 +81,12 @@ export const removeListenerExecuted = (cancelToken: string) => {
 	const { type, listener } = listenerMap[cancelToken];
 	window.removeEventListener(type, listener);
 
-	removeListener(cancelToken);
+	listenerMap = Object.keys(listenerMap).reduce((obj: typeof listenerMap, key) => {
+		if (key !== cancelToken) {
+			obj[key] = listenerMap[key];
+		}
+		return obj;
+	}, {});
 };
 
 /**
