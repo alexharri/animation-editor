@@ -1,5 +1,5 @@
 import { StyleParams } from "~/util/stylesheets";
-import { cssVariables } from "~/cssVariables";
+import { cssVariables, cssMixins } from "~/cssVariables";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
@@ -60,6 +60,7 @@ export default ({ css }: StyleParams) => ({
 		padding-right: 16px;
 		width: 100%;
 		position: relative;
+		z-index: 10;
 
 		&--last {
 			margin-bottom: 8px;
@@ -84,5 +85,43 @@ export default ({ css }: StyleParams) => ({
 		overflow: hidden;
 		text-overflow: ellipsis;
 		text-align: right;
+	`,
+
+	widthResize: css`
+		position: absolute;
+		top: 0;
+		right: -1px;
+		bottom: 0;
+		width: 2px;
+		cursor: ew-resize;
+	`,
+
+	expressionTextarea: css`
+		border: 1px solid ${cssVariables.gray700};
+		border-radius: 2px;
+		background: ${cssVariables.dark500};
+		width: calc(100% - 16px);
+		max-width: calc(100% - 16px);
+		margin: 0 8px 8px;
+		color: white;
+		font-size: 13px;
+		font-family: monospace;
+		resize: none;
+		outline: none;
+
+		${cssMixins.darkScrollbar}
+
+		&:focus {
+			border-color: ${cssVariables.primary500};
+		}
+	`,
+
+	expressionTextarea__resize: css`
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 7px; /* Because of margin-bottom: 8; */
+		height: 2px;
+		cursor: ns-resize;
 	`,
 });

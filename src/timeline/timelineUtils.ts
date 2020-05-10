@@ -269,7 +269,7 @@ export const generateTimelineTicksFromBounds = ([a, b]: [number, number]) => {
 export function getTimelineSelection(timelineId: string): TimelineSelectionState {
 	const selection = getActionState().timelineSelection;
 	if (selection.timelineId !== timelineId) {
-		return { timelineId, keyframes: {} };
+		return { timelineId, keyframes: {}, _dragSelectRect: null };
 	}
 	return selection;
 }

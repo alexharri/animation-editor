@@ -1,12 +1,12 @@
 import React from "react";
 import { connectActionState } from "~/state/stateUtils";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorGraphReducer";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import {
 	calculateNodeOutputPosition,
 	calculateNodeInputPosition,
 } from "~/nodeEditor/util/calculateNodeHeight";
 import { nodeEditorPositionToViewport } from "~/nodeEditor/nodeEditorUtils";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 
 interface OwnProps {
 	graphId: string;

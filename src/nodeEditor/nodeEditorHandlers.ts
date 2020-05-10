@@ -6,7 +6,6 @@ import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { isKeyDown } from "~/listener/keyboard";
 import { isLeftClick } from "~/util/mouse";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { nodeEditorGraphActions } from "~/nodeEditor/nodeEditorGraphActions";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { NodeEditorNodeType } from "~/types";
 import {
@@ -14,6 +13,7 @@ import {
 	transformGlobalToNodeEditorRect,
 } from "~/nodeEditor/nodeEditorUtils";
 import { getDistance, rectOfTwoVecs } from "~/util/math";
+import { clearElementFocus } from "~/util/focus";
 
 export const nodeEditorHandlers = {
 	onLeftClickOutside: (
@@ -24,56 +24,45 @@ export const nodeEditorHandlers = {
 		pan: Vec2,
 	) => {
 		e.preventDefault();
+		clearElementFocus();
 
-		const shouldAddToStack = (prevState: ActionState, _nextState: ActionState): boolean => {
-			return true;
-			const nKeys = Object.keys(prevState.nodeEditor.graphs[graphId].selection.nodes).length;
-			return nKeys !== 0;
-		};
+		requestAction({ history: true }, ({ addListener, dispatch, submitAction }) => {
+			const initialMousePos = Vec2.fromEvent(e);
 
-		requestAction(
-			{ history: true, shouldAddToStack },
-			({ addListener, dispatch: _dispatch, submitAction }) => {
-				const dispatch = (action: any) =>
-					_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
+			let hasMoved = false;
 
-				const initialMousePos = Vec2.fromEvent(e);
-
-				let hasMoved = false;
-
-				addListener.repeated("mousemove", (e) => {
-					const mousePos = Vec2.fromEvent(e);
-					if (!hasMoved) {
-						// We don't consider the mouse to be "moved" until the mouse has moved at least
-						// 5px from where it was initially.
-						if (getDistance(initialMousePos, mousePos) > 5 / scale) {
-							hasMoved = true;
-						} else {
-							return;
-						}
-					}
-
-					const rect = transformGlobalToNodeEditorRect(
-						rectOfTwoVecs(initialMousePos, mousePos),
-						viewport,
-						scale,
-						pan,
-					);
-					dispatch(nodeEditorGraphActions.setDragSelectRect(rect));
-				});
-
-				addListener.once("mouseup", () => {
-					if (hasMoved) {
-						const isAdditiveSelection = isKeyDown("Shift");
-						dispatch(nodeEditorGraphActions.submitDragSelectRect(isAdditiveSelection));
-						submitAction("Modify selection");
+			addListener.repeated("mousemove", (e) => {
+				const mousePos = Vec2.fromEvent(e);
+				if (!hasMoved) {
+					// We don't consider the mouse to be "moved" until the mouse has moved at least
+					// 5px from where it was initially.
+					if (getDistance(initialMousePos, mousePos) > 5 / scale) {
+						hasMoved = true;
 					} else {
-						dispatch(nodeEditorGraphActions.clearNodeSelection());
-						submitAction("Modify selection");
+						return;
 					}
-				});
-			},
-		);
+				}
+
+				const rect = transformGlobalToNodeEditorRect(
+					rectOfTwoVecs(initialMousePos, mousePos),
+					viewport,
+					scale,
+					pan,
+				);
+				dispatch(nodeEditorActions.setDragSelectRect(graphId, rect));
+			});
+
+			addListener.once("mouseup", () => {
+				if (hasMoved) {
+					const isAdditiveSelection = isKeyDown("Shift");
+					dispatch(nodeEditorActions.submitDragSelectRect(graphId, isAdditiveSelection));
+					submitAction("Modify selection");
+				} else {
+					dispatch(nodeEditorActions.clearNodeSelection(graphId));
+					submitAction("Modify selection");
+				}
+			});
+		});
 	},
 
 	onRightClickOutside: (
@@ -85,22 +74,21 @@ export const nodeEditorHandlers = {
 		setClickCapture: (fn: { fn: ((e: React.MouseEvent) => void) | null }) => void,
 	) => {
 		const pos = Vec2.fromEvent(e);
+		clearElementFocus();
 
 		let didAddNode = false;
 
 		requestAction(
 			{ history: true, shouldAddToStack: () => didAddNode },
-			({ cancelAction, dispatch: _dispatch, submitAction, execOnComplete }) => {
+			({ cancelAction, dispatch, submitAction, execOnComplete }) => {
 				// Cleanup click capture on completion
 				execOnComplete(() => setClickCapture({ fn: null }));
 
 				const onAddSelect = (type: NodeEditorNodeType) => {
 					didAddNode = true;
-					const dispatch = (action: any) =>
-						_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
 
-					dispatch(nodeEditorGraphActions.startAddNode(type));
-					_dispatch(contextMenuActions.closeContextMenu());
+					dispatch(nodeEditorActions.startAddNode(graphId, type));
+					dispatch(contextMenuActions.closeContextMenu());
 					const fn = (e: React.MouseEvent) => {
 						if (!e) {
 							return;
@@ -111,7 +99,7 @@ export const nodeEditorHandlers = {
 							scale,
 							pan,
 						);
-						dispatch(nodeEditorGraphActions.submitAddNode(pos));
+						dispatch(nodeEditorActions.submitAddNode(graphId, pos));
 						submitAction("Add node");
 					};
 					setClickCapture({ fn });
@@ -122,13 +110,23 @@ export const nodeEditorHandlers = {
 					onSelect: () => onAddSelect(type),
 				});
 
-				_dispatch(
+				dispatch(
 					contextMenuActions.openContextMenu(
 						"Node Editor",
 						[
 							{
-								label: "Vec2 Nodes",
+								label: "Vec2",
 								options: [createAddNodeOption(NodeEditorNodeType.add_vec2, "Add")],
+								default: true,
+							},
+							{
+								label: "Math",
+								options: [
+									createAddNodeOption(
+										NodeEditorNodeType.expression,
+										"Expression",
+									),
+								],
 								default: true,
 							},
 						],

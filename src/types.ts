@@ -7,11 +7,13 @@ export enum NodeEditorNodeType {
 	empty = "empty",
 	add_vec2 = "add_vec2",
 	translate_rect = "translate_rect",
+	expression = "expression",
 }
 
 export enum NodeEditorValueType {
 	Vec2,
 	Rect,
+	Any,
 }
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;

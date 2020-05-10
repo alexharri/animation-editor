@@ -84,6 +84,8 @@ export enum AreaType {
 }
 
 export const DEFAULT_NODE_EDITOR_NODE_WIDTH = 128;
+export const NODE_EDITOR_MIN_NODE_WIDTH = 64;
+export const NODE_EDITOR_EXPRESSION_NODE_MIN_TEXTAREA_HEIGHT = 24;
 
 export const DEFAULT_CONTEXT_MENU_WIDTH = 180;
 export const CONTEXT_MENU_OPTION_HEIGHT = 22;

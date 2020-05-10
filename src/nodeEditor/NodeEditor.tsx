@@ -3,16 +3,18 @@ import { connectActionState } from "~/state/stateUtils";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { AreaWindowProps } from "~/types/areaTypes";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
-import { nodeEditorHandlers } from "~/nodeEditor/handlers";
+import { nodeEditorHandlers } from "~/nodeEditor/nodeEditorHandlers";
 import styles from "~/nodeEditor/NodeEditor.styles";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorGraphReducer";
 import { Node } from "~/nodeEditor/nodes/Node";
+import { ExpressionNode } from "~/nodeEditor/expression/ExpressionNode";
 import { NodeEditorConnections } from "~/nodeEditor/NodeEditorConnections";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { NodeEditorDragSelect } from "~/nodeEditor/dragSelect/NodeEditorDragSelect";
 import { NodePreview } from "~/nodeEditor/nodes/NodePreview";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
+import { NodeEditorNodeType } from "~/types";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -125,8 +127,17 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 				>
 					<div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
 						{nodeIds.map((nodeId) => {
+							let NodeComponent = Node;
+
+							switch (props.graph.nodes[nodeId].type) {
+								case NodeEditorNodeType.expression: {
+									NodeComponent = ExpressionNode;
+									break;
+								}
+							}
+
 							return (
-								<Node
+								<NodeComponent
 									key={nodeId}
 									nodeId={nodeId}
 									areaId={props.areaId}

@@ -12,9 +12,9 @@ import { historyActions } from "~/state/history/historyActions";
 ReactDOM.render(<App />, document.getElementById("root"));
 
 // Disable right click context menu
-document.addEventListener("contextmenu", e => e.preventDefault(), false);
+document.addEventListener("contextmenu", (e) => e.preventDefault(), false);
 
-addListener.repeated("keydown", { modifierKeys: ["Command"] }, e => {
+addListener.repeated("keydown", { modifierKeys: ["Command"] }, (e) => {
 	if (!isKeyCodeOf("Z", e.keyCode)) {
 		return;
 	}

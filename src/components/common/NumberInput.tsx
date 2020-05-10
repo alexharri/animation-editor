@@ -178,7 +178,9 @@ export class NumberInput extends React.Component<Props, State> {
 			}
 		});
 
+		console.log("adding listener once");
 		addListener.once("mouseup", () => {
+			console.log("mouseup");
 			if (tokenMoveChangeValue) {
 				// The mouse was moved enough to trigger the mouse move value change
 				removeListener(tokenMoveChangeValue);

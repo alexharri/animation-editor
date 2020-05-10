@@ -1,6 +1,5 @@
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { isKeyDown } from "~/listener/keyboard";
-import { nodeEditorGraphActions } from "~/nodeEditor/nodeEditorGraphActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { getDistance } from "~/util/math";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
@@ -11,7 +10,9 @@ import {
 	calculateNodeOutputPosition,
 	calculateNodeInputPosition,
 } from "~/nodeEditor/util/calculateNodeHeight";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorGraphReducer";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
+import { clearElementFocus } from "~/util/focus";
+import { NODE_EDITOR_MIN_NODE_WIDTH } from "~/constants";
 
 const getAllInputsOfType = (graph: NodeEditorGraphState, nodeId: string, outputIndex: number) => {
 	const allNodeInputsOfType: Array<{
@@ -72,9 +73,6 @@ const getAllOutputsOfType = (graph: NodeEditorGraphState, nodeId: string, inputI
 export const nodeHandlers = {
 	onRightClick: (e: React.MouseEvent, graphId: string, nodeId: string) => {
 		requestAction({ history: true }, ({ submitAction, dispatch, cancelAction }) => {
-			const dispatchToGraph = (action: any) =>
-				dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
-
 			dispatch(
 				contextMenuActions.openContextMenu(
 					"Node",
@@ -83,7 +81,7 @@ export const nodeHandlers = {
 							label: "Delete",
 							onSelect: () => {
 								dispatch(contextMenuActions.closeContextMenu());
-								dispatchToGraph(nodeEditorGraphActions.removeNode(nodeId));
+								dispatch(nodeEditorActions.removeNode(graphId, nodeId));
 								submitAction("Remove node");
 							},
 							default: true,
@@ -104,6 +102,7 @@ export const nodeHandlers = {
 		viewport: Rect,
 	) => {
 		e.preventDefault();
+		clearElementFocus();
 
 		const shouldAddToStack = (prevState: ActionState, nextState: ActionState): boolean => {
 			// Check if move vector has changed
@@ -137,11 +136,8 @@ export const nodeHandlers = {
 
 		requestAction(
 			{ history: true, shouldAddToStack },
-			({ submitAction, dispatch: _dispatch, addListener }) => {
+			({ submitAction, dispatch, addListener }) => {
 				const shiftKeyDownAtMouseDown = isKeyDown("Shift");
-
-				const dispatch = (action: any) =>
-					_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
 
 				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 
@@ -153,12 +149,12 @@ export const nodeHandlers = {
 				// If the shift key is down, we modify the selection state immediately by
 				// toggling the selection state of the node that was clicked.
 				if (shiftKeyDownAtMouseDown) {
-					dispatch(nodeEditorGraphActions.toggleNodeSelection(nodeId));
+					dispatch(nodeEditorActions.toggleNodeSelection(graphId, nodeId));
 				} else if (!graph.selection.nodes[nodeId]) {
 					// If the current node is not selected, we clear the node selectction state
 					// and add the clicked node to the selection.
-					dispatch(nodeEditorGraphActions.clearNodeSelection());
-					dispatch(nodeEditorGraphActions.addNodeToSelection(nodeId));
+					dispatch(nodeEditorActions.clearNodeSelection(graphId));
+					dispatch(nodeEditorActions.addNodeToSelection(graphId, nodeId));
 				}
 
 				const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
@@ -177,17 +173,17 @@ export const nodeHandlers = {
 					}
 
 					const moveVector = mousePos.sub(initialMousePos).round();
-					dispatch(nodeEditorGraphActions.setMoveVector(moveVector));
+					dispatch(nodeEditorActions.setMoveVector(graphId, moveVector));
 				});
 
 				addListener.once("mouseup", () => {
 					if (hasMoved) {
-						dispatch(nodeEditorGraphActions.applyMoveVector());
+						dispatch(nodeEditorActions.applyMoveVector(graphId));
 						submitAction("Move selection");
 					} else {
 						if (!shiftKeyDownAtMouseDown) {
-							dispatch(nodeEditorGraphActions.clearNodeSelection());
-							dispatch(nodeEditorGraphActions.addNodeToSelection(nodeId));
+							dispatch(nodeEditorActions.clearNodeSelection(graphId));
+							dispatch(nodeEditorActions.addNodeToSelection(graphId, nodeId));
 						}
 						submitAction("Modify selection");
 					}
@@ -206,10 +202,7 @@ export const nodeHandlers = {
 	) => {
 		requestAction(
 			{ history: true },
-			({ dispatch: _dispatch, addListener, submitAction, cancelAction }) => {
-				const dispatch = (action: any) =>
-					_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
-
+			({ dispatch, addListener, submitAction, cancelAction }) => {
 				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 				const graph = getActionState().nodeEditor.graphs[graphId];
 
@@ -225,7 +218,7 @@ export const nodeHandlers = {
 
 					if (!hasInit) {
 						dispatch(
-							nodeEditorGraphActions.initDragOutputTo(mousePos, {
+							nodeEditorActions.initDragOutputTo(graphId, mousePos, {
 								outputIndex,
 								nodeId,
 							}),
@@ -246,14 +239,14 @@ export const nodeHandlers = {
 						}
 					}
 
-					dispatch(nodeEditorGraphActions.setDragOutputTo(mousePos, wouldConnectTo));
+					dispatch(nodeEditorActions.setDragOutputTo(graphId, mousePos, wouldConnectTo));
 				});
 
 				addListener.once("mouseup", () => {
 					const graph = getActionState().nodeEditor.graphs[graphId];
 
 					if (graph._dragOutputTo?.wouldConnectToInput) {
-						dispatch(nodeEditorGraphActions.submitDragOutputTo());
+						dispatch(nodeEditorActions.submitDragOutputTo(graphId));
 						submitAction("Connect output to input");
 						return;
 					}
@@ -273,14 +266,11 @@ export const nodeHandlers = {
 		viewport: Rect,
 	) => {
 		const cb: RequestActionCallback = ({
-			dispatch: _dispatch,
+			dispatch,
 			addListener,
 			submitAction,
 			cancelAction,
 		}) => {
-			const dispatch = (action: any) =>
-				_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
-
 			const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 			const graph = getActionState().nodeEditor.graphs[graphId];
 
@@ -296,7 +286,7 @@ export const nodeHandlers = {
 
 				if (!hasInit) {
 					dispatch(
-						nodeEditorGraphActions.initDragInputTo(mousePos, {
+						nodeEditorActions.initDragInputTo(graphId, mousePos, {
 							inputIndex,
 							nodeId,
 						}),
@@ -317,14 +307,14 @@ export const nodeHandlers = {
 					}
 				}
 
-				dispatch(nodeEditorGraphActions.setDragInputTo(mousePos, wouldConnectTo));
+				dispatch(nodeEditorActions.setDragInputTo(graphId, mousePos, wouldConnectTo));
 			});
 
 			addListener.once("mouseup", () => {
 				const graph = getActionState().nodeEditor.graphs[graphId];
 
 				if (graph._dragInputTo?.wouldConnectToOutput) {
-					dispatch(nodeEditorGraphActions.submitDragInputTo());
+					dispatch(nodeEditorActions.submitDragInputTo(graphId));
 					submitAction("Connect input to output");
 					return;
 				}
@@ -344,14 +334,11 @@ export const nodeHandlers = {
 		viewport: Rect,
 	) => {
 		const cb: RequestActionCallback = ({
-			dispatch: _dispatch,
+			dispatch,
 			addListener,
 			submitAction,
 			cancelAction,
 		}) => {
-			const dispatch = (action: any) =>
-				_dispatch(nodeEditorActions.dispatchToGraph(graphId, action));
-
 			const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 			const graph = getActionState().nodeEditor.graphs[graphId];
 
@@ -378,9 +365,9 @@ export const nodeHandlers = {
 				const mousePos = Vec2.fromEvent(e).apply(transformMousePosition);
 
 				if (!hasInit) {
-					dispatch(nodeEditorGraphActions.removeInputPointer(nodeId, inputIndex));
+					dispatch(nodeEditorActions.removeInputPointer(graphId, nodeId, inputIndex));
 					dispatch(
-						nodeEditorGraphActions.initDragOutputTo(mousePos, {
+						nodeEditorActions.initDragOutputTo(graphId, mousePos, {
 							outputIndex: pointer.outputIndex,
 							nodeId: pointer.nodeId,
 						}),
@@ -401,7 +388,7 @@ export const nodeHandlers = {
 					}
 				}
 
-				dispatch(nodeEditorGraphActions.setDragOutputTo(mousePos, wouldConnectTo));
+				dispatch(nodeEditorActions.setDragOutputTo(graphId, mousePos, wouldConnectTo));
 			});
 
 			addListener.once("mouseup", () => {
@@ -416,15 +403,69 @@ export const nodeHandlers = {
 						return;
 					}
 
-					dispatch(nodeEditorGraphActions.submitDragOutputTo());
+					dispatch(nodeEditorActions.submitDragOutputTo(graphId));
 					submitAction("Move input to output");
 				} else {
-					dispatch(nodeEditorGraphActions.clearDragOutputTo());
+					dispatch(nodeEditorActions.clearDragOutputTo(graphId));
 					submitAction("Disconnect input");
 				}
 			});
 		};
 
 		requestAction({ history: true }, cb);
+	},
+
+	onWidthResizeMouseDown: (
+		e: React.MouseEvent,
+		areaId: string,
+		graphId: string,
+		nodeId: string,
+		viewport: Rect,
+	) => {
+		e.preventDefault();
+		requestAction(
+			{ history: true },
+			({ submitAction, cancelAction, dispatch, addListener }) => {
+				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
+
+				const transformMousePosition = (mousePosition: Vec2) =>
+					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+
+				const graph = getActionState().nodeEditor.graphs[graphId];
+
+				const node = graph.nodes[nodeId];
+
+				const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
+				let hasMoved = false;
+
+				addListener.repeated("mousemove", (e) => {
+					const mousePos = transformMousePosition(Vec2.fromEvent(e));
+					if (!hasMoved) {
+						// We don't consider the mouse to be "moved" until the mouse has moved at least
+						// 5px from where it was initially.
+						if (getDistance(initialMousePos, mousePos) > 5 / scale) {
+							hasMoved = true;
+						} else {
+							return;
+						}
+					}
+
+					const width = Math.max(
+						NODE_EDITOR_MIN_NODE_WIDTH,
+						Math.round(mousePos.x - node.position.x),
+					);
+					dispatch(nodeEditorActions.setNodeWidth(graphId, nodeId, width));
+				});
+
+				addListener.once("mouseup", () => {
+					if (!hasMoved) {
+						cancelAction();
+						return;
+					}
+
+					submitAction("Resize node width");
+				});
+			},
+		);
 	},
 };

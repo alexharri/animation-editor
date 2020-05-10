@@ -1,3 +1,5 @@
+import "~/util/math/expressions";
+
 import React, { useState, useEffect } from "react";
 import { Area } from "~/area/components/Area";
 import { connectActionState } from "~/state/stateUtils";

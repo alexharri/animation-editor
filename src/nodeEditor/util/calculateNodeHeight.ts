@@ -1,10 +1,48 @@
 import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType } from "~/types";
 
+const inputHeight = 20;
+const outputHeight = 20;
+const borderWidth = 1;
+const headerHeight = 20;
+const spacing = 8;
+const bottomPadding = 16;
+
+export const NODE_HEIGHT_CONSTANTS = {
+	inputHeight,
+	outputHeight,
+	borderWidth,
+	headerHeight,
+	spacing,
+	bottomPadding,
+};
+
+const aboveInputs: Partial<
+	{ [key in NodeEditorNodeType]: (node: NodeEditorNode<any>) => number }
+> = {
+	[NodeEditorNodeType.expression]: (node: NodeEditorNode<NodeEditorNodeType.expression>) => {
+		return node.state.textareaHeight + spacing;
+	},
+};
+
+export const getAboveInputs = (node: NodeEditorNode<NodeEditorNodeType>): number => {
+	console.log(node);
+	return aboveInputs[node.type]?.(node) ?? 0;
+};
+
 export const calculateNodeHeight = (node: NodeEditorNode<NodeEditorNodeType>): number => {
 	const inputs = node.inputs;
 	const outputs = node.outputs;
-	return 2 + 28 + outputs.length * 20 + 8 + inputs.length * 20 + 16;
+	return (
+		borderWidth * 2 +
+		headerHeight +
+		spacing +
+		outputs.length * outputHeight +
+		spacing +
+		getAboveInputs(node) +
+		inputs.length * inputHeight +
+		bottomPadding
+	);
 };
 
 export const calculateNodeInputY = (
@@ -12,23 +50,43 @@ export const calculateNodeInputY = (
 	inputIndex: number,
 ): number => {
 	const outputs = node.outputs;
-	return 1 + 28 + outputs.length * 20 + 8 + inputIndex * 20 + 10;
+	return (
+		borderWidth +
+		headerHeight +
+		spacing +
+		outputs.length * outputHeight +
+		spacing +
+		getAboveInputs(node) +
+		inputIndex * inputHeight +
+		inputHeight / 2
+	);
 };
 
 export const calculateNodeOutputY = (outputIndex: number): number => {
-	return 1 + 28 + outputIndex * 20 + 10;
+	return borderWidth + headerHeight + spacing + outputIndex * outputHeight + outputHeight / 2;
 };
 
 export const calculateNodeOutputPosition = (
 	node: NodeEditorNode<NodeEditorNodeType>,
 	outputIndex: number,
 ): Vec2 => {
-	return node.position.addX(node.width).addY(1 + 28 + outputIndex * 20 + 10);
+	return node.position
+		.addX(node.width)
+		.addY(borderWidth + headerHeight + spacing + outputIndex * outputHeight + outputHeight / 2);
 };
 
 export const calculateNodeInputPosition = (
 	node: NodeEditorNode<NodeEditorNodeType>,
 	inputIndex: number,
 ): Vec2 => {
-	return node.position.addY(1 + 28 + node.outputs.length * 20 + 8 + inputIndex * 20 + 10);
+	return node.position.addY(
+		borderWidth +
+			headerHeight +
+			spacing +
+			node.outputs.length * outputHeight +
+			spacing +
+			getAboveInputs(node) +
+			inputIndex * inputHeight +
+			inputHeight / 2,
+	);
 };

@@ -1,5 +1,6 @@
 import { isKeyDown, isKeyCodeOf } from "~/listener/keyboard";
 import { keys } from "~/constants";
+import { elementHasKeyboardFocus } from "~/util/focus";
 
 type Key = keyof typeof keys;
 
@@ -43,6 +44,12 @@ const addListener = <T extends keyof TypeToEventMap, E = TypeToEventMap[T]>(
 	const listener =
 		options && options.modifierKeys
 			? (e: E) => {
+					if (type === "keydown" || type === "keypress" || type === "keyup") {
+						if (elementHasKeyboardFocus()) {
+							return;
+						}
+					}
+
 					const keys = Array.isArray(options.modifierKeys)
 						? options.modifierKeys
 						: [options.modifierKeys!];
@@ -53,7 +60,14 @@ const addListener = <T extends keyof TypeToEventMap, E = TypeToEventMap[T]>(
 					}
 					listenerFn(e);
 			  }
-			: listenerFn;
+			: (e: E) => {
+					if (type === "keydown" || type === "keypress" || type === "keyup") {
+						if (elementHasKeyboardFocus()) {
+							return;
+						}
+					}
+					listenerFn(e);
+			  };
 
 	window.addEventListener(type, listener as any);
 	listenerMap[cancelToken] = { type, listener };
@@ -61,11 +75,22 @@ const addListener = <T extends keyof TypeToEventMap, E = TypeToEventMap[T]>(
 
 const removeListener = (cancelToken: string) => {
 	listenerMap = Object.keys(listenerMap).reduce((obj: typeof listenerMap, key) => {
-		if (obj[key] !== cancelToken) {
+		if (key !== cancelToken) {
 			obj[key] = listenerMap[key];
 		}
 		return obj;
 	}, {});
+};
+
+export const removeListenerExecuted = (cancelToken: string) => {
+	if (!listenerMap[cancelToken]) {
+		return;
+	}
+
+	const { type, listener } = listenerMap[cancelToken];
+	window.removeEventListener(type, listener);
+
+	removeListener(cancelToken);
 };
 
 /**
@@ -90,8 +115,8 @@ export function addListenerExecuteOnce<T extends keyof T2E, E = T2E[T]>(
 	const listenerFunc = typeof optsOrListener === "function" ? optsOrListener : listenerFn!;
 
 	const listener = (e: E) => {
-		window.removeEventListener(type, listener as any);
 		listenerFunc(e);
+		removeListenerExecuted(cancelToken);
 	};
 
 	addListener(cancelToken, type, listener, opts);
@@ -201,14 +226,3 @@ export function addKeyboardListenerExecuteOnce<T extends keyof KT2E>(
 	addListener(cancelToken, type, listener, opts);
 	return cancelToken;
 }
-
-export const removeListenerExecuted = (cancelToken: string) => {
-	if (!listenerMap[cancelToken]) {
-		return;
-	}
-
-	const { type, listener } = listenerMap[cancelToken];
-	window.removeEventListener(type, listener);
-
-	removeListener(cancelToken);
-};

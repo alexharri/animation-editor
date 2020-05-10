@@ -57,3 +57,26 @@ export const cssZIndex = {
 	contextMenuBackground: 500,
 	contextMenu: 501,
 };
+
+export const cssMixins = {
+	darkScrollbar: `
+		scrollbar-color: ${cssVariables.gray500} ${cssVariables.dark500};
+		scrollbar-width: thin;
+
+		&::-webkit-scrollbar {
+			width: 8px;
+			height: 8px;
+		}
+		&::-webkit-scrollbar-track {
+			background: ${cssVariables.dark500};
+			border-radius: 4px;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: ${cssVariables.gray500};
+			border-radius: 4px;
+		}
+		&::-webkit-scrollbar-thumb:hover {
+			background: ${cssVariables.gray500};
+		}
+	`,
+};

@@ -39,6 +39,9 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 				},
 			];
 
+		case NodeEditorNodeType.expression:
+			return [];
+
 		case NodeEditorNodeType.empty:
 			return [];
 	}
@@ -64,8 +67,30 @@ export const getNodeEditorNodeDefaultOutputs = (
 				},
 			];
 
+		case NodeEditorNodeType.expression:
+			return [];
+
 		case NodeEditorNodeType.empty:
 			return [];
+	}
+};
+
+export const getNodeEditorNodeDefaultState = <T extends NodeEditorNodeType>(type: T): any => {
+	switch (type) {
+		case NodeEditorNodeType.add_vec2:
+			return {} as NodeEditorNodeStateMap[T];
+
+		case NodeEditorNodeType.translate_rect:
+			return {} as NodeEditorNodeStateMap[T];
+
+		case NodeEditorNodeType.expression:
+			return { expression: "", textareaHeight: 80 } as NodeEditorNodeStateMap["expression"];
+
+		case NodeEditorNodeType.empty:
+			return {} as NodeEditorNodeStateMap[T];
+
+		default:
+			return null as any;
 	}
 };
 
@@ -84,6 +109,17 @@ export interface NodeEditorNodeOutput {
 	type: NodeEditorValueType;
 }
 
+type NodeEditorNodeStateMap = {
+	[NodeEditorNodeType.add_vec2]: {};
+	[NodeEditorNodeType.empty]: {};
+	[NodeEditorNodeType.translate_rect]: {};
+	[NodeEditorNodeType.expression]: {
+		expression: string;
+		textareaHeight: number;
+	};
+};
+export type NodeEditorNodeState<T extends NodeEditorNodeType> = NodeEditorNodeStateMap[T];
+
 export interface NodeEditorNode<T extends NodeEditorNodeType> {
 	id: string;
 	type: T;
@@ -91,4 +127,5 @@ export interface NodeEditorNode<T extends NodeEditorNodeType> {
 	width: number;
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
+	state: NodeEditorNodeState<T>;
 }
