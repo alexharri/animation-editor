@@ -38,6 +38,11 @@ const areaTypeOptions: Array<{ icon: React.ComponentType; type: AreaType; label:
 		label: "Composition Timeline",
 	},
 	{
+		icon: PenIcon,
+		type: AreaType.CompositionWorkspace,
+		label: "Composition Timeline",
+	},
+	{
 		icon: EditIcon,
 		type: AreaType.NodeEditor,
 		label: "Node Editor",
@@ -74,6 +79,10 @@ const AreaComponent: React.FC<Props> = (props) => {
 						{
 							label: "Composition Timeline",
 							type: AreaType.CompositionTimeline,
+						},
+						{
+							label: "Composition Workspace",
+							type: AreaType.CompositionWorkspace,
 						},
 						{
 							label: "Node Editor",

@@ -3,7 +3,7 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 import styles from "~/components/common/NumberInput.styles";
 import { addListener, removeListener } from "~/listener/addListener";
 import { interpolate } from "~/util/math";
-import { isKeyDown } from "~/listener/keyboard";
+import { isKeyDown, isKeyCodeOf } from "~/listener/keyboard";
 
 function getDistance(a: Vec2, b: Vec2) {
 	return Math.hypot(b.x - a.x, b.y - a.y);
@@ -58,6 +58,8 @@ export class NumberInput extends React.Component<Props, State> {
 	private input = React.createRef<HTMLInputElement>();
 	private onBlurFn: (() => void) | null = null;
 	private unmounted = false;
+	private onTab: null | ((e: React.KeyboardEvent) => void) = null;
+	private onEnter: null | ((e: React.KeyboardEvent) => void) = null;
 
 	constructor(props: Props) {
 		super(props);
@@ -103,6 +105,20 @@ export class NumberInput extends React.Component<Props, State> {
 							}
 						}}
 						style={{ width: this.props.width }}
+						onKeyDown={(e) => {
+							if (
+								isKeyCodeOf("Enter", e.keyCode) &&
+								typeof this.onEnter === "function"
+							) {
+								this.onEnter(e);
+								return;
+							}
+
+							if (isKeyCodeOf("Tab", e.keyCode) && typeof this.onTab === "function") {
+								this.onTab(e);
+								return;
+							}
+						}}
 					/>
 				</div>
 			);
@@ -178,9 +194,7 @@ export class NumberInput extends React.Component<Props, State> {
 			}
 		});
 
-		console.log("adding listener once");
 		addListener.once("mouseup", () => {
-			console.log("mouseup");
 			if (tokenMoveChangeValue) {
 				// The mouse was moved enough to trigger the mouse move value change
 				removeListener(tokenMoveChangeValue);
@@ -232,14 +246,14 @@ export class NumberInput extends React.Component<Props, State> {
 				};
 
 				let mouseDownToken: string;
-				let enterToken: string;
 				let tabToken: string;
+				let enterToken: string;
 
 				const removeAndDone = () => {
 					this.onBlurFn = null;
 					removeListener(mouseDownToken);
-					removeListener(enterToken);
 					removeListener(tabToken);
+					removeListener(enterToken);
 					onDone();
 				};
 
@@ -250,10 +264,11 @@ export class NumberInput extends React.Component<Props, State> {
 						removeAndDone();
 					}
 				});
-				enterToken = addListener.keyboardOnce("Tab", "keydown", () => {
+				tabToken = addListener.keyboardOnce("Tab", "keydown", () => {
 					removeAndDone();
 				});
-				tabToken = addListener.keyboardOnce("Enter", "keydown", () => {
+				enterToken = addListener.keyboardOnce("Enter", "keydown", () => {
+					console.log("ENTER");
 					removeAndDone();
 				});
 			}

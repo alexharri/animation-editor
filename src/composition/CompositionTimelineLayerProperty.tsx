@@ -149,10 +149,12 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 					})}
 					// onClick={timelineId ? () => this.props.setTimelineId(timelineId) : undefined}
 				>
-					{property.name}
+					{property.label}
 				</div>
 				<div className={s("value")}>
 					<NumberInput
+						min={property.min}
+						max={property.max}
 						onChange={onValueChange}
 						onChangeEnd={onValueChangeEnd}
 						value={value}

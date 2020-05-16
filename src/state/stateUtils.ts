@@ -17,7 +17,7 @@ const getCurrentStateFromApplicationState = (_state: ApplicationState): ActionSt
 	return actionState;
 };
 
-const getActionStateFromApplicationState = (_state: ApplicationState): ActionState => {
+export const getActionStateFromApplicationState = (_state: ApplicationState): ActionState => {
 	const state: any = _state;
 	const keys = Object.keys(state) as Array<keyof ApplicationState>;
 	const actionState = keys.reduce<ActionState>((obj, key) => {
