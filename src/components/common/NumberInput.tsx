@@ -125,7 +125,7 @@ export class NumberInput extends React.Component<Props, State> {
 		}
 		return (
 			<div className={s("container")} style={{ width: this.props.width }}>
-				<button className={s("button")} onMouseDown={this.onMouseDown}>
+				<button className={s("button")} onMouseDown={this.onMouseDown} tabIndex={-1}>
 					{isMixed(this.props.value) && !this.state.useState
 						? "Mixed"
 						: (this.state.useState
@@ -246,31 +246,38 @@ export class NumberInput extends React.Component<Props, State> {
 				};
 
 				let mouseDownToken: string;
-				let tabToken: string;
-				let enterToken: string;
 
 				const removeAndDone = () => {
 					this.onBlurFn = null;
+					this.onEnter = null;
+					this.onTab = null;
 					removeListener(mouseDownToken);
-					removeListener(tabToken);
-					removeListener(enterToken);
 					onDone();
 				};
 
-				this.onBlurFn = () => removeAndDone();
+				this.onBlurFn = () => {
+					removeAndDone();
+				};
+
+				this.onEnter = () => {
+					removeAndDone();
+				};
+
+				this.onTab = () => {
+					removeAndDone();
+				};
 
 				mouseDownToken = addListener.repeated("mousedown", (ev) => {
 					if (ev.target !== this.input.current) {
 						removeAndDone();
 					}
 				});
-				tabToken = addListener.keyboardOnce("Tab", "keydown", () => {
-					removeAndDone();
-				});
-				enterToken = addListener.keyboardOnce("Enter", "keydown", () => {
-					console.log("ENTER");
-					removeAndDone();
-				});
+				// tabToken = addListener.keyboardOnce("Tab", "keydown", () => {
+				// 	removeAndDone();
+				// });
+				// enterToken = addListener.keyboardOnce("Enter", "keydown", () => {
+				// 	removeAndDone();
+				// });
 			}
 		});
 	}

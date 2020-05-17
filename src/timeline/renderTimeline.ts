@@ -48,7 +48,7 @@ export const createToTimelineViewportY = (options: {
 	const keyframes = timeline.keyframes;
 
 	const paths = timelineKeyframesToPathList(keyframes);
-	const [yUpper, yLower] = timeline._yBounds || getTimelineYBoundsFromPaths(paths);
+	const [yUpper, yLower] = timeline._yBounds || getTimelineYBoundsFromPaths(timeline, paths);
 	const yUpLowDiff = yUpper - yLower;
 
 	return (value: number) => {
@@ -74,7 +74,7 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 	const keyframes = timeline.keyframes;
 
 	const paths = timelineKeyframesToPathList(keyframes);
-	const [yUpper, yLower] = timeline._yBounds || getTimelineYBoundsFromPaths(paths);
+	const [yUpper, yLower] = timeline._yBounds || getTimelineYBoundsFromPaths(timeline, paths);
 
 	ctx.clearRect(0, 0, width, height);
 

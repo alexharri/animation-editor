@@ -4,9 +4,15 @@ import { capToRange, interpolate } from "~/util/math";
 import { animate } from "~/util/animation/animate";
 import { areaActions } from "~/area/state/areaActions";
 import { compositionTimelineAreaActions } from "~/composition/timeline/compositionTimelineAreaReducer";
-import { transformGlobalToTimelineX } from "~/timeline/timelineUtils";
+import {
+	transformGlobalToTimelineX,
+	getTimelineValueAtIndex,
+	createTimelineForLayerProperty,
+} from "~/timeline/timelineUtils";
 import { Composition } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { getActionState } from "~/state/stateUtils";
+import { timelineActions } from "~/timeline/timelineActions";
 
 const ZOOM_FAC = 0.25;
 
@@ -160,5 +166,54 @@ export const compositionTimelineHandlers = {
 			addListener.once("mouseup", () => submitAction());
 		};
 		requestAction({ history: false }, fn);
+	},
+
+	onPropertyKeyframeIconMouseDown: (
+		compositionId: string,
+		propertyId: string,
+		timelineId: string,
+	) => {
+		const { compositions, timelines } = getActionState();
+		const composition = compositions.compositions[compositionId];
+		const property = compositions.properties[propertyId];
+
+		if (timelineId) {
+			// Delete timeline and make the value of the timeline at the current time
+			// the value of the property
+			const timeline = timelines[timelineId];
+			const value = getTimelineValueAtIndex(timeline, composition.frameIndex);
+
+			requestAction({ history: true }, ({ dispatch, submitAction }) => {
+				dispatch(timelineActions.removeTimeline(timelineId));
+				dispatch(compositionActions.setPropertyValue(propertyId, value));
+				dispatch(compositionActions.setPropertyTimelineId(propertyId, ""));
+				submitAction("Remove timeline from property");
+			});
+			return;
+		}
+
+		// Create timeline with a single keyframe at the current time
+		requestAction({ history: true }, ({ dispatch, submitAction }) => {
+			const timeline = createTimelineForLayerProperty(property.value, composition.frameIndex);
+			dispatch(timelineActions.setTimeline(timeline.id, timeline));
+			dispatch(compositionActions.setPropertyTimelineId(propertyId, timeline.id));
+			submitAction("Add timeline to property");
+		});
+	},
+
+	onPropertyNameMouseDown: (e: React.MouseEvent, compositionId: string, propertyId: string) => {
+		e.preventDefault();
+		requestAction({ history: true }, (params) => {
+			const { dispatch, submitAction } = params;
+
+			if (isKeyDown("Shift")) {
+				dispatch(compositionActions.togglePropertySelection(compositionId, propertyId));
+				submitAction("Toggle selection");
+			} else {
+				dispatch(compositionActions.clearPropertySelection(compositionId));
+				dispatch(compositionActions.togglePropertySelection(compositionId, propertyId));
+				submitAction("Select property");
+			}
+		});
 	},
 };

@@ -1,17 +1,21 @@
 import React, { useRef } from "react";
 import { StopwatchIcon } from "~/components/icons/StopwatchIcon";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
-import styles from "~/composition/timeline/CompositionTimelineLayerProperty.styles";
 import { CompositionLayerProperty, Composition } from "~/composition/compositionTypes";
 import { connectActionState } from "~/state/stateUtils";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
-import { isKeyDown } from "~/listener/keyboard";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { NumberInput } from "~/components/common/NumberInput";
 import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
-import { getTimelineValueAtIndex, splitKeyframesAtIndex } from "~/timeline/timelineUtils";
+import {
+	getTimelineValueAtIndex,
+	splitKeyframesAtIndex,
+	createTimelineKeyframe,
+} from "~/timeline/timelineUtils";
 import { timelineActions } from "~/timeline/timelineActions";
+import styles from "~/composition/timeline/CompositionTimelineLayerProperty.styles";
+import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -72,6 +76,18 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 				const index = composition.frameIndex;
 				const keyframes = timeline.keyframes;
 
+				if (index < keyframes[0].index) {
+					const k = createTimelineKeyframe(value, index);
+					params.dispatch(timelineActions.setKeyframe(timeline.id, k));
+					return;
+				}
+
+				if (index > keyframes[keyframes.length - 1].index) {
+					const k = createTimelineKeyframe(value, index);
+					params.dispatch(timelineActions.setKeyframe(timeline.id, k));
+					return;
+				}
+
 				for (let i = 0; i < keyframes.length; i += 1) {
 					if (keyframes[i].index > index) {
 						continue;
@@ -96,6 +112,7 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 					params.dispatch(timelineActions.setKeyframe(timeline.id, k1));
 				}
 			};
+			onValueChangeFn.current(value);
 
 			onValueChangeEndFn.current = () => {
 				paramsRef.current?.submitAction("Update value");
@@ -111,22 +128,6 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 		onValueChangeEndFn.current = null;
 	};
 
-	const onNameMouseDown = (e: React.MouseEvent) => {
-		e.preventDefault();
-		requestAction({ history: true }, (params) => {
-			const { dispatch, submitAction } = params;
-
-			if (isKeyDown("Shift")) {
-				dispatch(compositionActions.togglePropertySelection(props.compositionId, props.id));
-				submitAction("Toggle selection");
-			} else {
-				dispatch(compositionActions.clearPropertySelection(props.compositionId));
-				dispatch(compositionActions.togglePropertySelection(props.compositionId, props.id));
-				submitAction("Select property");
-			}
-		});
-	};
-
 	const value = timeline
 		? getTimelineValueAtIndex(timeline, composition.frameIndex)
 		: property.value;
@@ -136,7 +137,14 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 			<div className={s("container")}>
 				<div
 					className={s("timelineIcon", { active: !!property.timelineId })}
-					// onMouseDown={this.onStopwatchMouseDown}
+					onMouseDown={separateLeftRightMouse({
+						left: () =>
+							compositionTimelineHandlers.onPropertyKeyframeIconMouseDown(
+								props.compositionId,
+								property.id,
+								property.timelineId,
+							),
+					})}
 				>
 					<StopwatchIcon />
 				</div>
@@ -145,9 +153,13 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 						active: props.isSelected,
 					})}
 					onMouseDown={separateLeftRightMouse({
-						left: (e) => onNameMouseDown(e),
+						left: (e) =>
+							compositionTimelineHandlers.onPropertyNameMouseDown(
+								e,
+								props.compositionId,
+								property.id,
+							),
 					})}
-					// onClick={timelineId ? () => this.props.setTimelineId(timelineId) : undefined}
 				>
 					{property.label}
 				</div>

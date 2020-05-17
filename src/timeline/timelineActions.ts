@@ -1,8 +1,16 @@
 import { createAction } from "typesafe-actions";
-import { TimelineKeyframe, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
+import { TimelineKeyframe, TimelineKeyframeControlPoint, Timeline } from "~/timeline/timelineTypes";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 
 export const timelineActions = {
+	setTimeline: createAction("timeline/SET_TIMELINE", (resolve) => {
+		return (timelineId: string, timeline: Timeline) => resolve({ timelineId, timeline });
+	}),
+
+	removeTimeline: createAction("timeline/REMOVE_TIMELINE", (resolve) => {
+		return (timelineId: string) => resolve({ timelineId });
+	}),
+
 	setKeyframe: createAction("timeline/SET_KEYFRAME", (resolve) => {
 		return (timelineId: string, keyframe: TimelineKeyframe) =>
 			resolve({ timelineId, keyframe });

@@ -80,6 +80,24 @@ export const initialTimelineState: TimelineState = {
 
 export function timelineReducer(state: TimelineState, action: Action): TimelineState {
 	switch (action.type) {
+		case getType(timelineActions.setTimeline): {
+			const { timeline, timelineId } = action.payload;
+			return {
+				...state,
+				[timelineId]: timeline,
+			};
+		}
+
+		case getType(timelineActions.removeTimeline): {
+			const { timelineId } = action.payload;
+			return Object.keys(state).reduce<TimelineState>((obj, key) => {
+				if (key !== timelineId) {
+					obj[key] = state[key];
+				}
+				return obj;
+			}, {});
+		}
+
 		case getType(timelineActions.setKeyframe): {
 			const { keyframe, timelineId } = action.payload;
 

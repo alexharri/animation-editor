@@ -51,7 +51,7 @@ export default ({ css }: StyleParams) => ({
 
 		&--active {
 			svg {
-				fill: $color-primary;
+				fill: ${cssVariables.primary500};
 			}
 		}
 	`,

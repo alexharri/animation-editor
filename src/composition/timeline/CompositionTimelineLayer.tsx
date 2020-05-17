@@ -2,7 +2,7 @@ import React from "react";
 import { useStylesheet } from "~/util/stylesheets";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import styles from "~/composition/timeline/CompositionTimelineLayer.style";
-import { CompositionTimelineLayerProperty } from "~/composition/CompositionTimelineLayerProperty";
+import { CompositionTimelineLayerProperty } from "~/composition/timeline/CompositionTimelineLayerProperty";
 import { connectActionState } from "~/state/stateUtils";
 
 interface OwnProps {

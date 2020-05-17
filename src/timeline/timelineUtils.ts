@@ -125,7 +125,33 @@ export function getTimelineValueAtIndex(timeline: Timeline, index: number): numb
 	return 0 as never;
 }
 
-export const getTimelineYBoundsFromPaths = (paths: Array<CubicBezier | Line>): [number, number] => {
+export const getTimelineYBoundsFromPaths = (
+	timeline: Timeline,
+	paths: Array<CubicBezier | Line>,
+): [number, number] => {
+	if (timeline.keyframes.length === 1) {
+		const { value } = timeline.keyframes[0];
+		return [value - 50, value + 50];
+	}
+
+	let areAllSameValue = true;
+	let firstValue = paths[0][0].y;
+	{
+		i: for (let i = 0; i < paths.length; i += 1) {
+			for (let j = i === 0 ? 1 : 0; j < paths[i].length; j += 1) {
+				const { y } = paths[i][j];
+				if (y !== firstValue) {
+					areAllSameValue = false;
+					break i;
+				}
+			}
+		}
+	}
+
+	if (areAllSameValue) {
+		return [firstValue - 50, firstValue + 50];
+	}
+
 	let yUpper = -Infinity;
 	let yLower = Infinity;
 
@@ -175,7 +201,7 @@ export const transformGlobalToTimelinePosition = (
 	const yt = pos.y / viewport.height;
 
 	const paths = timelineKeyframesToPathList(timeline.keyframes);
-	const [yUp, yLow] = getTimelineYBoundsFromPaths(paths);
+	const [yUp, yLow] = getTimelineYBoundsFromPaths(timeline, paths);
 	const [xMin, xMax] = viewBounds;
 
 	const x = (xMin + (xMax - xMin) * xt) * options.length;
@@ -364,3 +390,35 @@ export function splitKeyframesAtIndex(
 		},
 	];
 }
+
+export const createTimelineKeyframe = (value: number, index: number): TimelineKeyframe => {
+	return {
+		controlPointLeft: null,
+		controlPointRight: null,
+		id: uuid(),
+		index,
+		value,
+		reflectControlPoints: false,
+	};
+};
+
+export const createTimelineForLayerProperty = (value: number, index: number): Timeline => {
+	return {
+		id: uuid(),
+		keyframes: [
+			{
+				controlPointLeft: null,
+				controlPointRight: null,
+				id: uuid(),
+				index,
+				value,
+				reflectControlPoints: false,
+			},
+		],
+		_yBounds: null,
+		_yPan: 0,
+		_indexShift: null,
+		_valueShift: null,
+		_dragSelectRect: null,
+	};
+};

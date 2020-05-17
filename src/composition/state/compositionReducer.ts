@@ -77,20 +77,29 @@ export const initialCompositionState: CompositionState = {
 };
 
 export const compositionActions = {
-	togglePropertySelection: createAction("compTimeline/TOGGLE_PROPERTY_SELECTED", (action) => {
+	togglePropertySelection: createAction("comp/TOGGLE_PROPERTY_SELECTED", (action) => {
 		return (compositionId: string, propertyId: string) => action({ compositionId, propertyId });
 	}),
 
-	clearPropertySelection: createAction("compTimeline/CLEAR_PROPERTY_SELECTED", (action) => {
+	setCompositionDimension: createAction("comp/SET_COMPOSITION_DIMENSIONS", (action) => {
+		return (compositionId: string, which: "width" | "height", value: number) =>
+			action({ compositionId, which, value });
+	}),
+
+	clearPropertySelection: createAction("comp/CLEAR_PROPERTY_SELECTED", (action) => {
 		return (compositionId: string) => action({ compositionId });
 	}),
 
-	setFrameIndex: createAction("compTimeline/SET_FRAME_INDEX", (action) => {
+	setFrameIndex: createAction("comp/SET_FRAME_INDEX", (action) => {
 		return (compositionId: string, frameIndex: number) => action({ compositionId, frameIndex });
 	}),
 
-	setPropertyValue: createAction("compTimeline/SET_PROPERTY_VALUE", (action) => {
+	setPropertyValue: createAction("comp/SET_PROPERTY_VALUE", (action) => {
 		return (propertyId: string, value: number) => action({ propertyId, value });
+	}),
+
+	setPropertyTimelineId: createAction("comp/SET_PROPERTY_TIMELINE_ID", (action) => {
+		return (propertyId: string, timelineId: string) => action({ propertyId, timelineId });
 	}),
 };
 
@@ -115,6 +124,20 @@ export const compositionReducer = (
 			};
 		}
 
+		case getType(compositionActions.setCompositionDimension): {
+			const { compositionId, which, value } = action.payload;
+			return {
+				...state,
+				compositions: {
+					...state.compositions,
+					[compositionId]: {
+						...state.compositions[compositionId],
+						[which]: value,
+					},
+				},
+			};
+		}
+
 		case getType(compositionActions.setPropertyValue): {
 			const { propertyId, value } = action.payload;
 			return {
@@ -124,6 +147,20 @@ export const compositionReducer = (
 					[propertyId]: {
 						...state.properties[propertyId],
 						value,
+					},
+				},
+			};
+		}
+
+		case getType(compositionActions.setPropertyTimelineId): {
+			const { propertyId, timelineId } = action.payload;
+			return {
+				...state,
+				properties: {
+					...state.properties,
+					[propertyId]: {
+						...state.properties[propertyId],
+						timelineId,
 					},
 				},
 			};

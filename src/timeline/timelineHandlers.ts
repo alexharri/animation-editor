@@ -103,7 +103,7 @@ const actions = {
 		}
 
 		const paths = timelineKeyframesToPathList(timeline.keyframes);
-		const yBounds = getTimelineYBoundsFromPaths(paths);
+		const yBounds = getTimelineYBoundsFromPaths(timeline, paths);
 
 		let yPan = 0;
 		let hasMoved = false;
@@ -280,7 +280,7 @@ const actions = {
 		const kDiff = k1.value - k0.value;
 
 		const paths = timelineKeyframesToPathList(timeline.keyframes);
-		const yBounds = getTimelineYBoundsFromPaths(paths);
+		const yBounds = getTimelineYBoundsFromPaths(timeline, paths);
 
 		dispatch(timelineActions.setYBounds(timeline.id, yBounds));
 		dispatch(timelineActions.setYPan(timeline.id, 0));
