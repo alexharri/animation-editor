@@ -77,6 +77,14 @@ export const initialCompositionState: CompositionState = {
 };
 
 export const compositionActions = {
+	clearCompositionSelection: createAction("comp/CLEAR_COMP_SELECTION", (action) => {
+		return (compositionId: string) => action({ compositionId });
+	}),
+
+	toggleLayerSelection: createAction("comp/TOGGLE_LAYER_SELECTED", (action) => {
+		return (compositionId: string, layerId: string) => action({ compositionId, layerId });
+	}),
+
 	togglePropertySelection: createAction("comp/TOGGLE_PROPERTY_SELECTED", (action) => {
 		return (compositionId: string, propertyId: string) => action({ compositionId, propertyId });
 	}),
@@ -84,10 +92,6 @@ export const compositionActions = {
 	setCompositionDimension: createAction("comp/SET_COMPOSITION_DIMENSIONS", (action) => {
 		return (compositionId: string, which: "width" | "height", value: number) =>
 			action({ compositionId, which, value });
-	}),
-
-	clearPropertySelection: createAction("comp/CLEAR_PROPERTY_SELECTED", (action) => {
-		return (compositionId: string) => action({ compositionId });
 	}),
 
 	setFrameIndex: createAction("comp/SET_FRAME_INDEX", (action) => {

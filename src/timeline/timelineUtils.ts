@@ -131,7 +131,7 @@ export const getTimelineYBoundsFromPaths = (
 ): [number, number] => {
 	if (timeline.keyframes.length === 1) {
 		const { value } = timeline.keyframes[0];
-		return [value - 50, value + 50];
+		return [value + 10, value - 10];
 	}
 
 	let areAllSameValue = true;
@@ -149,7 +149,7 @@ export const getTimelineYBoundsFromPaths = (
 	}
 
 	if (areAllSameValue) {
-		return [firstValue - 50, firstValue + 50];
+		return [firstValue + 10, firstValue - 10];
 	}
 
 	let yUpper = -Infinity;

@@ -201,16 +201,49 @@ export const compositionTimelineHandlers = {
 		});
 	},
 
+	onMouseDownOut: (
+		e: React.MouseEvent,
+		ref: React.RefObject<HTMLDivElement>,
+		compositionId: string,
+	) => {
+		if (e.target !== ref.current) {
+			return;
+		}
+
+		e.preventDefault();
+		requestAction({ history: true }, (params) => {
+			const { dispatch, submitAction } = params;
+			dispatch(compositionActions.clearCompositionSelection(compositionId));
+			submitAction("Clear selection");
+		});
+	},
+
+	onLayerNameMouseDown: (e: React.MouseEvent, compositionId: string, propertyId: string) => {
+		e.preventDefault();
+		requestAction({ history: true }, (params) => {
+			const { dispatch, submitAction } = params;
+
+			if (isKeyDown("Command")) {
+				dispatch(compositionActions.toggleLayerSelection(compositionId, propertyId));
+				submitAction("Toggle selection");
+			} else {
+				dispatch(compositionActions.clearCompositionSelection(compositionId));
+				dispatch(compositionActions.toggleLayerSelection(compositionId, propertyId));
+				submitAction("Select property");
+			}
+		});
+	},
+
 	onPropertyNameMouseDown: (e: React.MouseEvent, compositionId: string, propertyId: string) => {
 		e.preventDefault();
 		requestAction({ history: true }, (params) => {
 			const { dispatch, submitAction } = params;
 
-			if (isKeyDown("Shift")) {
+			if (isKeyDown("Command")) {
 				dispatch(compositionActions.togglePropertySelection(compositionId, propertyId));
 				submitAction("Toggle selection");
 			} else {
-				dispatch(compositionActions.clearPropertySelection(compositionId));
+				dispatch(compositionActions.clearCompositionSelection(compositionId));
 				dispatch(compositionActions.togglePropertySelection(compositionId, propertyId));
 				submitAction("Select property");
 			}

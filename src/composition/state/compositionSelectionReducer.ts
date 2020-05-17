@@ -5,16 +5,19 @@ import { KeySelectionMap } from "~/types";
 // Only one composition may be selected at any time.
 export interface CompositionSelectionState {
 	compositionId: string;
+	layers: KeySelectionMap;
 	properties: KeySelectionMap;
 }
 
 export const initialCompositionSelectionState: CompositionSelectionState = {
 	compositionId: "",
+	layers: {},
 	properties: {},
 };
 
 const createNewState = (compositionId: string): CompositionSelectionState => ({
 	compositionId,
+	layers: {},
 	properties: {},
 });
 
@@ -25,6 +28,36 @@ export const compositionSelectionReducer = (
 	action: Action,
 ): CompositionSelectionState => {
 	switch (action.type) {
+		case getType(compositionActions.toggleLayerSelection): {
+			const { compositionId, layerId } = action.payload;
+
+			const newState =
+				state.compositionId === compositionId
+					? { ...state }
+					: createNewState(compositionId);
+
+			if (newState.layers[layerId]) {
+				newState.layers = Object.keys(newState.layers).reduce<KeySelectionMap>(
+					(obj, key) => {
+						if (layerId !== key) {
+							obj[key] = true;
+						}
+						return obj;
+					},
+					{},
+				);
+				return newState;
+			}
+
+			return {
+				...newState,
+				layers: {
+					...newState.layers,
+					[layerId]: true,
+				},
+			};
+		}
+
 		case getType(compositionActions.togglePropertySelection): {
 			const { compositionId, propertyId } = action.payload;
 
@@ -55,7 +88,7 @@ export const compositionSelectionReducer = (
 			};
 		}
 
-		case getType(compositionActions.clearPropertySelection): {
+		case getType(compositionActions.clearCompositionSelection): {
 			const { compositionId } = action.payload;
 
 			const newState =
@@ -63,7 +96,7 @@ export const compositionSelectionReducer = (
 					? { ...state }
 					: createNewState(compositionId);
 
-			return { ...newState, properties: {} };
+			return { ...newState, properties: {}, layers: {} };
 		}
 
 		default:

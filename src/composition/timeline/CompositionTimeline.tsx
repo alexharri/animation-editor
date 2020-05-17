@@ -1,12 +1,12 @@
 import React, { useState, useRef } from "react";
 import { AreaWindowProps } from "~/types/areaTypes";
-import { useStylesheet } from "~/util/stylesheets";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { connectActionState } from "~/state/stateUtils";
 import {
 	CompositionTimelineAreaState,
 	compositionTimelineAreaActions,
 } from "~/composition/timeline/compositionTimelineAreaReducer";
-import CompositionTimelineStyles from "~/composition/timeline/CompositionTimeline.styles";
+import styles from "~/composition/timeline/CompositionTimeline.styles";
 import { Composition, CompositionLayerProperty } from "~/composition/compositionTypes";
 import { splitRect, capToRange } from "~/util/math";
 import { RequestActionCallback, requestAction } from "~/listener/requestAction";
@@ -21,6 +21,8 @@ import { createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 
+const s = compileStylesheetLabelled(styles);
+
 const SEPARATOR_WIDTH = 4;
 
 type OwnProps = AreaWindowProps<CompositionTimelineAreaState>;
@@ -33,7 +35,6 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompositionTimelineComponent: React.FC<Props> = (props) => {
-	const s = useStylesheet(CompositionTimelineStyles);
 	const { composition } = props;
 
 	const [t, setT] = useState(0.3);
@@ -98,9 +99,19 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 		}
 	}
 
+	const outRef = useRef<HTMLDivElement>(null);
+
 	return (
 		<div className={s("wrapper")}>
-			<div className={s("left")} style={viewportLeft}>
+			<div
+				className={s("left")}
+				style={viewportLeft}
+				ref={outRef}
+				onMouseDown={separateLeftRightMouse({
+					left: (e) =>
+						compositionTimelineHandlers.onMouseDownOut(e, outRef, props.composition.id),
+				})}
+			>
 				<div className={s("header")} />
 				{composition.layers.map((layerId, i) => {
 					return (
