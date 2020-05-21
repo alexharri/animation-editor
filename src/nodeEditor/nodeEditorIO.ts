@@ -1,17 +1,17 @@
-import { NodeEditorNodeType, NodeEditorValueType } from "~/types";
+import { NodeEditorNodeType, ValueType } from "~/types";
 
 export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEditorNodeInput[] => {
 	switch (type) {
 		case NodeEditorNodeType.add_vec2:
 			return [
 				{
-					type: NodeEditorValueType.Vec2,
+					type: ValueType.Vec2,
 					name: "Input Vector A",
 					value: Vec2.new(0, 0),
 					pointer: null,
 				},
 				{
-					type: NodeEditorValueType.Vec2,
+					type: ValueType.Vec2,
 					name: "Input Vector B",
 					value: Vec2.new(0, 0),
 					pointer: null,
@@ -21,7 +21,7 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 		case NodeEditorNodeType.translate_rect:
 			return [
 				{
-					type: NodeEditorValueType.Rect,
+					type: ValueType.Rect,
 					name: "Input Rect",
 					value: {
 						height: 0,
@@ -32,12 +32,18 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 					pointer: null,
 				},
 				{
-					type: NodeEditorValueType.Vec2,
+					type: ValueType.Vec2,
 					name: "Translation Vector",
 					value: Vec2.new(0, 0),
 					pointer: null,
 				},
 			];
+
+		case NodeEditorNodeType.layer_input:
+			return [];
+
+		case NodeEditorNodeType.layer_output:
+			return [];
 
 		case NodeEditorNodeType.expression:
 			return [];
@@ -55,7 +61,7 @@ export const getNodeEditorNodeDefaultOutputs = (
 			return [
 				{
 					name: "Vector",
-					type: NodeEditorValueType.Vec2,
+					type: ValueType.Vec2,
 				},
 			];
 
@@ -63,9 +69,15 @@ export const getNodeEditorNodeDefaultOutputs = (
 			return [
 				{
 					name: "Rect",
-					type: NodeEditorValueType.Rect,
+					type: ValueType.Rect,
 				},
 			];
+
+		case NodeEditorNodeType.layer_input:
+			return [];
+
+		case NodeEditorNodeType.layer_output:
+			return [];
 
 		case NodeEditorNodeType.expression:
 			return [];
@@ -83,6 +95,12 @@ export const getNodeEditorNodeDefaultState = <T extends NodeEditorNodeType>(type
 		case NodeEditorNodeType.translate_rect:
 			return {} as NodeEditorNodeStateMap[T];
 
+		case NodeEditorNodeType.layer_input:
+			return {} as NodeEditorNodeStateMap[T];
+
+		case NodeEditorNodeType.layer_output:
+			return {} as NodeEditorNodeStateMap[T];
+
 		case NodeEditorNodeType.expression:
 			return { expression: "", textareaHeight: 80 } as NodeEditorNodeStateMap["expression"];
 
@@ -95,7 +113,7 @@ export const getNodeEditorNodeDefaultState = <T extends NodeEditorNodeType>(type
 };
 
 export interface NodeEditorNodeInput<T = any> {
-	type: NodeEditorValueType;
+	type: ValueType;
 	name: string;
 	value: T;
 	pointer: {
@@ -106,13 +124,20 @@ export interface NodeEditorNodeInput<T = any> {
 
 export interface NodeEditorNodeOutput {
 	name: string;
-	type: NodeEditorValueType;
+	type: ValueType;
+}
+
+export interface NodeEditorNodeIO {
+	inputs: NodeEditorNodeInput[];
+	outputs: NodeEditorNodeOutput[];
 }
 
 type NodeEditorNodeStateMap = {
 	[NodeEditorNodeType.add_vec2]: {};
 	[NodeEditorNodeType.empty]: {};
 	[NodeEditorNodeType.translate_rect]: {};
+	[NodeEditorNodeType.layer_input]: {};
+	[NodeEditorNodeType.layer_output]: {};
 	[NodeEditorNodeType.expression]: {
 		expression: string;
 		textareaHeight: number;

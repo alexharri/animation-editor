@@ -6,7 +6,7 @@ import { areaActions } from "~/area/state/areaActions";
 import { computeAreaRowToMinSize } from "~/area/util/areaRowToMinSize";
 import { getActionState } from "~/state/stateUtils";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
-import { getAreaRootViewport } from "~/area/util/getAreaRootViewport";
+import { getAreaRootViewport } from "~/area/util/getAreaViewport";
 
 export const handleDragAreaResize = (
 	e: React.MouseEvent,
@@ -18,7 +18,11 @@ export const handleDragAreaResize = (
 		e.preventDefault();
 
 		const areaState = getActionState().area;
-		const areaToViewport = computeAreaToViewport(areaState, getAreaRootViewport());
+		const areaToViewport = computeAreaToViewport(
+			areaState.layout,
+			areaState.rootId,
+			getAreaRootViewport(),
+		);
 
 		const getMinSize = (id: string) => {
 			const layout = areaState.layout[id];
@@ -31,7 +35,7 @@ export const handleDragAreaResize = (
 			return horizontal ? minSize.width : minSize.height;
 		};
 
-		const rowToMinSize = computeAreaRowToMinSize(areaState);
+		const rowToMinSize = computeAreaRowToMinSize(areaState.rootId, areaState.layout);
 
 		const a0 = row.areas[areaIndex - 1];
 		const a1 = row.areas[areaIndex];
@@ -61,7 +65,7 @@ export const handleDragAreaResize = (
 			return;
 		}
 
-		addListener.repeated("mousemove", e => {
+		addListener.repeated("mousemove", (e) => {
 			const vec = Vec2.fromEvent(e);
 
 			const t0 = horizontal ? sharedViewport.left : sharedViewport.top;
@@ -72,9 +76,9 @@ export const handleDragAreaResize = (
 			const val = horizontal ? vec.x : vec.y;
 			const t = capToRange(tMin0, 1 - tMin1, (val - t0) / (t1 - t0));
 
-			const sizes = [t, 1 - t].map(v => interpolate(0, sizeToShare, v));
+			const sizes = [t, 1 - t].map((v) => interpolate(0, sizeToShare, v));
 
-			const rowAreas = row.areas.map(x => x.size);
+			const rowAreas = row.areas.map((x) => x.size);
 			rowAreas[areaIndex - 1] = sizes[0];
 			rowAreas[areaIndex] = sizes[1];
 

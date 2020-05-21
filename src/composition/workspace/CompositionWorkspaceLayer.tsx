@@ -1,7 +1,6 @@
 import React from "react";
 import { useActionState } from "~/hook/useActionState";
 import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
-import { CompositionLayerProperty } from "~/composition/compositionTypes";
 import { Timeline } from "~/timeline/timelineTypes";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 

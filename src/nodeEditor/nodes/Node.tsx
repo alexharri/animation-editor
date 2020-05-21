@@ -13,7 +13,6 @@ interface OwnProps {
 	areaId: string;
 	graphId: string;
 	nodeId: string;
-	viewport: Rect;
 }
 interface StateProps {
 	node: NodeEditorNode<any>;
@@ -33,14 +32,7 @@ function NodeComponent(props: Props) {
 			className={s("container", { selected })}
 			style={{ left, top, width: props.node.width }}
 			onMouseDown={separateLeftRightMouse({
-				left: (e) =>
-					nodeHandlers.mouseDown(
-						e,
-						props.areaId,
-						props.graphId,
-						props.nodeId,
-						props.viewport,
-					),
+				left: (e) => nodeHandlers.mouseDown(e, props.areaId, props.graphId, props.nodeId),
 				right: (e) => nodeHandlers.onRightClick(e, props.graphId, props.nodeId),
 			})}
 		>
@@ -60,7 +52,6 @@ function NodeComponent(props: Props) {
 									props.graphId,
 									props.nodeId,
 									i,
-									props.viewport,
 								)
 							}
 						/>
@@ -82,7 +73,6 @@ function NodeComponent(props: Props) {
 												props.graphId,
 												props.nodeId,
 												i,
-												props.viewport,
 											)
 									: (e) =>
 											nodeHandlers.onInputMouseDown(
@@ -91,7 +81,6 @@ function NodeComponent(props: Props) {
 												props.graphId,
 												props.nodeId,
 												i,
-												props.viewport,
 											),
 							})}
 						/>
@@ -108,7 +97,6 @@ function NodeComponent(props: Props) {
 							props.areaId,
 							props.graphId,
 							props.nodeId,
-							props.viewport,
 						),
 				})}
 			/>

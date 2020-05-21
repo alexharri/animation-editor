@@ -66,12 +66,11 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 		if (clickCaptureFn.fn && el) {
 			const moveListener = (e: MouseEvent) => {
 				const {
-					viewport,
 					areaState: { pan, scale },
 				} = props;
 				const pos = transformGlobalToNodeEditorPosition(
 					Vec2.fromEvent(e),
-					viewport,
+					props,
 					scale,
 					pan,
 				);
@@ -97,7 +96,7 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 						nodeEditorHandlers.onLeftClickOutside(
 							e,
 							props.areaState.graphId,
-							props.viewport,
+							props.areaId,
 							props.areaState.scale,
 							props.areaState.pan,
 						);
@@ -106,9 +105,7 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 						nodeEditorHandlers.onRightClickOutside(
 							e,
 							props.areaState.graphId,
-							props.viewport,
-							props.areaState.scale,
-							props.areaState.pan,
+							props.areaId,
 							setClickCaptureFn,
 						),
 				})}
@@ -116,12 +113,15 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 				<NodeEditorConnections
 					areaState={props.areaState}
 					graphId={props.areaState.graphId}
-					viewport={props.viewport}
+					height={props.height}
+					width={props.width}
+					left={props.left}
+					top={props.top}
 				/>
 				<div
 					style={{
-						transform: `translate(${pan.x + props.viewport.width / 2}px, ${
-							pan.y + props.viewport.height / 2
+						transform: `translate(${pan.x + props.width / 2}px, ${
+							pan.y + props.height / 2
 						}px)`,
 					}}
 				>
@@ -141,7 +141,6 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 									key={nodeId}
 									nodeId={nodeId}
 									areaId={props.areaId}
-									viewport={props.viewport}
 									graphId={props.areaState.graphId}
 								/>
 							);
@@ -150,8 +149,8 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 						{clickCapturePos && props.graph._addNodeOfTypeOnClick && (
 							<NodePreview
 								position={clickCapturePos}
-								type={props.graph._addNodeOfTypeOnClick}
-								viewport={props.viewport}
+								type={props.graph._addNodeOfTypeOnClick.type}
+								io={props.graph._addNodeOfTypeOnClick.io}
 							/>
 						)}
 					</div>
@@ -160,7 +159,10 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 			<NodeEditorDragSelect
 				areaId={props.areaId}
 				areaState={props.areaState}
-				viewport={props.viewport}
+				width={props.width}
+				height={props.height}
+				left={props.left}
+				top={props.top}
 			/>
 			<div
 				className={s("clickCaptureTarget")}
@@ -178,7 +180,7 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 				className={s("zoomTarget")}
 				ref={zoomTarget}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) => nodeEditorHandlers.onZoomClick(e, props.areaId, props.viewport),
+					left: (e) => nodeEditorHandlers.onZoomClick(e, props.areaId),
 				})}
 			/>
 		</>

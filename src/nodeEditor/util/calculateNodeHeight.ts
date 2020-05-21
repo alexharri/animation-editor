@@ -26,7 +26,6 @@ const aboveInputs: Partial<
 };
 
 export const getAboveInputs = (node: NodeEditorNode<NodeEditorNodeType>): number => {
-	console.log(node);
 	return aboveInputs[node.type]?.(node) ?? 0;
 };
 
@@ -55,7 +54,7 @@ export const calculateNodeInputY = (
 		headerHeight +
 		spacing +
 		outputs.length * outputHeight +
-		spacing +
+		(outputs.length ? spacing : 0) +
 		getAboveInputs(node) +
 		inputIndex * inputHeight +
 		inputHeight / 2
@@ -84,7 +83,7 @@ export const calculateNodeInputPosition = (
 			headerHeight +
 			spacing +
 			node.outputs.length * outputHeight +
-			spacing +
+			(node.outputs.length ? spacing : 0) +
 			getAboveInputs(node) +
 			inputIndex * inputHeight +
 			inputHeight / 2,

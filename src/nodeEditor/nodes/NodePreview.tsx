@@ -4,6 +4,7 @@ import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import {
 	getNodeEditorNodeDefaultInputs,
 	getNodeEditorNodeDefaultOutputs,
+	NodeEditorNodeIO,
 } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType } from "~/types";
 import { DEFAULT_NODE_EDITOR_NODE_WIDTH } from "~/constants";
@@ -12,19 +13,20 @@ const s = compileStylesheetLabelled(NodeStyles);
 
 interface OwnProps {
 	type: NodeEditorNodeType;
-	viewport: Rect;
+	io?: NodeEditorNodeIO;
 	position: Vec2;
 }
 
 type Props = OwnProps;
 
 export function NodePreview(props: Props) {
+	const { io } = props;
 	const { x: left, y: top } = props.position;
 
 	const type = props.type as NodeEditorNodeType.empty;
 
-	const inputs = getNodeEditorNodeDefaultInputs(type);
-	const outputs = getNodeEditorNodeDefaultOutputs(type);
+	const inputs = io?.inputs || getNodeEditorNodeDefaultInputs(type);
+	const outputs = io?.outputs || getNodeEditorNodeDefaultOutputs(type);
 
 	return (
 		<div

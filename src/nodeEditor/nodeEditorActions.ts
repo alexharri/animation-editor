@@ -4,6 +4,7 @@ import {
 	NodeEditorNodeState,
 	NodeEditorNodeInput,
 	NodeEditorNodeOutput,
+	NodeEditorNodeIO,
 } from "~/nodeEditor/nodeEditorIO";
 
 export const nodeEditorActions = {
@@ -11,7 +12,8 @@ export const nodeEditorActions = {
 	 * Add node
 	 */
 	startAddNode: createAction("nodeEditorGraph/START_ADD_NODE", (action) => {
-		return (graphId: string, type: NodeEditorNodeType) => action({ graphId, type });
+		return (graphId: string, type: NodeEditorNodeType, io?: NodeEditorNodeIO) =>
+			action({ graphId, type, io });
 	}),
 
 	submitAddNode: createAction("nodeEditorGraph/SUBMIT_ADD_NODE", (action) => {

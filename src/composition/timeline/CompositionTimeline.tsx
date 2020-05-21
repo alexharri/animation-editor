@@ -39,7 +39,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 
 	const [t, setT] = useState(0.3);
 
-	let [viewportLeft, viewportRight] = splitRect("horizontal", props.viewport, t, SEPARATOR_WIDTH);
+	let [viewportLeft, viewportRight] = splitRect("horizontal", props, t, SEPARATOR_WIDTH);
 
 	const zoomTarget = useRef<HTMLDivElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
@@ -57,11 +57,10 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 
 	const onMouseDown: RequestActionCallback = (params) => {
 		const { addListener, submitAction } = params;
-		const { viewport } = props;
 
 		addListener.repeated("mousemove", (e) => {
-			const pos = Vec2.fromEvent(e).subX(viewport.left);
-			setT(capToRange(0.1, 0.8, pos.x / viewport.width));
+			const pos = Vec2.fromEvent(e).subX(props.left);
+			setT(capToRange(0.1, 0.8, pos.x / props.width));
 		});
 
 		addListener.once("mouseup", () => {

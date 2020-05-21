@@ -8,6 +8,7 @@ import {
 	NodeEditorNodeInput,
 	NodeEditorNode,
 	getNodeEditorNodeDefaultState,
+	NodeEditorNodeIO,
 } from "~/nodeEditor/nodeEditorIO";
 import { rectsIntersect } from "~/util/math";
 import { calculateNodeHeight } from "~/nodeEditor/util/calculateNodeHeight";
@@ -24,6 +25,7 @@ type Selection = KeySelectionMap;
 
 export interface NodeEditorGraphState {
 	id: string;
+	layerId: string;
 	moveVector: Vec2;
 	nodes: {
 		[nodeId: string]: NodeEditorNode<NodeEditorNodeType>;
@@ -31,7 +33,7 @@ export interface NodeEditorGraphState {
 	selection: {
 		nodes: Selection;
 	};
-	_addNodeOfTypeOnClick: NodeEditorNodeType | null;
+	_addNodeOfTypeOnClick: { type: NodeEditorNodeType; io?: NodeEditorNodeIO } | null;
 	_dragSelectRect: Rect | null;
 	_dragOutputTo: {
 		position: Vec2;
@@ -64,6 +66,7 @@ export const initialNodeEditorState: NodeEditorState = {
 	graphs: {
 		0: {
 			id: "0",
+			layerId: "0",
 			moveVector: Vec2.new(0, 0),
 			nodes: {
 				0: {
@@ -219,14 +222,14 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 		}
 
 		case getType(actions.startAddNode): {
-			const { type } = action.payload;
-			return { ...state, _addNodeOfTypeOnClick: type };
+			const { type, io } = action.payload;
+			return { ...state, _addNodeOfTypeOnClick: { type, io } };
 		}
 
 		case getType(actions.submitAddNode): {
 			const { position } = action.payload;
 			const id = createNodeId(state.nodes);
-			const type = state._addNodeOfTypeOnClick!;
+			const { type, io } = state._addNodeOfTypeOnClick!;
 
 			return {
 				...state,
@@ -238,8 +241,8 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 						type,
 						position,
 						width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
-						inputs: getNodeEditorNodeDefaultInputs(type),
-						outputs: getNodeEditorNodeDefaultOutputs(type),
+						inputs: io?.inputs || getNodeEditorNodeDefaultInputs(type),
+						outputs: io?.outputs || getNodeEditorNodeDefaultOutputs(type),
 						state: getNodeEditorNodeDefaultState(type),
 					},
 				},

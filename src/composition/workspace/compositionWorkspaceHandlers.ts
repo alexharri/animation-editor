@@ -7,6 +7,8 @@ import {
 import { areaActions } from "~/area/state/areaActions";
 import { getAreaActionState } from "~/state/stateUtils";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
+import { getAreaViewport } from "~/area/util/getAreaViewport";
+import { AreaType } from "~/constants";
 
 const actions = {
 	zoom: (
@@ -65,10 +67,11 @@ export const compositionWorkspaceHandlers = {
 		});
 	},
 
-	onZoomClick: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
+	onZoomClick: (e: React.MouseEvent, areaId: string) => {
 		e.preventDefault();
 
 		const areaState = getAreaActionState<CompositionWorkspaceAreaState>(areaId);
+		const viewport = getAreaViewport(areaId, AreaType.CompositionWorkspace);
 
 		requestAction({}, (params) => {
 			actions.zoom(params, e, areaId, viewport, areaState.pan, areaState.scale);

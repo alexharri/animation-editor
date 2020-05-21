@@ -45,7 +45,7 @@ describe("computeAreaToViewport", () => {
 			joinPreview: null,
 		};
 
-		const result = computeAreaToViewport(areaState, {
+		const result = computeAreaToViewport(areaState.layout, areaState.rootId, {
 			left: 0,
 			top: 0,
 			width: 1000,

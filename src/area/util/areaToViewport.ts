@@ -3,10 +3,14 @@ import { AreaLayout, AreaRowLayout } from "~/types/areaTypes";
 import { AREA_MIN_CONTENT_WIDTH } from "~/constants";
 import { computeAreaRowToMinSize } from "~/area/util/areaRowToMinSize";
 
-export const computeAreaToViewport = (areaState: AreaState, rootViewport: Rect) => {
+export const computeAreaToViewport = (
+	areaLayout: AreaState["layout"],
+	rootId: string,
+	rootViewport: Rect,
+) => {
 	const areaToViewport: { [areaId: string]: Rect } = {};
 
-	const rowToMinSize = computeAreaRowToMinSize(areaState);
+	const rowToMinSize = computeAreaRowToMinSize(rootId, areaLayout);
 
 	function computeArea(area: AreaLayout, contentArea: Rect) {
 		areaToViewport[area.id] = contentArea;
@@ -31,7 +35,7 @@ export const computeAreaToViewport = (areaState: AreaState, rootViewport: Rect) 
 		const computeUnbiasedSizes = () =>
 			row.areas.map((item, i) => {
 				const t = item.size / adjustedSize;
-				const layout = areaState.layout[row.areas[i].id];
+				const layout = areaLayout[row.areas[i].id];
 				const value = adjustedArea * t;
 				return { value, index: i, layout };
 			});
@@ -49,7 +53,7 @@ export const computeAreaToViewport = (areaState: AreaState, rootViewport: Rect) 
 
 				const { index, value } = unbiasedSizes[_i];
 
-				const layout = areaState.layout[row.areas[index].id];
+				const layout = areaLayout[row.areas[index].id];
 				const n =
 					layout.type === "area"
 						? 1
@@ -122,16 +126,16 @@ export const computeAreaToViewport = (areaState: AreaState, rootViewport: Rect) 
 	}
 
 	function compute(id: string, contentArea: Rect) {
-		const layout = areaState.layout[id];
+		const layout = areaLayout[id];
 
 		if (layout.type === "area_row") {
-			computeRow(areaState.layout[id] as AreaRowLayout, contentArea);
+			computeRow(areaLayout[id] as AreaRowLayout, contentArea);
 		}
 
-		computeArea(areaState.layout[id] as AreaLayout, contentArea);
+		computeArea(areaLayout[id] as AreaLayout, contentArea);
 	}
 
-	compute(areaState.rootId, rootViewport);
+	compute(rootId, rootViewport);
 
 	return areaToViewport;
 };

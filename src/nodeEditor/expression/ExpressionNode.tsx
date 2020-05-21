@@ -15,7 +15,6 @@ interface OwnProps {
 	areaId: string;
 	graphId: string;
 	nodeId: string;
-	viewport: Rect;
 }
 interface StateProps {
 	node: NodeEditorNode<NodeEditorNodeType.expression>;
@@ -35,14 +34,7 @@ function ExpressionNodeComponent(props: Props) {
 			className={s("container", { selected })}
 			style={{ left, top, width: props.node.width }}
 			onMouseDown={separateLeftRightMouse({
-				left: (e) =>
-					nodeHandlers.mouseDown(
-						e,
-						props.areaId,
-						props.graphId,
-						props.nodeId,
-						props.viewport,
-					),
+				left: (e) => nodeHandlers.mouseDown(e, props.areaId, props.graphId, props.nodeId),
 				right: (e) => nodeHandlers.onRightClick(e, props.graphId, props.nodeId),
 			})}
 		>
@@ -62,7 +54,6 @@ function ExpressionNodeComponent(props: Props) {
 									props.graphId,
 									props.nodeId,
 									i,
-									props.viewport,
 								)
 							}
 						/>
@@ -88,7 +79,6 @@ function ExpressionNodeComponent(props: Props) {
 								props.areaId,
 								props.graphId,
 								props.nodeId,
-								props.viewport,
 							),
 					})}
 				/>
@@ -107,7 +97,6 @@ function ExpressionNodeComponent(props: Props) {
 												props.graphId,
 												props.nodeId,
 												i,
-												props.viewport,
 											)
 									: (e) =>
 											nodeHandlers.onInputMouseDown(
@@ -116,7 +105,6 @@ function ExpressionNodeComponent(props: Props) {
 												props.graphId,
 												props.nodeId,
 												i,
-												props.viewport,
 											),
 							})}
 						/>
@@ -133,7 +121,6 @@ function ExpressionNodeComponent(props: Props) {
 							props.areaId,
 							props.graphId,
 							props.nodeId,
-							props.viewport,
 						),
 				})}
 			/>

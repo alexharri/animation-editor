@@ -7,19 +7,18 @@ import { isKeyDown } from "~/listener/keyboard";
 import { isLeftClick } from "~/util/mouse";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
-import { NodeEditorNodeType } from "~/types";
-import {
-	transformGlobalToNodeEditorPosition,
-	transformGlobalToNodeEditorRect,
-} from "~/nodeEditor/nodeEditorUtils";
+import { transformGlobalToNodeEditorRect } from "~/nodeEditor/nodeEditorUtils";
 import { getDistance, rectOfTwoVecs } from "~/util/math";
 import { clearElementFocus } from "~/util/focus";
+import { getNodeEditorContextMenuOptions } from "~/nodeEditor/util/nodeEditorContextMenu";
+import { getAreaViewport } from "~/area/util/getAreaViewport";
+import { AreaType } from "~/constants";
 
 export const nodeEditorHandlers = {
 	onLeftClickOutside: (
 		e: React.MouseEvent,
 		graphId: string,
-		viewport: Rect,
+		areaId: string,
 		scale: number,
 		pan: Vec2,
 	) => {
@@ -43,6 +42,7 @@ export const nodeEditorHandlers = {
 					}
 				}
 
+				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 				const rect = transformGlobalToNodeEditorRect(
 					rectOfTwoVecs(initialMousePos, mousePos),
 					viewport,
@@ -68,74 +68,34 @@ export const nodeEditorHandlers = {
 	onRightClickOutside: (
 		e: React.MouseEvent,
 		graphId: string,
-		viewport: Rect,
-		scale: number,
-		pan: Vec2,
+		areaId: string,
 		setClickCapture: (fn: { fn: ((e: React.MouseEvent) => void) | null }) => void,
 	) => {
 		const pos = Vec2.fromEvent(e);
 		clearElementFocus();
 
-		let didAddNode = false;
+		requestAction({ history: true }, (params) => {
+			const { cancelAction, dispatch, execOnComplete } = params;
 
-		requestAction(
-			{ history: true, shouldAddToStack: () => didAddNode },
-			({ cancelAction, dispatch, submitAction, execOnComplete }) => {
-				// Cleanup click capture on completion
-				execOnComplete(() => setClickCapture({ fn: null }));
+			// Cleanup click capture on completion
+			execOnComplete(() => setClickCapture({ fn: null }));
 
-				const onAddSelect = (type: NodeEditorNodeType) => {
-					didAddNode = true;
-
-					dispatch(nodeEditorActions.startAddNode(graphId, type));
-					dispatch(contextMenuActions.closeContextMenu());
-					const fn = (e: React.MouseEvent) => {
-						if (!e) {
-							return;
-						}
-						const pos = transformGlobalToNodeEditorPosition(
-							Vec2.fromEvent(e),
-							viewport,
-							scale,
-							pan,
-						);
-						dispatch(nodeEditorActions.submitAddNode(graphId, pos));
-						submitAction("Add node");
-					};
-					setClickCapture({ fn });
-				};
-
-				const createAddNodeOption = (type: NodeEditorNodeType, label: string) => ({
-					label,
-					onSelect: () => onAddSelect(type),
-				});
-
-				dispatch(
-					contextMenuActions.openContextMenu(
-						"Node Editor",
-						[
-							{
-								label: "Vec2",
-								options: [createAddNodeOption(NodeEditorNodeType.add_vec2, "Add")],
-								default: true,
-							},
-							{
-								label: "Math",
-								options: [
-									createAddNodeOption(
-										NodeEditorNodeType.expression,
-										"Expression",
-									),
-								],
-								default: true,
-							},
-						],
-						pos,
-						cancelAction,
-					),
-				);
-			},
-		);
+			const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
+			dispatch(
+				contextMenuActions.openContextMenu(
+					"Node Editor",
+					getNodeEditorContextMenuOptions({
+						params,
+						graphId,
+						areaId,
+						viewport,
+						setClickCapture,
+					}),
+					pos,
+					cancelAction,
+				),
+			);
+		});
 	},
 
 	onPanStart: (areaId: string, e: React.MouseEvent) => {
@@ -156,7 +116,7 @@ export const nodeEditorHandlers = {
 		});
 	},
 
-	onZoomClick: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
+	onZoomClick: (e: React.MouseEvent, areaId: string) => {
 		e.preventDefault();
 
 		if (!isLeftClick(e)) {
@@ -173,6 +133,7 @@ export const nodeEditorHandlers = {
 		}
 
 		requestAction({}, ({ dispatch, submitAction }) => {
+			const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 			const fac = isKeyDown("Alt") ? 0.5 : 2;
 
 			const pos = Vec2.fromEvent(e)

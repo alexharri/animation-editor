@@ -83,8 +83,8 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 			<div className={s("container")}>
 				<div
 					style={{
-						transform: `translate(${pan.x + props.viewport.width / 2}px, ${
-							pan.y + props.viewport.height / 2
+						transform: `translate(${pan.x + props.width / 2}px, ${
+							pan.y + props.height / 2
 						}px)`,
 					}}
 				>
@@ -106,12 +106,7 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 					className={s("zoomTarget")}
 					ref={zoomTarget}
 					onMouseDown={separateLeftRightMouse({
-						left: (e) =>
-							compositionWorkspaceHandlers.onZoomClick(
-								e,
-								props.areaId,
-								props.viewport,
-							),
+						left: (e) => compositionWorkspaceHandlers.onZoomClick(e, props.areaId),
 					})}
 				/>
 			</div>

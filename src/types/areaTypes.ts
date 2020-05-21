@@ -13,7 +13,10 @@ export type AreaRowLayout = {
 export type AreaLayoutType = AreaLayout["type"] | AreaRowLayout["type"];
 
 export interface AreaWindowProps<T> {
-	viewport: Rect;
+	width: number;
+	height: number;
+	left: number;
+	top: number;
 	areaState: T;
 	areaId: string;
 }

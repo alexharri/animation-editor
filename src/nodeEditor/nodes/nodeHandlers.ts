@@ -12,7 +12,8 @@ import {
 } from "~/nodeEditor/util/calculateNodeHeight";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { clearElementFocus } from "~/util/focus";
-import { NODE_EDITOR_MIN_NODE_WIDTH } from "~/constants";
+import { NODE_EDITOR_MIN_NODE_WIDTH, AreaType } from "~/constants";
+import { getAreaViewport } from "~/area/util/getAreaViewport";
 
 const getAllInputsOfType = (graph: NodeEditorGraphState, nodeId: string, outputIndex: number) => {
 	const allNodeInputsOfType: Array<{
@@ -94,13 +95,7 @@ export const nodeHandlers = {
 		});
 	},
 
-	mouseDown: (
-		e: React.MouseEvent,
-		areaId: string,
-		graphId: string,
-		nodeId: string,
-		viewport: Rect,
-	) => {
+	mouseDown: (e: React.MouseEvent, areaId: string, graphId: string, nodeId: string) => {
 		e.preventDefault();
 		clearElementFocus();
 
@@ -141,6 +136,7 @@ export const nodeHandlers = {
 
 				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 
+				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 				const transformMousePosition = (mousePosition: Vec2) =>
 					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 
@@ -198,7 +194,6 @@ export const nodeHandlers = {
 		graphId: string,
 		nodeId: string,
 		outputIndex: number,
-		viewport: Rect,
 	) => {
 		requestAction(
 			{ history: true },
@@ -206,6 +201,7 @@ export const nodeHandlers = {
 				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 				const graph = getActionState().nodeEditor.graphs[graphId];
 
+				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 				const transformMousePosition = (mousePosition: Vec2) =>
 					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 
@@ -263,7 +259,6 @@ export const nodeHandlers = {
 		graphId: string,
 		nodeId: string,
 		inputIndex: number,
-		viewport: Rect,
 	) => {
 		const cb: RequestActionCallback = ({
 			dispatch,
@@ -274,6 +269,7 @@ export const nodeHandlers = {
 			const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 			const graph = getActionState().nodeEditor.graphs[graphId];
 
+			const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 			const transformMousePosition = (mousePosition: Vec2) =>
 				transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 
@@ -331,7 +327,6 @@ export const nodeHandlers = {
 		graphId: string,
 		nodeId: string,
 		inputIndex: number,
-		viewport: Rect,
 	) => {
 		const cb: RequestActionCallback = ({
 			dispatch,
@@ -342,6 +337,7 @@ export const nodeHandlers = {
 			const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 			const graph = getActionState().nodeEditor.graphs[graphId];
 
+			const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 			const transformMousePosition = (mousePosition: Vec2) =>
 				transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 
@@ -420,7 +416,6 @@ export const nodeHandlers = {
 		areaId: string,
 		graphId: string,
 		nodeId: string,
-		viewport: Rect,
 	) => {
 		e.preventDefault();
 		requestAction(
@@ -428,6 +423,7 @@ export const nodeHandlers = {
 			({ submitAction, cancelAction, dispatch, addListener }) => {
 				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 
+				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 				const transformMousePosition = (mousePosition: Vec2) =>
 					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 

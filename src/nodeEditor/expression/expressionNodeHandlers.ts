@@ -2,12 +2,13 @@ import { requestAction } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { getExpressionUpdateIO } from "~/nodeEditor/expression/expressionUtils";
-import { NodeEditorValueType } from "~/types";
+import { ValueType } from "~/types";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { getDistance } from "~/util/math";
-import { NODE_EDITOR_EXPRESSION_NODE_MIN_TEXTAREA_HEIGHT } from "~/constants";
+import { NODE_EDITOR_EXPRESSION_NODE_MIN_TEXTAREA_HEIGHT, AreaType } from "~/constants";
 import { NODE_HEIGHT_CONSTANTS } from "~/nodeEditor/util/calculateNodeHeight";
+import { getAreaViewport } from "~/area/util/getAreaViewport";
 
 export const expressionNodeHandlers = {
 	onBlur: (e: React.FocusEvent<HTMLTextAreaElement>, graphId: string, nodeId: string) => {
@@ -39,7 +40,7 @@ export const expressionNodeHandlers = {
 					nodeEditorActions.addNodeInput(graphId, nodeId, {
 						name: input,
 						pointer: null,
-						type: NodeEditorValueType.Any,
+						type: ValueType.Any,
 						value: 0,
 					}),
 				);
@@ -48,7 +49,7 @@ export const expressionNodeHandlers = {
 				params.dispatch(
 					nodeEditorActions.addNodeOutput(graphId, nodeId, {
 						name: output,
-						type: NodeEditorValueType.Any,
+						type: ValueType.Any,
 					}),
 				);
 			});
@@ -62,7 +63,6 @@ export const expressionNodeHandlers = {
 		areaId: string,
 		graphId: string,
 		nodeId: string,
-		viewport: Rect,
 	) => {
 		e.preventDefault();
 		requestAction(
@@ -70,6 +70,7 @@ export const expressionNodeHandlers = {
 			({ submitAction, cancelAction, dispatch, addListener }) => {
 				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
 
+				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 				const transformMousePosition = (mousePosition: Vec2) =>
 					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 

@@ -1,3 +1,5 @@
+import { ValueType } from "~/types";
+
 export interface Composition {
 	id: string;
 	layers: string[];
@@ -20,7 +22,7 @@ export interface CompositionLayerProperty {
 	id: string;
 	label: string;
 	name: string;
-	type: "number";
+	type: ValueType;
 	value: number;
 	timelineId: string;
 	color?: string;

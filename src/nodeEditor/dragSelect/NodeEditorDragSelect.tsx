@@ -41,7 +41,7 @@ const NodeEditorDragSelectComponent: React.FC<Props> = (props) => {
 	const vec = Vec2.new(rect.left, rect.top)
 		.scale(props.areaState.scale)
 		.add(props.areaState.pan)
-		.add(Vec2.new(props.viewport.width / 2, props.viewport.height / 2));
+		.add(Vec2.new(props.width / 2, props.height / 2));
 	const width = rect.width / props.areaState.scale;
 	const height = rect.height / props.areaState.scale;
 

@@ -12,16 +12,11 @@ type Props = OwnProps;
 const VectorEditorComponent: React.FC<Props> = (props) => {
 	const canvas = useRef<HTMLCanvasElement>(null);
 
-	const { viewport } = props;
+	const { width, height } = props;
 
 	return (
 		<>
-			<canvas
-				width={viewport.width}
-				height={viewport.height}
-				ref={canvas}
-				className={s("canvas")}
-			/>
+			<canvas width={width} height={height} ref={canvas} className={s("canvas")} />
 		</>
 	);
 };

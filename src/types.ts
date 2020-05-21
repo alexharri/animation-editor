@@ -8,9 +8,12 @@ export enum NodeEditorNodeType {
 	add_vec2 = "add_vec2",
 	translate_rect = "translate_rect",
 	expression = "expression",
+	layer_output = "layer_output",
+	layer_input = "layer_input",
 }
 
-export enum NodeEditorValueType {
+export enum ValueType {
+	Number,
 	Vec2,
 	Rect,
 	Any,

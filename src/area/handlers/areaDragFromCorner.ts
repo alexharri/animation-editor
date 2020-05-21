@@ -9,7 +9,7 @@ import { AreaRowLayout } from "~/types/areaTypes";
 import { AreaState } from "~/area/state/areaReducer";
 import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
-import { getAreaRootViewport } from "~/area/util/getAreaRootViewport";
+import { getAreaRootViewport } from "~/area/util/getAreaViewport";
 
 const directionVectors = {
 	n: { x: 0, y: 1 },
@@ -26,7 +26,7 @@ const oppositeDirectionVectors = {
 };
 
 const getEligibleAreaIndices = (areaState: AreaState, row: AreaRowLayout, index: number) => {
-	return [index - 1, index + 1].filter(i => {
+	return [index - 1, index + 1].filter((i) => {
 		if (i < 0 || i > row.areas.length - 1) {
 			return false;
 		}
@@ -56,7 +56,11 @@ export const handleAreaDragFromCorner = (
 
 		const areaState = getActionState().area;
 		const areaToRow = computeAreaToParentRow(areaState);
-		const areaToViewport = computeAreaToViewport(areaState, getAreaRootViewport());
+		const areaToViewport = computeAreaToViewport(
+			areaState.layout,
+			areaState.rootId,
+			getAreaRootViewport(),
+		);
 
 		// Row does not exist if the area we are operating on is the root area
 		const row = areaState.layout[areaToRow[areaId]] as AreaRowLayout | null;
@@ -96,7 +100,7 @@ export const handleAreaDragFromCorner = (
 			//
 			if (!row || (row.orientation === "horizontal") !== horizontal) {
 				dispatch(areaActions.convertAreaToRow(areaId, directionParts, horizontal));
-				onMoveFn = vec => {
+				onMoveFn = (vec) => {
 					const t = getT(vec);
 					dispatch(areaActions.setRowSizes(areaId, [t, 1 - t]));
 				};
@@ -111,7 +115,7 @@ export const handleAreaDragFromCorner = (
 			//		2.	OR the mouse moved vertically and one of the 'n' (north) corners
 			//			was clicked.
 
-			const areaIndex = row.areas.map(x => x.id).indexOf(areaId);
+			const areaIndex = row.areas.map((x) => x.id).indexOf(areaId);
 			const insertIndex =
 				areaIndex + (directionParts.indexOf(horizontal ? "w" : "n") !== -1 ? 0 : 1);
 
@@ -121,10 +125,10 @@ export const handleAreaDragFromCorner = (
 			// before the action.
 			const sizeToShare = row.areas[areaIndex].size;
 
-			onMoveFn = vec => {
+			onMoveFn = (vec) => {
 				const t = getT(vec);
-				const sizes = [t, 1 - t].map(v => interpolate(0, sizeToShare, v));
-				const rowAreas = row.areas.map(x => x.size);
+				const sizes = [t, 1 - t].map((v) => interpolate(0, sizeToShare, v));
+				const rowAreas = row.areas.map((x) => x.size);
 				rowAreas.splice(insertIndex, 0, 0);
 				rowAreas[areaIndex] = sizes[0];
 				rowAreas[areaIndex + 1] = sizes[1];
@@ -137,11 +141,11 @@ export const handleAreaDragFromCorner = (
 				throw new Error("Expected row to be valid.");
 			}
 
-			let areaIndex = row.areas.map(x => x.id).indexOf(areaId);
+			let areaIndex = row.areas.map((x) => x.id).indexOf(areaId);
 			let eligibleAreaIndices = getEligibleAreaIndices(areaState, row, areaIndex);
 
 			const getEligibleAreaIds = (eligibleAreaIndices: number[]) =>
-				eligibleAreaIndices.map(i => row.areas[i].id);
+				eligibleAreaIndices.map((i) => row.areas[i].id);
 
 			dispatch(
 				areaActions.setJoinAreasPreview(
@@ -153,7 +157,7 @@ export const handleAreaDragFromCorner = (
 
 			let lastMousePosition: Vec2;
 
-			onMoveFn = vec => {
+			onMoveFn = (vec) => {
 				lastMousePosition = vec;
 
 				for (let i = 0; i < eligibleAreaIndices.length; i += 1) {
@@ -196,7 +200,7 @@ export const handleAreaDragFromCorner = (
 
 		const initialMousePosition = Vec2.fromEvent(e);
 
-		addListener.repeated("mousemove", e => {
+		addListener.repeated("mousemove", (e) => {
 			const vec = Vec2.fromEvent(e);
 
 			if (onMoveFn) {

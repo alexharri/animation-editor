@@ -45,7 +45,7 @@ describe("computeAreaRowToMinSize", () => {
 			joinPreview: null,
 		};
 
-		const result = computeAreaRowToMinSize(areaState);
+		const result = computeAreaRowToMinSize(areaState.rootId, areaState.layout);
 
 		expect(result["0"].height).toEqual(3);
 		expect(result["0"].width).toEqual(3);

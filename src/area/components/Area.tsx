@@ -112,13 +112,6 @@ const AreaComponent: React.FC<Props> = (props) => {
 		});
 	};
 
-	const componentViewport: Rect = {
-		left: viewport.left + AREA_BORDER_WIDTH,
-		top: viewport.top + AREA_BORDER_WIDTH,
-		width: viewport.width - AREA_BORDER_WIDTH * 2,
-		height: viewport.height - AREA_BORDER_WIDTH * 2,
-	};
-
 	return (
 		<div data-areaid={id} className={s("area", { raised })} style={viewport}>
 			{["ne", "nw", "se", "sw"].map((dir) => (
@@ -132,7 +125,14 @@ const AreaComponent: React.FC<Props> = (props) => {
 				<Icon />
 			</button>
 			<div className={s("area__content")}>
-				<Component areaId={props.id} viewport={componentViewport} areaState={props.state} />
+				<Component
+					areaId={props.id}
+					areaState={props.state}
+					left={viewport.left + AREA_BORDER_WIDTH}
+					top={viewport.top + AREA_BORDER_WIDTH}
+					width={viewport.width - AREA_BORDER_WIDTH * 2}
+					height={viewport.height - AREA_BORDER_WIDTH * 2}
+				/>
 			</div>
 		</div>
 	);

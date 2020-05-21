@@ -10,8 +10,11 @@ import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 
 interface OwnProps {
 	graphId: string;
-	viewport: Rect;
 	areaState: NodeEditorAreaState;
+	width: number;
+	height: number;
+	left: number;
+	top: number;
 }
 interface StateProps {
 	graph: NodeEditorGraphState;
@@ -22,9 +25,9 @@ class NodeEditorConnectionsComponent extends React.Component<Props> {
 	public render() {
 		const { props } = this;
 
-		const { areaState, viewport, graph } = props;
+		const { areaState, graph, width, height, left, top } = props;
 		const { pan, scale } = areaState;
-		const opts = { viewport, pan, scale };
+		const opts = { viewport: { width, height, left, top }, pan, scale };
 
 		const lines: React.ReactNode[] = [];
 
@@ -132,8 +135,8 @@ class NodeEditorConnectionsComponent extends React.Component<Props> {
 
 		return (
 			<svg
-				width={viewport.width}
-				height={viewport.height}
+				width={props.width}
+				height={props.height}
 				style={{ zIndex: 45, position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
 			>
 				{lines}
