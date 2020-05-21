@@ -23,6 +23,7 @@ export interface CompositionLayerProperty {
 	type: "number";
 	value: number;
 	timelineId: string;
+	color?: string;
 	min?: number;
 	max?: number;
 }

@@ -33,7 +33,7 @@ export const getControlPointAsVector = (
 };
 import { TimelineKeyframe, Timeline } from "~/timeline/timelineTypes";
 import { interpolate } from "~/util/math";
-import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
 import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
@@ -126,11 +126,11 @@ export function getTimelineValueAtIndex(timeline: Timeline, index: number): numb
 }
 
 export const getTimelineYBoundsFromPaths = (
-	timeline: Timeline,
+	timelines: Timeline[],
 	paths: Array<CubicBezier | Line>,
 ): [number, number] => {
-	if (timeline.keyframes.length === 1) {
-		const { value } = timeline.keyframes[0];
+	if (timelines.length === 1 && timelines[0].keyframes.length === 1) {
+		const { value } = timelines[0].keyframes[0];
 		return [value + 10, value - 10];
 	}
 
@@ -188,20 +188,25 @@ export const transformGlobalToTimelinePosition = (
 	vec: Vec2,
 	options: {
 		length: number;
-		timeline: Timeline;
+		timelines: Timeline[];
 		viewBounds: [number, number];
 		viewport: Rect;
 	},
 ): Vec2 => {
-	const { timeline, viewBounds, viewport } = options;
+	const { timelines, viewBounds, viewport } = options;
 
 	let pos = vec.subY(viewport.top).subX(viewport.left);
 
 	const xt = pos.x / viewport.width;
 	const yt = pos.y / viewport.height;
 
-	const paths = timelineKeyframesToPathList(timeline.keyframes);
-	const [yUp, yLow] = getTimelineYBoundsFromPaths(timeline, paths);
+	const paths: Array<CubicBezier | Line> = [];
+
+	for (let i = 0; i < timelines.length; i += 1) {
+		paths.push(...timelineKeyframesToPathList(timelines[i].keyframes));
+	}
+
+	const [yUp, yLow] = getTimelineYBoundsFromPaths(timelines, paths);
 	const [xMin, xMax] = viewBounds;
 
 	const x = (xMin + (xMax - xMin) * xt) * options.length;
@@ -215,11 +220,11 @@ export const transformGlobalToTimelinePosition = (
 
 export const applyTimelineIndexAndValueShifts = (
 	timeline: Timeline,
-	selection: TimelineSelectionState,
+	selection: TimelineSelection | undefined,
 ): Timeline => {
 	const { _indexShift, _valueShift } = timeline;
 
-	if (typeof _indexShift !== "number" || typeof _valueShift !== "number") {
+	if (!selection || typeof _indexShift !== "number" || typeof _valueShift !== "number") {
 		return timeline;
 	}
 
@@ -292,12 +297,9 @@ export const generateTimelineTicksFromBounds = ([a, b]: [number, number]) => {
 	return ticks.map((tick) => Number(tick.toFixed(10)));
 };
 
-export function getTimelineSelection(timelineId: string): TimelineSelectionState {
+export function getTimelineSelection(timelineId: string): TimelineSelection {
 	const selection = getActionState().timelineSelection;
-	if (selection.timelineId !== timelineId) {
-		return { timelineId, keyframes: {}, _dragSelectRect: null };
-	}
-	return selection;
+	return selection[timelineId] || { timelineId, keyframes: {} };
 }
 
 export function splitKeyframesAtIndex(

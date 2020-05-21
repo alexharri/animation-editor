@@ -13,7 +13,6 @@ import {
 	getDistance,
 	getAngleRadians,
 	rotateVec2CCW,
-	rectOfTwoVecs,
 } from "~/util/math";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { timelineActions } from "~/timeline/timelineActions";
@@ -29,65 +28,72 @@ const actions = {
 		e: React.MouseEvent,
 		options: {
 			length: number;
-			timeline: Timeline;
+			timelines: Timeline[];
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	) => {
-		const { timeline } = options;
+		const { timelines } = options;
 
 		e.preventDefault();
 
-		requestAction({ history: true }, ({ addListener, dispatch, submitAction }) => {
-			const initialMousePos = Vec2.fromEvent(e);
+		requestAction(
+			{ history: true },
+			({ addListener, dispatch, cancelAction, submitAction }) => {
+				const initialMousePos = Vec2.fromEvent(e);
 
-			let hasMoved = false;
+				let hasMoved = false;
 
-			addListener.repeated("mousemove", (e) => {
-				const mousePos = Vec2.fromEvent(e);
-				if (!hasMoved) {
-					// We don't consider the mouse to be "moved" until the mouse has moved at least
-					// 5px from where it was initially.
-					if (getDistance(initialMousePos, mousePos) > 5) {
-						hasMoved = true;
-					} else {
-						return;
+				addListener.repeated("mousemove", (e) => {
+					const mousePos = Vec2.fromEvent(e);
+					if (!hasMoved) {
+						// We don't consider the mouse to be "moved" until the mouse has moved at least
+						// 5px from where it was initially.
+						if (getDistance(initialMousePos, mousePos) > 5) {
+							hasMoved = true;
+						} else {
+							return;
+						}
 					}
-				}
 
-				const p0 = transformGlobalToTimelinePosition(initialMousePos, options);
-				const p1 = transformGlobalToTimelinePosition(mousePos, options);
-				const rect = rectOfTwoVecs(p0, p1);
-				dispatch(timelineActions.setDragSelectRect(timeline.id, rect));
-			});
+					// const p0 = transformGlobalToTimelinePosition(initialMousePos, options);
+					// const p1 = transformGlobalToTimelinePosition(mousePos, options);
+					// const rect = rectOfTwoVecs(p0, p1);
+					// dispatch(timelineActions.setDragSelectRect(timeline.id, rect));
+				});
 
-			addListener.once("mouseup", () => {
-				if (hasMoved) {
-					const isAdditiveSelection = isKeyDown("Shift");
-					dispatch(
-						timelineActions.submitDragSelectRect(timeline.id, isAdditiveSelection),
-					);
-					submitAction("Modify selection");
-				} else {
-					dispatch(timelineActions.clearSelection(timeline.id));
-					submitAction("Modify selection");
-				}
-			});
-		});
+				addListener.once("mouseup", () => {
+					if (hasMoved) {
+						// const isAdditiveSelection = isKeyDown("Shift");
+						// dispatch(
+						// 	timelineActions.submitDragSelectRect(timeline.id, isAdditiveSelection),
+						// );
+						// submitAction("Modify selection");
+						cancelAction();
+					} else {
+						timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
+						submitAction("Modify selection");
+					}
+				});
+			},
+		);
 	},
 
 	keyframeMouseDown: (
 		{ dispatch, addListener, submitAction }: RequestActionParams,
 		initialMousePos: Vec2,
+		timelineIndex: number,
 		index: number,
 		options: {
 			length: number;
-			timeline: Timeline;
+			timelines: Timeline[];
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	) => {
-		const { timeline, viewport } = options;
+		const { timelines, viewport } = options;
+		const timeline = timelines[timelineIndex];
+
 		const selection = getTimelineSelection(timeline.id);
 		const keyframe = timeline.keyframes[index];
 
@@ -96,14 +102,17 @@ const actions = {
 		if (shiftKeyDownAtMouseDown) {
 			dispatch(timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id));
 		} else if (!selection.keyframes[keyframe.id]) {
-			// If the current node is not selected, we clear the node selectction state
-			// and add the clicked node to the selection.
-			dispatch(timelineActions.clearSelection(timeline.id));
+			// If the current node is not selected, we clear the selections of all timelines
+			// we are operating on.
+			timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
 			dispatch(timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id));
 		}
 
-		const paths = timelineKeyframesToPathList(timeline.keyframes);
-		const yBounds = getTimelineYBoundsFromPaths(timeline, paths);
+		const paths = timelines.reduce<Array<CubicBezier | Line>>((arr, timeline) => {
+			arr.push(...timelineKeyframesToPathList(timeline.keyframes));
+			return arr;
+		}, []);
+		const yBounds = getTimelineYBoundsFromPaths(timelines, paths);
 
 		let yPan = 0;
 		let hasMoved = false;
@@ -115,8 +124,11 @@ const actions = {
 		addListener.repeated("mousemove", (e) => {
 			if (!hasMoved) {
 				hasMoved = true;
-				dispatch(timelineActions.setYBounds(timeline.id, yBounds));
-				dispatch(timelineActions.setYPan(timeline.id, 0));
+
+				timelines.forEach(({ id }) => {
+					dispatch(timelineActions.setYBounds(id, yBounds));
+					dispatch(timelineActions.setYPan(id, 0));
+				});
 			}
 
 			mousePos = Vec2.fromEvent(e);
@@ -148,11 +160,13 @@ const actions = {
 			if (yLower) {
 				shouldAlwaysUpdate = true;
 				yPan -= yLower * boundsDiff * PAN_FAC;
-				dispatch(timelineActions.setYPan(timeline.id, yPan));
 			} else if (yUpper) {
 				shouldAlwaysUpdate = true;
 				yPan += yUpper * boundsDiff * PAN_FAC;
-				dispatch(timelineActions.setYPan(timeline.id, yPan));
+			}
+
+			if (yLower || yUpper) {
+				timelines.forEach(({ id }) => dispatch(timelineActions.setYPan(id, yPan)));
 			}
 
 			if (shouldAlwaysUpdate || lastUsedMousePos !== mousePos) {
@@ -172,11 +186,13 @@ const actions = {
 
 				moveVector = moveVector.sub(initialMousePos);
 
-				dispatch(
-					timelineActions.setIndexAndValueShift(
-						timeline.id,
-						Math.round(moveVector.x),
-						moveVector.y,
+				timelines.forEach(({ id }) =>
+					dispatch(
+						timelineActions.setIndexAndValueShift(
+							id,
+							Math.round(moveVector.x),
+							moveVector.y,
+						),
 					),
 				);
 			}
@@ -191,31 +207,31 @@ const actions = {
 				return;
 			}
 
-			dispatch(timelineActions.setYBounds(timeline.id, null));
-			dispatch(timelineActions.setYPan(timeline.id, 0));
-			dispatch(
-				timelineActions.submitIndexAndValueShift(
-					timeline.id,
-					getTimelineSelection(timeline.id),
-				),
-			);
+			timelines.forEach(({ id }) => {
+				dispatch(timelineActions.setYBounds(id, null));
+				dispatch(timelineActions.setYPan(id, 0));
+				dispatch(timelineActions.submitIndexAndValueShift(id, getTimelineSelection(id)));
+			});
 			submitAction("Move selected keyframes");
 		});
 	},
 
 	keyframeAltMouseDown: (
 		params: RequestActionParams,
+		timelineIndex: number,
 		index: number,
 		initialPos: Vec2,
 		options: {
 			length: number;
-			timeline: Timeline;
+			timelines: Timeline[];
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	) => {
-		const { timeline } = options;
+		const { timelines } = options;
 		const { dispatch, addListener, removeListener, submitAction } = params;
+
+		const timeline = timelines[timelineIndex];
 
 		let upToken: string;
 		const moveToken = addListener.repeated("mousemove", (e) => {
@@ -225,6 +241,7 @@ const actions = {
 				removeListener(upToken);
 				actions.controlPointMouseDown(
 					params,
+					timelineIndex,
 					index,
 					mousePos.x < initialPos.x ? "left" : "right",
 					{
@@ -245,18 +262,21 @@ const actions = {
 
 	controlPointMouseDown: (
 		{ addListener, dispatch, cancelAction, submitAction }: RequestActionParams,
+		timelineIndex: number,
 		index: number,
 		direction: "left" | "right",
 		options: {
 			reflect?: boolean;
 			reflectLength?: boolean;
 			length: number;
-			timeline: Timeline;
+			timelines: Timeline[];
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	) => {
-		const { timeline, viewport, viewBounds, reflectLength = false } = options;
+		const { timelines, viewport, viewBounds, reflectLength = false } = options;
+
+		const timeline = timelines[timelineIndex];
 
 		let reflect = options.reflect;
 
@@ -279,11 +299,18 @@ const actions = {
 		const dist = k1.index - k0.index;
 		const kDiff = k1.value - k0.value;
 
-		const paths = timelineKeyframesToPathList(timeline.keyframes);
-		const yBounds = getTimelineYBoundsFromPaths(timeline, paths);
+		const paths = timelines.reduce<Array<CubicBezier | Line>>((arr, timeline) => {
+			arr.push(...timelineKeyframesToPathList(timeline.keyframes));
+			return arr;
+		}, []);
+		const yBounds = getTimelineYBoundsFromPaths(timelines, paths);
 
-		dispatch(timelineActions.setYBounds(timeline.id, yBounds));
-		dispatch(timelineActions.setYPan(timeline.id, 0));
+		// Set bounds for all timelines
+		timelines.forEach(({ id }) => {
+			dispatch(timelineActions.setYBounds(id, yBounds));
+			dispatch(timelineActions.setYPan(id, 0));
+		});
+
 		dispatch(timelineActions.setKeyframeReflectControlPoints(timeline.id, index, reflect));
 
 		const setControlPoint = (dir: "left" | "right", cp: TimelineKeyframeControlPoint) => {
@@ -327,11 +354,13 @@ const actions = {
 			if (yLower) {
 				shouldAlwaysUpdate = true;
 				yPan -= yLower * boundsDiff * PAN_FAC;
-				dispatch(timelineActions.setYPan(timeline.id, yPan));
 			} else if (yUpper) {
 				shouldAlwaysUpdate = true;
 				yPan += yUpper * boundsDiff * PAN_FAC;
-				dispatch(timelineActions.setYPan(timeline.id, yPan));
+			}
+
+			if (yLower || yUpper) {
+				timelines.forEach(({ id }) => dispatch(timelineActions.setYPan(id, yPan)));
 			}
 
 			if (!shouldAlwaysUpdate && lastUsedMousePos === mousePos) {
@@ -373,9 +402,11 @@ const actions = {
 			const _k1 = timeline.keyframes[index + (right ? -1 : 0) + 1];
 			const _dist = _k1.index - _k0.index;
 
+			const timelineActionState = getActionState().timelines;
+
 			const renderOptions = {
 				length: options.length,
-				timeline: getActionState().timelines[timeline.id],
+				timelines: timelines.map(({ id }) => timelineActionState[id]),
 				height: viewport.height,
 				width: viewport.width,
 				viewBounds,
@@ -446,8 +477,10 @@ const actions = {
 
 		addListener.once("mouseup", () => {
 			hasSubmitted = true;
-			dispatch(timelineActions.setYBounds(timeline.id, null));
-			dispatch(timelineActions.setYPan(timeline.id, 0));
+			timelines.forEach(({ id }) => {
+				dispatch(timelineActions.setYBounds(id, null));
+				dispatch(timelineActions.setYPan(id, 0));
+			});
 
 			if (!hasMoved) {
 				if (!altDownAtMouseDown) {
@@ -472,12 +505,12 @@ export const timelineHandlers = {
 		e: React.MouseEvent,
 		options: {
 			length: number;
-			timeline: Timeline;
+			timelines: Timeline[];
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	) => {
-		const { timeline } = options;
+		const { timelines } = options;
 
 		e.preventDefault();
 		const initialPos = Vec2.fromEvent(e);
@@ -498,78 +531,83 @@ export const timelineHandlers = {
 			};
 		}
 
-		const keyframes = timeline.keyframes;
+		for (let ti = 0; ti < timelines.length; ti += 1) {
+			const timeline = timelines[ti];
+			const { keyframes } = timeline;
 
-		// Check whether a control point was clicked
-		for (let i = 0; i < keyframes.length - 1; i += 1) {
-			const k0 = keyframes[i];
-			const k1 = keyframes[i + 1];
+			// Check whether a control point was clicked
+			for (let i = 0; i < keyframes.length - 1; i += 1) {
+				const k0 = keyframes[i];
+				const k1 = keyframes[i + 1];
 
-			const cp0 = getControlPointAsVector("cp0", k0, k1);
-			const cp1 = getControlPointAsVector("cp1", k0, k1);
+				const cp0 = getControlPointAsVector("cp0", k0, k1);
+				const cp1 = getControlPointAsVector("cp1", k0, k1);
 
-			if (cp0 && getDistanceInPx(cp0, mousePos) < MIN_DIST) {
-				timelineHandlers.onControlPointMouseDown(i, "right", options);
-				return;
-			}
-
-			if (cp1 && getDistanceInPx(cp1, mousePos) < MIN_DIST) {
-				timelineHandlers.onControlPointMouseDown(i + 1, "left", options);
-				return;
-			}
-		}
-
-		// Check whether a keyframe was clicked
-		for (let i = 0; i < keyframes.length; i += 1) {
-			const keyframe = keyframes[i];
-			const keyframePos = Vec2.new(keyframe.index, keyframe.value);
-			if (getDistanceInPx(keyframePos, mousePos) < MIN_DIST) {
-				if (isKeyDown("Alt")) {
-					requestAction({ history: true }, (params) => {
-						actions.keyframeAltMouseDown(params, i, initialPos, options);
-					});
+				if (cp0 && getDistanceInPx(cp0, mousePos) < MIN_DIST) {
+					timelineHandlers.onControlPointMouseDown(ti, i, "right", options);
 					return;
 				}
 
-				timelineHandlers.onKeyframeMouseDown(mousePos, i, options);
-				return;
+				if (cp1 && getDistanceInPx(cp1, mousePos) < MIN_DIST) {
+					timelineHandlers.onControlPointMouseDown(ti, i + 1, "left", options);
+					return;
+				}
+			}
+
+			// Check whether a keyframe was clicked
+			for (let i = 0; i < keyframes.length; i += 1) {
+				const keyframe = keyframes[i];
+				const keyframePos = Vec2.new(keyframe.index, keyframe.value);
+				if (getDistanceInPx(keyframePos, mousePos) < MIN_DIST) {
+					if (isKeyDown("Alt")) {
+						requestAction({ history: true }, (params) => {
+							actions.keyframeAltMouseDown(params, ti, i, initialPos, options);
+						});
+						return;
+					}
+
+					timelineHandlers.onKeyframeMouseDown(mousePos, ti, i, options);
+					return;
+				}
 			}
 		}
 
 		requestAction({ history: true }, ({ dispatch, submitAction }) => {
-			dispatch(timelineActions.clearSelection(timeline.id));
+			timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
 			submitAction("Clear timeline selection");
 		});
 	},
 
 	onControlPointMouseDown: (
+		timelineIndex: number,
 		index: number,
 		direction: "left" | "right",
 		options: {
 			reflect?: boolean;
 			length: number;
-			timeline: Timeline;
+			timelines: Timeline[];
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	) => {
 		requestAction({ history: true }, (params) => {
-			actions.controlPointMouseDown(params, index, direction, options);
+			actions.controlPointMouseDown(params, timelineIndex, index, direction, options);
 		});
 	},
 
 	onKeyframeMouseDown: (
 		initialMousePos: Vec2,
+		timelineIndex: number,
 		index: number,
 		options: {
 			length: number;
-			timeline: Timeline;
+			timelines: Timeline[];
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	) => {
 		requestAction({ history: true }, (params) => {
-			actions.keyframeMouseDown(params, initialMousePos, index, options);
+			actions.keyframeMouseDown(params, initialMousePos, timelineIndex, index, options);
 		});
 	},
 };

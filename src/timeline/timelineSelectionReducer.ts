@@ -4,23 +4,16 @@ import { KeySelectionMap } from "~/types";
 
 type Action = ActionType<typeof timelineActions>;
 
-export interface TimelineSelectionState {
+export interface TimelineSelection {
 	timelineId: string;
 	keyframes: KeySelectionMap;
-	_dragSelectRect: Rect | null;
 }
 
-export const initialTimelineSelectionState: TimelineSelectionState = {
-	timelineId: "",
-	keyframes: {},
-	_dragSelectRect: null,
-};
+export type TimelineSelectionState = Partial<{
+	[timelineId: string]: TimelineSelection;
+}>;
 
-const createNewState = (timelineId: string): TimelineSelectionState => ({
-	timelineId,
-	keyframes: {},
-	_dragSelectRect: null,
-});
+export const initialTimelineSelectionState: TimelineSelectionState = {};
 
 export function timelineSelectionReducer(
 	state: TimelineSelectionState,
@@ -30,23 +23,30 @@ export function timelineSelectionReducer(
 		case getType(timelineActions.clearSelection): {
 			const { timelineId } = action.payload;
 
-			const newState =
-				state.timelineId === timelineId ? { ...state } : createNewState(timelineId);
-
-			return {
-				...newState,
-				keyframes: {},
-			};
+			return Object.keys(state).reduce<TimelineSelectionState>((obj, key) => {
+				if (key !== timelineId) {
+					obj[key] = state[key];
+				}
+				return obj;
+			}, {});
 		}
 
 		case getType(timelineActions.toggleKeyframeSelection): {
 			const { timelineId, keyframeId } = action.payload;
 
-			const newState =
-				state.timelineId === timelineId ? { ...state } : createNewState(timelineId);
+			const newState = { ...state };
 
-			if (newState.keyframes[keyframeId]) {
-				newState.keyframes = Object.keys(newState.keyframes).reduce<KeySelectionMap>(
+			if (!newState[timelineId]) {
+				newState[timelineId] = {
+					timelineId,
+					keyframes: {},
+				};
+			}
+
+			const newTimeline = { ...newState[timelineId]! };
+
+			if (newTimeline.keyframes[keyframeId]) {
+				newTimeline.keyframes = Object.keys(newTimeline.keyframes).reduce<KeySelectionMap>(
 					(obj, key) => {
 						if (keyframeId !== key) {
 							obj[key] = true;
@@ -60,21 +60,24 @@ export function timelineSelectionReducer(
 
 			return {
 				...newState,
-				keyframes: {
-					...newState.keyframes,
-					[keyframeId]: true,
+				[timelineId]: {
+					...newTimeline,
+					keyframes: {
+						...newTimeline.keyframes,
+						[keyframeId]: true,
+					},
 				},
 			};
 		}
 
-		case getType(timelineActions.setDragSelectRect): {
-			const { timelineId, rect } = action.payload;
-			return {
-				...state,
-				timelineId,
-				_dragSelectRect: rect,
-			};
-		}
+		// case getType(timelineActions.setDragSelectRect): {
+		// 	const { timelineId, rect } = action.payload;
+		// 	return {
+		// 		...state,
+		// 		timelineId,
+		// 		_dragSelectRect: rect,
+		// 	};
+		// }
 
 		// case getType(timelineActions.submitDragSelectRect): {
 		// 	const { timelineId, additiveSelection } = action.payload;

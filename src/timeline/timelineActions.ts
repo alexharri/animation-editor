@@ -1,6 +1,6 @@
 import { createAction } from "typesafe-actions";
 import { TimelineKeyframe, TimelineKeyframeControlPoint, Timeline } from "~/timeline/timelineTypes";
-import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
 
 export const timelineActions = {
 	setTimeline: createAction("timeline/SET_TIMELINE", (resolve) => {
@@ -31,7 +31,7 @@ export const timelineActions = {
 	}),
 
 	submitIndexAndValueShift: createAction("timeline/SUBMIT_SHIFT", (resolve) => {
-		return (timelineId: string, selection: TimelineSelectionState) =>
+		return (timelineId: string, selection: TimelineSelection) =>
 			resolve({ timelineId, selection });
 	}),
 

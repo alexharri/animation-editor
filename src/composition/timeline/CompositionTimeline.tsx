@@ -75,7 +75,9 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 		width: viewportRight.width,
 	});
 
-	let timelineId = "";
+	const timelineIds: string[] = [];
+	const colors: Partial<{ [timelineId: string]: string }> = {};
+
 	if (props.selection.compositionId === props.composition.id) {
 		const layers = props.composition.layers.map((id) => props.compositionState.layers[id]);
 
@@ -93,8 +95,8 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 
 		for (let i = 0; i < properties.length; i += 1) {
 			if (properties[i].timelineId) {
-				timelineId = properties[i].timelineId;
-				break;
+				timelineIds.push(properties[i].timelineId);
+				colors[properties[i].timelineId] = properties[i].color;
 			}
 		}
 	}
@@ -201,14 +203,15 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 								}),
 						})}
 					/>
-					{timelineId && (
+					{timelineIds.length > 0 && (
 						<TimelineEditor
-							id={timelineId}
+							ids={timelineIds}
 							viewport={{
 								...viewportRight,
 								height: viewportRight.height - 32,
 								top: viewportRight.top + 32,
 							}}
+							colors={colors}
 							viewBounds={props.viewBounds}
 							length={props.composition.length}
 						/>

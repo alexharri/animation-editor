@@ -84,6 +84,13 @@ export enum AreaType {
 	Temp = "temp",
 }
 
+export enum TimelineColors {
+	XPosition = "#FF3434",
+	YPosition = "#5BE719",
+	Width = "#32E8E8",
+	Height = "#EE30F2",
+}
+
 export const DEFAULT_NODE_EDITOR_NODE_WIDTH = 128;
 export const NODE_EDITOR_MIN_NODE_WIDTH = 64;
 export const NODE_EDITOR_EXPRESSION_NODE_MIN_TEXTAREA_HEIGHT = 24;

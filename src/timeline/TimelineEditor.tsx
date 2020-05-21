@@ -1,26 +1,27 @@
 import React, { useRef, useEffect } from "react";
-import { TimelineState } from "~/timeline/timelineReducer";
 import { renderTimeline } from "~/timeline/renderTimeline";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
 import { connectActionState } from "~/state/stateUtils";
 import { timelineHandlers } from "~/timeline/timelineHandlers";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { Timeline } from "~/timeline/timelineTypes";
 
 interface OwnProps {
-	id: string;
+	ids: string[];
+	colors: Partial<{ [timelineId: string]: string }>;
 	length: number;
 	viewBounds: [number, number];
 	viewport: Rect;
 }
 interface StateProps {
-	timeline: TimelineState[string];
+	timelines: Timeline[];
 	selection: TimelineSelectionState;
 }
 type Props = OwnProps & StateProps;
 
 const TimelineEditorComponent: React.FC<Props> = (props) => {
-	const { viewport, length, selection } = props;
+	const { viewport, length, selection, colors } = props;
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -33,14 +34,17 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 
 		const { width, height } = viewport;
 
-		const timeline = applyTimelineIndexAndValueShifts(props.timeline, props.selection);
+		const timelines = props.timelines.map((timeline) =>
+			applyTimelineIndexAndValueShifts(timeline, props.selection[timeline.id]),
+		);
 
 		renderTimeline({
 			ctx,
 			length,
 			width,
 			height,
-			timeline,
+			timelines,
+			colors,
 			viewBounds,
 			selection,
 		});
@@ -58,7 +62,7 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 				onMouseDown={separateLeftRightMouse({
 					left: (e) =>
 						timelineHandlers.onMouseDown(e, {
-							timeline: props.timeline,
+							timelines: props.timelines,
 							length,
 							viewBounds,
 							viewport,
@@ -73,7 +77,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ timelines, timelineSelection },
 	ownProps,
 ) => ({
-	timeline: timelines[ownProps.id],
+	timelines: ownProps.ids.map((id) => timelines[id]),
 	selection: timelineSelection,
 });
 

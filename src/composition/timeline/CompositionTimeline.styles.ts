@@ -29,7 +29,7 @@ export default ({ css }: StyleParams) => ({
 		height: 24px;
 		position: relative;
 		z-index: 1;
-		background: ${cssVariables.dark700};
+		background: ${cssVariables.dark600};
 	`,
 
 	scrubHead: css`
@@ -55,7 +55,7 @@ export default ({ css }: StyleParams) => ({
 		position: absolute;
 		top: 0;
 		bottom: 0;
-		background: ${cssVariables.dark700};
+		background: ${cssVariables.dark600};
 		cursor: ew-resize;
 	`,
 

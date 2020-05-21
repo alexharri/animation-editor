@@ -20,7 +20,8 @@ interface RenderTimelineOptions {
 	height: number;
 	viewBounds: [number, number];
 	length: number;
-	timeline: Timeline;
+	timelines: Timeline[];
+	colors: Partial<{ [timelineId: string]: string }>;
 	selection: TimelineSelectionState;
 }
 
@@ -40,19 +41,23 @@ export const createToTimelineViewportX = (options: {
 };
 
 export const createToTimelineViewportY = (options: {
-	timeline: Timeline;
+	timelines: Timeline[];
 	height: number;
 }): ((value: number) => number) => {
-	const { timeline, height } = options;
+	const { timelines, height } = options;
 
-	const keyframes = timeline.keyframes;
+	const paths: Array<CubicBezier | Line> = [];
 
-	const paths = timelineKeyframesToPathList(keyframes);
-	const [yUpper, yLower] = timeline._yBounds || getTimelineYBoundsFromPaths(timeline, paths);
+	for (let i = 0; i < timelines.length; i += 1) {
+		const keyframes = timelines[i].keyframes;
+		paths.push(...timelineKeyframesToPathList(keyframes));
+	}
+
+	const [yUpper, yLower] = timelines[0]._yBounds || getTimelineYBoundsFromPaths(timelines, paths);
 	const yUpLowDiff = yUpper - yLower;
 
 	return (value: number) => {
-		const yPan = timeline._yPan;
+		const yPan = timelines[0]._yPan;
 		const t = (value - yPan - yLower) / yUpLowDiff;
 		return interpolate(height, 0, t);
 	};
@@ -65,26 +70,26 @@ export const createToTimelineViewport = (options: RenderTimelineOptions): ((vec:
 };
 
 export const renderTimeline = (options: RenderTimelineOptions) => {
-	const { ctx, timeline, width, height, selection } = options;
+	const { ctx, timelines, width, height, selection } = options;
 
 	const toViewportY = createToTimelineViewportY(options);
 	const toViewportX = createToTimelineViewportX(options);
 	const toViewport = (vec: Vec2) => Vec2.new(toViewportX(vec.x), toViewportY(vec.y));
 
-	const keyframes = timeline.keyframes;
-
-	const paths = timelineKeyframesToPathList(keyframes);
-	const [yUpper, yLower] = timeline._yBounds || getTimelineYBoundsFromPaths(timeline, paths);
-
 	ctx.clearRect(0, 0, width, height);
+
+	const { _yBounds, _yPan } = timelines[0];
+
+	const allPaths = timelines.reduce<Array<CubicBezier | Line>>((arr, timeline) => {
+		arr.push(...timelineKeyframesToPathList(timeline.keyframes));
+		return arr;
+	}, []);
+	const [yUpper, yLower] = _yBounds || getTimelineYBoundsFromPaths(timelines, allPaths);
 
 	/**
 	 * Ticks
 	 */
-	const ticks = generateTimelineTicksFromBounds([
-		yUpper + timeline._yPan,
-		yLower + timeline._yPan,
-	]);
+	const ticks = generateTimelineTicksFromBounds([yUpper + _yPan, yLower + _yPan]);
 
 	for (let i = 0; i < ticks.length; i += 1) {
 		const y = toViewportY(ticks[i]);
@@ -98,81 +103,88 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 		ctx.fillText(ticks[i].toString(), 8, y);
 	}
 
-	const transformedPaths = paths.map((path) => path.map((vec) => toViewport(vec))) as Array<
-		CubicBezier | Line
-	>;
+	timelines.forEach((timeline) => {
+		const { keyframes } = timeline;
+		const paths = timelineKeyframesToPathList(keyframes);
 
-	for (let i = 0; i < paths.length; i += 1) {
-		const path = transformedPaths[i];
-		if (path.length === 4) {
-			renderCubicBezier(ctx, path, { color: "red", strokeWidth: 1 });
-		} else {
-			renderLine(ctx, path[0], path[1], { color: "red", strokeWidth: 1 });
-		}
-	}
+		const transformedPaths = paths.map((path) => path.map((vec) => toViewport(vec))) as Array<
+			CubicBezier | Line
+		>;
 
-	/**
-	 * Control point lines
-	 */
-	for (let i = 0; i < keyframes.length - 1; i += 1) {
-		const path = transformedPaths[i];
-
-		if (path.length === 2) {
-			continue;
+		for (let i = 0; i < paths.length; i += 1) {
+			const color = options.colors[timeline.id] || "red";
+			const path = transformedPaths[i];
+			if (path.length === 4) {
+				renderCubicBezier(ctx, path, { color, strokeWidth: 1 });
+			} else {
+				renderLine(ctx, path[0], path[1], { color, strokeWidth: 1 });
+			}
 		}
 
-		const k0 = keyframes[i];
-		const k1 = keyframes[i + 1];
+		/**
+		 * Control point lines
+		 */
+		for (let i = 0; i < keyframes.length - 1; i += 1) {
+			const path = transformedPaths[i];
 
-		if (k0.controlPointRight) {
-			renderLine(ctx, path[0], path[1], {
-				color: "yellow",
+			if (path.length === 2) {
+				continue;
+			}
+
+			const k0 = keyframes[i];
+			const k1 = keyframes[i + 1];
+
+			if (k0.controlPointRight) {
+				renderLine(ctx, path[0], path[1], {
+					color: "yellow",
+					strokeWidth: 1,
+				});
+			}
+
+			if (k1.controlPointLeft) {
+				renderLine(ctx, path[2], path[3], {
+					color: "yellow",
+					strokeWidth: 1,
+				});
+			}
+		}
+
+		/**
+		 * Keyframes
+		 */
+		keyframes.forEach((k) => {
+			const vec = toViewport(Vec2.new(k.index, k.value));
+			const timelineSelection = selection[timeline.id];
+			const selected = timelineSelection && timelineSelection.keyframes[k.id];
+			renderDiamond(ctx, vec, {
+				fillColor: selected ? "#2f9eff" : "#333",
+				width: 7.5,
+				height: 7.5,
+				strokeColor: "#2f9eff",
 				strokeWidth: 1,
 			});
-		}
-
-		if (k1.controlPointLeft) {
-			renderLine(ctx, path[2], path[3], {
-				color: "yellow",
-				strokeWidth: 1,
-			});
-		}
-	}
-
-	/**
-	 * Keyframes
-	 */
-	keyframes.forEach((k) => {
-		const vec = toViewport(Vec2.new(k.index, k.value));
-		const selected = selection.timelineId === timeline.id && selection.keyframes[k.id];
-		renderDiamond(ctx, vec, {
-			fillColor: selected ? "#2f9eff" : "#333",
-			width: 7.5,
-			height: 7.5,
-			strokeColor: "#2f9eff",
-			strokeWidth: 1,
 		});
+
+		/**
+		 * Control point dots
+		 */
+		for (let i = 0; i < keyframes.length - 1; i += 1) {
+			const path = transformedPaths[i];
+
+			if (path.length === 2) {
+				continue;
+			}
+
+			const k0 = keyframes[i];
+			const k1 = keyframes[i + 1];
+
+			if (k0.controlPointRight) {
+				renderCircle(ctx, path[1], { color: "yellow", radius: 2 });
+			}
+
+			if (k1.controlPointLeft) {
+				renderCircle(ctx, path[2], { color: "yellow", radius: 2 });
+			}
+		}
 	});
-
-	/**
-	 * Control point dots
-	 */
-	for (let i = 0; i < keyframes.length - 1; i += 1) {
-		const path = transformedPaths[i];
-
-		if (path.length === 2) {
-			continue;
-		}
-
-		const k0 = keyframes[i];
-		const k1 = keyframes[i + 1];
-
-		if (k0.controlPointRight) {
-			renderCircle(ctx, path[1], { color: "yellow", radius: 2 });
-		}
-
-		if (k1.controlPointLeft) {
-			renderCircle(ctx, path[2], { color: "yellow", radius: 2 });
-		}
-	}
 };

@@ -1,11 +1,12 @@
 import { StyleParams } from "~/util/stylesheets";
+import { cssVariables } from "~/cssVariables";
 
 export const VIEWBOUNDS_HEIGHT = 8;
 
 export default ({ css }: StyleParams) => ({
 	viewBounds: css`
 		height: ${VIEWBOUNDS_HEIGHT}px;
-		background: darkblue;
+		background: ${cssVariables.gray500};
 		position: relative;
 		margin: 0;
 	`,
@@ -16,7 +17,7 @@ export default ({ css }: StyleParams) => ({
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: blue;
+		background: ${cssVariables.gray700};
 		cursor: grab;
 	`,
 
@@ -25,7 +26,7 @@ export default ({ css }: StyleParams) => ({
 		top: 0;
 		bottom: 0;
 		width: 6px;
-		background: red;
+		background: ${cssVariables.primary500};
 		cursor: ew-resize;
 
 		&--left {

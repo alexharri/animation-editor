@@ -4,6 +4,7 @@ import {
 	CompositionLayer,
 	CompositionLayerProperty,
 } from "~/composition/compositionTypes";
+import { TimelineColors } from "~/constants";
 
 export interface CompositionState {
 	compositions: {
@@ -46,6 +47,7 @@ export const initialCompositionState: CompositionState = {
 			label: "X Position",
 			type: "number",
 			value: 100,
+			color: TimelineColors.XPosition,
 		},
 		"1": {
 			id: "1",
@@ -54,6 +56,7 @@ export const initialCompositionState: CompositionState = {
 			label: "Y Position",
 			type: "number",
 			value: 50,
+			color: TimelineColors.YPosition,
 		},
 		"2": {
 			id: "2",
@@ -61,6 +64,7 @@ export const initialCompositionState: CompositionState = {
 			timelineId: "",
 			label: "Width",
 			type: "number",
+			color: TimelineColors.Width,
 			value: 200,
 			min: 0,
 		},
@@ -70,6 +74,7 @@ export const initialCompositionState: CompositionState = {
 			timelineId: "",
 			label: "Height",
 			type: "number",
+			color: TimelineColors.Height,
 			value: 75,
 			min: 0,
 		},
