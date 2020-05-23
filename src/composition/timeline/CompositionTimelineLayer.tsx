@@ -6,6 +6,7 @@ import { CompositionTimelineLayerProperty } from "~/composition/timeline/Composi
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
+import { GraphIcon } from "~/components/icons/GraphIcon";
 
 interface OwnProps {
 	id: string;
@@ -36,6 +37,9 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 					})}
 				>
 					{layer.name}
+				</div>
+				<div className={s("graph")}>
+					<GraphIcon />
 				</div>
 			</div>
 			{layer.properties.map((propertyId, i) => {

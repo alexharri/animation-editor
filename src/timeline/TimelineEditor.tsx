@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useLayoutEffect } from "react";
 import { renderTimeline } from "~/timeline/renderTimeline";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
@@ -25,7 +25,7 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const ctx = canvasRef.current?.getContext("2d");
 
 		if (!ctx) {

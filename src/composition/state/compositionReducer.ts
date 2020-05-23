@@ -33,6 +33,7 @@ export const initialCompositionState: CompositionState = {
 	layers: {
 		"0": {
 			id: "0",
+			graphId: "0",
 			type: "rect",
 			name: "Rect",
 			index: 10,

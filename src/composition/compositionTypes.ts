@@ -11,6 +11,7 @@ export interface Composition {
 
 export interface CompositionLayer {
 	id: string;
+	graphId: string;
 	type: "rect";
 	name: string;
 	index: number; // Index of first frame

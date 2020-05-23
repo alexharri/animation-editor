@@ -32,4 +32,22 @@ export default ({ css }: StyleParams) => ({
 	property__label: css`
 		color: ${cssVariables.white500};
 	`,
+
+	graph: css`
+		margin-left: 2px;
+		height: 16px;
+		width: 16px;
+		position: relative;
+		cursor: pointer;
+
+		svg {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 14px;
+			height: 14px;
+			fill: ${cssVariables.primary500};
+			transform: translate(-50%, -50%);
+		}
+	`,
 });
