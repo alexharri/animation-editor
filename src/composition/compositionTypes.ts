@@ -11,6 +11,7 @@ export interface Composition {
 
 export interface CompositionLayer {
 	id: string;
+	compositionId: string;
 	graphId: string;
 	type: "rect";
 	name: string;
@@ -21,6 +22,8 @@ export interface CompositionLayer {
 
 export interface CompositionLayerProperty {
 	id: string;
+	layerId: string;
+	compositionId: string;
 	label: string;
 	name: string;
 	type: ValueType;

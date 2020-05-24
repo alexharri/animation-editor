@@ -95,11 +95,47 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 			default: true,
 		},
 		{
+			label: "Number",
+			options: [
+				createAddNodeOption({
+					type: NodeEditorNodeType.num_cap,
+					label: "Cap to Range",
+				}),
+				createAddNodeOption({
+					type: NodeEditorNodeType.num_lerp,
+					label: "Linear Interpolation",
+				}),
+			],
+			default: true,
+		},
+		{
 			label: "Vec2",
 			options: [
 				createAddNodeOption({
-					type: NodeEditorNodeType.add_vec2,
+					type: NodeEditorNodeType.vec2_add,
 					label: "Add",
+				}),
+				createAddNodeOption({
+					type: NodeEditorNodeType.vec2_factors,
+					label: "Factors",
+				}),
+				createAddNodeOption({
+					type: NodeEditorNodeType.vec2_lerp,
+					label: "Linear Interpolation",
+				}),
+			],
+			default: true,
+		},
+		{
+			label: "Conversion",
+			options: [
+				createAddNodeOption({
+					type: NodeEditorNodeType.deg_to_rad,
+					label: "Degrees to Radians",
+				}),
+				createAddNodeOption({
+					type: NodeEditorNodeType.rad_to_deg,
+					label: "Radians to Degrees",
 				}),
 			],
 			default: true,
@@ -108,7 +144,7 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 			label: "Math",
 			options: [
 				createAddNodeOption({
-					type: NodeEditorNodeType.expression,
+					type: NodeEditorNodeType.expr,
 					label: "Expression",
 				}),
 			],

@@ -130,7 +130,7 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 							let NodeComponent = Node;
 
 							switch (props.graph.nodes[nodeId].type) {
-								case NodeEditorNodeType.expression: {
+								case NodeEditorNodeType.expr: {
 									NodeComponent = ExpressionNode;
 									break;
 								}

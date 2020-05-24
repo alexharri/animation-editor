@@ -20,7 +20,7 @@ export const NODE_HEIGHT_CONSTANTS = {
 const aboveInputs: Partial<
 	{ [key in NodeEditorNodeType]: (node: NodeEditorNode<any>) => number }
 > = {
-	[NodeEditorNodeType.expression]: (node: NodeEditorNode<NodeEditorNodeType.expression>) => {
+	[NodeEditorNodeType.expr]: (node: NodeEditorNode<NodeEditorNodeType.expr>) => {
 		return node.state.textareaHeight + spacing;
 	},
 };

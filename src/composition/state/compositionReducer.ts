@@ -33,6 +33,7 @@ export const initialCompositionState: CompositionState = {
 	layers: {
 		"0": {
 			id: "0",
+			compositionId: "0",
 			graphId: "0",
 			type: "rect",
 			name: "Rect",
@@ -44,6 +45,8 @@ export const initialCompositionState: CompositionState = {
 	properties: {
 		"0": {
 			id: "0",
+			layerId: "0",
+			compositionId: "0",
 			name: "x",
 			timelineId: "0",
 			label: "X Position",
@@ -53,6 +56,8 @@ export const initialCompositionState: CompositionState = {
 		},
 		"1": {
 			id: "1",
+			layerId: "0",
+			compositionId: "0",
 			name: "y",
 			timelineId: "",
 			label: "Y Position",
@@ -62,6 +67,8 @@ export const initialCompositionState: CompositionState = {
 		},
 		"2": {
 			id: "2",
+			layerId: "0",
+			compositionId: "0",
 			name: "width",
 			timelineId: "",
 			label: "Width",
@@ -72,6 +79,8 @@ export const initialCompositionState: CompositionState = {
 		},
 		"3": {
 			id: "3",
+			layerId: "0",
+			compositionId: "0",
 			name: "height",
 			timelineId: "",
 			label: "Height",

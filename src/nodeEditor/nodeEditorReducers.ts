@@ -71,29 +71,29 @@ export const initialNodeEditorState: NodeEditorState = {
 			nodes: {
 				0: {
 					id: "0",
-					type: NodeEditorNodeType.add_vec2,
+					type: NodeEditorNodeType.vec2_add,
 					position: Vec2.new(-100, -200),
 					width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
-					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.add_vec2),
-					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.add_vec2),
+					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.vec2_add),
+					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.vec2_add),
 					state: {},
 				},
 				1: {
 					id: "1",
-					type: NodeEditorNodeType.translate_rect,
+					type: NodeEditorNodeType.rect_translate,
 					position: Vec2.new(100, -100),
 					width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
-					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.translate_rect),
-					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.translate_rect),
+					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.rect_translate),
+					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.rect_translate),
 					state: {},
 				},
 				2: {
 					id: "2",
-					type: NodeEditorNodeType.expression,
+					type: NodeEditorNodeType.expr,
 					position: Vec2.new(0, 100),
 					width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
-					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.expression),
-					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.expression),
+					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.expr),
+					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.expr),
 					state: {
 						expression: "",
 						textareaHeight: 80,
@@ -527,7 +527,7 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 
 		case getType(actions.setExpressionNodeTextareaHeight): {
 			const { nodeId, height } = action.payload;
-			const node = state.nodes[nodeId] as NodeEditorNode<NodeEditorNodeType.expression>;
+			const node = state.nodes[nodeId] as NodeEditorNode<NodeEditorNodeType.expr>;
 			return {
 				...state,
 				nodes: {

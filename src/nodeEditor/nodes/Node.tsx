@@ -36,7 +36,9 @@ function NodeComponent(props: Props) {
 				right: (e) => nodeHandlers.onRightClick(e, props.graphId, props.nodeId),
 			})}
 		>
-			<div className={s("header")}>{props.node.type}</div>
+			<div className={s("header")}>
+				{props.node.type} ({props.node.id})
+			</div>
 			{props.node.outputs.map((output, i) => {
 				return (
 					<div

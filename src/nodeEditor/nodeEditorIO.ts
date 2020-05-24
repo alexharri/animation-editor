@@ -2,7 +2,103 @@ import { NodeEditorNodeType, ValueType } from "~/types";
 
 export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEditorNodeInput[] => {
 	switch (type) {
-		case NodeEditorNodeType.add_vec2:
+		case NodeEditorNodeType.num_cap:
+			return [
+				{
+					type: ValueType.Number,
+					name: "Value",
+					value: 0,
+					pointer: null,
+				},
+				{
+					type: ValueType.Number,
+					name: "Min",
+					value: 0,
+					pointer: null,
+				},
+				{
+					type: ValueType.Number,
+					name: "Max",
+					value: 1,
+					pointer: null,
+				},
+			];
+
+		case NodeEditorNodeType.num_lerp:
+			return [
+				{
+					type: ValueType.Number,
+					name: "Number A",
+					value: 0,
+					pointer: null,
+				},
+				{
+					type: ValueType.Number,
+					name: "Number B",
+					value: 1,
+					pointer: null,
+				},
+				{
+					type: ValueType.Number,
+					name: "t",
+					value: 0.5,
+					pointer: null,
+				},
+			];
+
+		case NodeEditorNodeType.rad_to_deg:
+			return [
+				{
+					type: ValueType.Number,
+					name: "Radians",
+					value: 0,
+					pointer: null,
+				},
+			];
+
+		case NodeEditorNodeType.deg_to_rad:
+			return [
+				{
+					type: ValueType.Number,
+					name: "Degrees",
+					value: 0,
+					pointer: null,
+				},
+			];
+
+		case NodeEditorNodeType.vec2_factors:
+			return [
+				{
+					type: ValueType.Vec2,
+					name: "Vec2",
+					value: Vec2.new(0, 0),
+					pointer: null,
+				},
+			];
+
+		case NodeEditorNodeType.vec2_lerp:
+			return [
+				{
+					type: ValueType.Vec2,
+					name: "Vec2 A",
+					value: Vec2.new(0, 0),
+					pointer: null,
+				},
+				{
+					type: ValueType.Vec2,
+					name: "Vec2 B",
+					value: Vec2.new(0, 0),
+					pointer: null,
+				},
+				{
+					type: ValueType.Vec2,
+					name: "t",
+					value: 0.5,
+					pointer: null,
+				},
+			];
+
+		case NodeEditorNodeType.vec2_add:
 			return [
 				{
 					type: ValueType.Vec2,
@@ -18,7 +114,7 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 				},
 			];
 
-		case NodeEditorNodeType.translate_rect:
+		case NodeEditorNodeType.rect_translate:
 			return [
 				{
 					type: ValueType.Rect,
@@ -45,7 +141,7 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 		case NodeEditorNodeType.layer_output:
 			return [];
 
-		case NodeEditorNodeType.expression:
+		case NodeEditorNodeType.expr:
 			return [];
 
 		case NodeEditorNodeType.empty:
@@ -57,7 +153,59 @@ export const getNodeEditorNodeDefaultOutputs = (
 	type: NodeEditorNodeType,
 ): NodeEditorNodeOutput[] => {
 	switch (type) {
-		case NodeEditorNodeType.add_vec2:
+		case NodeEditorNodeType.deg_to_rad:
+			return [
+				{
+					name: "Radians",
+					type: ValueType.Number,
+				},
+			];
+
+		case NodeEditorNodeType.rad_to_deg:
+			return [
+				{
+					name: "Degrees",
+					type: ValueType.Number,
+				},
+			];
+
+		case NodeEditorNodeType.num_cap:
+			return [
+				{
+					name: "Number",
+					type: ValueType.Number,
+				},
+			];
+
+		case NodeEditorNodeType.num_lerp:
+			return [
+				{
+					name: "Number",
+					type: ValueType.Number,
+				},
+			];
+
+		case NodeEditorNodeType.vec2_factors:
+			return [
+				{
+					name: "X",
+					type: ValueType.Number,
+				},
+				{
+					name: "Y",
+					type: ValueType.Number,
+				},
+			];
+
+		case NodeEditorNodeType.vec2_lerp:
+			return [
+				{
+					name: "Vec2",
+					type: ValueType.Vec2,
+				},
+			];
+
+		case NodeEditorNodeType.vec2_add:
 			return [
 				{
 					name: "Vector",
@@ -65,7 +213,7 @@ export const getNodeEditorNodeDefaultOutputs = (
 				},
 			];
 
-		case NodeEditorNodeType.translate_rect:
+		case NodeEditorNodeType.rect_translate:
 			return [
 				{
 					name: "Rect",
@@ -79,7 +227,7 @@ export const getNodeEditorNodeDefaultOutputs = (
 		case NodeEditorNodeType.layer_output:
 			return [];
 
-		case NodeEditorNodeType.expression:
+		case NodeEditorNodeType.expr:
 			return [];
 
 		case NodeEditorNodeType.empty:
@@ -89,26 +237,11 @@ export const getNodeEditorNodeDefaultOutputs = (
 
 export const getNodeEditorNodeDefaultState = <T extends NodeEditorNodeType>(type: T): any => {
 	switch (type) {
-		case NodeEditorNodeType.add_vec2:
-			return {} as NodeEditorNodeStateMap[T];
-
-		case NodeEditorNodeType.translate_rect:
-			return {} as NodeEditorNodeStateMap[T];
-
-		case NodeEditorNodeType.layer_input:
-			return {} as NodeEditorNodeStateMap[T];
-
-		case NodeEditorNodeType.layer_output:
-			return {} as NodeEditorNodeStateMap[T];
-
-		case NodeEditorNodeType.expression:
-			return { expression: "", textareaHeight: 80 } as NodeEditorNodeStateMap["expression"];
-
-		case NodeEditorNodeType.empty:
-			return {} as NodeEditorNodeStateMap[T];
+		case NodeEditorNodeType.expr:
+			return { expression: "", textareaHeight: 80 } as NodeEditorNodeStateMap["expr"];
 
 		default:
-			return null as any;
+			return {} as any;
 	}
 };
 
@@ -133,12 +266,18 @@ export interface NodeEditorNodeIO {
 }
 
 type NodeEditorNodeStateMap = {
-	[NodeEditorNodeType.add_vec2]: {};
+	[NodeEditorNodeType.deg_to_rad]: {};
+	[NodeEditorNodeType.rad_to_deg]: {};
+	[NodeEditorNodeType.num_cap]: {};
+	[NodeEditorNodeType.num_lerp]: {};
+	[NodeEditorNodeType.vec2_factors]: {};
+	[NodeEditorNodeType.vec2_lerp]: {};
+	[NodeEditorNodeType.vec2_add]: {};
 	[NodeEditorNodeType.empty]: {};
-	[NodeEditorNodeType.translate_rect]: {};
+	[NodeEditorNodeType.rect_translate]: {};
 	[NodeEditorNodeType.layer_input]: {};
 	[NodeEditorNodeType.layer_output]: {};
-	[NodeEditorNodeType.expression]: {
+	[NodeEditorNodeType.expr]: {
 		expression: string;
 		textareaHeight: number;
 	};
@@ -154,3 +293,10 @@ export interface NodeEditorNode<T extends NodeEditorNodeType> {
 	outputs: NodeEditorNodeOutput[];
 	state: NodeEditorNodeState<T>;
 }
+
+export const nodeValidInputToOutputsMap: { [key in ValueType]: ValueType[] } = {
+	[ValueType.Any]: [ValueType.Any, ValueType.Number, ValueType.Rect, ValueType.Vec2],
+	[ValueType.Number]: [ValueType.Any, ValueType.Number],
+	[ValueType.Rect]: [ValueType.Any, ValueType.Rect],
+	[ValueType.Vec2]: [ValueType.Any, ValueType.Vec2],
+};

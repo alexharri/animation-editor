@@ -17,7 +17,7 @@ interface OwnProps {
 	nodeId: string;
 }
 interface StateProps {
-	node: NodeEditorNode<NodeEditorNodeType.expression>;
+	node: NodeEditorNode<NodeEditorNodeType.expr>;
 	position: Vec2;
 	selected: boolean;
 	nodes: NodeEditorGraphState["nodes"];
@@ -136,7 +136,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	const node = graph.nodes[nodeId];
 	const selected = !!graph.selection.nodes[nodeId];
 	return {
-		node: node as NodeEditorNode<NodeEditorNodeType.expression>,
+		node: node as NodeEditorNode<NodeEditorNodeType.expr>,
 		selected: selected,
 		position:
 			selected && (graph.moveVector.x !== 0 || graph.moveVector.y !== 0)

@@ -22,6 +22,7 @@ const s = compileStylesheetLabelled(styles);
 interface OwnProps {
 	compositionId: string;
 	id: string;
+	value: number;
 }
 interface StateProps {
 	property: CompositionLayerProperty;
@@ -128,9 +129,10 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 		onValueChangeEndFn.current = null;
 	};
 
-	const value = timeline
-		? getTimelineValueAtIndex(timeline, composition.frameIndex)
-		: property.value;
+	// const value = timeline
+	// 	? getTimelineValueAtIndex(timeline, composition.frameIndex)
+	// 	: property.value;
+	const value = props.value;
 
 	return (
 		<>

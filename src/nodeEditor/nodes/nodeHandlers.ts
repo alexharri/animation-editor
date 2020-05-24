@@ -14,8 +14,13 @@ import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { clearElementFocus } from "~/util/focus";
 import { NODE_EDITOR_MIN_NODE_WIDTH, AreaType } from "~/constants";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
+import { nodeValidInputToOutputsMap } from "~/nodeEditor/nodeEditorIO";
 
-const getAllInputsOfType = (graph: NodeEditorGraphState, nodeId: string, outputIndex: number) => {
+const getAllValidInputsForType = (
+	graph: NodeEditorGraphState,
+	nodeId: string,
+	outputIndex: number,
+) => {
 	const allNodeInputsOfType: Array<{
 		nodeId: string;
 		inputIndex: number;
@@ -33,7 +38,7 @@ const getAllInputsOfType = (graph: NodeEditorGraphState, nodeId: string, outputI
 
 		for (let i = 0; i < node.inputs.length; i += 1) {
 			const input = node.inputs[i];
-			if (input.type === output.type) {
+			if (nodeValidInputToOutputsMap[output.type].indexOf(input.type) !== -1) {
 				const position = calculateNodeInputPosition(node, i);
 				allNodeInputsOfType.push({ inputIndex: i, nodeId: key, position });
 			}
@@ -205,7 +210,7 @@ export const nodeHandlers = {
 				const transformMousePosition = (mousePosition: Vec2) =>
 					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 
-				const allNodeInputsOfType = getAllInputsOfType(graph, nodeId, outputIndex);
+				const allNodeInputsOfType = getAllValidInputsForType(graph, nodeId, outputIndex);
 
 				let hasInit = false;
 
@@ -349,7 +354,7 @@ export const nodeHandlers = {
 				return;
 			}
 
-			const allNodeInputsOfType = getAllInputsOfType(
+			const allNodeInputsOfType = getAllValidInputsForType(
 				graph,
 				pointer.nodeId,
 				pointer.outputIndex,
