@@ -1,23 +1,38 @@
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType } from "~/types";
-import { CompositionLayerProperty, CompositionLayer } from "~/composition/compositionTypes";
-import {
-	ComputeNodeContext,
-	computeNodeOutputArgs,
-	ComputeNodeArg,
-} from "~/nodeEditor/graph/computeNode";
+import { CompositionLayerProperty } from "~/composition/compositionTypes";
+import { ComputeNodeContext, computeNodeOutputArgs } from "~/nodeEditor/graph/computeNode";
+import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 
 export const computeLayerGraph = (
-	_layer: CompositionLayer,
 	properties: CompositionLayerProperty[],
-	graph: NodeEditorGraphState,
+	graph?: NodeEditorGraphState,
 ): ((
 	context: ComputeNodeContext,
 ) => {
 	[propertyId: string]: number;
 }) => {
-	console.log("Calling computeLayerGraph");
+	const computeRawPropertyValues = (
+		context: ComputeNodeContext,
+	): { [propertyId: string]: number } => {
+		return properties.reduce<{
+			[propertyId: string]: number;
+		}>((obj, p) => {
+			obj[p.id] = p.timelineId
+				? getTimelineValueAtIndex(
+						context.composition.frameIndex,
+						context.timelines[p.timelineId],
+						context.timelineSelection[p.timelineId],
+				  )
+				: p.value;
+			return obj;
+		}, {});
+	};
+
+	if (!graph) {
+		return computeRawPropertyValues;
+	}
 
 	let outputNode: NodeEditorNode<NodeEditorNodeType.layer_output> | undefined;
 
@@ -34,7 +49,7 @@ export const computeLayerGraph = (
 	}
 
 	if (!outputNode) {
-		return () => ({});
+		return computeRawPropertyValues;
 	}
 
 	const getNodes = (node: NodeEditorNode<any>) => {
@@ -53,7 +68,7 @@ export const computeLayerGraph = (
 				const input = node.inputs[i];
 
 				if (input.pointer) {
-					dfs(graph.nodes[input.pointer.nodeId]);
+					dfs(graph!.nodes[input.pointer.nodeId]);
 				}
 			}
 
@@ -67,15 +82,10 @@ export const computeLayerGraph = (
 
 	const toCompute = getNodes(outputNode);
 
-	return function computeGraphValues(
-		context: ComputeNodeContext,
-	): {
-		[propertyId: string]: number;
-	} {
+	return (context: ComputeNodeContext): { [propertyId: string]: number } => {
 		for (let i = 0; i < toCompute.length; i += 1) {
 			const node = graph.nodes[toCompute[i]];
 			context.computed[node.id] = computeNodeOutputArgs(node, context);
-			console.log(context.computed);
 		}
 
 		return context.computed[outputNode!.id]

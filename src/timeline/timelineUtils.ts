@@ -74,7 +74,17 @@ export const timelineKeyframesToPathList = (
 	return paths;
 };
 
-export function getTimelineValueAtIndex(timeline: Timeline, index: number): number {
+export function getTimelineValueAtIndex(
+	index: number,
+	_timeline: Timeline,
+	selection?: TimelineSelection,
+): number {
+	let timeline = _timeline;
+
+	if (typeof timeline._indexShift) {
+		timeline = applyTimelineIndexAndValueShifts(timeline, selection);
+	}
+
 	const keyframes = timeline.keyframes;
 
 	if (keyframes.length < 1) {

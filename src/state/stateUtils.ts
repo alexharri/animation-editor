@@ -1,6 +1,7 @@
 import { connect, DispatchProp, InferableComponentEnhancerWithProps } from "react-redux";
 import { store } from "~/state/store";
 import { HistoryState } from "~/state/history/historyReducer";
+import { ActionBasedState } from "~/state/history/actionBasedReducer";
 
 const getCurrentStateFromApplicationState = (_state: ApplicationState): ActionState => {
 	const state: any = _state;
@@ -37,6 +38,38 @@ export const getActionStateFromApplicationState = (_state: ApplicationState): Ac
 		return obj;
 	}, {} as any);
 	return actionState;
+};
+
+export const createApplicationStateFromActionState = (
+	actionState: ActionState,
+): ApplicationState => {
+	const toActionBasedState = <S extends {} = {}>(state: S): ActionBasedState<S> => ({
+		action: null,
+		state,
+	});
+	const toHistoryBasedState = <S extends {} = {}>(
+		state: S,
+		type: "selection" | "normal" = "normal",
+	): HistoryState<S> => ({
+		action: null,
+		index: 0,
+		indexDirection: 1,
+		list: [{ state, modifiedRelated: false, name: "Initial state" }],
+		type,
+	});
+
+	const state: ApplicationState = {
+		area: toActionBasedState(actionState.area),
+		compositionSelection: toHistoryBasedState(actionState.compositionSelection, "selection"),
+		compositions: toHistoryBasedState(actionState.compositions),
+		contextMenu: toActionBasedState(actionState.contextMenu),
+		nodeEditor: toHistoryBasedState(actionState.nodeEditor),
+		timelines: toHistoryBasedState(actionState.timelines),
+		timelineSelection: toHistoryBasedState(actionState.timelineSelection, "selection"),
+		tool: toActionBasedState(actionState.tool),
+	};
+
+	return state;
 };
 
 export function connectActionState<TStateProps = {}, TOwnProps = {}>(

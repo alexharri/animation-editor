@@ -1,7 +1,7 @@
 import { Json, JsonObject } from "~/types";
-import { AreaState } from "~/area/state/areaReducer";
+import { getActionState } from "~/state/stateUtils";
 
-const key = "__SAVED_AREA_STATE";
+const key = "__SAVED_ACTION_STATE";
 
 const parseItem = (item: Json): any => {
 	if (Array.isArray(item)) {
@@ -26,7 +26,7 @@ const parseItem = (item: Json): any => {
 	return item;
 };
 
-export const getSavedAreaState = (): AreaState | null => {
+export const getSavedActionState = (): ActionState | null => {
 	const json = localStorage.getItem(key);
 
 	if (!json) {
@@ -41,7 +41,10 @@ export const getSavedAreaState = (): AreaState | null => {
 	}
 };
 
-export const saveAreaState = (areaState: AreaState): void => {
-	const json = JSON.stringify(areaState);
+export const saveActionState = () => {
+	const actionState = getActionState();
+	const json = JSON.stringify(actionState);
 	localStorage.setItem(key, json);
 };
+
+(window as any).saveActionState = saveActionState;

@@ -8,11 +8,7 @@ import { compositionActions } from "~/composition/state/compositionReducer";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { NumberInput } from "~/components/common/NumberInput";
 import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
-import {
-	getTimelineValueAtIndex,
-	splitKeyframesAtIndex,
-	createTimelineKeyframe,
-} from "~/timeline/timelineUtils";
+import { splitKeyframesAtIndex, createTimelineKeyframe } from "~/timeline/timelineUtils";
 import { timelineActions } from "~/timeline/timelineActions";
 import styles from "~/composition/timeline/CompositionTimelineLayerProperty.styles";
 import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";

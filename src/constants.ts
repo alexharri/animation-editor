@@ -15,6 +15,7 @@ export const keys = {
 	P: 80,
 	Q: 81,
 	R: 82,
+	S: 83,
 	V: 86,
 	X: 88,
 	Z: 90,

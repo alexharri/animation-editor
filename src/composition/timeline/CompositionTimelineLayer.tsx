@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useStylesheet } from "~/util/stylesheets";
-import { CompositionLayer, CompositionLayerProperty } from "~/composition/compositionTypes";
+import { CompositionLayer } from "~/composition/compositionTypes";
 import styles from "~/composition/timeline/CompositionTimelineLayer.style";
 import { CompositionTimelineLayerProperty } from "~/composition/timeline/CompositionTimelineLayerProperty";
 import { connectActionState } from "~/state/stateUtils";
@@ -19,7 +19,6 @@ interface OwnProps {
 }
 interface StateProps {
 	layer: CompositionLayer;
-	properties: CompositionLayerProperty[];
 	graph?: NodeEditorGraphState;
 	isSelected: boolean;
 }
@@ -27,57 +26,28 @@ type Props = OwnProps & StateProps;
 
 const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 	const s = useStylesheet(styles);
-	const { layer, properties, graph } = props;
+	const { layer, graph } = props;
 
-	const c = useComputeHistory(() => {
-		if (!graph) {
-			return null;
-		}
+	const properties = useComputeHistory((state) =>
+		layer.properties.map((id) => state.compositions.properties[id]),
+	);
 
-		return { fn: computeLayerGraph(layer, properties, graph) };
+	const { computePropertyValues } = useComputeHistory(() => {
+		return { computePropertyValues: computeLayerGraph(properties, graph) };
 	});
 
-	// console.log(c);
 	const propertyToValue = useActionState((actionState) => {
-		if (!graph || !c) {
-			return null;
-		}
-
 		const context: ComputeNodeContext = {
 			computed: {},
 			composition: actionState.compositions.compositions[layer.compositionId],
 			layer,
-			graph,
 			properties: layer.properties.map((id) => actionState.compositions.properties[id]),
 			timelines: actionState.timelines,
+			timelineSelection: actionState.timelineSelection,
 		};
 
-		if (typeof c.fn === "function") {
-			return c.fn(context);
-		}
-
-		return null;
+		return computePropertyValues(context);
 	});
-	// const actionState = useActionState((s) => s);
-
-	// useEffect(() => {
-	// 	if (!graph || !c) {
-	// 		return;
-	// 	}
-
-	// 	const context: ComputeNodeContext = {
-	// 		computed: {},
-	// 		composition: actionState.compositions.compositions[layer.compositionId],
-	// 		layer,
-	// 		graph,
-	// 		properties: layer.properties.map((id) => actionState.compositions.properties[id]),
-	// 		timelines: actionState.timelines,
-	// 	};
-
-	// 	if (typeof c.fn === "function") {
-	// 		console.log({ result: c.fn(context) });
-	// 	}
-	// }, [c]);
 
 	return (
 		<>
@@ -104,7 +74,7 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 					<CompositionTimelineLayerProperty
 						compositionId={props.compositionId}
 						id={propertyId}
-						value={propertyToValue?.[propertyId as any] ?? 0}
+						value={propertyToValue[propertyId as any]}
 						key={i}
 					/>
 				);
@@ -120,7 +90,6 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	const layer = compositions.layers[id];
 	return {
 		layer,
-		properties: layer.properties.map((id) => compositions.properties[id]),
 		graph: layer.graphId ? nodeEditor.graphs[layer.graphId] : undefined,
 		isSelected: !!compositionSelection.layers[id],
 	};

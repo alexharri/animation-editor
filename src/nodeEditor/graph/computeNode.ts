@@ -1,7 +1,6 @@
 import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType, ValueType } from "~/types";
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import {
 	Composition,
 	CompositionLayer,
@@ -12,6 +11,7 @@ import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 import { interpolate } from "~/util/math";
 import { getExpressionIO } from "~/util/math/expressions";
 import * as mathjs from "mathjs";
+import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 
 const Type = NodeEditorNodeType;
 
@@ -22,11 +22,11 @@ export type ComputeNodeArg = {
 
 export interface ComputeNodeContext {
 	computed: { [nodeId: string]: ComputeNodeArg[] };
-	graph: NodeEditorGraphState;
 	composition: Composition;
 	layer: CompositionLayer;
 	properties: CompositionLayerProperty[];
 	timelines: TimelineState;
+	timelineSelection: TimelineSelectionState;
 }
 
 const parseNum = (arg: ComputeNodeArg): number => {
@@ -163,7 +163,11 @@ const compute: {
 	[Type.layer_input]: (_, ctx) => {
 		return ctx.properties.map((p) => {
 			const value = p.timelineId
-				? getTimelineValueAtIndex(ctx.timelines[p.timelineId], ctx.composition.frameIndex)
+				? getTimelineValueAtIndex(
+						ctx.composition.frameIndex,
+						ctx.timelines[p.timelineId],
+						ctx.timelineSelection[p.timelineId],
+				  )
 				: p.value;
 			return toArg.number(value);
 		});
@@ -209,14 +213,11 @@ const compute: {
 
 	[Type.vec2_lerp]: (args) => {
 		const a = parseVec2(args[0]);
-		const b = parseVec2(args[0]);
-		const t = parseNum(args[0]);
+		const b = parseVec2(args[1]);
+		const t = parseNum(args[2]);
 		return [toArg.vec2(a.lerp(b, t))];
 	},
 
-	/**
-	 * @todo
-	 */
 	[Type.expr]: (args, _ctx, state: NodeEditorNodeState<NodeEditorNodeType.expr>) => {
 		const expression = state.expression;
 		const io = getExpressionIO(expression);
@@ -268,33 +269,6 @@ const compute: {
 		}
 
 		return [resolve(res)];
-
-		// if (res.isDenseMatrix) {
-		// 	return res._data.map()
-		// }
-
-		// if (typeof res === "object" && Array.isArray(res.entries)) {
-		// 	return res.entries.map((item: any) => toArg.any(item));
-		// }
-
-		// if (typeof res === "object" && Array.isArray(res.entries)) {
-		// 	return res.entries.map((item: any) => toArg.any(item));
-		// }
-
-		// if (typeof res.result === "number") {
-		// 	return [toArg.number(res.result)];
-		// }
-
-		return [
-			toArg.number(5),
-			toArg.number(5),
-			toArg.number(5),
-			toArg.number(5),
-			toArg.number(5),
-			toArg.number(5),
-			toArg.number(5),
-			toArg.number(5),
-		];
 	},
 
 	[Type.empty]: () => {
@@ -315,8 +289,9 @@ export const computeNodeOutputArgs = (
 				type,
 				value: p.timelineId
 					? getTimelineValueAtIndex(
-							ctx.timelines[p.timelineId],
 							ctx.composition.frameIndex,
+							ctx.timelines[p.timelineId],
+							ctx.timelineSelection[p.timelineId],
 					  )
 					: p.value,
 			};

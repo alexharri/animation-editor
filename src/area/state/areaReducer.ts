@@ -8,8 +8,7 @@ import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { CardinalDirection } from "~/types";
 import { AreaType } from "~/constants";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
-import { getSavedAreaState, saveAreaState } from "~/area/state/localAreaState";
-import { store } from "~/state/store";
+import { CompositionTimelineAreaState } from "~/composition/timeline/compositionTimelineAreaReducer";
 
 type AreaAction = ActionType<typeof actions>;
 
@@ -32,12 +31,7 @@ export interface AreaState {
 	};
 }
 
-(window as any).saveAreaState = () => {
-	const state = store.getState();
-	saveAreaState(state.area.state);
-};
-
-export const initialAreaState: AreaState = getSavedAreaState() || {
+export const initialAreaState: AreaState = {
 	_id: 15,
 	layout: {
 		"2": {
@@ -64,8 +58,8 @@ export const initialAreaState: AreaState = getSavedAreaState() || {
 	},
 	areas: {
 		"13": {
-			type: AreaType.Timeline,
-			state: { timelineId: "0", viewBounds: [0.2, 1] },
+			type: AreaType.CompositionTimeline,
+			state: { compositionId: "0", viewBounds: [0, 1] } as CompositionTimelineAreaState,
 		},
 		"14": {
 			type: AreaType.NodeEditor,

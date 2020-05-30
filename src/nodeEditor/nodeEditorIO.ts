@@ -91,7 +91,7 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 					pointer: null,
 				},
 				{
-					type: ValueType.Vec2,
+					type: ValueType.Number,
 					name: "t",
 					value: 0.5,
 					pointer: null,
