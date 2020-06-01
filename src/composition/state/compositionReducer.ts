@@ -282,19 +282,6 @@ export const compositionReducer = (
 			const layer = state.layers[layerId];
 			const comp = state.compositions[layer.compositionId];
 
-			console.log(state, {
-				...state,
-				compositions: {
-					...state.compositions,
-					[comp.id]: {
-						...comp,
-						layers: comp.layers.filter((id) => id !== layer.id),
-					},
-				},
-				layers: removeKeysFromMap(state.layers, [layer.id]),
-				properties: removeKeysFromMap(state.properties, layer.properties),
-			});
-
 			return {
 				...state,
 				compositions: {
