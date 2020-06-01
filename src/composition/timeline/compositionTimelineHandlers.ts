@@ -235,7 +235,7 @@ export const compositionTimelineHandlers = {
 
 			params.dispatch(
 				contextMenuActions.openContextMenu(
-					"Composition Timeline Context Menu",
+					"Composition Timeline",
 					[
 						{
 							label: "Add new layer",

@@ -78,10 +78,10 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 
 	const { _yBounds, _yPan } = timelines[0];
 
-	const timelinePathLists = timelines.map((timeline) =>
+	const timelinePaths = timelines.map((timeline) =>
 		timelineKeyframesToPathList(timeline.keyframes),
 	);
-	const [yUpper, yLower] = _yBounds || getTimelineYBoundsFromPaths(timelines, timelinePathLists);
+	const [yUpper, yLower] = _yBounds || getTimelineYBoundsFromPaths(timelines, timelinePaths);
 
 	/**
 	 * Ticks
