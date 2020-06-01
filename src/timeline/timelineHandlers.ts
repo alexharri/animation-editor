@@ -297,7 +297,7 @@ const actions = {
 		const k0 = timeline.keyframes[index + (right ? 0 : -1)];
 		const k1 = timeline.keyframes[index + (right ? 0 : -1) + 1];
 		const dist = k1.index - k0.index;
-		const kDiff = k1.value - k0.value;
+		const kDiff = k1.value - k0.value || 0.0001;
 
 		const paths = timelines.reduce<Array<CubicBezier | Line>>((arr, timeline) => {
 			arr.push(...timelineKeyframesToPathList(timeline.keyframes));

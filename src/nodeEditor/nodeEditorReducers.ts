@@ -68,38 +68,7 @@ export const initialNodeEditorState: NodeEditorState = {
 			id: "0",
 			layerId: "0",
 			moveVector: Vec2.new(0, 0),
-			nodes: {
-				0: {
-					id: "0",
-					type: NodeEditorNodeType.vec2_add,
-					position: Vec2.new(-100, -200),
-					width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
-					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.vec2_add),
-					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.vec2_add),
-					state: {},
-				},
-				1: {
-					id: "1",
-					type: NodeEditorNodeType.rect_translate,
-					position: Vec2.new(100, -100),
-					width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
-					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.rect_translate),
-					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.rect_translate),
-					state: {},
-				},
-				2: {
-					id: "2",
-					type: NodeEditorNodeType.expr,
-					position: Vec2.new(0, 100),
-					width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
-					inputs: getNodeEditorNodeDefaultInputs(NodeEditorNodeType.expr),
-					outputs: getNodeEditorNodeDefaultOutputs(NodeEditorNodeType.expr),
-					state: {
-						expression: "",
-						textareaHeight: 80,
-					},
-				},
-			},
+			nodes: {},
 			selection: {
 				nodes: {},
 			},
@@ -261,7 +230,7 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 						...node,
 						state: {
 							...node.state,
-							..._state,
+							...(_state as any),
 						},
 					},
 				},
@@ -520,6 +489,28 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 					[nodeId]: {
 						...node,
 						width,
+					},
+				},
+			};
+		}
+
+		case getType(actions.setNodeInputValue): {
+			const { nodeId, inputIndex, value } = action.payload;
+			const node = state.nodes[nodeId];
+			return {
+				...state,
+				nodes: {
+					...state.nodes,
+					[nodeId]: {
+						...node,
+						inputs: node.inputs.map((input, i) =>
+							i === inputIndex
+								? {
+										...input,
+										value,
+								  }
+								: input,
+						),
 					},
 				},
 			};

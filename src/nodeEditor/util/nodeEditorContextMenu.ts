@@ -98,6 +98,10 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 			label: "Number",
 			options: [
 				createAddNodeOption({
+					type: NodeEditorNodeType.num_input,
+					label: "Number Input",
+				}),
+				createAddNodeOption({
 					type: NodeEditorNodeType.num_cap,
 					label: "Cap to Range",
 				}),
@@ -111,6 +115,10 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 		{
 			label: "Vec2",
 			options: [
+				createAddNodeOption({
+					type: NodeEditorNodeType.vec2_input,
+					label: "Vec2 Input",
+				}),
 				createAddNodeOption({
 					type: NodeEditorNodeType.vec2_add,
 					label: "Add",

@@ -173,6 +173,10 @@ const compute: {
 		});
 	},
 
+	[Type.num_input]: (_args, _ctx, state: NodeEditorNodeState<NodeEditorNodeType.num_input>) => {
+		return [toArg.number(state.value)];
+	},
+
 	[Type.num_cap]: (args) => {
 		const value = parseNum(args[0]);
 		const min = parseNum(args[1]);
@@ -216,6 +220,12 @@ const compute: {
 		const b = parseVec2(args[1]);
 		const t = parseNum(args[2]);
 		return [toArg.vec2(a.lerp(b, t))];
+	},
+
+	[Type.vec2_input]: (args) => {
+		const x = parseNum(args[0]);
+		const y = parseNum(args[1]);
+		return [toArg.vec2(Vec2.new(x, y))];
 	},
 
 	[Type.expr]: (args, _ctx, state: NodeEditorNodeState<NodeEditorNodeType.expr>) => {
@@ -279,8 +289,10 @@ const compute: {
 export const computeNodeOutputArgs = (
 	node: NodeEditorNode<NodeEditorNodeType>,
 	ctx: ComputeNodeContext,
+	mostRecentNode?: NodeEditorNode<NodeEditorNodeType>,
 ): ComputeNodeArg[] => {
-	const inputs = node.inputs.map(({ pointer, type, value }, i) => {
+	const inputs = node.inputs.map(({ pointer, type, value: _value }, i) => {
+		const value = mostRecentNode?.inputs[i].value ?? _value;
 		let defaultValue = { type, value };
 
 		if (node.type === Type.layer_output) {
@@ -303,5 +315,5 @@ export const computeNodeOutputArgs = (
 
 		return pointer ? ctx.computed[pointer.nodeId][pointer.outputIndex] : defaultValue;
 	});
-	return compute[node.type](inputs, ctx, node.state);
+	return compute[node.type](inputs, ctx, mostRecentNode?.state || node.state);
 };

@@ -8,13 +8,16 @@ import styles from "~/nodeEditor/NodeEditor.styles";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { Node } from "~/nodeEditor/nodes/Node";
-import { ExpressionNode } from "~/nodeEditor/expression/ExpressionNode";
+import { ExpressionNode } from "~/nodeEditor/nodes/expression/ExpressionNode";
+import { NumberInputNode } from "~/nodeEditor/nodes/NumberInputNode";
 import { NodeEditorConnections } from "~/nodeEditor/NodeEditorConnections";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { NodeEditorDragSelect } from "~/nodeEditor/dragSelect/NodeEditorDragSelect";
 import { NodePreview } from "~/nodeEditor/nodes/NodePreview";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { NodeEditorNodeType } from "~/types";
+import { Vec2LerpNode } from "~/nodeEditor/nodes/Vec2LerpNode";
+import { Vec2InputNode } from "~/nodeEditor/nodes/Vec2InputNode";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -127,11 +130,30 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 				>
 					<div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
 						{nodeIds.map((nodeId) => {
-							let NodeComponent = Node;
+							let NodeComponent: React.ComponentType<{
+								areaId: string;
+								graphId: string;
+								nodeId: string;
+							}> = Node;
 
 							switch (props.graph.nodes[nodeId].type) {
 								case NodeEditorNodeType.expr: {
 									NodeComponent = ExpressionNode;
+									break;
+								}
+
+								case NodeEditorNodeType.num_input: {
+									NodeComponent = NumberInputNode;
+									break;
+								}
+
+								case NodeEditorNodeType.vec2_lerp: {
+									NodeComponent = Vec2LerpNode;
+									break;
+								}
+
+								case NodeEditorNodeType.vec2_input: {
+									NodeComponent = Vec2InputNode;
 									break;
 								}
 							}

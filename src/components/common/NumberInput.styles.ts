@@ -13,15 +13,30 @@ export default ({ css }: StyleParams) => ({
 		line-height: 16px;
 		padding: 0 4px;
 		outline: none;
+		display: flex;
 
 		&:hover {
-			background-color: rgba(255, 255, 255, 0.1);
+			background-color: rgba(255, 255, 255, 0.05);
 		}
 
 		&:active {
-			background-color: rgba(255, 255, 255, 0.2);
+			background-color: rgba(255, 255, 255, 0.1);
 			cursor: ew-resize;
 		}
+
+		&--fillWidth {
+			width: 100%;
+		}
+	`,
+
+	button__label: css`
+		flex-grow: 0;
+		text-overflow: ellipsis;
+	`,
+
+	button__value: css`
+		flex-grow: 1;
+		text-align: right;
 	`,
 
 	container: css`
@@ -29,10 +44,21 @@ export default ({ css }: StyleParams) => ({
 		height: 16px;
 		display: inline-block;
 		vertical-align: top;
+
+		input {
+			width: 50px;
+		}
+
+		&--fullWidth {
+			width: 100%;
+
+			input {
+				width: 100%;
+			}
+		}
 	`,
 
 	input: css`
-		width: 50px;
 		height: 18px;
 		color: white;
 		outline: none;

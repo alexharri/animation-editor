@@ -173,4 +173,8 @@ export const nodeEditorActions = {
 		return (graphId: string, nodeId: string, indices: number[]) =>
 			action({ graphId, nodeId, indices });
 	}),
+	setNodeInputValue: createAction("nodeEditorGraph/SET_NODE_INPUT_VALUE", (action) => {
+		return (graphId: string, nodeId: string, inputIndex: number, value: any) =>
+			action({ graphId, nodeId, inputIndex, value });
+	}),
 };

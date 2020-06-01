@@ -17,6 +17,37 @@ export const NODE_HEIGHT_CONSTANTS = {
 	bottomPadding,
 };
 
+const getVec2InputHeight = (node: NodeEditorNode<NodeEditorNodeType>, index: number) => {
+	return node.inputs[index].pointer ? inputHeight : inputHeight * 3;
+};
+
+const getInputHeight = (node: NodeEditorNode<NodeEditorNodeType>, index: number) => {
+	switch (node.type) {
+		case NodeEditorNodeType.vec2_lerp: {
+			switch (index) {
+				case 0:
+					return getVec2InputHeight(node, index);
+				case 1:
+					return getVec2InputHeight(node, index);
+			}
+			break;
+		}
+	}
+
+	return inputHeight;
+};
+
+const getCombinedInputsHeight = (
+	node: NodeEditorNode<NodeEditorNodeType>,
+	upToIndex = node.inputs.length,
+) => {
+	let out = 0;
+	for (let i = 0; i < upToIndex; i += 1) {
+		out += getInputHeight(node, i);
+	}
+	return out;
+};
+
 const aboveInputs: Partial<
 	{ [key in NodeEditorNodeType]: (node: NodeEditorNode<any>) => number }
 > = {
@@ -30,8 +61,8 @@ export const getAboveInputs = (node: NodeEditorNode<NodeEditorNodeType>): number
 };
 
 export const calculateNodeHeight = (node: NodeEditorNode<NodeEditorNodeType>): number => {
-	const inputs = node.inputs;
 	const outputs = node.outputs;
+	console.log(node.type);
 	return (
 		borderWidth * 2 +
 		headerHeight +
@@ -39,7 +70,7 @@ export const calculateNodeHeight = (node: NodeEditorNode<NodeEditorNodeType>): n
 		outputs.length * outputHeight +
 		spacing +
 		getAboveInputs(node) +
-		inputs.length * inputHeight +
+		getCombinedInputsHeight(node) +
 		bottomPadding
 	);
 };
@@ -56,7 +87,7 @@ export const calculateNodeInputY = (
 		outputs.length * outputHeight +
 		(outputs.length ? spacing : 0) +
 		getAboveInputs(node) +
-		inputIndex * inputHeight +
+		getCombinedInputsHeight(node, inputIndex) +
 		inputHeight / 2
 	);
 };
@@ -85,7 +116,7 @@ export const calculateNodeInputPosition = (
 			node.outputs.length * outputHeight +
 			(node.outputs.length ? spacing : 0) +
 			getAboveInputs(node) +
-			inputIndex * inputHeight +
+			getCombinedInputsHeight(node, inputIndex) +
 			inputHeight / 2,
 	);
 };

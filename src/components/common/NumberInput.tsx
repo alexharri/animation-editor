@@ -27,6 +27,7 @@ const getUnmixedValue = (val: number | number[]): number => {
 };
 
 interface Props {
+	label?: string;
 	tick?: number;
 	pxPerTick?: number;
 	value: number | number[];
@@ -37,6 +38,8 @@ interface Props {
 	max?: number;
 	decimalPlaces?: number;
 	width?: number;
+	fillWidth?: boolean;
+	fullWidth?: boolean;
 	dragRelative?: boolean;
 }
 
@@ -85,12 +88,12 @@ export class NumberInput extends React.Component<Props, State> {
 	}
 
 	public render() {
+		const { width, fillWidth = false, fullWidth = false } = this.props;
+		const { typing } = this.state;
+
 		if (this.state.typing) {
 			return (
-				<div
-					className={s("container", { typing: this.state.typing })}
-					style={{ width: this.props.width }}
-				>
+				<div className={s("container", { typing, fullWidth })} style={{ width }}>
 					<input
 						className={s("input")}
 						ref={this.input}
@@ -104,7 +107,8 @@ export class NumberInput extends React.Component<Props, State> {
 								this.onBlurFn();
 							}
 						}}
-						style={{ width: this.props.width }}
+						onMouseDown={(e) => e.stopPropagation()}
+						style={{ width }}
 						onKeyDown={(e) => {
 							if (
 								isKeyCodeOf("Enter", e.keyCode) &&
@@ -123,25 +127,40 @@ export class NumberInput extends React.Component<Props, State> {
 				</div>
 			);
 		}
+
+		const val =
+			isMixed(this.props.value) && !this.state.useState
+				? "Mixed"
+				: (this.state.useState
+						? this.state.value
+						: getUnmixedValue(this.props.value)
+				  ).toFixed(
+						typeof this.props.decimalPlaces === "number" ? this.props.decimalPlaces : 1,
+				  );
+
 		return (
-			<div className={s("container")} style={{ width: this.props.width }}>
-				<button className={s("button")} onMouseDown={this.onMouseDown} tabIndex={-1}>
-					{isMixed(this.props.value) && !this.state.useState
-						? "Mixed"
-						: (this.state.useState
-								? this.state.value
-								: getUnmixedValue(this.props.value)
-						  ).toFixed(
-								typeof this.props.decimalPlaces === "number"
-									? this.props.decimalPlaces
-									: 1,
-						  )}
+			<div className={s("container", { fullWidth })} style={{ width }}>
+				<button
+					className={s("button", { fillWidth })}
+					onMouseDown={this.onMouseDown}
+					tabIndex={-1}
+				>
+					{this.props.label ? (
+						<>
+							<div className={s("button__label")}>{this.props.label}</div>
+							<div className={s("button__value")}>{val}</div>
+						</>
+					) : (
+						<div className={s("button__value")}>{val}</div>
+					)}
 				</button>
 			</div>
 		);
 	}
 
 	private onMouseDown(e: React.MouseEvent) {
+		e.stopPropagation();
+
 		const tick = this.props.tick || 1;
 		const initialPosition = Vec2.fromEvent(e);
 		const initialValue = this.state.useState

@@ -10,6 +10,7 @@ export const computeLayerGraph = (
 	graph?: NodeEditorGraphState,
 ): ((
 	context: ComputeNodeContext,
+	graph?: NodeEditorGraphState,
 ) => {
 	[propertyId: string]: number;
 }) => {
@@ -82,10 +83,14 @@ export const computeLayerGraph = (
 
 	const toCompute = getNodes(outputNode);
 
-	return (context: ComputeNodeContext): { [propertyId: string]: number } => {
+	return (
+		context: ComputeNodeContext,
+		mostRecentGraph: NodeEditorGraphState = graph,
+	): { [propertyId: string]: number } => {
 		for (let i = 0; i < toCompute.length; i += 1) {
 			const node = graph.nodes[toCompute[i]];
-			context.computed[node.id] = computeNodeOutputArgs(node, context);
+			const mostRecentNode = mostRecentGraph.nodes[toCompute[i]];
+			context.computed[node.id] = computeNodeOutputArgs(node, context, mostRecentNode);
 		}
 
 		return context.computed[outputNode!.id]

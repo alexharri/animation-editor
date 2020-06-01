@@ -1,5 +1,6 @@
 import { StyleParams } from "~/util/stylesheets";
 import { cssVariables, cssMixins } from "~/cssVariables";
+import { NODE_EDITOR_NODE_H_PADDING } from "~/constants";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
@@ -28,17 +29,21 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	input: css`
-		height: 20px;
+		min-height: 20px;
 		line-height: 20px;
-		padding-left: 16px;
+		padding-left: ${NODE_EDITOR_NODE_H_PADDING}px;
 		width: 100%;
 		position: relative;
+
+		&--noPadding {
+			padding-left: 0;
+		}
 	`,
 
 	input__circle: css`
 		position: absolute;
 		left: -5px;
-		top: 50%;
+		top: 10px;
 		transform: translate(0, -50%);
 		width: 9px;
 		height: 9px;
@@ -57,7 +62,7 @@ export default ({ css }: StyleParams) => ({
 	output: css`
 		height: 20px;
 		line-height: 20px;
-		padding-right: 16px;
+		padding-right: ${NODE_EDITOR_NODE_H_PADDING}px;
 		width: 100%;
 		position: relative;
 		z-index: 10;

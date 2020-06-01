@@ -1,7 +1,7 @@
 import { requestAction } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { getExpressionUpdateIO } from "~/nodeEditor/expression/expressionUtils";
+import { getExpressionUpdateIO } from "~/nodeEditor/nodes/expression/expressionUtils";
 import { ValueType } from "~/types";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";

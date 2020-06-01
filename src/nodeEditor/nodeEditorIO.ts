@@ -2,6 +2,9 @@ import { NodeEditorNodeType, ValueType } from "~/types";
 
 export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEditorNodeInput[] => {
 	switch (type) {
+		case NodeEditorNodeType.num_input:
+			return [];
+
 		case NodeEditorNodeType.num_cap:
 			return [
 				{
@@ -114,6 +117,22 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 				},
 			];
 
+		case NodeEditorNodeType.vec2_input:
+			return [
+				{
+					type: ValueType.Number,
+					name: "X",
+					value: 0,
+					pointer: null,
+				},
+				{
+					type: ValueType.Number,
+					name: "Y",
+					value: 0,
+					pointer: null,
+				},
+			];
+
 		case NodeEditorNodeType.rect_translate:
 			return [
 				{
@@ -177,6 +196,14 @@ export const getNodeEditorNodeDefaultOutputs = (
 				},
 			];
 
+		case NodeEditorNodeType.num_input:
+			return [
+				{
+					name: "Number",
+					type: ValueType.Number,
+				},
+			];
+
 		case NodeEditorNodeType.num_lerp:
 			return [
 				{
@@ -209,6 +236,14 @@ export const getNodeEditorNodeDefaultOutputs = (
 			return [
 				{
 					name: "Vector",
+					type: ValueType.Vec2,
+				},
+			];
+
+		case NodeEditorNodeType.vec2_input:
+			return [
+				{
+					name: "Vec2",
 					type: ValueType.Vec2,
 				},
 			];
@@ -270,9 +305,11 @@ type NodeEditorNodeStateMap = {
 	[NodeEditorNodeType.rad_to_deg]: {};
 	[NodeEditorNodeType.num_cap]: {};
 	[NodeEditorNodeType.num_lerp]: {};
+	[NodeEditorNodeType.num_input]: { value: number; type: "value" | "t_value" };
 	[NodeEditorNodeType.vec2_factors]: {};
 	[NodeEditorNodeType.vec2_lerp]: {};
 	[NodeEditorNodeType.vec2_add]: {};
+	[NodeEditorNodeType.vec2_input]: {};
 	[NodeEditorNodeType.empty]: {};
 	[NodeEditorNodeType.rect_translate]: {};
 	[NodeEditorNodeType.layer_input]: {};

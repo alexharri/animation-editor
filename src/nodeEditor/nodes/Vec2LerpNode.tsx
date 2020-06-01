@@ -3,9 +3,10 @@ import { connectActionState } from "~/state/stateUtils";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
-import { separateLeftRightMouse } from "~/util/mouse";
 import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
 import { NodeBody } from "~/nodeEditor/components/NodeBody";
+import { NodeTValueInput } from "~/nodeEditor/inputs/NodeTValueInput";
+import { NodeVec2Input } from "~/nodeEditor/inputs/NodeVec2Input";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -17,15 +18,18 @@ interface OwnProps {
 interface StateProps {
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
+	width: number;
 }
 
 type Props = OwnProps & StateProps;
 
-function NodeComponent(props: Props) {
-	const { nodeId, areaId, graphId, outputs, inputs } = props;
+function Vec2LerpNodeComponent(props: Props) {
+	const { areaId, graphId, nodeId, outputs } = props;
+
+	const baseProps = { areaId, graphId, nodeId };
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+		<NodeBody {...baseProps}>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -45,35 +49,9 @@ function NodeComponent(props: Props) {
 					</div>
 				);
 			})}
-			{inputs.map((input, i) => {
-				return (
-					<div className={s("input")} key={i}>
-						<div
-							className={s("input__circle")}
-							onMouseDown={separateLeftRightMouse({
-								left: input.pointer
-									? (e) =>
-											nodeHandlers.onInputWithPointerMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											)
-									: (e) =>
-											nodeHandlers.onInputMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											),
-							})}
-						/>
-						<div className={s("input__name")}>{input.name}</div>
-					</div>
-				);
-			})}
+			<NodeVec2Input {...baseProps} index={0} />
+			<NodeVec2Input {...baseProps} index={1} />
+			<NodeTValueInput {...baseProps} index={2} />
 		</NodeBody>
 	);
 }
@@ -87,7 +65,8 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	return {
 		inputs: node.inputs,
 		outputs: node.outputs,
+		width: node.width,
 	};
 };
 
-export const Node = connectActionState(mapStateToProps)(NodeComponent);
+export const Vec2LerpNode = connectActionState(mapStateToProps)(Vec2LerpNodeComponent);

@@ -3,9 +3,9 @@ import { connectActionState } from "~/state/stateUtils";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
-import { separateLeftRightMouse } from "~/util/mouse";
 import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
 import { NodeBody } from "~/nodeEditor/components/NodeBody";
+import { NodeNumberInput } from "~/nodeEditor/inputs/NodeNumberInput";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -17,15 +17,18 @@ interface OwnProps {
 interface StateProps {
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
+	width: number;
 }
 
 type Props = OwnProps & StateProps;
 
-function NodeComponent(props: Props) {
-	const { nodeId, areaId, graphId, outputs, inputs } = props;
+function Vec2InputNodeComponent(props: Props) {
+	const { areaId, graphId, nodeId, outputs } = props;
+
+	const baseProps = { areaId, graphId, nodeId };
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+		<NodeBody {...baseProps}>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -45,35 +48,8 @@ function NodeComponent(props: Props) {
 					</div>
 				);
 			})}
-			{inputs.map((input, i) => {
-				return (
-					<div className={s("input")} key={i}>
-						<div
-							className={s("input__circle")}
-							onMouseDown={separateLeftRightMouse({
-								left: input.pointer
-									? (e) =>
-											nodeHandlers.onInputWithPointerMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											)
-									: (e) =>
-											nodeHandlers.onInputMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											),
-							})}
-						/>
-						<div className={s("input__name")}>{input.name}</div>
-					</div>
-				);
-			})}
+			<NodeNumberInput {...baseProps} index={0} />
+			<NodeNumberInput {...baseProps} index={1} />
 		</NodeBody>
 	);
 }
@@ -87,7 +63,8 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	return {
 		inputs: node.inputs,
 		outputs: node.outputs,
+		width: node.width,
 	};
 };
 
-export const Node = connectActionState(mapStateToProps)(NodeComponent);
+export const Vec2InputNode = connectActionState(mapStateToProps)(Vec2InputNodeComponent);

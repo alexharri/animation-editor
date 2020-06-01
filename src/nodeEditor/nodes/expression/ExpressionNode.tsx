@@ -4,10 +4,14 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
+import {
+	NodeEditorNodeState,
+	NodeEditorNodeInput,
+	NodeEditorNodeOutput,
+} from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType } from "~/types";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { expressionNodeHandlers } from "~/nodeEditor/expression/expressionNodeHandlers";
+import { expressionNodeHandlers } from "~/nodeEditor/nodes/expression/expressionNodeHandlers";
+import { NodeBody } from "~/nodeEditor/components/NodeBody";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -17,34 +21,21 @@ interface OwnProps {
 	nodeId: string;
 }
 interface StateProps {
-	node: NodeEditorNode<NodeEditorNodeType.expr>;
-	position: Vec2;
-	selected: boolean;
-	nodes: NodeEditorGraphState["nodes"];
+	inputs: NodeEditorNodeInput[];
+	outputs: NodeEditorNodeOutput[];
+	state: NodeEditorNodeState<NodeEditorNodeType.expr>;
 }
 
 type Props = OwnProps & StateProps;
 
 function ExpressionNodeComponent(props: Props) {
-	const { x: left, y: top } = props.position;
-	const { selected } = props;
+	const { areaId, graphId, nodeId, outputs, inputs, state } = props;
 
 	return (
-		<div
-			className={s("container", { selected })}
-			style={{ left, top, width: props.node.width }}
-			onMouseDown={separateLeftRightMouse({
-				left: (e) => nodeHandlers.mouseDown(e, props.areaId, props.graphId, props.nodeId),
-				right: (e) => nodeHandlers.onRightClick(e, props.graphId, props.nodeId),
-			})}
-		>
-			<div className={s("header")}>{props.node.type}</div>
-			{props.node.outputs.map((output, i) => {
+		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+			{outputs.map((output, i) => {
 				return (
-					<div
-						className={s("output", { last: i === props.node.outputs.length - 1 })}
-						key={i}
-					>
+					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
 						<div
 							className={s("output__circle")}
 							onMouseDown={(e) =>
@@ -65,10 +56,10 @@ function ExpressionNodeComponent(props: Props) {
 				<textarea
 					className={s("expressionTextarea")}
 					onMouseDown={(e) => e.stopPropagation()}
-					key={props.node.state.expression}
-					defaultValue={props.node.state.expression}
+					key={state.expression}
+					defaultValue={state.expression}
 					onBlur={(e) => expressionNodeHandlers.onBlur(e, props.graphId, props.nodeId)}
-					style={{ height: props.node.state.textareaHeight }}
+					style={{ height: state.textareaHeight }}
 				/>
 				<div
 					className={s("expressionTextarea__resize")}
@@ -83,7 +74,7 @@ function ExpressionNodeComponent(props: Props) {
 					})}
 				/>
 			</div>
-			{props.node.inputs.map((input, i) => {
+			{inputs.map((input, i) => {
 				return (
 					<div className={s("input")} key={i}>
 						<div
@@ -112,19 +103,7 @@ function ExpressionNodeComponent(props: Props) {
 					</div>
 				);
 			})}
-			<div
-				className={s("widthResize")}
-				onMouseDown={separateLeftRightMouse({
-					left: (e) =>
-						nodeHandlers.onWidthResizeMouseDown(
-							e,
-							props.areaId,
-							props.graphId,
-							props.nodeId,
-						),
-				})}
-			/>
-		</div>
+		</NodeBody>
 	);
 }
 
@@ -134,15 +113,10 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 ) => {
 	const graph = nodeEditor.graphs[graphId];
 	const node = graph.nodes[nodeId];
-	const selected = !!graph.selection.nodes[nodeId];
 	return {
-		node: node as NodeEditorNode<NodeEditorNodeType.expr>,
-		selected: selected,
-		position:
-			selected && (graph.moveVector.x !== 0 || graph.moveVector.y !== 0)
-				? node.position.add(graph.moveVector)
-				: node.position,
-		nodes: nodeEditor.graphs[graphId].nodes,
+		inputs: node.inputs,
+		outputs: node.outputs,
+		state: node.state as StateProps["state"],
 	};
 };
 

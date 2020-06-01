@@ -50,7 +50,8 @@ const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 			timelineSelection: actionState.timelineSelection,
 		};
 
-		return computePropertyValues(context);
+		const mostRecentGraph = actionState.nodeEditor.graphs[layer.graphId];
+		return computePropertyValues(context, mostRecentGraph);
 	});
 
 	const nameToProperty = layer.properties.reduce<{ [key: string]: number }>((obj, propertyId) => {
