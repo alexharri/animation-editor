@@ -13,6 +13,7 @@ import { Composition } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
+import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 
 const ZOOM_FAC = 0.25;
 
@@ -219,6 +220,79 @@ export const compositionTimelineHandlers = {
 			const { dispatch, submitAction } = params;
 			dispatch(compositionActions.clearCompositionSelection(compositionId));
 			submitAction("Clear selection");
+		});
+	},
+
+	onRightClickOut: (e: React.MouseEvent, compositionId: string) => {
+		const position = Vec2.fromEvent(e);
+
+		requestAction({ history: true }, (params) => {
+			const addRectLayer = () => {
+				params.dispatch(compositionActions.createRectLayer(compositionId));
+				params.dispatch(contextMenuActions.closeContextMenu());
+				params.submitAction("Add Rect Layer");
+			};
+
+			params.dispatch(
+				contextMenuActions.openContextMenu(
+					"Composition Timeline",
+					[
+						{
+							label: "Add new layer",
+							options: [
+								{
+									label: "Rect",
+									onSelect: addRectLayer,
+								},
+							],
+						},
+					],
+					position,
+					params.cancelAction,
+				),
+			);
+		});
+	},
+
+	onLayerRightClick: (e: React.MouseEvent, layerId: string) => {
+		const position = Vec2.fromEvent(e);
+
+		requestAction({ history: true }, (params) => {
+			const removeLayer = () => {
+				const compositionState = getActionState().compositions;
+				const layer = compositionState.layers[layerId];
+				const properties = layer.properties.map((id) => compositionState.properties[id]);
+
+				// Remove all timelines referenced by properties of the deleted layer.
+				//
+				// In the future, timelines may be referenced in more ways than just by animated
+				// properties. When that is the case we will have to check for other references to
+				// the timelines we're deleting.
+				const timelineIdsToRemove = properties
+					.filter((p) => p.timelineId)
+					.map((p) => p.timelineId);
+				for (let i = 0; i < timelineIdsToRemove.length; i += 1) {
+					params.dispatch(timelineActions.removeTimeline(timelineIdsToRemove[i]));
+				}
+
+				params.dispatch(compositionActions.removeLayer(layer.id));
+				params.dispatch(contextMenuActions.closeContextMenu());
+				params.submitAction("Delete layer");
+			};
+
+			params.dispatch(
+				contextMenuActions.openContextMenu(
+					"Layer",
+					[
+						{
+							label: "Delete",
+							onSelect: removeLayer,
+						},
+					],
+					position,
+					params.cancelAction,
+				),
+			);
 		});
 	},
 

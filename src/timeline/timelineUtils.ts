@@ -137,22 +137,40 @@ export function getTimelineValueAtIndex(
 
 export const getTimelineYBoundsFromPaths = (
 	timelines: Timeline[],
-	paths: Array<CubicBezier | Line>,
+	_timelinePaths: Array<CubicBezier | Line>[],
 ): [number, number] => {
 	if (timelines.length === 1 && timelines[0].keyframes.length === 1) {
 		const { value } = timelines[0].keyframes[0];
 		return [value + 10, value - 10];
 	}
 
+	// If no paths exist for a timeline, that means the timeline consists of
+	// a single keyframe.
+	//
+	// Since only the y value matters, we can replace it with a line that
+	// reflects the keyframe's y.
+	const timelinePaths = _timelinePaths.map<Array<CubicBezier | Line>>((paths, i) => {
+		if (paths.length === 0) {
+			const { value, index } = timelines[i].keyframes[0];
+			return [[Vec2.new(index, value), Vec2.new(index + 1, value)]];
+		}
+
+		return paths;
+	});
+
+	// Check if all paths are on the same y value. This is most commonly the
+	// case for single-keyframe paths.
 	let areAllSameValue = true;
-	let firstValue = paths[0][0].y;
+	let firstValue = timelines[0].keyframes[0].value;
 	{
-		i: for (let i = 0; i < paths.length; i += 1) {
-			for (let j = i === 0 ? 1 : 0; j < paths[i].length; j += 1) {
-				const { y } = paths[i][j];
-				if (y !== firstValue) {
-					areAllSameValue = false;
-					break i;
+		i: for (let i = 0; i < timelinePaths.length; i += 1) {
+			for (let j = i === 0 ? 1 : 0; j < timelinePaths[i].length; j += 1) {
+				for (let k = 0; k < timelinePaths.length; k += 1) {
+					const { y } = timelinePaths[i][j][k];
+					if (y !== firstValue) {
+						areAllSameValue = false;
+						break i;
+					}
 				}
 			}
 		}
@@ -165,20 +183,23 @@ export const getTimelineYBoundsFromPaths = (
 	let yUpper = -Infinity;
 	let yLower = Infinity;
 
-	for (let i = 0; i < paths.length; i += 1) {
-		for (let j = 0; j < paths[i].length; j += 1) {
-			const vec = paths[i][j];
-			if (yUpper < vec.y) {
-				yUpper = vec.y;
-			}
-			if (yLower > vec.y) {
-				yLower = vec.y;
+	for (let i = 0; i < timelinePaths.length; i += 1) {
+		for (let j = 0; j < timelinePaths[i].length; j += 1) {
+			for (let k = 0; k < timelinePaths[i][j].length; k += 1) {
+				const vec = timelinePaths[i][j][k];
+				if (yUpper < vec.y) {
+					yUpper = vec.y;
+				}
+				if (yLower > vec.y) {
+					yLower = vec.y;
+				}
 			}
 		}
 	}
 
 	const diff = yUpper - yLower;
 
+	// Add .1 of the diff on each side for padding.
 	return [yUpper + diff * 0.1, yLower - diff * 0.1];
 };
 
@@ -210,13 +231,11 @@ export const transformGlobalToTimelinePosition = (
 	const xt = pos.x / viewport.width;
 	const yt = pos.y / viewport.height;
 
-	const paths: Array<CubicBezier | Line> = [];
+	const timelinePaths = timelines.map((timeline) =>
+		timelineKeyframesToPathList(timeline.keyframes),
+	);
 
-	for (let i = 0; i < timelines.length; i += 1) {
-		paths.push(...timelineKeyframesToPathList(timelines[i].keyframes));
-	}
-
-	const [yUp, yLow] = getTimelineYBoundsFromPaths(timelines, paths);
+	const [yUp, yLow] = getTimelineYBoundsFromPaths(timelines, timelinePaths);
 	const [xMin, xMax] = viewBounds;
 
 	const x = (xMin + (xMax - xMin) * xt) * options.length;

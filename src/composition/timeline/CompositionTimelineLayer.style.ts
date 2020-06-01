@@ -6,7 +6,7 @@ export default ({ css }: StyleParams) => ({
 		display: flex;
 		padding-left: 24px;
 		background: ${cssVariables.dark700};
-		margin-bottom: 1px;
+		margin: 1px 0;
 		border-radius: 2px;
 	`,
 

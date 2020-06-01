@@ -108,11 +108,10 @@ const actions = {
 			dispatch(timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id));
 		}
 
-		const paths = timelines.reduce<Array<CubicBezier | Line>>((arr, timeline) => {
-			arr.push(...timelineKeyframesToPathList(timeline.keyframes));
-			return arr;
-		}, []);
-		const yBounds = getTimelineYBoundsFromPaths(timelines, paths);
+		const timelinePaths = timelines.map((timeline) =>
+			timelineKeyframesToPathList(timeline.keyframes),
+		);
+		const yBounds = getTimelineYBoundsFromPaths(timelines, timelinePaths);
 
 		let yPan = 0;
 		let hasMoved = false;
@@ -299,11 +298,10 @@ const actions = {
 		const dist = k1.index - k0.index;
 		const kDiff = k1.value - k0.value || 0.0001;
 
-		const paths = timelines.reduce<Array<CubicBezier | Line>>((arr, timeline) => {
-			arr.push(...timelineKeyframesToPathList(timeline.keyframes));
-			return arr;
-		}, []);
-		const yBounds = getTimelineYBoundsFromPaths(timelines, paths);
+		const timelinePaths = timelines.map((timeline) =>
+			timelineKeyframesToPathList(timeline.keyframes),
+		);
+		const yBounds = getTimelineYBoundsFromPaths(timelines, timelinePaths);
 
 		// Set bounds for all timelines
 		timelines.forEach(({ id }) => {

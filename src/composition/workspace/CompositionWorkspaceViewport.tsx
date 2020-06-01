@@ -1,8 +1,8 @@
 import React from "react";
-import { useActionState } from "~/hook/useActionState";
 import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
 import { cssVariables } from "~/cssVariables";
 import { CompositionWorkspaceLayer } from "~/composition/workspace/CompositionWorkspaceLayer";
+import { connectActionState } from "~/state/stateUtils";
 
 const styles = ({ css }: StyleParams) => ({
 	container: css`
@@ -13,22 +13,21 @@ const styles = ({ css }: StyleParams) => ({
 
 const s = compileStylesheetLabelled(styles);
 
-interface Props {
+interface OwnProps {
 	compositionId: string;
 }
+interface StateProps {
+	width: number;
+	height: number;
+	layerIds: string[];
+}
+type Props = OwnProps & StateProps;
 
-export const CompositionWorkspaceViewport: React.FC<Props> = (props) => {
-	const composition = useActionState(
-		(state) => state.compositions.compositions[props.compositionId],
-	);
-
-	const layerIds = composition.layers;
+const CompositionWorkspaceViewportComponent: React.FC<Props> = (props) => {
+	const { width, height, layerIds } = props;
 
 	return (
-		<div
-			className={s("container")}
-			style={{ width: composition.width, height: composition.height }}
-		>
+		<div className={s("container")} style={{ width, height }}>
 			{layerIds.map((id) => (
 				<CompositionWorkspaceLayer
 					key={id}
@@ -39,3 +38,16 @@ export const CompositionWorkspaceViewport: React.FC<Props> = (props) => {
 		</div>
 	);
 };
+
+const mapState: MapActionState<StateProps, OwnProps> = ({ compositions }, { compositionId }) => {
+	const { width, height, layers } = compositions.compositions[compositionId];
+	return {
+		width,
+		height,
+		layerIds: layers,
+	};
+};
+
+export const CompositionWorkspaceViewport = connectActionState(mapState)(
+	CompositionWorkspaceViewportComponent,
+);
