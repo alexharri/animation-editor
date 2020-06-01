@@ -46,14 +46,12 @@ export const createToTimelineViewportY = (options: {
 }): ((value: number) => number) => {
 	const { timelines, height } = options;
 
-	const paths: Array<CubicBezier | Line> = [];
+	const timelinePaths = timelines.map((timeline) =>
+		timelineKeyframesToPathList(timeline.keyframes),
+	);
 
-	for (let i = 0; i < timelines.length; i += 1) {
-		const keyframes = timelines[i].keyframes;
-		paths.push(...timelineKeyframesToPathList(keyframes));
-	}
-
-	const [yUpper, yLower] = timelines[0]._yBounds || getTimelineYBoundsFromPaths(timelines, paths);
+	const [yUpper, yLower] =
+		timelines[0]._yBounds || getTimelineYBoundsFromPaths(timelines, timelinePaths);
 	const yUpLowDiff = yUpper - yLower;
 
 	return (value: number) => {
@@ -80,11 +78,10 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 
 	const { _yBounds, _yPan } = timelines[0];
 
-	const allPaths = timelines.reduce<Array<CubicBezier | Line>>((arr, timeline) => {
-		arr.push(...timelineKeyframesToPathList(timeline.keyframes));
-		return arr;
-	}, []);
-	const [yUpper, yLower] = _yBounds || getTimelineYBoundsFromPaths(timelines, allPaths);
+	const timelinePathLists = timelines.map((timeline) =>
+		timelineKeyframesToPathList(timeline.keyframes),
+	);
+	const [yUpper, yLower] = _yBounds || getTimelineYBoundsFromPaths(timelines, timelinePathLists);
 
 	/**
 	 * Ticks

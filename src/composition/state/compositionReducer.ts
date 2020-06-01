@@ -6,6 +6,45 @@ import {
 } from "~/composition/compositionTypes";
 import { TimelineColors } from "~/constants";
 import { ValueType } from "~/types";
+import { getDefaultLayerProperties } from "~/composition/util/layerPropertyUtils";
+import { removeKeysFromMap, addListToMap } from "~/util/mapUtils";
+
+const createLayerId = (layers: CompositionState["layers"]) =>
+	(
+		Math.max(
+			...Object.keys(layers)
+				.map((x) => parseInt(x))
+				.filter((x) => !isNaN(x)),
+		) + 1
+	).toString();
+
+const getNonDuplicateLayerName = (name: string, layers: CompositionLayer[]) => {
+	const names = new Set(...layers.map((layer) => layer.name));
+
+	if (!names.has(name)) {
+		return name;
+	}
+
+	let i = 1;
+	while (names.has(`${name} ${i}`)) {
+		i++;
+	}
+	return `${name} ${i}`;
+};
+
+const createPropertyIdFn = (properties: CompositionState["properties"]) => {
+	let n = 0;
+	return () => {
+		n++;
+		return (
+			Math.max(
+				...Object.keys(properties)
+					.map((x) => parseInt(x))
+					.filter((x) => !isNaN(x)),
+			) + n
+		).toString();
+	};
+};
 
 export interface CompositionState {
 	compositions: {
@@ -121,6 +160,14 @@ export const compositionActions = {
 	setPropertyTimelineId: createAction("comp/SET_PROPERTY_TIMELINE_ID", (action) => {
 		return (propertyId: string, timelineId: string) => action({ propertyId, timelineId });
 	}),
+
+	createRectLayer: createAction("comp/CREATE_RECT_LAYER", (action) => {
+		return (compositionId: string) => action({ compositionId });
+	}),
+
+	removeLayer: createAction("comp/DELETE_LAYER", (action) => {
+		return (layerId: string) => action({ layerId });
+	}),
 };
 
 type Action = ActionType<typeof compositionActions>;
@@ -183,6 +230,82 @@ export const compositionReducer = (
 						timelineId,
 					},
 				},
+			};
+		}
+
+		case getType(compositionActions.createRectLayer): {
+			const { compositionId } = action.payload;
+
+			const composition = state.compositions[compositionId];
+
+			const layerId = createLayerId(state.layers);
+
+			const properties = getDefaultLayerProperties({
+				compositionId,
+				layerId,
+				createId: createPropertyIdFn(state.properties),
+			});
+
+			const layer: CompositionLayer = {
+				compositionId,
+				graphId: "",
+				id: layerId,
+				index: 0,
+				length: composition.length,
+				name: getNonDuplicateLayerName(
+					"Rect Layer",
+					composition.layers.map((id) => state.layers[id]),
+				),
+				properties: properties.map((p) => p.id),
+				type: "rect",
+			};
+
+			return {
+				...state,
+				compositions: {
+					...state.compositions,
+					[composition.id]: {
+						...composition,
+						layers: [...composition.layers, layer.id],
+					},
+				},
+				layers: {
+					...state.layers,
+					[layer.id]: layer,
+				},
+				properties: addListToMap(state.properties, properties, "id"),
+			};
+		}
+
+		case getType(compositionActions.removeLayer): {
+			const { layerId } = action.payload;
+			const layer = state.layers[layerId];
+			const comp = state.compositions[layer.compositionId];
+
+			console.log(state, {
+				...state,
+				compositions: {
+					...state.compositions,
+					[comp.id]: {
+						...comp,
+						layers: comp.layers.filter((id) => id !== layer.id),
+					},
+				},
+				layers: removeKeysFromMap(state.layers, [layer.id]),
+				properties: removeKeysFromMap(state.properties, layer.properties),
+			});
+
+			return {
+				...state,
+				compositions: {
+					...state.compositions,
+					[comp.id]: {
+						...comp,
+						layers: comp.layers.filter((id) => id !== layer.id),
+					},
+				},
+				layers: removeKeysFromMap(state.layers, [layer.id]),
+				properties: removeKeysFromMap(state.properties, layer.properties),
 			};
 		}
 

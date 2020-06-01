@@ -1,5 +1,5 @@
 import React from "react";
-import { useStylesheet } from "~/util/stylesheets";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import styles from "~/composition/timeline/CompositionTimelineLayer.style";
 import { CompositionTimelineLayerProperty } from "~/composition/timeline/CompositionTimelineLayerProperty";
@@ -13,6 +13,8 @@ import { useComputeHistory } from "~/hook/useComputeHistory";
 import { useActionState } from "~/hook/useActionState";
 import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
 
+const s = compileStylesheetLabelled(styles);
+
 interface OwnProps {
 	id: string;
 	compositionId: string;
@@ -25,7 +27,6 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
-	const s = useStylesheet(styles);
 	const { layer, graph } = props;
 
 	const properties = useComputeHistory((state) =>
@@ -51,7 +52,12 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 
 	return (
 		<>
-			<div className={s("container")}>
+			<div
+				className={s("container")}
+				onMouseDown={separateLeftRightMouse({
+					right: (e) => compositionTimelineHandlers.onLayerRightClick(e, layer.id),
+				})}
+			>
 				<div
 					className={s("name", { active: props.isSelected })}
 					onMouseDown={separateLeftRightMouse({

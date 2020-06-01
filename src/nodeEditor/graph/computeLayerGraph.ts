@@ -17,7 +17,7 @@ export const computeLayerGraph = (
 	const computeRawPropertyValues = (
 		context: ComputeNodeContext,
 	): { [propertyId: string]: number } => {
-		return properties.reduce<{
+		return context.properties.reduce<{
 			[propertyId: string]: number;
 		}>((obj, p) => {
 			obj[p.id] = p.timelineId

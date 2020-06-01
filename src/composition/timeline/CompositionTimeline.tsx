@@ -111,6 +111,8 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				onMouseDown={separateLeftRightMouse({
 					left: (e) =>
 						compositionTimelineHandlers.onMouseDownOut(e, outRef, props.composition.id),
+					right: (e) =>
+						compositionTimelineHandlers.onRightClickOut(e, props.composition.id),
 				})}
 			>
 				<div className={s("header")} />
