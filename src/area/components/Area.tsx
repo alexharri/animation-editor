@@ -49,11 +49,6 @@ const areaTypeOptions: Array<{ icon: React.ComponentType; type: AreaType; label:
 	},
 	{
 		icon: EditIcon,
-		type: AreaType.Timeline,
-		label: "Timeline",
-	},
-	{
-		icon: EditIcon,
 		type: AreaType.History,
 		label: "History",
 	},
@@ -87,10 +82,6 @@ const AreaComponent: React.FC<Props> = (props) => {
 						{
 							label: "Node Editor",
 							type: AreaType.NodeEditor,
-						},
-						{
-							label: "Timeline",
-							type: AreaType.Timeline,
 						},
 						{
 							label: "History",

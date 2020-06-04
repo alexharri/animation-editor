@@ -154,6 +154,16 @@ export const translateRect = (rect: Rect, translationVector: Vec2): Rect => {
 	};
 };
 
+export const translateRectAsVec = (rect: Rect, transformFn: (vec: Vec2) => Vec2): Rect => {
+	const { x: left, y: top } = transformFn(Vec2.new(rect.left, rect.top));
+	const v0 = transformFn(Vec2.new(0, 0));
+	const v1 = transformFn(Vec2.new(1, 1));
+	let { x: wt, y: ht } = v1.sub(v0);
+	const width = rect.width * wt;
+	const height = rect.height * ht;
+	return { left, top, width, height };
+};
+
 export const splitRect = (
 	type: "horizontal" | "vertical",
 	rect: Rect,

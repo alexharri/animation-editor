@@ -206,6 +206,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 					/>
 					{timelineIds.length > 0 && (
 						<TimelineEditor
+							compositionTimelineAreaId={props.areaId}
 							ids={timelineIds}
 							viewport={{
 								...viewportRight,
@@ -215,6 +216,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 							colors={colors}
 							viewBounds={props.viewBounds}
 							length={props.composition.length}
+							dragSelectRect={props.areaState.dragSelectRect}
 						/>
 					)}
 				</div>

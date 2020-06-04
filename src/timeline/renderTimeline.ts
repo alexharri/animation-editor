@@ -3,8 +3,9 @@ import {
 	renderDiamond,
 	renderCubicBezier,
 	renderLine,
+	renderRect,
 } from "~/util/canvas/renderPrimitives";
-import { translateToRange, interpolate } from "~/util/math";
+import { translateToRange, interpolate, translateRectAsVec } from "~/util/math";
 import {
 	timelineKeyframesToPathList,
 	getTimelineYBoundsFromPaths,
@@ -23,6 +24,7 @@ interface RenderTimelineOptions {
 	timelines: Timeline[];
 	colors: Partial<{ [timelineId: string]: string }>;
 	selection: TimelineSelectionState;
+	dragSelectRect: Rect | null;
 }
 
 export const createToTimelineViewportX = (options: {
@@ -182,6 +184,15 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 			if (k1.controlPointLeft) {
 				renderCircle(ctx, path[2], { color: "yellow", radius: 2 });
 			}
+		}
+
+		if (options.dragSelectRect) {
+			const rect = translateRectAsVec(options.dragSelectRect, toViewport);
+			renderRect(ctx, rect, {
+				strokeColor: "red",
+				strokeWidth: 1,
+				fillColor: "rgba(255, 0, 0, .1)",
+			});
 		}
 	});
 };
