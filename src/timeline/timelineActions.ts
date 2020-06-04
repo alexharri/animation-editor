@@ -44,6 +44,10 @@ export const timelineActions = {
 		return (timelineId: string, yPan: number) => resolve({ timelineId, yPan });
 	}),
 
+	addKeyframesToSelection: createAction("timeline/ADD_KEYFRAMES_TO_SELECTION", (action) => {
+		return (timelineId: string, keyframeIds: string[]) => action({ timelineId, keyframeIds });
+	}),
+
 	clearSelection: createAction("timeline/CLEAR_SELECTION", (resolve) => {
 		return (timelineId: string) => resolve({ timelineId });
 	}),

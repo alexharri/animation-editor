@@ -13,6 +13,8 @@ interface OwnProps {
 	length: number;
 	viewBounds: [number, number];
 	viewport: Rect;
+	dragSelectRect: Rect | null;
+	compositionTimelineAreaId: string;
 }
 interface StateProps {
 	timelines: Timeline[];
@@ -21,7 +23,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const TimelineEditorComponent: React.FC<Props> = (props) => {
-	const { viewport, length, selection, colors } = props;
+	const { viewport, length, selection, colors, dragSelectRect } = props;
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -47,6 +49,7 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 			colors,
 			viewBounds,
 			selection,
+			dragSelectRect,
 		});
 	}, [props]);
 
@@ -62,6 +65,7 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 				onMouseDown={separateLeftRightMouse({
 					left: (e) =>
 						timelineHandlers.onMouseDown(e, {
+							compositionTimelineAreaId: props.compositionTimelineAreaId,
 							timelines: props.timelines,
 							length,
 							viewBounds,

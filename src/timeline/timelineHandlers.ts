@@ -13,12 +13,19 @@ import {
 	getDistance,
 	getAngleRadians,
 	rotateVec2CCW,
+	rectOfTwoVecs,
+	isVecInRect,
 } from "~/util/math";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { timelineActions } from "~/timeline/timelineActions";
 import { isKeyDown } from "~/listener/keyboard";
 import { createToTimelineViewportY, createToTimelineViewportX } from "~/timeline/renderTimeline";
-import { getActionState } from "~/state/stateUtils";
+import { getActionState, getAreaActionState } from "~/state/stateUtils";
+import { areaActions } from "~/area/state/areaActions";
+import {
+	compositionTimelineAreaActions,
+	CompositionTimelineAreaState,
+} from "~/composition/timeline/compositionTimelineAreaReducer";
 
 const PAN_FAC = 0.0004;
 const MIN_DIST = 6;
@@ -502,6 +509,7 @@ export const timelineHandlers = {
 	onMouseDown: (
 		e: React.MouseEvent,
 		options: {
+			compositionTimelineAreaId: string;
 			length: number;
 			timelines: Timeline[];
 			viewBounds: [number, number];
@@ -570,9 +578,74 @@ export const timelineHandlers = {
 			}
 		}
 
-		requestAction({ history: true }, ({ dispatch, submitAction }) => {
-			timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
-			submitAction("Clear timeline selection");
+		/**
+		 * Did not select any entity on timeline.
+		 *
+		 * If user drags mouse, create a selection rect.
+		 *
+		 * If mouseup is fired without moving, clear selection.
+		 */
+		requestAction({ history: true }, ({ dispatch, submitAction, addListener }) => {
+			const initialMousePos = Vec2.fromEvent(e);
+
+			let hasMoved = false;
+			const wasShiftDown = isKeyDown("Shift");
+
+			addListener.repeated("mousemove", (e) => {
+				const mousePos = Vec2.fromEvent(e);
+
+				if (!hasMoved) {
+					if (getDistance(initialMousePos, mousePos) < 5) {
+						return;
+					}
+
+					hasMoved = true;
+				}
+
+				const dragSelectRect = rectOfTwoVecs(
+					transformGlobalToTimelinePosition(initialMousePos, options),
+					transformGlobalToTimelinePosition(mousePos, options),
+				);
+
+				dispatch(
+					areaActions.dispatchToAreaState(
+						options.compositionTimelineAreaId,
+						compositionTimelineAreaActions.setFields({ dragSelectRect }),
+					),
+				);
+			});
+
+			addListener.once("mouseup", () => {
+				if (!hasMoved) {
+					timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
+					submitAction("Clear timeline selection");
+					return;
+				}
+
+				if (!wasShiftDown) {
+					timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
+				}
+
+				const { dragSelectRect } = getAreaActionState<CompositionTimelineAreaState>(
+					options.compositionTimelineAreaId,
+				);
+
+				timelines.forEach((timeline) => {
+					const keyframes = timeline.keyframes
+						.filter((k) => {
+							return isVecInRect(Vec2.new(k.index, k.value), dragSelectRect!);
+						})
+						.map((k) => k.id);
+					dispatch(timelineActions.addKeyframesToSelection(timeline.id, keyframes));
+				});
+				dispatch(
+					areaActions.dispatchToAreaState(
+						options.compositionTimelineAreaId,
+						compositionTimelineAreaActions.setFields({ dragSelectRect: null }),
+					),
+				);
+				submitAction("Select keyframes");
+			});
 		});
 	},
 

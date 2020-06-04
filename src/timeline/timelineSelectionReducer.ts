@@ -70,40 +70,22 @@ export function timelineSelectionReducer(
 			};
 		}
 
-		// case getType(timelineActions.setDragSelectRect): {
-		// 	const { timelineId, rect } = action.payload;
-		// 	return {
-		// 		...state,
-		// 		timelineId,
-		// 		_dragSelectRect: rect,
-		// 	};
-		// }
-
-		// case getType(timelineActions.submitDragSelectRect): {
-		// 	const { timelineId, additiveSelection } = action.payload;
-
-		// 	return {
-		// 		...state,
-		// 		keyframes: Object.keys(state.nodes).reduce<{ [key: string]: true }>((obj, key) => {
-		// 					const node = state.nodes[key];
-		// 					const shouldBeSelected =
-		// 						(additiveSelection && state.selection.nodes[key]) ||
-		// 						rectsIntersect(state._dragSelectRect!, {
-		// 							left: node.position.x,
-		// 							top: node.position.y,
-		// 							height: calculateNodeHeight(node),
-		// 							width: node.width,
-		// 						});
-
-		// 					if (shouldBeSelected) {
-		// 						obj[key] = true;
-		// 					}
-
-		// 					return obj;
-		// 				}, {}),
-		// 		_dragSelectRect: null,
-		// 	};
-		// }
+		case getType(timelineActions.addKeyframesToSelection): {
+			const { timelineId, keyframeIds } = action.payload;
+			return {
+				...state,
+				[timelineId]: {
+					timelineId,
+					keyframes: {
+						...state[timelineId]?.keyframes,
+						...keyframeIds.reduce<KeySelectionMap>((obj, key) => {
+							obj[key] = true;
+							return obj;
+						}, {}),
+					},
+				},
+			};
+		}
 
 		default:
 			return state;
