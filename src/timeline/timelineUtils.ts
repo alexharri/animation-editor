@@ -31,8 +31,8 @@ export const getControlPointAsVector = (
 	const t = (k1.index - k0.index) / cp.relativeToDistance;
 	return Vec2.new(interpolate(k0.index, k1.index, cp.tx), k.value + cp.value * t);
 };
-import { TimelineKeyframe, Timeline } from "~/timeline/timelineTypes";
-import { interpolate } from "~/util/math";
+import { TimelineKeyframe, Timeline, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
+import { interpolate, capToRange, getDistance } from "~/util/math";
 import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
@@ -247,13 +247,223 @@ export const transformGlobalToTimelinePosition = (
 	return pos;
 };
 
-export const applyTimelineIndexAndValueShifts = (
-	timeline: Timeline,
+const _applyNewControlPointShift = (
+	_timeline: Timeline,
 	selection: TimelineSelection | undefined,
 ): Timeline => {
-	const { _indexShift, _valueShift } = timeline;
+	let timeline = _timeline;
 
-	if (!selection || typeof _indexShift !== "number" || typeof _valueShift !== "number") {
+	if (!selection) {
+		return timeline;
+	}
+
+	const _newControlPointShift = timeline._newControlPointShift!;
+
+	const { indexShift, valueShift, keyframeIndex: index, direction } = _newControlPointShift;
+
+	const keyframes = timeline.keyframes.map<TimelineKeyframe>((k, i) => {
+		if (i !== index) {
+			return k;
+		}
+
+		const k0 = timeline.keyframes[i - 1];
+		const k1 = timeline.keyframes[i];
+		const k2 = timeline.keyframes[i + 1];
+
+		const fac = direction === "left" ? 1 : -1;
+		const cap = (t: number) => capToRange(0, 1, t);
+
+		const controlPointLeft = k0
+			? {
+					value: valueShift * fac,
+					tx: cap((k1.index + indexShift * fac - k0.index) / (k1.index - k0.index)),
+					relativeToDistance: k1.index - k0.index,
+			  }
+			: null;
+
+		const controlPointRight = k2
+			? {
+					value: -(valueShift * fac),
+					tx: cap(1 - (k2.index + indexShift * fac - k1.index) / (k2.index - k1.index)),
+					relativeToDistance: k2.index - k1.index,
+			  }
+			: null;
+
+		return { ...k, controlPointLeft, controlPointRight };
+	});
+
+	return {
+		...timeline,
+		_newControlPointShift: null,
+		keyframes,
+	};
+};
+
+const _applyControlPointShift = (
+	_timeline: Timeline,
+	selection: TimelineSelection | undefined,
+): Timeline => {
+	let timeline = _timeline;
+
+	if (!selection) {
+		return timeline;
+	}
+
+	const _controlPointShift = timeline._controlPointShift!;
+
+	const {
+		indexShift: parentIndexShift,
+		valueShift,
+		indexDiff: parentIndexDiff,
+		direction: direction,
+		yFac,
+	} = _controlPointShift;
+
+	const keyframes = timeline.keyframes.map<TimelineKeyframe>((k, i) => {
+		if (!selection.keyframes[k.id]) {
+			return k;
+		}
+
+		const computeCp = (
+			i0: number,
+			i1: number,
+			cp: TimelineKeyframeControlPoint,
+		): TimelineKeyframeControlPoint => {
+			const indexDiff = timeline.keyframes[i0].index - timeline.keyframes[i1].index;
+			const indexShift = parentIndexShift * (parentIndexDiff / indexDiff);
+			return {
+				...cp,
+				relativeToDistance: indexDiff,
+				tx: capToRange(0, 1, cp.tx + indexShift / parentIndexDiff),
+				value: cp.value + valueShift,
+			};
+		};
+
+		if (direction === "left") {
+			if (!timeline.keyframes[i - 1] || !k.controlPointLeft) {
+				return k;
+			}
+
+			const reflect =
+				k.reflectControlPoints && k.controlPointRight && timeline.keyframes[i + 1];
+
+			const cpl = computeCp(i, i - 1, k.controlPointLeft);
+			let cpr: TimelineKeyframeControlPoint | null;
+
+			const oldCpr = k.controlPointRight!;
+
+			if (reflect) {
+				const k0 = timeline.keyframes[i - 1];
+				const k1 = timeline.keyframes[i];
+				const k2 = timeline.keyframes[i + 1];
+
+				const cplPos = Vec2.new(
+					interpolate(k0.index, k1.index, cpl.tx),
+					k.value + cpl.value,
+				);
+				const cprPos = Vec2.new(
+					interpolate(k1.index, k2.index, oldCpr.tx),
+					k.value + oldCpr.value,
+				);
+
+				const kPos = Vec2.new(k1.index, k1.value);
+				const lDist = getDistance(kPos.scaleX(yFac), cplPos.scaleX(yFac));
+				const rDist = getDistance(kPos.scaleX(yFac), cprPos.scaleX(yFac));
+
+				const cprPosNew = cplPos.scale(-1, kPos).scale(rDist / lDist, kPos);
+
+				cpr = {
+					relativeToDistance: k2.index - k1.index,
+					tx: capToRange(0, 1, (cprPosNew.x - k1.index) / (k2.index - k1.index)),
+					value: cprPosNew.y - k1.value,
+				};
+			} else {
+				cpr = k.controlPointRight;
+			}
+
+			return {
+				...k,
+				controlPointLeft: cpl,
+				controlPointRight: cpr,
+			};
+		} else {
+			if (!timeline.keyframes[i + 1] || !k.controlPointRight) {
+				return k;
+			}
+
+			const reflect =
+				k.reflectControlPoints && k.controlPointLeft && timeline.keyframes[i - 1];
+
+			const cpr = computeCp(i + 1, i, k.controlPointRight);
+			let cpl: TimelineKeyframeControlPoint | null;
+
+			const oldCpl = k.controlPointLeft!;
+
+			if (reflect) {
+				const k0 = timeline.keyframes[i - 1];
+				const k1 = timeline.keyframes[i];
+				const k2 = timeline.keyframes[i + 1];
+
+				const cplPos = Vec2.new(
+					interpolate(k0.index, k1.index, oldCpl.tx),
+					k.value + oldCpl.value,
+				);
+				const cprPos = Vec2.new(
+					interpolate(k1.index, k2.index, cpr.tx),
+					k.value + cpr.value,
+				);
+
+				const kPos = Vec2.new(k1.index, k1.value);
+				const lDist = getDistance(kPos.scaleX(yFac), cplPos.scaleX(yFac));
+				const rDist = getDistance(kPos.scaleX(yFac), cprPos.scaleX(yFac));
+
+				const cplPosNew = cprPos.scale(-1, kPos).scale(lDist / rDist, kPos);
+
+				cpl = {
+					relativeToDistance: k1.index - k0.index,
+					tx: capToRange(0, 1, (cplPosNew.x - k0.index) / (k1.index - k0.index)),
+					value: cplPosNew.y - k1.value,
+				};
+			} else {
+				cpl = k.controlPointLeft;
+			}
+
+			return {
+				...k,
+				controlPointRight: cpr,
+				controlPointLeft: cpl,
+			};
+		}
+	});
+
+	return {
+		...timeline,
+		_controlPointShift: null,
+		keyframes,
+	};
+};
+
+export const applyTimelineIndexAndValueShifts = (
+	_timeline: Timeline,
+	selection: TimelineSelection | undefined,
+): Timeline => {
+	let timeline = _timeline;
+
+	if (!selection) {
+		return timeline;
+	}
+
+	const { _indexShift, _valueShift, _controlPointShift, _newControlPointShift } = timeline;
+
+	if (_controlPointShift) {
+		return _applyControlPointShift(_timeline, selection);
+	}
+
+	if (_newControlPointShift) {
+		return _applyNewControlPointShift(_timeline, selection);
+	}
+
+	if (typeof _indexShift !== "number" || typeof _valueShift !== "number") {
 		return timeline;
 	}
 
@@ -269,7 +479,13 @@ export const applyTimelineIndexAndValueShifts = (
 	}
 
 	const keyframes = [...timeline.keyframes]
-		.filter((keyframe) => !removeKeyframesAtIndex.has(keyframe.index))
+		.filter((keyframe) => {
+			if (selection.keyframes[keyframe.id]) {
+				return true;
+			}
+
+			return !removeKeyframesAtIndex.has(keyframe.index);
+		})
 		.map<TimelineKeyframe>((keyframe) => {
 			if (selection.keyframes[keyframe.id]) {
 				return {
@@ -450,6 +666,8 @@ export const createTimelineForLayerProperty = (value: number, index: number): Ti
 		_yPan: 0,
 		_indexShift: null,
 		_valueShift: null,
+		_controlPointShift: null,
+		_newControlPointShift: null,
 		_dragSelectRect: null,
 	};
 };

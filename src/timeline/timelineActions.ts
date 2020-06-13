@@ -30,6 +30,21 @@ export const timelineActions = {
 			resolve({ timelineId, indexShift, valueShift });
 	}),
 
+	setControlPointShift: createAction("timeline/SET_CP_SHIFT", (resolve) => {
+		return (timelineId: string, controlPointShift: Timeline["_controlPointShift"]) =>
+			resolve({ timelineId, controlPointShift });
+	}),
+
+	setNewControlPointShift: createAction("timeline/SET_NEW_CP_SHIFT", (resolve) => {
+		return (timelineId: string, newControlPointShift: Timeline["_newControlPointShift"]) =>
+			resolve({ timelineId, newControlPointShift });
+	}),
+
+	applyControlPointShift: createAction("timeline/APPLY_CP_SHIFT", (resolve) => {
+		return (timelineId: string, selection: TimelineSelection | undefined) =>
+			resolve({ timelineId, selection });
+	}),
+
 	submitIndexAndValueShift: createAction("timeline/SUBMIT_SHIFT", (resolve) => {
 		return (timelineId: string, selection: TimelineSelection) =>
 			resolve({ timelineId, selection });
