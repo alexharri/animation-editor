@@ -332,10 +332,9 @@ const _applyControlPointShift = (
 			const indexDiff = timeline.keyframes[i0].index - timeline.keyframes[i1].index;
 			const indexShift = parentIndexShift * (parentIndexDiff / indexDiff);
 			return {
-				...cp,
 				relativeToDistance: indexDiff,
 				tx: capToRange(0, 1, cp.tx + indexShift / parentIndexDiff),
-				value: cp.value + valueShift,
+				value: cp.value * (indexDiff / cp.relativeToDistance) + valueShift,
 			};
 		};
 
