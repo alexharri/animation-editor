@@ -5,6 +5,19 @@ export interface Timeline {
 	_yPan: number;
 	_indexShift: number | null;
 	_valueShift: number | null;
+	_controlPointShift: null | {
+		indexDiff: number;
+		indexShift: number;
+		valueShift: number;
+		direction: "left" | "right";
+		yFac: number;
+	};
+	_newControlPointShift: null | {
+		indexShift: number;
+		valueShift: number;
+		keyframeIndex: number;
+		direction: "left" | "right";
+	};
 	_dragSelectRect: Rect | null;
 }
 

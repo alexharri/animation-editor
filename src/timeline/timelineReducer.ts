@@ -75,6 +75,8 @@ export const initialTimelineState: TimelineState = {
 		_indexShift: null,
 		_valueShift: null,
 		_dragSelectRect: null,
+		_controlPointShift: null,
+		_newControlPointShift: null,
 	},
 };
 
@@ -160,6 +162,36 @@ export function timelineReducer(state: TimelineState, action: Action): TimelineS
 					_indexShift: indexShift,
 					_valueShift: valueShift,
 				},
+			};
+		}
+
+		case getType(timelineActions.setControlPointShift): {
+			const { timelineId, controlPointShift } = action.payload;
+			return {
+				...state,
+				[timelineId]: {
+					...state[timelineId],
+					_controlPointShift: controlPointShift,
+				},
+			};
+		}
+
+		case getType(timelineActions.setNewControlPointShift): {
+			const { timelineId, newControlPointShift } = action.payload;
+			return {
+				...state,
+				[timelineId]: {
+					...state[timelineId],
+					_newControlPointShift: newControlPointShift,
+				},
+			};
+		}
+
+		case getType(timelineActions.applyControlPointShift): {
+			const { timelineId, selection } = action.payload;
+			return {
+				...state,
+				[timelineId]: applyTimelineIndexAndValueShifts(state[timelineId], selection),
 			};
 		}
 

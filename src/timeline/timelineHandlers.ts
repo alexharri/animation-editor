@@ -5,17 +5,8 @@ import {
 	getControlPointAsVector,
 	getTimelineSelection,
 } from "~/timeline/timelineUtils";
-import { Timeline, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
-import {
-	getDistance as _getDistance,
-	capToRange,
-	interpolate,
-	getDistance,
-	getAngleRadians,
-	rotateVec2CCW,
-	rectOfTwoVecs,
-	isVecInRect,
-} from "~/util/math";
+import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
+import { getDistance as _getDistance, getDistance, rectOfTwoVecs, isVecInRect } from "~/util/math";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { timelineActions } from "~/timeline/timelineActions";
 import { isKeyDown } from "~/listener/keyboard";
@@ -224,6 +215,7 @@ const actions = {
 
 	keyframeAltMouseDown: (
 		params: RequestActionParams,
+		initialEv: React.MouseEvent,
 		timelineIndex: number,
 		index: number,
 		initialPos: Vec2,
@@ -238,6 +230,7 @@ const actions = {
 		const { dispatch, addListener, removeListener, submitAction } = params;
 
 		const timeline = timelines[timelineIndex];
+		const initialMousePos = Vec2.fromEvent(initialEv);
 
 		let upToken: string;
 		const moveToken = addListener.repeated("mousemove", (e) => {
@@ -245,16 +238,13 @@ const actions = {
 			if (getDistance(initialPos, mousePos) > 3) {
 				removeListener(moveToken);
 				removeListener(upToken);
-				actions.controlPointMouseDown(
+				actions.createKeyframeControlPoints(
 					params,
+					initialMousePos,
 					timelineIndex,
 					index,
 					mousePos.x < initialPos.x ? "left" : "right",
-					{
-						...options,
-						reflect: true,
-						reflectLength: true,
-					},
+					options,
 				);
 			}
 		});
@@ -268,59 +258,97 @@ const actions = {
 
 	controlPointMouseDown: (
 		{ addListener, dispatch, cancelAction, submitAction }: RequestActionParams,
+		initialGlobalMousePos: Vec2,
 		timelineIndex: number,
 		index: number,
 		direction: "left" | "right",
 		options: {
-			reflect?: boolean;
-			reflectLength?: boolean;
 			length: number;
 			timelines: Timeline[];
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	) => {
-		const { timelines, viewport, viewBounds, reflectLength = false } = options;
+		const { timelines, viewport, viewBounds } = options;
 
 		const timeline = timelines[timelineIndex];
-
-		let reflect = options.reflect;
-
-		if (typeof reflect !== "boolean") {
-			const shouldReflect = timeline.keyframes[index].reflectControlPoints;
-			reflect = isKeyDown("Alt") ? !shouldReflect : shouldReflect;
-		}
-
 		const k = timeline.keyframes[index];
-		const right = direction === "right";
 
-		// If other control point doesn't exist, we can't reflect it.
-		if (reflect && !(right ? k.controlPointLeft : k.controlPointRight)) {
-			reflect = false;
+		// Add keyframe to selection if not part of current selection.
+		//
+		// If not part of current selection and shift key was not down, the current
+		// timeline selection is cleared.
+		{
+			const selected = getActionState().timelineSelection[timeline.id]?.keyframes[k.id];
+
+			if (!selected) {
+				if (!isKeyDown("Shift")) {
+					timelines.forEach((timeline) => {
+						dispatch(timelineActions.clearSelection(timeline.id));
+					});
+				}
+				dispatch(timelineActions.toggleKeyframeSelection(timeline.id, k.id));
+			}
 		}
+
+		// Whether or not the angle of the other control point of the keyframe should
+		// be reflected according the the control point being moved.
+		let reflect: boolean | undefined;
+
+		const shouldReflect = k.reflectControlPoints;
+		reflect = isKeyDown("Alt") ? !shouldReflect : shouldReflect;
+
+		const timelineSelectionState = getActionState().timelineSelection;
+		const timelineSelectedKeyframes = timelines.map<
+			Array<{ index: number; keyframe: TimelineKeyframe }>
+		>((timeline) => {
+			const selection = timelineSelectionState[timeline.id];
+
+			if (!selection) {
+				return [];
+			}
+
+			return timeline.keyframes
+				.map((keyframe, index) => ({ keyframe, index }))
+				.filter((item) => selection.keyframes[item.keyframe.id]);
+		});
 
 		const altDownAtMouseDown = isKeyDown("Alt");
-		const k0 = timeline.keyframes[index + (right ? 0 : -1)];
-		const k1 = timeline.keyframes[index + (right ? 0 : -1) + 1];
-		const dist = k1.index - k0.index;
-		const kDiff = k1.value - k0.value || 0.0001;
 
 		const timelinePaths = timelines.map((timeline) =>
 			timelineKeyframesToPathList(timeline.keyframes),
 		);
 		const yBounds = getTimelineYBoundsFromPaths(timelines, timelinePaths);
 
-		// Set bounds for all timelines
+		// Lock yBounds and init pan for all timelines.
+		//
+		// In the future the yBound should be controll via CompositionTimeline's
+		// area state.
 		timelines.forEach(({ id }) => {
 			dispatch(timelineActions.setYBounds(id, yBounds));
 			dispatch(timelineActions.setYPan(id, 0));
 		});
 
-		dispatch(timelineActions.setKeyframeReflectControlPoints(timeline.id, index, reflect));
+		if (altDownAtMouseDown) {
+			// If alt was down, toggle the reflection preferences of all selected
+			// keyframes in all active timelines.
+			timelineSelectedKeyframes.forEach((ids, timelineIndex) => {
+				const timeline = timelines[timelineIndex];
+				ids.forEach(({ keyframe, index }) => {
+					dispatch(
+						timelineActions.setKeyframeReflectControlPoints(
+							timeline.id,
+							index,
+							!keyframe.reflectControlPoints,
+						),
+					);
+				});
+			});
+		}
 
-		const setControlPoint = (dir: "left" | "right", cp: TimelineKeyframeControlPoint) => {
-			dispatch(timelineActions.setKeyframeControlPoint(timeline.id, index, dir, cp));
-		};
+		// Set mousedown keyframe specifically because `options.reflect` may
+		// Have been provided.
+		dispatch(timelineActions.setKeyframeReflectControlPoints(timeline.id, index, reflect));
 
 		let yPan = 0;
 		let hasMoved = false;
@@ -374,39 +402,6 @@ const actions = {
 
 			lastUsedMousePos = mousePos;
 
-			const capToBoundsY = (vec: Vec2): Vec2 => {
-				const newVec = vec.copy();
-				newVec.y = capToRange(
-					yBounds[1] + yPan - yLower * boundsDiff * PAN_FAC,
-					yBounds[0] + yPan + yUpper * boundsDiff * PAN_FAC,
-					newVec.y,
-				);
-				return newVec;
-			};
-
-			let moveVector = transformGlobalToTimelinePosition(mousePos, options)
-				.addY(yPan)
-				.apply(capToBoundsY);
-
-			let tx = capToRange(0, 1, (moveVector.x - k0.index) / dist);
-			const ty = (moveVector.y - k0.value) / kDiff;
-
-			let value = kDiff * ty - (right ? 0 : kDiff);
-			if (lastShift) {
-				value = 0;
-			}
-
-			setControlPoint(direction, { tx, value, relativeToDistance: dist });
-
-			// If we are not reflecting or at start/end of timeline, we are done.
-			if (!reflect || !timeline.keyframes[index + (right ? -1 : 1)]) {
-				return;
-			}
-
-			const _k0 = timeline.keyframes[index + (right ? -1 : 0)];
-			const _k1 = timeline.keyframes[index + (right ? -1 : 0) + 1];
-			const _dist = _k1.index - _k0.index;
-
 			const timelineActionState = getActionState().timelines;
 
 			const renderOptions = {
@@ -418,65 +413,30 @@ const actions = {
 			};
 			const toViewportY = createToTimelineViewportY(renderOptions);
 			const toViewportX = createToTimelineViewportX(renderOptions);
-			const toViewport = (vec: Vec2) => Vec2.new(toViewportX(vec.x), toViewportY(vec.y));
 
-			const reflectAngle = () => {
-				const cpl = k.controlPointLeft!;
-				const cpr = k.controlPointRight!;
+			const initialPos = transformGlobalToTimelinePosition(initialGlobalMousePos, options);
+			let pos = transformGlobalToTimelinePosition(mousePos, options).addY(yPan);
 
-				const cprPos = (right
-					? Vec2.new(interpolate(k0.index, k1.index, tx), k.value + value)
-					: Vec2.new(interpolate(_k0.index, _k1.index, cpr.tx), k.value + cpr.value)
-				).apply(toViewport);
-				const cplPos = (right
-					? Vec2.new(interpolate(_k0.index, _k1.index, cpl.tx), k.value + cpl.value)
-					: Vec2.new(interpolate(k0.index, k1.index, tx), k.value + value)
-				).apply(toViewport);
+			const yFac = (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
 
-				let kpost = Vec2.new(k.index, k.value).apply(toViewport);
+			const { x: indexShift, y: valueShift } = pos.sub(initialPos);
 
-				// Get angle from k to cp
-				const angle = getAngleRadians(kpost, right ? cprPos : cplPos);
+			const indexDiff =
+				direction === "left"
+					? timeline.keyframes[index].index - timeline.keyframes[index - 1].index
+					: timeline.keyframes[index + 1].index - timeline.keyframes[index].index;
 
-				// Amplitude of the reflected cp
-				const amplitude = getDistance(kpost, right ? cplPos : cprPos);
-
-				const _moveVector = Vec2.new(amplitude, 0)
-					.add(kpost)
-					.apply((vec) => rotateVec2CCW(vec, angle - Math.PI, kpost))
-					.addY(viewport.top)
-					.addX(viewport.left)
-					.apply((vec) => transformGlobalToTimelinePosition(vec, options))
-					.addY(yPan);
-
-				const _tx = capToRange(0, 1, (_moveVector.x - _k0.index) / _dist);
-				setControlPoint(right ? "left" : "right", {
-					tx: _tx,
-					value: _moveVector.y - k.value,
-					relativeToDistance: _dist,
-				});
-			};
-
-			const reflectAngleAndAmplitude = () => {
-				setControlPoint(right ? "left" : "right", {
-					tx: right
-						? capToRange(0, 1, 1 - tx * (dist / _dist))
-						: capToRange(0, 1, (1 - tx) * (dist / _dist)),
-					value: -value,
-					relativeToDistance: _dist,
-				});
-			};
-
-			// If reflectLength, we create the reflected cp if it doesn't exist
-			if (reflectLength) {
-				reflectAngleAndAmplitude();
-				return;
-			}
-
-			// Reflected cp must exist for only its angle to be reflected
-			if (timeline.keyframes[index][right ? "controlPointRight" : "controlPointLeft"]) {
-				reflectAngle();
-			}
+			timelines.forEach((timeline) => {
+				dispatch(
+					timelineActions.setControlPointShift(timeline.id, {
+						indexDiff,
+						direction: direction,
+						indexShift,
+						valueShift,
+						yFac,
+					}),
+				);
+			});
 		};
 		requestAnimationFrame(tick);
 
@@ -498,9 +458,146 @@ const actions = {
 				);
 				submitAction("Remove control point");
 				return;
+			} else {
+				const timelineSelectionState = getActionState().timelineSelection;
+				timelines.forEach(({ id }) => {
+					const selection = timelineSelectionState[id];
+					dispatch(timelineActions.applyControlPointShift(id, selection));
+				});
 			}
 
 			submitAction("Move control point");
+		});
+	},
+
+	createKeyframeControlPoints: (
+		{ addListener, dispatch, cancelAction, submitAction }: RequestActionParams,
+		initialGlobalMousePos: Vec2,
+		timelineIndex: number,
+		index: number,
+		direction: "left" | "right",
+		options: {
+			length: number;
+			timelines: Timeline[];
+			viewBounds: [number, number];
+			viewport: Rect;
+		},
+	) => {
+		const { timelines, viewport } = options;
+
+		const timeline = timelines[timelineIndex];
+		const k = timeline.keyframes[index];
+
+		// Clear timeline selection and select only the keyframe we are
+		// operating on.
+		timelines.forEach((timeline) => {
+			dispatch(timelineActions.clearSelection(timeline.id));
+		});
+		dispatch(timelineActions.toggleKeyframeSelection(timeline.id, k.id));
+
+		const timelinePaths = timelines.map((timeline) =>
+			timelineKeyframesToPathList(timeline.keyframes),
+		);
+		const yBounds = getTimelineYBoundsFromPaths(timelines, timelinePaths);
+
+		// Lock yBounds and init pan for all timelines.
+		//
+		// In the future the yBound should be controll via CompositionTimeline's
+		// area state.
+		timelines.forEach(({ id }) => {
+			dispatch(timelineActions.setYBounds(id, yBounds));
+			dispatch(timelineActions.setYPan(id, 0));
+		});
+
+		// When creating control points, they are always initialized to reflect
+		dispatch(timelineActions.setKeyframeReflectControlPoints(timeline.id, index, true));
+
+		let yPan = 0;
+		let hasMoved = false;
+		let mousePos: Vec2;
+		let lastUsedMousePos: Vec2;
+		let lastShift = isKeyDown("Shift");
+		let hasSubmitted = false;
+
+		addListener.repeated("mousemove", (e) => {
+			hasMoved = true;
+			mousePos = Vec2.fromEvent(e);
+		});
+
+		const tick = () => {
+			if (hasSubmitted) {
+				return;
+			}
+			requestAnimationFrame(tick);
+
+			if (!hasMoved) {
+				return;
+			}
+
+			let shouldAlwaysUpdate = false;
+
+			if (lastShift !== isKeyDown("Shift")) {
+				lastShift = !lastShift;
+				shouldAlwaysUpdate = true;
+			}
+
+			const buffer = 5;
+			const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
+			const yUpper = Math.max(0, viewport.top - (mousePos.y - buffer));
+			const yLower = Math.max(0, mousePos.y + buffer - (viewport.top + viewport.height));
+
+			if (yLower) {
+				shouldAlwaysUpdate = true;
+				yPan -= yLower * boundsDiff * PAN_FAC;
+			} else if (yUpper) {
+				shouldAlwaysUpdate = true;
+				yPan += yUpper * boundsDiff * PAN_FAC;
+			}
+
+			if (yLower || yUpper) {
+				timelines.forEach(({ id }) => dispatch(timelineActions.setYPan(id, yPan)));
+			}
+
+			if (!shouldAlwaysUpdate && lastUsedMousePos === mousePos) {
+				return;
+			}
+
+			lastUsedMousePos = mousePos;
+
+			const initialPos = transformGlobalToTimelinePosition(initialGlobalMousePos, options);
+			let pos = transformGlobalToTimelinePosition(mousePos, options).addY(yPan);
+
+			const { x: indexShift, y: valueShift } = pos.sub(initialPos);
+			dispatch(
+				timelineActions.setNewControlPointShift(timeline.id, {
+					keyframeIndex: index,
+					direction,
+					indexShift,
+					valueShift,
+				}),
+			);
+		};
+		requestAnimationFrame(tick);
+
+		addListener.once("mouseup", () => {
+			hasSubmitted = true;
+			timelines.forEach(({ id }) => {
+				dispatch(timelineActions.setYBounds(id, null));
+				dispatch(timelineActions.setYPan(id, 0));
+			});
+
+			if (!hasMoved) {
+				cancelAction();
+				return;
+			}
+
+			const timelineSelectionState = getActionState().timelineSelection;
+			timelines.forEach(({ id }) => {
+				const selection = timelineSelectionState[id];
+				dispatch(timelineActions.applyControlPointShift(id, selection));
+			});
+
+			submitAction("Create control points");
 		});
 	},
 };
@@ -550,12 +647,12 @@ export const timelineHandlers = {
 				const cp1 = getControlPointAsVector("cp1", k0, k1);
 
 				if (cp0 && getDistanceInPx(cp0, mousePos) < MIN_DIST) {
-					timelineHandlers.onControlPointMouseDown(ti, i, "right", options);
+					timelineHandlers.onControlPointMouseDown(e, ti, i, "right", options);
 					return;
 				}
 
 				if (cp1 && getDistanceInPx(cp1, mousePos) < MIN_DIST) {
-					timelineHandlers.onControlPointMouseDown(ti, i + 1, "left", options);
+					timelineHandlers.onControlPointMouseDown(e, ti, i + 1, "left", options);
 					return;
 				}
 			}
@@ -567,7 +664,7 @@ export const timelineHandlers = {
 				if (getDistanceInPx(keyframePos, mousePos) < MIN_DIST) {
 					if (isKeyDown("Alt")) {
 						requestAction({ history: true }, (params) => {
-							actions.keyframeAltMouseDown(params, ti, i, initialPos, options);
+							actions.keyframeAltMouseDown(params, e, ti, i, initialPos, options);
 						});
 						return;
 					}
@@ -650,11 +747,11 @@ export const timelineHandlers = {
 	},
 
 	onControlPointMouseDown: (
+		e: React.MouseEvent,
 		timelineIndex: number,
 		index: number,
 		direction: "left" | "right",
 		options: {
-			reflect?: boolean;
 			length: number;
 			timelines: Timeline[];
 			viewBounds: [number, number];
@@ -662,7 +759,14 @@ export const timelineHandlers = {
 		},
 	) => {
 		requestAction({ history: true }, (params) => {
-			actions.controlPointMouseDown(params, timelineIndex, index, direction, options);
+			actions.controlPointMouseDown(
+				params,
+				Vec2.fromEvent(e),
+				timelineIndex,
+				index,
+				direction,
+				options,
+			);
 		});
 	},
 

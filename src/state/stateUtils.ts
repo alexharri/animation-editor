@@ -90,3 +90,5 @@ export const getAreaActionState = <T>(areaId: string): T => {
 };
 
 export const getActionId = () => store.getState().area.action?.id || null;
+
+(window as any).getActionState = () => getActionState();
