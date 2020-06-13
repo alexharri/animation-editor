@@ -247,15 +247,8 @@ export const transformGlobalToTimelinePosition = (
 	return pos;
 };
 
-const _applyNewControlPointShift = (
-	_timeline: Timeline,
-	selection: TimelineSelection | undefined,
-): Timeline => {
+const _applyNewControlPointShift = (_timeline: Timeline): Timeline => {
 	let timeline = _timeline;
-
-	if (!selection) {
-		return timeline;
-	}
 
 	const _newControlPointShift = timeline._newControlPointShift!;
 
@@ -299,15 +292,8 @@ const _applyNewControlPointShift = (
 	};
 };
 
-const _applyControlPointShift = (
-	_timeline: Timeline,
-	selection: TimelineSelection | undefined,
-): Timeline => {
+const _applyControlPointShift = (_timeline: Timeline, selection: TimelineSelection): Timeline => {
 	let timeline = _timeline;
-
-	if (!selection) {
-		return timeline;
-	}
 
 	const _controlPointShift = timeline._controlPointShift!;
 
@@ -449,6 +435,21 @@ export const applyTimelineIndexAndValueShifts = (
 	let timeline = _timeline;
 
 	if (!selection) {
+		if (
+			timeline._indexShift ||
+			timeline._valueShift ||
+			timeline._controlPointShift ||
+			timeline._newControlPointShift
+		) {
+			return {
+				...timeline,
+				_indexShift: null,
+				_valueShift: null,
+				_controlPointShift: null,
+				_newControlPointShift: null,
+			};
+		}
+
 		return timeline;
 	}
 
@@ -459,7 +460,7 @@ export const applyTimelineIndexAndValueShifts = (
 	}
 
 	if (_newControlPointShift) {
-		return _applyNewControlPointShift(_timeline, selection);
+		return _applyNewControlPointShift(_timeline);
 	}
 
 	if (typeof _indexShift !== "number" || typeof _valueShift !== "number") {
