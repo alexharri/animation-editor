@@ -100,3 +100,6 @@ export const CONTEXT_MENU_OPTION_HEIGHT = 22;
 
 export const DEG_TO_RAD_FAC = 0.0174533;
 export const RAD_TO_DEG_FAC = 57.2958;
+
+export const TIMELINE_CP_TX_MIN = 0.0001;
+export const TIMELINE_CP_TX_MAX = 1 - TIMELINE_CP_TX_MIN;

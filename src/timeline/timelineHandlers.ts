@@ -131,6 +131,22 @@ const actions = {
 			mousePos = Vec2.fromEvent(e);
 		});
 
+		// Used for Shift moving (lock to more significant axis)
+		let yFac: number;
+		{
+			const renderOptions = {
+				timelines,
+				length: options.length,
+				viewBounds: options.viewBounds,
+				width: viewport.width,
+				height: viewport.height,
+			};
+			const toViewportY = createToTimelineViewportY(renderOptions);
+			const toViewportX = createToTimelineViewportX(renderOptions);
+
+			yFac = (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
+		}
+
 		const tick = () => {
 			if (hasSubmitted) {
 				return;
@@ -182,6 +198,14 @@ const actions = {
 				);
 
 				moveVector = moveVector.sub(initialMousePos);
+
+				if (lastShift) {
+					if (Math.abs(moveVector.x * yFac) > Math.abs(moveVector.y)) {
+						moveVector.y = 0;
+					} else {
+						moveVector.x = 0;
+					}
+				}
 
 				timelines.forEach(({ id }) =>
 					dispatch(
@@ -434,6 +458,7 @@ const actions = {
 						indexShift,
 						valueShift,
 						yFac,
+						shiftDown: lastShift,
 					}),
 				);
 			});
@@ -567,7 +592,12 @@ const actions = {
 			const initialPos = transformGlobalToTimelinePosition(initialGlobalMousePos, options);
 			let pos = transformGlobalToTimelinePosition(mousePos, options).addY(yPan);
 
-			const { x: indexShift, y: valueShift } = pos.sub(initialPos);
+			let { x: indexShift, y: valueShift } = pos.sub(initialPos);
+
+			if (lastShift) {
+				valueShift = 0;
+			}
+
 			dispatch(
 				timelineActions.setNewControlPointShift(timeline.id, {
 					keyframeIndex: index,
