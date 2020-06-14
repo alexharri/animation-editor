@@ -37,6 +37,7 @@ import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
 import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
+import { TIMELINE_CP_TX_MIN, TIMELINE_CP_TX_MAX } from "~/constants";
 
 const getPathFromKeyframes = (k0: TimelineKeyframe, k1: TimelineKeyframe): CubicBezier | Line => {
 	if (k0.controlPointRight && k1.controlPointLeft) {
@@ -303,6 +304,7 @@ const _applyControlPointShift = (_timeline: Timeline, selection: TimelineSelecti
 		indexDiff: parentIndexDiff,
 		direction: direction,
 		yFac,
+		shiftDown,
 	} = _controlPointShift;
 
 	const keyframes = timeline.keyframes.map<TimelineKeyframe>((k, i) => {
@@ -319,8 +321,12 @@ const _applyControlPointShift = (_timeline: Timeline, selection: TimelineSelecti
 			const indexShift = parentIndexShift * (parentIndexDiff / indexDiff);
 			return {
 				relativeToDistance: indexDiff,
-				tx: capToRange(0, 1, cp.tx + indexShift / parentIndexDiff),
-				value: cp.value * (indexDiff / cp.relativeToDistance) + valueShift,
+				tx: capToRange(
+					TIMELINE_CP_TX_MIN,
+					TIMELINE_CP_TX_MAX,
+					cp.tx + indexShift / parentIndexDiff,
+				),
+				value: shiftDown ? 0 : cp.value * (indexDiff / cp.relativeToDistance) + valueShift,
 			};
 		};
 
@@ -359,7 +365,11 @@ const _applyControlPointShift = (_timeline: Timeline, selection: TimelineSelecti
 
 				cpr = {
 					relativeToDistance: k2.index - k1.index,
-					tx: capToRange(0, 1, (cprPosNew.x - k1.index) / (k2.index - k1.index)),
+					tx: capToRange(
+						TIMELINE_CP_TX_MIN,
+						TIMELINE_CP_TX_MAX,
+						(cprPosNew.x - k1.index) / (k2.index - k1.index),
+					),
 					value: cprPosNew.y - k1.value,
 				};
 			} else {
@@ -406,7 +416,11 @@ const _applyControlPointShift = (_timeline: Timeline, selection: TimelineSelecti
 
 				cpl = {
 					relativeToDistance: k1.index - k0.index,
-					tx: capToRange(0, 1, (cplPosNew.x - k0.index) / (k1.index - k0.index)),
+					tx: capToRange(
+						TIMELINE_CP_TX_MIN,
+						TIMELINE_CP_TX_MAX,
+						(cplPosNew.x - k0.index) / (k1.index - k0.index),
+					),
 					value: cplPosNew.y - k1.value,
 				};
 			} else {

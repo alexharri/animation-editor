@@ -11,6 +11,7 @@ export interface Timeline {
 		valueShift: number;
 		direction: "left" | "right";
 		yFac: number;
+		shiftDown: boolean;
 	};
 	_newControlPointShift: null | {
 		indexShift: number;
