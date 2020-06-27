@@ -23,8 +23,13 @@ const defaultOpts: AnimationOpts = {
 	bezier: [0.46, 0.19, 0.13, 0.98],
 };
 
-export function animate(options: Options, fn: (t: number) => void): Promise<void> {
-	return new Promise((resolve) => {
+export function animate(
+	options: Options,
+	fn: (t: number) => void,
+): Promise<boolean> & { cancel: () => void } {
+	let cancelled = false;
+
+	const promise = new Promise<boolean>((resolve) => {
 		const opts = {
 			...defaultOpts,
 			...options,
@@ -37,6 +42,11 @@ export function animate(options: Options, fn: (t: number) => void): Promise<void
 		let f = opts.from;
 
 		const tick = () => {
+			if (cancelled) {
+				resolve(true);
+				return;
+			}
+
 			const actualF = (Date.now() - startTime) / opts.duration;
 			f = easing(actualF);
 
@@ -51,10 +61,16 @@ export function animate(options: Options, fn: (t: number) => void): Promise<void
 			fn(interpolate(opts.from, to, f));
 
 			if (f === 1) {
-				resolve();
+				resolve(false);
 			}
 		};
 
 		tick();
-	});
+	}) as Promise<boolean> & { cancel: () => void };
+
+	promise.cancel = () => {
+		cancelled = true;
+	};
+
+	return promise;
 }

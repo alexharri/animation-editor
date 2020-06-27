@@ -21,3 +21,14 @@ export const addListToMap = <M extends { [key: string]: T }, T>(
 		}, {} as M),
 	};
 };
+
+export const modifyItemInMap = <M extends { [key: string]: T }, T = M[string]>(
+	map: M,
+	id: string,
+	fn: (item: T) => T,
+): M => {
+	return {
+		...map,
+		[id]: fn(map[id]),
+	};
+};

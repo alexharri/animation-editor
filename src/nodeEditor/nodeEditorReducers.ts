@@ -12,6 +12,7 @@ import {
 } from "~/nodeEditor/nodeEditorIO";
 import { rectsIntersect } from "~/util/math";
 import { calculateNodeHeight } from "~/nodeEditor/util/calculateNodeHeight";
+import { removeKeysFromMap } from "~/util/mapUtils";
 
 type NodeEditorAction = ActionType<typeof actions>;
 
@@ -80,7 +81,31 @@ export const initialNodeEditorState: NodeEditorState = {
 	},
 };
 
-export function nodeEditorReducer(state: NodeEditorState, action: NodeEditorAction) {
+export function nodeEditorReducer(
+	state: NodeEditorState,
+	action: NodeEditorAction,
+): NodeEditorState {
+	switch (action.type) {
+		case getType(actions.setGraph): {
+			const { graph } = action.payload;
+			return {
+				...state,
+				graphs: {
+					...state.graphs,
+					[graph.id]: graph,
+				},
+			};
+		}
+
+		case getType(actions.removeGraph): {
+			const { graphId } = action.payload;
+			return {
+				...state,
+				graphs: removeKeysFromMap(state.graphs, [graphId]),
+			};
+		}
+	}
+
 	const graphId = action.payload.graphId;
 	const graph = state.graphs[graphId];
 	return {

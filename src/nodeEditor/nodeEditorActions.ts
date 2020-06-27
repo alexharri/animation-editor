@@ -6,8 +6,19 @@ import {
 	NodeEditorNodeOutput,
 	NodeEditorNodeIO,
 } from "~/nodeEditor/nodeEditorIO";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 
 export const nodeEditorActions = {
+	/**
+	 * Graph
+	 */
+	setGraph: createAction("nodeEditorGraph/SET_GRAPH", (action) => {
+		return (graph: NodeEditorGraphState) => action({ graph });
+	}),
+	removeGraph: createAction("nodeEditorGraph/REMOVE_GRAPH", (action) => {
+		return (graphId: string) => action({ graphId });
+	}),
+
 	/**
 	 * Add node
 	 */

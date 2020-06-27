@@ -84,7 +84,6 @@ const ContextMenuComponent: React.FC<Props> = (props) => {
 		}
 
 		if (reduceStackRect && !isVecInRect(vec, reduceStackRect)) {
-			console.log("reduced");
 			setStack(stack.slice(0, stack.length - 1));
 			return;
 		}

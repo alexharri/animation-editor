@@ -1,3 +1,23 @@
+import { AreaType } from "~/constants";
+import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
+import { CompositionTimelineAreaState } from "~/composition/timeline/compositionTimelineAreaReducer";
+import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
+
+interface _AreaStates {
+	[AreaType.NodeEditor]: NodeEditorAreaState;
+	[AreaType.CompositionTimeline]: CompositionTimelineAreaState;
+	[AreaType.CompositionWorkspace]: CompositionWorkspaceAreaState;
+	[AreaType.VectorEditor]: {};
+	[AreaType.History]: {};
+}
+
+export type AreaState<T extends AreaType> = _AreaStates[T];
+
+export interface Area<T extends AreaType = AreaType> {
+	type: T;
+	state: AreaState<T>;
+}
+
 export interface AreaLayout {
 	type: "area";
 	id: string;
@@ -12,7 +32,7 @@ export type AreaRowLayout = {
 
 export type AreaLayoutType = AreaLayout["type"] | AreaRowLayout["type"];
 
-export interface AreaWindowProps<T> {
+export interface AreaComponentProps<T> {
 	width: number;
 	height: number;
 	left: number;

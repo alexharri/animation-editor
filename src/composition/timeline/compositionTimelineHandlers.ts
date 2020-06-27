@@ -1,6 +1,6 @@
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { isKeyDown } from "~/listener/keyboard";
-import { capToRange, interpolate } from "~/util/math";
+import { capToRange, interpolate, getDistance } from "~/util/math";
 import { animate } from "~/util/animation/animate";
 import { areaActions } from "~/area/state/areaActions";
 import { compositionTimelineAreaActions } from "~/composition/timeline/compositionTimelineAreaReducer";
@@ -14,6 +14,13 @@ import { compositionActions } from "~/composition/state/compositionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
+import { createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
+import { getAreaRootViewport } from "~/area/util/getAreaViewport";
+import { computeAreaToViewport } from "~/area/util/areaToViewport";
+import { AreaType } from "~/constants";
+import { areaInitialStates } from "~/area/state/areaInitialStates";
+import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
 
 const ZOOM_FAC = 0.25;
 
@@ -309,6 +316,110 @@ export const compositionTimelineHandlers = {
 				dispatch(compositionActions.toggleLayerSelection(compositionId, propertyId));
 				submitAction("Select property");
 			}
+		});
+	},
+
+	onLayerGraphMouseDown: (e: React.MouseEvent, layerId: string) => {
+		e.preventDefault();
+
+		const compositionState = getActionState().compositions;
+		const layer = compositionState.layers[layerId];
+
+		requestAction({ history: true }, (params) => {
+			const { dispatch, submitAction } = params;
+
+			// If graph exists, delete it. If not, create one.
+			if (layer.graphId) {
+				dispatch(compositionActions.setLayerGraphId(layerId, ""));
+				dispatch(nodeEditorActions.removeGraph(layer.graphId));
+				submitAction("Remove layer graph");
+				return;
+			}
+
+			const properties = layer.properties.map((id) => compositionState.properties[id]);
+			const graph = createLayerGraph(layerId, properties);
+			dispatch(compositionActions.setLayerGraphId(layerId, graph.id));
+			dispatch(nodeEditorActions.setGraph(graph));
+			submitAction("Create layer graph");
+		});
+	},
+
+	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, layerId: string) => {
+		e.preventDefault();
+
+		const compositionState = getActionState().compositions;
+		const layer = compositionState.layers[layerId];
+
+		requestAction({ history: true }, (params) => {
+			const { dispatch, cancelAction, submitAction, addListener } = params;
+
+			const initialMousePos = Vec2.fromEvent(e);
+
+			let hasMoved = false;
+			let mousePos!: Vec2;
+
+			addListener.repeated("mousemove", (e) => {
+				mousePos = Vec2.fromEvent(e);
+
+				if (!hasMoved) {
+					if (getDistance(initialMousePos, mousePos) > 5) {
+						hasMoved = true;
+					} else {
+						return;
+					}
+				}
+
+				dispatch(
+					areaActions.setFields({
+						areaToOpen: {
+							position: mousePos,
+							area: {
+								type: AreaType.NodeEditor,
+								state: {
+									...areaInitialStates[AreaType.NodeEditor],
+									graphId: layer.graphId,
+									compositionId: layer.compositionId,
+								},
+							},
+						},
+					}),
+				);
+			});
+
+			addListener.once("mouseup", () => {
+				if (!hasMoved) {
+					cancelAction();
+					return;
+				}
+
+				// Check whether the mouse is over an area other than the one we started at.
+
+				const areaState = getActionState().area;
+				const viewport = getAreaRootViewport();
+				const areaToViewport = computeAreaToViewport(
+					areaState.layout,
+					areaState.rootId,
+					viewport,
+				);
+
+				let areaId = getAreaToOpenTargetId(mousePos, areaState, areaToViewport);
+
+				if (!areaId) {
+					// Mouse is not over any area, cancel
+
+					cancelAction();
+					return;
+				}
+
+				dispatch(
+					areaActions.setAreaType(areaId, AreaType.NodeEditor, {
+						...areaInitialStates[AreaType.NodeEditor],
+						graphId: layer.graphId,
+					}),
+				);
+				dispatch(areaActions.setFields({ areaToOpen: null }));
+				submitAction("Open graph in area");
+			});
 		});
 	},
 

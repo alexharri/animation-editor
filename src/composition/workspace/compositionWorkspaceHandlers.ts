@@ -1,12 +1,8 @@
 import { RequestActionParams, requestAction } from "~/listener/requestAction";
 import { isKeyDown } from "~/listener/keyboard";
-import {
-	compositionWorkspaceAreaActions,
-	CompositionWorkspaceAreaState,
-} from "~/composition/workspace/compositionWorkspaceAreaReducer";
+import { compositionWorkspaceAreaActions } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { areaActions } from "~/area/state/areaActions";
 import { getAreaActionState } from "~/state/stateUtils";
-import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { AreaType } from "~/constants";
 
@@ -52,7 +48,7 @@ export const compositionWorkspaceHandlers = {
 	onPanStart: (e: React.MouseEvent, areaId: string) => {
 		e.preventDefault();
 
-		const areaState = getAreaActionState<NodeEditorAreaState>(areaId);
+		const areaState = getAreaActionState<AreaType.NodeEditor>(areaId);
 		const initialPos = Vec2.fromEvent(e);
 
 		requestAction({}, ({ addListener, dispatch, submitAction }) => {
@@ -70,7 +66,7 @@ export const compositionWorkspaceHandlers = {
 	onZoomClick: (e: React.MouseEvent, areaId: string) => {
 		e.preventDefault();
 
-		const areaState = getAreaActionState<CompositionWorkspaceAreaState>(areaId);
+		const areaState = getAreaActionState<AreaType.CompositionWorkspace>(areaId);
 		const viewport = getAreaViewport(areaId, AreaType.CompositionWorkspace);
 
 		requestAction({}, (params) => {

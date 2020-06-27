@@ -6,7 +6,7 @@ import { areaActions } from "~/area/state/areaActions";
 import { CardinalDirection, IntercardinalDirection } from "~/types";
 import { isVecInRect, interpolate, capToRange } from "~/util/math";
 import { AreaRowLayout } from "~/types/areaTypes";
-import { AreaState } from "~/area/state/areaReducer";
+import { AreaReducerState } from "~/area/state/areaReducer";
 import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
@@ -25,7 +25,7 @@ const oppositeDirectionVectors = {
 	e: directionVectors.w,
 };
 
-const getEligibleAreaIndices = (areaState: AreaState, row: AreaRowLayout, index: number) => {
+const getEligibleAreaIndices = (areaState: AreaReducerState, row: AreaRowLayout, index: number) => {
 	return [index - 1, index + 1].filter((i) => {
 		if (i < 0 || i > row.areas.length - 1) {
 			return false;

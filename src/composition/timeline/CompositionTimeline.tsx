@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { AreaWindowProps } from "~/types/areaTypes";
+import { AreaComponentProps } from "~/types/areaTypes";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { connectActionState } from "~/state/stateUtils";
 import {
@@ -25,7 +25,7 @@ const s = compileStylesheetLabelled(styles);
 
 const SEPARATOR_WIDTH = 4;
 
-type OwnProps = AreaWindowProps<CompositionTimelineAreaState>;
+type OwnProps = AreaComponentProps<CompositionTimelineAreaState>;
 interface StateProps {
 	composition: Composition;
 	selection: CompositionSelectionState;

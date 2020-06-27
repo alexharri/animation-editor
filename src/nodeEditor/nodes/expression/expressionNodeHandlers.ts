@@ -3,7 +3,6 @@ import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { getExpressionUpdateIO } from "~/nodeEditor/nodes/expression/expressionUtils";
 import { ValueType } from "~/types";
-import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { getDistance } from "~/util/math";
 import { NODE_EDITOR_EXPRESSION_NODE_MIN_TEXTAREA_HEIGHT, AreaType } from "~/constants";
@@ -68,7 +67,7 @@ export const expressionNodeHandlers = {
 		requestAction(
 			{ history: true },
 			({ submitAction, cancelAction, dispatch, addListener }) => {
-				const { pan, scale } = getAreaActionState<NodeEditorAreaState>(areaId);
+				const { pan, scale } = getAreaActionState<AreaType.NodeEditor>(areaId);
 
 				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 				const transformMousePosition = (mousePosition: Vec2) =>

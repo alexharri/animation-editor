@@ -13,10 +13,8 @@ import { isKeyDown } from "~/listener/keyboard";
 import { createToTimelineViewportY, createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { areaActions } from "~/area/state/areaActions";
-import {
-	compositionTimelineAreaActions,
-	CompositionTimelineAreaState,
-} from "~/composition/timeline/compositionTimelineAreaReducer";
+import { compositionTimelineAreaActions } from "~/composition/timeline/compositionTimelineAreaReducer";
+import { AreaType } from "~/constants";
 
 const PAN_FAC = 0.0004;
 const MIN_DIST = 6;
@@ -753,7 +751,7 @@ export const timelineHandlers = {
 					timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
 				}
 
-				const { dragSelectRect } = getAreaActionState<CompositionTimelineAreaState>(
+				const { dragSelectRect } = getAreaActionState<AreaType.CompositionTimeline>(
 					options.compositionTimelineAreaId,
 				);
 

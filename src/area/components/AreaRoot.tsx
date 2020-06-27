@@ -4,35 +4,20 @@ import React, { useState, useEffect, useRef } from "react";
 import { Area } from "~/area/components/Area";
 import { connectActionState } from "~/state/stateUtils";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
-import { AreaState } from "~/area/state/areaReducer";
 import { JoinAreaPreview } from "~/area/components/JoinAreaPreview";
-import { compileStylesheet } from "~/util/stylesheets";
 import { AreaRowSeparators } from "~/area/components/AreaRowSeparators";
-
-import { cssZIndex } from "~/cssVariables";
 import { getAreaRootViewport, _setAreaViewport } from "~/area/util/getAreaViewport";
+import { AreaReducerState } from "~/area/state/areaReducer";
+import { AreaToOpenPreview } from "~/area/components/AreaToOpenPreview";
+import AreaRootStyles from "~/area/components/AreaRoot.styles";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
-const s = compileStylesheet(({ css }) => ({
-	cursorCapture: css`
-		display: none;
-
-		&--active {
-			position: absolute;
-			display: block;
-			top: 0;
-			left: 0;
-			bottom: 0;
-			right: 0;
-			z-index: ${cssZIndex.area.cursorCapture};
-			cursor: not-allowed;
-		}
-	`,
-}));
+const s = compileStylesheetLabelled(AreaRootStyles);
 
 interface StateProps {
-	layout: AreaState["layout"];
+	layout: AreaReducerState["layout"];
 	rootId: string;
-	joinPreview: AreaState["joinPreview"];
+	joinPreview: AreaReducerState["joinPreview"];
 }
 type Props = StateProps;
 
@@ -105,6 +90,7 @@ const AreaRootComponent: React.FC<Props> = (props) => {
 					movingInDirection={joinPreview.movingInDirection!}
 				/>
 			)}
+			<AreaToOpenPreview areaToViewport={areaToViewport} />
 			<div className={s("cursorCapture", { active: !!joinPreview })} />
 		</div>
 	);

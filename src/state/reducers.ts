@@ -1,5 +1,5 @@
 import { combineReducers } from "redux";
-import { AreaState, areaReducer, initialAreaState } from "~/area/state/areaReducer";
+import { AreaReducerState, areaReducer, initialAreaState } from "~/area/state/areaReducer";
 import { ActionBasedState, createActionBasedReducer } from "~/state/history/actionBasedReducer";
 import { ToolState, toolReducer, initialToolState } from "~/toolbar/toolReducer";
 import {
@@ -32,7 +32,7 @@ import {
 
 declare global {
 	interface ApplicationState {
-		area: ActionBasedState<AreaState>;
+		area: ActionBasedState<AreaReducerState>;
 		compositions: HistoryState<CompositionState>;
 		compositionSelection: HistoryState<CompositionSelectionState>;
 		nodeEditor: HistoryState<NodeEditorState>;
@@ -43,7 +43,7 @@ declare global {
 	}
 
 	interface ActionState {
-		area: AreaState;
+		area: AreaReducerState;
 		compositions: CompositionState;
 		compositionSelection: CompositionSelectionState;
 		nodeEditor: NodeEditorState;

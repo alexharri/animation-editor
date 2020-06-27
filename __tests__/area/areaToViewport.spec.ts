@@ -1,9 +1,9 @@
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
-import { AreaState } from "~/area/state/areaReducer";
+import { AreaReducerState } from "~/area/state/areaReducer";
 
 describe("computeAreaToViewport", () => {
 	it("creates a valid viewport", () => {
-		const areaState: AreaState = {
+		const areaState: AreaReducerState = {
 			_id: 0,
 			layout: {
 				0: {
@@ -43,6 +43,7 @@ describe("computeAreaToViewport", () => {
 			areas: {},
 			rootId: "0",
 			joinPreview: null,
+			areaToOpen: null,
 		};
 
 		const result = computeAreaToViewport(areaState.layout, areaState.rootId, {

@@ -3,8 +3,8 @@ import { connectActionState } from "~/state/stateUtils";
 import { handleAreaDragFromCorner } from "~/area/handlers/areaDragFromCorner";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import styles from "~/area/components/Area.styles";
-import { AreaWindowProps } from "~/types/areaTypes";
-import { areaComponentRegistry } from "~/area/windows";
+import { AreaComponentProps } from "~/types/areaTypes";
+import { areaComponentRegistry } from "~/area/areaRegistry";
 import { AreaType, AREA_BORDER_WIDTH } from "~/constants";
 import { EditIcon } from "~/components/icons/EditIcon";
 import { PenIcon } from "~/components/icons/PenIcon";
@@ -22,7 +22,7 @@ interface StateProps {
 	state: any;
 	type: AreaType;
 	raised: boolean;
-	Component: React.ComponentType<AreaWindowProps<any>>;
+	Component: React.ComponentType<AreaComponentProps<any>>;
 }
 type Props = StateProps & OwnProps;
 
@@ -59,7 +59,7 @@ const typeToIndex = areaTypeOptions.reduce<{ [key: string]: number }>((obj, { ty
 	return obj;
 }, {});
 
-const AreaComponent: React.FC<Props> = (props) => {
+export const AreaComponent: React.FC<Props> = (props) => {
 	const { id, raised, viewport, Component, type } = props;
 
 	const { icon: Icon } = areaTypeOptions[typeToIndex[type]];
@@ -137,7 +137,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	const isBeingJoined = joinPreview && joinPreview.areaId === id;
 
 	const component = areaComponentRegistry[areas[id].type] as React.ComponentType<
-		AreaWindowProps<any>
+		AreaComponentProps<any>
 	>;
 
 	return {
