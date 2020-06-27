@@ -13,7 +13,7 @@ export interface NodeEditorAreaState {
 export const initialNodeEditorAreaState: NodeEditorAreaState = {
 	pan: Vec2.new(0, 0),
 	scale: 1,
-	graphId: "0",
+	graphId: "",
 };
 
 export const nodeEditorAreaReducer = (
@@ -21,6 +21,11 @@ export const nodeEditorAreaReducer = (
 	action: ToolAction,
 ): NodeEditorAreaState => {
 	switch (action.type) {
+		case getType(nodeEditorAreaActions.setGraphId): {
+			const { graphId } = action.payload;
+			return { ...state, graphId };
+		}
+
 		case getType(nodeEditorAreaActions.setPan): {
 			const { pan } = action.payload;
 			return { ...state, pan };

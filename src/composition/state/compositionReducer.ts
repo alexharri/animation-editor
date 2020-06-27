@@ -7,7 +7,7 @@ import {
 import { TimelineColors } from "~/constants";
 import { ValueType } from "~/types";
 import { getDefaultLayerProperties } from "~/composition/util/layerPropertyUtils";
-import { removeKeysFromMap, addListToMap } from "~/util/mapUtils";
+import { removeKeysFromMap, addListToMap, modifyItemInMap } from "~/util/mapUtils";
 
 const createLayerId = (layers: CompositionState["layers"]) =>
 	(
@@ -168,6 +168,10 @@ export const compositionActions = {
 	removeLayer: createAction("comp/DELETE_LAYER", (action) => {
 		return (layerId: string) => action({ layerId });
 	}),
+
+	setLayerGraphId: createAction("comp/SET_LAYER_GRAPH_ID", (action) => {
+		return (layerId: string, graphId: string) => action({ layerId, graphId });
+	}),
 };
 
 type Action = ActionType<typeof compositionActions>;
@@ -293,6 +297,17 @@ export const compositionReducer = (
 				},
 				layers: removeKeysFromMap(state.layers, [layer.id]),
 				properties: removeKeysFromMap(state.properties, layer.properties),
+			};
+		}
+
+		case getType(compositionActions.setLayerGraphId): {
+			const { layerId, graphId } = action.payload;
+			return {
+				...state,
+				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+					...layer,
+					graphId,
+				})),
 			};
 		}
 

@@ -1,9 +1,9 @@
 import { computeAreaRowToMinSize } from "~/area/util/areaRowToMinSize";
-import { AreaState } from "~/area/state/areaReducer";
+import { AreaReducerState } from "~/area/state/areaReducer";
 
 describe("computeAreaRowToMinSize", () => {
 	it("works", () => {
-		const areaState: AreaState = {
+		const areaState: AreaReducerState = {
 			_id: 0,
 			layout: {
 				0: {
@@ -43,6 +43,7 @@ describe("computeAreaRowToMinSize", () => {
 			areas: {},
 			rootId: "0",
 			joinPreview: null,
+			areaToOpen: null,
 		};
 
 		const result = computeAreaRowToMinSize(areaState.rootId, areaState.layout);

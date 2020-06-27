@@ -5,7 +5,7 @@ import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
+import { AreaType } from "~/constants";
 
 interface Options {
 	graphId: string;
@@ -26,7 +26,7 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 		(propertyId) => actionState.compositions.properties[propertyId],
 	);
 
-	const { scale, pan } = getAreaActionState<NodeEditorAreaState>(areaId);
+	const { scale, pan } = getAreaActionState<AreaType.NodeEditor>(areaId);
 
 	interface AddNodeOptions {
 		label: string;

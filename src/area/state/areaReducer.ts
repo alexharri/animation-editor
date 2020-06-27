@@ -1,7 +1,7 @@
 import { ActionType, getType } from "typesafe-actions";
 import { areaActions as actions, areaActions } from "~/area/state/areaActions";
-import { AreaRowLayout, AreaLayout } from "~/types/areaTypes";
-import { areaStateReducerRegistry } from "~/area/windows";
+import { AreaRowLayout, AreaLayout, Area } from "~/types/areaTypes";
+import { areaStateReducerRegistry } from "~/area/areaRegistry";
 import { joinAreas } from "~/area/util/joinArea";
 import { areaToRow } from "~/area/util/areaToRow";
 import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
@@ -12,7 +12,7 @@ import { CompositionTimelineAreaState } from "~/composition/timeline/composition
 
 type AreaAction = ActionType<typeof actions>;
 
-export interface AreaState {
+export interface AreaReducerState {
 	_id: number;
 	rootId: string;
 	joinPreview: null | {
@@ -24,14 +24,15 @@ export interface AreaState {
 		[key: string]: AreaRowLayout | AreaLayout;
 	};
 	areas: {
-		[key: string]: {
-			type: AreaType;
-			state: any;
-		};
+		[key: string]: Area;
+	};
+	areaToOpen: null | {
+		position: Vec2;
+		area: Area;
 	};
 }
 
-export const initialAreaState: AreaState = {
+export const initialAreaState: AreaReducerState = {
 	_id: 15,
 	layout: {
 		"2": {
@@ -72,10 +73,16 @@ export const initialAreaState: AreaState = {
 	},
 	joinPreview: null,
 	rootId: "2",
+	areaToOpen: null,
 };
 
-export const areaReducer = (state: AreaState, action: AreaAction): AreaState => {
+export const areaReducer = (state: AreaReducerState, action: AreaAction): AreaReducerState => {
 	switch (action.type) {
+		case getType(areaActions.setFields): {
+			const { fields } = action.payload;
+			return { ...state, ...fields };
+		}
+
 		case getType(areaActions.setJoinAreasPreview): {
 			const { areaId, from, eligibleAreaIds } = action.payload;
 			return {
@@ -87,6 +94,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 				},
 			};
 		}
+
 		case getType(areaActions.joinAreas): {
 			const { areaRowId, areaIndex, mergeInto } = action.payload;
 
@@ -99,7 +107,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 			const newState = {
 				...state,
 				rootId: shouldRemoveRow && state.rootId === row.id ? area.id : state.rootId,
-				layout: Object.keys(state.layout).reduce<AreaState["layout"]>((obj, id) => {
+				layout: Object.keys(state.layout).reduce<AreaReducerState["layout"]>((obj, id) => {
 					if (id === removedAreaId) {
 						return obj;
 					}
@@ -123,7 +131,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 
 					return obj;
 				}, {}),
-				areas: Object.keys(state.areas).reduce<AreaState["areas"]>((obj, key) => {
+				areas: Object.keys(state.areas).reduce<AreaReducerState["areas"]>((obj, key) => {
 					if (key !== removedAreaId) {
 						obj[key] = state.areas[key];
 					}
@@ -139,7 +147,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 		case getType(areaActions.convertAreaToRow): {
 			const { cornerParts, areaId, horizontal } = action.payload;
 
-			const newState: AreaState = {
+			const newState: AreaReducerState = {
 				...state,
 				layout: { ...state.layout },
 				areas: { ...state.areas },
@@ -227,7 +235,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 		}
 
 		case getType(areaActions.setAreaType): {
-			const { areaId, type } = action.payload;
+			const { areaId, type, initialState } = action.payload;
 
 			const area = state.areas[areaId];
 
@@ -238,7 +246,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 					[areaId]: {
 						...area,
 						type,
-						state: areaInitialStates[type],
+						state: initialState || areaInitialStates[type],
 					},
 				},
 			};
@@ -255,7 +263,7 @@ export const areaReducer = (state: AreaState, action: AreaAction): AreaState => 
 					...state.areas,
 					[areaId]: {
 						...area,
-						state: areaStateReducerRegistry[area.type](area.state, _action),
+						state: areaStateReducerRegistry[area.type](area.state as any, _action),
 					},
 				},
 			};

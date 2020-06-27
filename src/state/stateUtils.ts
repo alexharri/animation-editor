@@ -2,6 +2,8 @@ import { connect, DispatchProp, InferableComponentEnhancerWithProps } from "reac
 import { store } from "~/state/store";
 import { HistoryState } from "~/state/history/historyReducer";
 import { ActionBasedState } from "~/state/history/actionBasedReducer";
+import { AreaType } from "~/constants";
+import { AreaState } from "~/types/areaTypes";
 
 const getCurrentStateFromApplicationState = (_state: ApplicationState): ActionState => {
 	const state: any = _state;
@@ -84,9 +86,9 @@ export function connectActionState<TStateProps = {}, TOwnProps = {}>(
 export const getActionState = () => getActionStateFromApplicationState(store.getState());
 export const getCurrentState = () => getCurrentStateFromApplicationState(store.getState());
 
-export const getAreaActionState = <T>(areaId: string): T => {
+export const getAreaActionState = <T extends AreaType>(areaId: string): AreaState<T> => {
 	const actionState = getActionState();
-	return actionState.area.areas[areaId].state;
+	return actionState.area.areas[areaId].state as AreaState<T>;
 };
 
 export const getActionId = () => store.getState().area.action?.id || null;

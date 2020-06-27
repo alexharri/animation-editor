@@ -52,6 +52,8 @@ export const cssZIndex = {
 		cursorCapture: 15,
 		areaRaised: 20,
 		joinPreview: 25,
+		areaToOpenTarget: 99,
+		areaToOpen: 100,
 	},
 	toolbar: 100,
 	contextMenuBackground: 500,

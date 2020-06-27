@@ -6,6 +6,8 @@ export default ({ css }: StyleParams) => ({
 		cursor: pointer;
 		border: none;
 		height: 16px;
+		font-family: ${cssVariables.fontFamily};
+		font-size: 11px;
 		color: ${cssVariables.primary700};
 		background-color: transparent;
 		transition: background-color 0.3s;
@@ -64,10 +66,17 @@ export default ({ css }: StyleParams) => ({
 		outline: none;
 		background-color: ${cssVariables.dark300};
 		border: 1px solid ${cssVariables.primary400};
+		font-size: 11px;
 		padding: 0 3px;
-		line-height: 18px;
+		padding-top: 1px;
+		padding-bottom: 1px;
 		border-radius: 3px;
-		font-weight: 300;
+		font-weight: 400;
 		transform: translateY(-1px);
+
+		&::selection {
+			color: white;
+			background: ${cssVariables.primary700};
+		}
 	`,
 });

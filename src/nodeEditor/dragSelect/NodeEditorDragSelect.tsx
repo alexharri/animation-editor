@@ -2,11 +2,11 @@ import React from "react";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { cssZIndex } from "~/cssVariables";
 import { useRef } from "react";
-import { AreaWindowProps } from "~/types/areaTypes";
+import { AreaComponentProps } from "~/types/areaTypes";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { connectActionState } from "~/state/stateUtils";
 
-type OwnProps = AreaWindowProps<NodeEditorAreaState>;
+type OwnProps = AreaComponentProps<NodeEditorAreaState>;
 interface StateProps {
 	rect: Rect | null;
 }

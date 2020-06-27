@@ -1,43 +1,74 @@
 import "~/util/math/expressions";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Area } from "~/area/components/Area";
+import { Area, AreaComponent } from "~/area/components/Area";
 import { connectActionState } from "~/state/stateUtils";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
-import { AreaState } from "~/area/state/areaReducer";
+import { AreaReducerState } from "~/area/state/areaReducer";
 import { JoinAreaPreview } from "~/area/components/JoinAreaPreview";
 import { compileStylesheet } from "~/util/stylesheets";
 import { AreaRowSeparators } from "~/area/components/AreaRowSeparators";
 
-import { cssZIndex } from "~/cssVariables";
+import { cssZIndex, cssVariables } from "~/cssVariables";
 import { getAreaRootViewport, _setAreaViewport } from "~/area/util/getAreaViewport";
+import { areaComponentRegistry } from "~/area/areaRegistry";
+import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
+import { contractRect } from "~/util/math";
+import { AREA_BORDER_WIDTH } from "~/constants";
 
-const s = compileStylesheet(({ css }) => ({
-	cursorCapture: css`
-		display: none;
+const s = compileStylesheet(({ css, keyframes }) => {
+	const areaToOpenContainerAnimation = keyframes`
+		0% { transform: scale(0.25); opacity: .3 }
+		50% { transform: scale(0.52); opacity: .8; }
+		100% { transform: scale(0.5); }
+	`;
+	return {
+		cursorCapture: css`
+			display: none;
 
-		&--active {
+			&--active {
+				position: absolute;
+				display: block;
+				top: 0;
+				left: 0;
+				bottom: 0;
+				right: 0;
+				z-index: ${cssZIndex.area.cursorCapture};
+				cursor: not-allowed;
+			}
+		`,
+
+		areaToOpenContainer: css`
+			z-index: ${cssZIndex.area.areaToOpen};
+			transform: scale(0.5);
 			position: absolute;
-			display: block;
-			top: 0;
-			left: 0;
-			bottom: 0;
-			right: 0;
-			z-index: ${cssZIndex.area.cursorCapture};
-			cursor: not-allowed;
-		}
-	`,
-}));
+			opacity: 0.8;
+			animation: ${areaToOpenContainerAnimation} 0.3s;
+			cursor: grabbing;
+
+			& > * > * {
+				pointer-events: none;
+			}
+		`,
+
+		areaToOpenTargetOverlay: css`
+			z-index: ${cssZIndex.area.areaToOpenTarget};
+			position: absolute;
+			background: ${cssVariables.primary700};
+			border-radius: 8px;
+			opacity: 0.1;
+		`,
+	};
+});
 
 interface StateProps {
-	layout: AreaState["layout"];
-	rootId: string;
-	joinPreview: AreaState["joinPreview"];
+	areaState: AreaReducerState;
 }
 type Props = StateProps;
 
 const AreaRootComponent: React.FC<Props> = (props) => {
-	const { joinPreview } = props;
+	const { areaState } = props;
+	const { joinPreview, areaToOpen } = areaState;
 
 	const viewportMapRef = useRef<{ [areaId: string]: Rect }>({});
 
@@ -51,7 +82,7 @@ const AreaRootComponent: React.FC<Props> = (props) => {
 
 	{
 		const newMap =
-			(viewport && computeAreaToViewport(props.layout, props.rootId, viewport)) || {};
+			(viewport && computeAreaToViewport(areaState.layout, areaState.rootId, viewport)) || {};
 
 		const map = viewportMapRef.current;
 
@@ -81,11 +112,38 @@ const AreaRootComponent: React.FC<Props> = (props) => {
 	const areaToViewport = viewportMapRef.current;
 	_setAreaViewport(areaToViewport);
 
+	const areaToOpenTargetId =
+		areaToOpen && getAreaToOpenTargetId(areaToOpen.position, areaState, areaToViewport);
+	const areaToOpenTargetViewport = areaToOpenTargetId && areaToViewport[areaToOpenTargetId];
+
 	return (
 		<div data-area-root>
+			{viewport && areaToOpen && (
+				<div
+					className={s("areaToOpenContainer")}
+					style={{
+						left: areaToOpen.position.x,
+						top: areaToOpen.position.y,
+					}}
+				>
+					<AreaComponent
+						id="-1"
+						Component={areaComponentRegistry[areaToOpen.area.type]}
+						raised
+						state={areaToOpen.area.state}
+						type={areaToOpen.area.type}
+						viewport={{
+							left: -250,
+							top: -175,
+							height: 350,
+							width: 500,
+						}}
+					/>
+				</div>
+			)}
 			{viewport &&
-				Object.keys(props.layout).map((id) => {
-					const layout = props.layout[id];
+				Object.keys(areaState.layout).map((id) => {
+					const layout = areaState.layout[id];
 
 					if (layout.type === "area_row") {
 						return (
@@ -105,15 +163,19 @@ const AreaRootComponent: React.FC<Props> = (props) => {
 					movingInDirection={joinPreview.movingInDirection!}
 				/>
 			)}
+			{areaToOpenTargetViewport && (
+				<div
+					className={s("areaToOpenTargetOverlay")}
+					style={contractRect(areaToOpenTargetViewport, AREA_BORDER_WIDTH)}
+				/>
+			)}
 			<div className={s("cursorCapture", { active: !!joinPreview })} />
 		</div>
 	);
 };
 
 const mapStateToProps: MapActionState<StateProps> = ({ area }) => ({
-	joinPreview: area.joinPreview,
-	layout: area.layout,
-	rootId: area.rootId,
+	areaState: area,
 });
 
 export const AreaRoot = connectActionState(mapStateToProps)(AreaRootComponent);

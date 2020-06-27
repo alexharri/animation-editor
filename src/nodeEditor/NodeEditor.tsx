@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { connectActionState } from "~/state/stateUtils";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { AreaWindowProps } from "~/types/areaTypes";
+import { AreaComponentProps } from "~/types/areaTypes";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { nodeEditorHandlers } from "~/nodeEditor/nodeEditorHandlers";
 import styles from "~/nodeEditor/NodeEditor.styles";
@@ -21,7 +21,7 @@ import { Vec2InputNode } from "~/nodeEditor/nodes/Vec2InputNode";
 
 const s = compileStylesheetLabelled(styles);
 
-type OwnProps = AreaWindowProps<NodeEditorAreaState>;
+type OwnProps = AreaComponentProps<NodeEditorAreaState>;
 interface StateProps {
 	graph: NodeEditorGraphState;
 }
@@ -52,7 +52,6 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 	});
 
 	const { graph } = props;
-	const nodeIds = Object.keys(graph.nodes);
 
 	const [clickCaptureFn, setClickCaptureFn] = useState<{
 		fn: ((e: React.MouseEvent) => void) | null;
@@ -62,7 +61,6 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 	useEffect(() => {
 		const el = clickCaptureTarget.current;
 		if (el) {
-			console.log(clickCaptureFn.fn ? "block" : "");
 			el.style.display = clickCaptureFn.fn ? "block" : "";
 		}
 
@@ -89,6 +87,12 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 
 		return () => {};
 	}, [clickCaptureFn.fn]);
+
+	if (!graph) {
+		return null;
+	}
+
+	const nodeIds = Object.keys(graph.nodes);
 
 	return (
 		<>

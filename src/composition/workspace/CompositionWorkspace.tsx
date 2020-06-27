@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { AreaWindowProps } from "~/types/areaTypes";
+import { AreaComponentProps } from "~/types/areaTypes";
 import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -14,7 +14,7 @@ import { useActionState } from "~/hook/useActionState";
 
 const s = compileStylesheetLabelled(styles);
 
-type Props = AreaWindowProps<CompositionWorkspaceAreaState>;
+type Props = AreaComponentProps<CompositionWorkspaceAreaState>;
 
 export const CompositionWorkspace: React.FC<Props> = (props) => {
 	const clickCaptureTarget = useRef<HTMLDivElement>(null);

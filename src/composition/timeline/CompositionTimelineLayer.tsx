@@ -12,6 +12,7 @@ import { computeLayerGraph } from "~/nodeEditor/graph/computeLayerGraph";
 import { useComputeHistory } from "~/hook/useComputeHistory";
 import { useActionState } from "~/hook/useActionState";
 import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
+import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -71,9 +72,27 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 				>
 					{layer.name}
 				</div>
-				<div className={s("graph")}>
+				<div
+					title={layer.graphId ? "Delete Layer Graph" : "Create Layer Graph"}
+					className={s("graph", { active: !!layer.graphId })}
+					onMouseDown={separateLeftRightMouse({
+						left: (e) => compositionTimelineHandlers.onLayerGraphMouseDown(e, layer.id),
+					})}
+				>
 					<GraphIcon />
 				</div>
+				{!!layer.graphId && (
+					<div
+						title="Open Graph in area"
+						className={s("openGraphInArea", { active: true })}
+						onMouseDown={separateLeftRightMouse({
+							left: (e) =>
+								compositionTimelineHandlers.onOpenGraphInAreaMouseDown(e, layer.id),
+						})}
+					>
+						<OpenInAreaIcon />
+					</div>
+				)}
 			</div>
 			{layer.properties.map((propertyId, i) => {
 				return (

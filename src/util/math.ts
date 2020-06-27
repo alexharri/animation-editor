@@ -164,6 +164,18 @@ export const translateRectAsVec = (rect: Rect, transformFn: (vec: Vec2) => Vec2)
 	return { left, top, width, height };
 };
 
+export const contractRect = (rect: Rect, contractBy: number): Rect => {
+	return {
+		left: rect.left + contractBy,
+		top: rect.top + contractBy,
+		width: rect.width - contractBy * 2,
+		height: rect.height - contractBy * 2,
+	};
+};
+
+export const expandRect = (rect: Rect, contractBy: number): Rect =>
+	contractRect(rect, contractBy * -1);
+
 export const splitRect = (
 	type: "horizontal" | "vertical",
 	rect: Rect,

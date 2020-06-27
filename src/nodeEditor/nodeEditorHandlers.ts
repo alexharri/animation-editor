@@ -2,7 +2,6 @@ import { areaActions } from "~/area/state/areaActions";
 import { requestAction } from "~/listener/requestAction";
 import { nodeEditorAreaActions } from "~/nodeEditor/nodeEditorAreaActions";
 import { getAreaActionState } from "~/state/stateUtils";
-import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { isKeyDown } from "~/listener/keyboard";
 import { isLeftClick } from "~/util/mouse";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
@@ -101,7 +100,7 @@ export const nodeEditorHandlers = {
 	onPanStart: (areaId: string, e: React.MouseEvent) => {
 		e.preventDefault();
 
-		const areaState = getAreaActionState<NodeEditorAreaState>(areaId);
+		const areaState = getAreaActionState<AreaType.NodeEditor>(areaId);
 		const initialPos = Vec2.fromEvent(e);
 
 		requestAction({}, ({ addListener, dispatch, submitAction }) => {
@@ -123,7 +122,7 @@ export const nodeEditorHandlers = {
 			return;
 		}
 
-		const areaState = getAreaActionState<NodeEditorAreaState>(areaId);
+		const areaState = getAreaActionState<AreaType.NodeEditor>(areaId);
 
 		if (
 			(areaState.scale < 0.0625 && isKeyDown("Alt")) ||
