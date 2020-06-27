@@ -3,7 +3,7 @@ import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { CompositionTimelineAreaState } from "~/composition/timeline/compositionTimelineAreaReducer";
 import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 
-interface _AreaWindowStates {
+interface _AreaStates {
 	[AreaType.NodeEditor]: NodeEditorAreaState;
 	[AreaType.CompositionTimeline]: CompositionTimelineAreaState;
 	[AreaType.CompositionWorkspace]: CompositionWorkspaceAreaState;
@@ -11,7 +11,7 @@ interface _AreaWindowStates {
 	[AreaType.History]: {};
 }
 
-export type AreaState<T extends AreaType> = _AreaWindowStates[T];
+export type AreaState<T extends AreaType> = _AreaStates[T];
 
 export interface Area<T extends AreaType = AreaType> {
 	type: T;
