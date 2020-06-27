@@ -15,6 +15,7 @@ import { areaComponentRegistry } from "~/area/areaRegistry";
 import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
 import { contractRect } from "~/util/math";
 import { AREA_BORDER_WIDTH } from "~/constants";
+import { useVec2TransitionState } from "~/hook/useNumberTransitionState";
 
 const s = compileStylesheet(({ css, keyframes }) => {
 	const areaToOpenContainerAnimation = keyframes`
@@ -116,6 +117,21 @@ const AreaRootComponent: React.FC<Props> = (props) => {
 		areaToOpen && getAreaToOpenTargetId(areaToOpen.position, areaState, areaToViewport);
 	const areaToOpenTargetViewport = areaToOpenTargetId && areaToViewport[areaToOpenTargetId];
 
+	const [areaToOpenDimensions, setAreaToOpenDimensions] = useVec2TransitionState(
+		Vec2.new(100, 100),
+		{ duration: 250, bezier: [0.24, 0.02, 0.18, 0.97] },
+	);
+
+	useEffect(() => {
+		if (!areaToOpenTargetId) {
+			return;
+		}
+
+		const viewport = areaToViewport[areaToOpenTargetId];
+
+		setAreaToOpenDimensions(Vec2.new(viewport.width, viewport.height));
+	}, [areaToOpenTargetId]);
+
 	return (
 		<div data-area-root>
 			{viewport && areaToOpen && (
@@ -133,10 +149,10 @@ const AreaRootComponent: React.FC<Props> = (props) => {
 						state={areaToOpen.area.state}
 						type={areaToOpen.area.type}
 						viewport={{
-							left: -250,
-							top: -175,
-							height: 350,
-							width: 500,
+							left: -(areaToOpenDimensions.x / 2),
+							top: -(areaToOpenDimensions.y / 2),
+							height: areaToOpenDimensions.y,
+							width: areaToOpenDimensions.x,
 						}}
 					/>
 				</div>
