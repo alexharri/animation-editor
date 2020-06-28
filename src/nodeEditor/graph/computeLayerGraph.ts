@@ -1,12 +1,12 @@
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType } from "~/types";
-import { CompositionLayerProperty } from "~/composition/compositionTypes";
+import { CompositionProperty } from "~/composition/compositionTypes";
 import { ComputeNodeContext, computeNodeOutputArgs } from "~/nodeEditor/graph/computeNode";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 
 export const computeLayerGraph = (
-	properties: CompositionLayerProperty[],
+	properties: CompositionProperty[],
 	graph?: NodeEditorGraphState,
 ): ((
 	context: ComputeNodeContext,
@@ -35,16 +35,18 @@ export const computeLayerGraph = (
 		return computeRawPropertyValues;
 	}
 
-	let outputNode: NodeEditorNode<NodeEditorNodeType.layer_output> | undefined;
+	let outputNode: NodeEditorNode<NodeEditorNodeType.layer_transform_output> | undefined;
 
 	const keys = Object.keys(graph.nodes);
 	for (let i = 0; i < keys.length; i += 1) {
 		const node = graph.nodes[keys[i]];
-		if (node.type === NodeEditorNodeType.layer_output) {
+		if (node.type === NodeEditorNodeType.layer_transform_output) {
 			if (outputNode) {
-				console.warn(`More than one '${NodeEditorNodeType.layer_output}' node in graph`);
+				console.warn(
+					`More than one '${NodeEditorNodeType.layer_transform_output}' node in graph`,
+				);
 			} else {
-				outputNode = node as NodeEditorNode<NodeEditorNodeType.layer_output>;
+				outputNode = node as NodeEditorNode<NodeEditorNodeType.layer_transform_output>;
 			}
 		}
 	}

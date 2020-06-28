@@ -7,10 +7,10 @@ export const removeKeysFromMap = <T extends { [key: string]: any }>(obj: T, keys
 	}, {} as T);
 };
 
-export const addListToMap = <M extends { [key: string]: T }, T>(
+export const addListToMap = <M extends { [key: string]: T }, T, U extends T = T>(
 	map: M,
-	items: T[],
-	idField: keyof T,
+	items: U[],
+	idField: keyof T & keyof U,
 ): M => {
 	return {
 		...map,
@@ -31,4 +31,30 @@ export const modifyItemInMap = <M extends { [key: string]: T }, T = M[string]>(
 		...map,
 		[id]: fn(map[id]),
 	};
+};
+
+export const modifyItemInUnionMap = <
+	M extends { [key: string]: T },
+	T = M[string],
+	U extends T = T
+>(
+	map: M,
+	id: string,
+	fn: (item: U) => U,
+): M => {
+	return {
+		...map,
+		[id]: fn(map[id] as U),
+	};
+};
+
+export const reduceMap = <M extends { [key: string]: T }, T = M[string]>(
+	map: M,
+	fn: (item: T) => T,
+): M => {
+	const keys = Object.keys(map);
+	return keys.reduce((obj, key) => {
+		(obj as any)[key] = fn(map[key]);
+		return obj;
+	}, {} as M);
 };

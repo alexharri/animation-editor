@@ -154,10 +154,10 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 				},
 			];
 
-		case NodeEditorNodeType.layer_input:
+		case NodeEditorNodeType.layer_transform_input:
 			return [];
 
-		case NodeEditorNodeType.layer_output:
+		case NodeEditorNodeType.layer_transform_output:
 			return [];
 
 		case NodeEditorNodeType.expr:
@@ -256,10 +256,10 @@ export const getNodeEditorNodeDefaultOutputs = (
 				},
 			];
 
-		case NodeEditorNodeType.layer_input:
+		case NodeEditorNodeType.layer_transform_input:
 			return [];
 
-		case NodeEditorNodeType.layer_output:
+		case NodeEditorNodeType.layer_transform_output:
 			return [];
 
 		case NodeEditorNodeType.expr:
@@ -312,8 +312,8 @@ type NodeEditorNodeStateMap = {
 	[NodeEditorNodeType.vec2_input]: {};
 	[NodeEditorNodeType.empty]: {};
 	[NodeEditorNodeType.rect_translate]: {};
-	[NodeEditorNodeType.layer_input]: {};
-	[NodeEditorNodeType.layer_output]: {};
+	[NodeEditorNodeType.layer_transform_input]: {};
+	[NodeEditorNodeType.layer_transform_output]: {};
 	[NodeEditorNodeType.expr]: {
 		expression: string;
 		textareaHeight: number;

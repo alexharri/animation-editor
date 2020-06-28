@@ -1,4 +1,4 @@
-import { NodeEditorNodeType } from "~/types";
+import { NodeEditorNodeType, PropertyGroupName } from "~/types";
 import { RequestActionParams } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
@@ -6,6 +6,8 @@ import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtil
 import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { AreaType } from "~/constants";
+import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
+import { CompositionPropertyGroup, CompositionProperty } from "~/composition/compositionTypes";
 
 interface Options {
 	graphId: string;
@@ -20,11 +22,22 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 	const { dispatch, submitAction } = params;
 
 	const actionState = getActionState();
+	const compositionState = actionState.compositions;
 	const graph = actionState.nodeEditor.graphs[graphId];
-	const layer = actionState.compositions.layers[graph.layerId];
-	const properties = layer.properties.map(
-		(propertyId) => actionState.compositions.properties[propertyId],
-	);
+	const layer = compositionState.layers[graph.layerId];
+
+	const propertyGroups = layer.properties.map((id) => compositionState.properties[id]);
+	const transformGroup = propertyGroups.find((group): group is CompositionPropertyGroup => {
+		return group.type === "group" && group.name === PropertyGroupName.Transform;
+	});
+
+	if (!transformGroup) {
+		throw new Error("Layer does not contain Transform property group");
+	}
+
+	const transformProperties = transformGroup.properties.map((id) => {
+		return compositionState.properties[id] as CompositionProperty;
+	});
 
 	const { scale, pan } = getAreaActionState<AreaType.NodeEditor>(areaId);
 
@@ -64,27 +77,27 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 			label: "Layer",
 			options: [
 				createAddNodeOption({
-					type: NodeEditorNodeType.layer_input,
+					type: NodeEditorNodeType.layer_transform_input,
 					label: "Layer input",
 					getIO: () => {
 						return {
-							outputs: properties.map<NodeEditorNodeOutput>((property) => ({
-								name: property.name,
-								type: property.type,
+							outputs: transformProperties.map<NodeEditorNodeOutput>((property) => ({
+								name: getLayerPropertyLabel(property.name),
+								type: property.valueType,
 							})),
 							inputs: [],
 						};
 					},
 				}),
 				createAddNodeOption({
-					type: NodeEditorNodeType.layer_output,
+					type: NodeEditorNodeType.layer_transform_output,
 					label: "Layer output",
 					getIO: () => {
 						return {
-							inputs: properties.map<NodeEditorNodeInput>((property) => ({
-								name: property.name,
+							inputs: transformProperties.map<NodeEditorNodeInput>((property) => ({
+								name: getLayerPropertyLabel(property.name),
 								pointer: null,
-								type: property.type,
+								type: property.valueType,
 								value: null,
 							})),
 							outputs: [],

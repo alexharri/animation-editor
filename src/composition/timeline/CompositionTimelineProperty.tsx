@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { StopwatchIcon } from "~/components/icons/StopwatchIcon";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { CompositionLayerProperty, Composition } from "~/composition/compositionTypes";
+import { CompositionProperty, Composition } from "~/composition/compositionTypes";
 import { connectActionState } from "~/state/stateUtils";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { compositionActions } from "~/composition/state/compositionReducer";
@@ -10,8 +10,10 @@ import { NumberInput } from "~/components/common/NumberInput";
 import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
 import { splitKeyframesAtIndex, createTimelineKeyframe } from "~/timeline/timelineUtils";
 import { timelineActions } from "~/timeline/timelineActions";
-import styles from "~/composition/timeline/CompositionTimelineLayerProperty.styles";
+import styles from "~/composition/timeline/CompositionTimelineProperty.styles";
 import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
+import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
+import { PropertyName } from "~/types";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -21,7 +23,7 @@ interface OwnProps {
 	value: number;
 }
 interface StateProps {
-	property: CompositionLayerProperty;
+	property: CompositionProperty;
 	isSelected: boolean;
 	composition: Composition;
 	timeline?: Timeline;
@@ -125,9 +127,6 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 		onValueChangeEndFn.current = null;
 	};
 
-	// const value = timeline
-	// 	? getTimelineValueAtIndex(timeline, composition.frameIndex)
-	// 	: property.value;
 	const value = props.value;
 
 	return (
@@ -159,7 +158,7 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 							),
 					})}
 				>
-					{property.label}
+					{getLayerPropertyLabel(property.name)}
 				</div>
 				<div className={s("value")}>
 					<NumberInput
@@ -168,6 +167,7 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 						onChange={onValueChange}
 						onChangeEnd={onValueChangeEnd}
 						value={value}
+						tick={property.name === PropertyName.Scale ? 0.01 : 1}
 					/>
 				</div>
 			</div>
@@ -180,7 +180,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ id, compositionId },
 ) => {
 	const composition = compositions.compositions[compositionId];
-	const property = compositions.properties[id];
+	const property = compositions.properties[id] as CompositionProperty;
 	const isSelected = !!compositionSelection.properties[id];
 
 	const timeline = property.timelineId ? timelines[property.timelineId] : undefined;

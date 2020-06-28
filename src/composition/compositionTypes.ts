@@ -1,4 +1,4 @@
-import { ValueType } from "~/types";
+import { ValueType, PropertyName, PropertyGroupName } from "~/types";
 
 export interface Composition {
 	id: string;
@@ -20,13 +20,20 @@ export interface CompositionLayer {
 	properties: string[];
 }
 
-export interface CompositionLayerProperty {
+export interface CompositionPropertyGroup {
+	type: "group";
+	name: PropertyGroupName;
+	id: string;
+	properties: string[];
+}
+
+export interface CompositionProperty {
+	type: "property";
 	id: string;
 	layerId: string;
 	compositionId: string;
-	label: string;
-	name: string;
-	type: ValueType;
+	name: PropertyName;
+	valueType: ValueType;
 	value: number;
 	timelineId: string;
 	color?: string;

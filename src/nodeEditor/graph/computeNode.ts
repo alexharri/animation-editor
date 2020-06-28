@@ -1,11 +1,7 @@
 import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType, ValueType } from "~/types";
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
-import {
-	Composition,
-	CompositionLayer,
-	CompositionLayerProperty,
-} from "~/composition/compositionTypes";
+import { Composition, CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 import { interpolate } from "~/util/math";
@@ -24,7 +20,7 @@ export interface ComputeNodeContext {
 	computed: { [nodeId: string]: ComputeNodeArg[] };
 	composition: Composition;
 	layer: CompositionLayer;
-	properties: CompositionLayerProperty[];
+	properties: CompositionProperty[];
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
 }
@@ -158,9 +154,11 @@ const compute: {
 		return [toArg.number(deg * RAD_TO_DEG_FAC)];
 	},
 
-	[Type.layer_output]: (args) => args,
+	[Type.layer_transform_output]: (args) => {
+		return args;
+	},
 
-	[Type.layer_input]: (_, ctx) => {
+	[Type.layer_transform_input]: (_, ctx) => {
 		return ctx.properties.map((p) => {
 			const value = p.timelineId
 				? getTimelineValueAtIndex(
@@ -295,7 +293,7 @@ export const computeNodeOutputArgs = (
 		const value = mostRecentNode?.inputs[i].value ?? _value;
 		let defaultValue = { type, value };
 
-		if (node.type === Type.layer_output) {
+		if (node.type === Type.layer_transform_output) {
 			const p = ctx.properties[i];
 			defaultValue = {
 				type,

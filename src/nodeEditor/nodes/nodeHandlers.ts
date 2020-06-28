@@ -83,7 +83,7 @@ export const nodeHandlers = {
 					"Node",
 					[
 						{
-							label: "Delete",
+							label: "Delete node",
 							onSelect: () => {
 								dispatch(contextMenuActions.closeContextMenu());
 								dispatch(nodeEditorActions.removeNode(graphId, nodeId));

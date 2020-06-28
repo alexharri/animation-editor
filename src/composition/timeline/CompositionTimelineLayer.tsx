@@ -2,7 +2,7 @@ import React from "react";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import styles from "~/composition/timeline/CompositionTimelineLayer.style";
-import { CompositionTimelineLayerProperty } from "~/composition/timeline/CompositionTimelineLayerProperty";
+import { CompositionTimelineLayerProperty } from "~/composition/timeline/CompositionTimelineProperty";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
@@ -13,6 +13,7 @@ import { useComputeHistory } from "~/hook/useComputeHistory";
 import { useActionState } from "~/hook/useActionState";
 import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
+import { getLayerTransformProperties } from "~/composition/util/compositionPropertyUtils";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -30,9 +31,9 @@ type Props = OwnProps & StateProps;
 const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
 
-	const properties = useComputeHistory((state) =>
-		layer.properties.map((id) => state.compositions.properties[id]),
-	);
+	const properties = useComputeHistory((state) => {
+		return getLayerTransformProperties(layer.id, state.compositions);
+	});
 
 	const { computePropertyValues } = useComputeHistory(() => {
 		return { computePropertyValues: computeLayerGraph(properties, graph) };
@@ -43,7 +44,7 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 			computed: {},
 			composition: actionState.compositions.compositions[layer.compositionId],
 			layer,
-			properties: layer.properties.map((id) => actionState.compositions.properties[id]),
+			properties,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
 		};
@@ -94,12 +95,12 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 					</div>
 				)}
 			</div>
-			{layer.properties.map((propertyId, i) => {
+			{properties.map((property, i) => {
 				return (
 					<CompositionTimelineLayerProperty
 						compositionId={props.compositionId}
-						id={propertyId}
-						value={propertyToValue[propertyId as any]}
+						id={property.id}
+						value={propertyToValue[property.id as any]}
 						key={i}
 					/>
 				);
