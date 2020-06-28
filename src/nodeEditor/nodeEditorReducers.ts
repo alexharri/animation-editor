@@ -452,7 +452,6 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 
 		case getType(actions.addNodeOutput): {
 			const { nodeId, output } = action.payload;
-			console.log({ output });
 			const node = state.nodes[nodeId];
 			return {
 				...state,
