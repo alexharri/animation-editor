@@ -24,12 +24,16 @@ export const addListToMap = <M extends { [key: string]: T }, T, U extends T = T>
 
 export const modifyItemInMap = <M extends { [key: string]: T }, T = M[string]>(
 	map: M,
-	id: string,
+	key: string,
 	fn: (item: T) => T,
 ): M => {
+	if (!map.hasOwnProperty(key)) {
+		throw new Error(`Key '${key}' does not exist in map.`);
+	}
+
 	return {
 		...map,
-		[id]: fn(map[id]),
+		[key]: fn(map[key]),
 	};
 };
 
@@ -39,12 +43,16 @@ export const modifyItemInUnionMap = <
 	U extends T = T
 >(
 	map: M,
-	id: string,
+	key: string,
 	fn: (item: U) => U,
 ): M => {
+	if (!map.hasOwnProperty(key)) {
+		throw new Error(`Key '${key}' does not exist in map.`);
+	}
+
 	return {
 		...map,
-		[id]: fn(map[id] as U),
+		[key]: fn(map[key] as U),
 	};
 };
 
