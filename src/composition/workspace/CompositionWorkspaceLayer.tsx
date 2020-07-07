@@ -36,19 +36,18 @@ type Props = OwnProps & StateProps;
 const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
 
-	const properties = useActionState((state) => {
-		return getLayerCompositionProperties(layer.id, state.compositions);
-	});
+	const getTransformProperties = (state: ActionState) =>
+		getLayerTransformProperties(layer.id, state.compositions);
 
-	const transformProperties = useActionState((state) => {
-		return getLayerTransformProperties(layer.id, state.compositions);
-	});
+	const { computePropertyValues } = useComputeHistory((state) => {
+		const transformProperties = getTransformProperties(state);
 
-	const { computePropertyValues } = useComputeHistory(() => {
 		return { computePropertyValues: computeLayerGraph(transformProperties, graph) };
 	});
 
 	const propertyToValue = useActionState((actionState) => {
+		const transformProperties = getTransformProperties(actionState);
+
 		const context: ComputeNodeContext = {
 			computed: {},
 			composition: actionState.compositions.compositions[layer.compositionId],
@@ -62,13 +61,17 @@ const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 		return computePropertyValues(context, mostRecentGraph);
 	});
 
+	const properties = useActionState((state) => {
+		return getLayerCompositionProperties(layer.id, state.compositions);
+	});
+
 	const nameToProperty = properties.reduce((obj, p) => {
 		const value = propertyToValue[p.id] ?? p.value;
 		(obj as any)[PropertyName[p.name]] = value;
 		return obj;
 	}, {} as { [key in keyof typeof PropertyName]: number });
 
-	const { Width, Height, PositionX, PositionY, Scale, Rotation } = nameToProperty;
+	const { Width, Height, PositionX, PositionY, Scale, Opacity, Rotation } = nameToProperty;
 
 	return (
 		<div
@@ -76,8 +79,9 @@ const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 			style={{
 				width: Width,
 				height: Height,
-				left: PositionX,
-				top: PositionY,
+				left: 0,
+				top: 0,
+				opacity: Opacity,
 				border: props.isSelected ? "1px solid cyan" : undefined,
 				transform: `translateX(${PositionX}px) translateY(${PositionY}px) scale(${Scale}) rotate(${Rotation}deg)`,
 			}}

@@ -295,6 +295,11 @@ export const computeNodeOutputArgs = (
 
 		if (node.type === Type.layer_transform_output) {
 			const p = ctx.properties[i];
+
+			if (p.timelineId && !ctx.timelines[p.timelineId]) {
+				// console.log(ctx, p);
+			}
+
 			defaultValue = {
 				type,
 				value: p.timelineId

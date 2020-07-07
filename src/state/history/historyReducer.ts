@@ -71,6 +71,43 @@ export function createReducerWithHistory<S>(
 				};
 			}
 
+			case "history/DISPATCH_BATCH_TO_ACTION": {
+				const { actionId, actionBatch, modifiesHistory } = action.payload;
+
+				if (!modifiesHistory) {
+					return state;
+				}
+
+				if (!state.action) {
+					console.warn("Attempted to dispatch to an action that does not exist.");
+					return state;
+				}
+
+				if (state.action.id !== actionId) {
+					console.warn("Attempted to dispatch with the wrong action id.");
+					return state;
+				}
+
+				let newState = state.action.state;
+
+				for (let i = 0; i < actionBatch.length; i += 1) {
+					newState = reducer(newState, actionBatch[i]);
+				}
+
+				if (newState === state.action.state) {
+					// State was not modified
+					return state;
+				}
+
+				return {
+					...state,
+					action: {
+						...state.action,
+						state: newState,
+					},
+				};
+			}
+
 			case "history/DISPATCH_TO_ACTION": {
 				const { actionId, actionToDispatch, modifiesHistory } = action.payload;
 

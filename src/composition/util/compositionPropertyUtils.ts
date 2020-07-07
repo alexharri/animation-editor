@@ -83,6 +83,19 @@ const createDefaultTransformProperties = (opts: Options): CompositionProperty[] 
 			value: 0,
 			color: TimelineColors.YPosition,
 		},
+		{
+			type: "property",
+			id: createId(),
+			layerId,
+			compositionId,
+			name: PropertyName.Opacity,
+			timelineId: "",
+			valueType: ValueType.Number,
+			value: 1,
+			color: TimelineColors.YPosition,
+			max: 1,
+			min: 0,
+		},
 	];
 };
 

@@ -50,6 +50,7 @@ export enum PropertyName {
 	Width,
 	Height,
 }
+console.log({ PropertyName });
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
 export interface JsonArray extends Array<Json> {}

@@ -167,7 +167,12 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 						onChange={onValueChange}
 						onChangeEnd={onValueChangeEnd}
 						value={value}
-						tick={property.name === PropertyName.Scale ? 0.01 : 1}
+						tick={
+							property.name === PropertyName.Scale ||
+							property.name === PropertyName.Opacity
+								? 0.01
+								: 1
+						}
 					/>
 				</div>
 			</div>

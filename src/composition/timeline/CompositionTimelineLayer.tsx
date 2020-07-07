@@ -31,15 +31,16 @@ type Props = OwnProps & StateProps;
 const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
 
-	const properties = useComputeHistory((state) => {
-		return getLayerTransformProperties(layer.id, state.compositions);
-	});
+	const getProperties = (state: ActionState) =>
+		getLayerTransformProperties(layer.id, state.compositions);
 
-	const { computePropertyValues } = useComputeHistory(() => {
+	const { computePropertyValues } = useComputeHistory((state) => {
+		const properties = getProperties(state);
 		return { computePropertyValues: computeLayerGraph(properties, graph) };
 	});
 
 	const propertyToValue = useActionState((actionState) => {
+		const properties = getProperties(actionState);
 		const context: ComputeNodeContext = {
 			computed: {},
 			composition: actionState.compositions.compositions[layer.compositionId],
@@ -51,6 +52,8 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 
 		return computePropertyValues(context);
 	});
+
+	const properties = useComputeHistory(getProperties);
 
 	return (
 		<>

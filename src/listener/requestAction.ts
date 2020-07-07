@@ -15,7 +15,8 @@ interface Options {
 }
 
 export interface RequestActionParams {
-	dispatch: (action: any) => void;
+	dispatch: (action: any | any[], ...otherActions: any[]) => void;
+	dispatchBatch: (action: any[]) => void;
 	cancelAction: () => void;
 	submitAction: (name?: string) => void;
 	addListener: typeof _addListener;
@@ -66,8 +67,24 @@ export const requestAction = (
 	store.dispatch(historyActions.startAction(actionId));
 
 	callback({
-		dispatch: (action) => {
+		dispatch: (action, ...args) => {
+			if (Array.isArray(action)) {
+				store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
+				return;
+			}
+
+			if (args.length) {
+				store.dispatch(
+					historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
+				);
+				return;
+			}
+
 			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
+		},
+
+		dispatchBatch: (actionBatch) => {
+			store.dispatch(historyActions.dispatchBatchToAction(actionId, actionBatch, history));
 		},
 
 		submitAction: (name = "Unknown action") => {

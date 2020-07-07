@@ -197,9 +197,11 @@ export const compositionTimelineHandlers = {
 			);
 
 			requestAction({ history: true }, ({ dispatch, submitAction }) => {
-				dispatch(timelineActions.removeTimeline(timelineId));
-				dispatch(compositionActions.setPropertyValue(propertyId, value));
-				dispatch(compositionActions.setPropertyTimelineId(propertyId, ""));
+				dispatch(
+					timelineActions.removeTimeline(timelineId),
+					compositionActions.setPropertyValue(propertyId, value),
+					compositionActions.setPropertyTimelineId(propertyId, ""),
+				);
 				submitAction("Remove timeline from property");
 			});
 			return;
@@ -208,8 +210,10 @@ export const compositionTimelineHandlers = {
 		// Create timeline with a single keyframe at the current time
 		requestAction({ history: true }, ({ dispatch, submitAction }) => {
 			const timeline = createTimelineForLayerProperty(property.value, composition.frameIndex);
-			dispatch(timelineActions.setTimeline(timeline.id, timeline));
-			dispatch(compositionActions.setPropertyTimelineId(propertyId, timeline.id));
+			dispatch(
+				timelineActions.setTimeline(timeline.id, timeline),
+				compositionActions.setPropertyTimelineId(propertyId, timeline.id),
+			);
 			submitAction("Add timeline to property");
 		});
 	},
@@ -295,8 +299,10 @@ export const compositionTimelineHandlers = {
 					params.dispatch(timelineActions.removeTimeline(id)),
 				);
 
-				params.dispatch(compositionActions.removeLayer(layer.id));
-				params.dispatch(contextMenuActions.closeContextMenu());
+				params.dispatch(
+					compositionActions.removeLayer(layer.id),
+					contextMenuActions.closeContextMenu(),
+				);
 				params.submitAction("Delete layer");
 			};
 

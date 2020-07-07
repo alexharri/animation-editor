@@ -20,7 +20,10 @@ import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
+import {
+	getLayerCompositionProperties,
+	getLayerTransformProperties,
+} from "~/composition/util/compositionPropertyUtils";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -84,18 +87,14 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 		const properties: CompositionProperty[] = [];
 
 		for (let i = 0; i < layers.length; i += 1) {
-			const propertyIds = layers[i].properties;
-			for (let j = 0; j < propertyIds.length; j += 1) {
-				if (!props.selection.properties[propertyIds[j]]) {
-					continue;
-				}
-				properties.push(
-					...getLayerCompositionProperties(layers[i].id, props.compositionState),
-				);
-			}
+			properties.push(...getLayerCompositionProperties(layers[i].id, props.compositionState));
 		}
 
 		for (let i = 0; i < properties.length; i += 1) {
+			if (!props.selection.properties[properties[i].id]) {
+				continue;
+			}
+
 			if (properties[i].timelineId) {
 				timelineIds.push(properties[i].timelineId);
 				colors[properties[i].timelineId] = properties[i].color;

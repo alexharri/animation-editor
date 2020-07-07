@@ -98,7 +98,7 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 								name: getLayerPropertyLabel(property.name),
 								pointer: null,
 								type: property.valueType,
-								value: null,
+								value: property.value,
 							})),
 							outputs: [],
 						};
