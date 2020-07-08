@@ -16,7 +16,6 @@ interface Options {
 
 export interface RequestActionParams {
 	dispatch: (action: any | any[], ...otherActions: any[]) => void;
-	dispatchBatch: (action: any[]) => void;
 	cancelAction: () => void;
 	submitAction: (name?: string) => void;
 	addListener: typeof _addListener;
@@ -81,10 +80,6 @@ export const requestAction = (
 			}
 
 			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
-		},
-
-		dispatchBatch: (actionBatch) => {
-			store.dispatch(historyActions.dispatchBatchToAction(actionId, actionBatch, history));
 		},
 
 		submitAction: (name = "Unknown action") => {
