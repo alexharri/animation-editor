@@ -25,6 +25,7 @@ export interface CompositionPropertyGroup {
 	name: PropertyGroupName;
 	id: string;
 	properties: string[];
+	collapsed: boolean;
 }
 
 export interface CompositionProperty {

@@ -13,7 +13,6 @@ import { useComputeHistory } from "~/hook/useComputeHistory";
 import { useActionState } from "~/hook/useActionState";
 import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
-import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -31,26 +30,21 @@ type Props = OwnProps & StateProps;
 const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
 
-	const getProperties = (state: ActionState) =>
-		getLayerCompositionProperties(layer.id, state.compositions);
-
-	const { computePropertyValues } = useComputeHistory((state) => {
-		const properties = getProperties(state);
-		return { computePropertyValues: computeLayerGraph(properties, graph) };
+	const { computePropertyValues } = useComputeHistory(() => {
+		return { computePropertyValues: computeLayerGraph(graph) };
 	});
 
 	const propertyToValue = useActionState((actionState) => {
-		const properties = getProperties(actionState);
 		const context: ComputeNodeContext = {
 			computed: {},
-			composition: actionState.compositions.compositions[layer.compositionId],
-			layer,
-			properties,
+			compositionId: props.compositionId,
+			layerId: props.id,
+			compositionState: actionState.compositions,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
 		};
 
-		return computePropertyValues(context);
+		return computePropertyValues(context, graph && actionState.nodeEditor.graphs[graph.id]);
 	});
 
 	return (

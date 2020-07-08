@@ -56,6 +56,9 @@ const aboveOutputs: Partial<
 	[NodeEditorNodeType.property_input]: () => {
 		return selectHeight + spacing;
 	},
+	[NodeEditorNodeType.property_output]: () => {
+		return selectHeight + spacing;
+	},
 };
 
 export const getAboveOutputs = (node: NodeEditorNode<NodeEditorNodeType>): number => {

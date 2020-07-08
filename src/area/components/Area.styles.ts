@@ -82,7 +82,7 @@ export default ({ css }: StyleParams) => ({
 
 	selectArea__inner: css`
 		border: 1px solid ${cssVariables.gray800};
-		background: ${cssVariables.dark700};
+		background: ${cssVariables.dark800};
 	`,
 
 	selectArea__item: css`
@@ -90,7 +90,7 @@ export default ({ css }: StyleParams) => ({
 		border: none;
 		border-radius: 4px;
 		padding: 0 24px;
-		background: ${cssVariables.dark700};
+		background: ${cssVariables.dark800};
 		display: block;
 		width: 128px;
 	`,

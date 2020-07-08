@@ -142,6 +142,7 @@ export const getDefaultLayerProperties = (
 		name: PropertyGroupName.Transform,
 		id: opts.createId(),
 		properties: transformProperties.map((p) => p.id),
+		collapsed: true,
 	};
 
 	const dimensionProperties = createDefaultDimensionProperties(opts);
@@ -150,34 +151,13 @@ export const getDefaultLayerProperties = (
 		name: PropertyGroupName.Dimensions,
 		id: opts.createId(),
 		properties: dimensionProperties.map((p) => p.id),
+		collapsed: true,
 	};
 
 	return {
 		nestedProperties: [...transformProperties, ...dimensionProperties],
 		topLevelProperties: [dimensionsGroup, transformGroup],
 	};
-};
-
-export const getLayerTransformProperties = (
-	layerId: string,
-	compositionState: CompositionState,
-): CompositionProperty[] => {
-	const layer = compositionState.layers[layerId];
-
-	const propertyGroups = layer.properties.map((id) => compositionState.properties[id]);
-	const transformGroup = propertyGroups.find((group): group is CompositionPropertyGroup => {
-		return group.type === "group" && group.name === PropertyGroupName.Transform;
-	});
-
-	if (!transformGroup) {
-		throw new Error("Layer does not contain Transform property group");
-	}
-
-	const transformProperties = transformGroup.properties.map((id) => {
-		return compositionState.properties[id] as CompositionProperty;
-	});
-
-	return transformProperties;
 };
 
 export function getLayerCompositionProperties(

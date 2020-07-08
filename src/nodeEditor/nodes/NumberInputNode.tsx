@@ -89,20 +89,20 @@ function NumberInputNodeComponent(props: Props) {
 					},
 				]}
 			/>
-			{state.type === "value" ? (
-				<NodeEditorNumberInput
-					label="Value"
-					value={state.value}
-					onChange={onChange}
-					onChangeEnd={onChangeEnd}
-				/>
-			) : (
+			{state.type === "t_value" ? (
 				<NodeEditorTValueInput
 					label="t"
 					value={state.value}
 					onChange={onChange}
 					onChangeEnd={onChangeEnd}
 					horizontalPadding
+				/>
+			) : (
+				<NodeEditorNumberInput
+					label="Value"
+					value={state.value}
+					onChange={onChange}
+					onChangeEnd={onChangeEnd}
 				/>
 			)}
 		</NodeBody>

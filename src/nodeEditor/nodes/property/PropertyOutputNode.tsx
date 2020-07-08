@@ -16,7 +16,6 @@ import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { null } from "mathjs";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -34,7 +33,7 @@ interface StateProps {
 
 type Props = OwnProps & StateProps;
 
-function PropertyInputNodeComponent(props: Props) {
+function PropertyOutputNodeComponent(props: Props) {
 	const { areaId, graphId, nodeId, inputs } = props;
 
 	const onSelectProperty = (propertyId: string) => {
@@ -63,9 +62,9 @@ function PropertyInputNodeComponent(props: Props) {
 					const property = properties[id] as CompositionProperty;
 					return {
 						name: getLayerPropertyLabel(property.name),
-                        type: property.valueType,
-                        pointer: null,
-                        value: null,
+						type: property.valueType,
+						pointer: null,
+						value: null,
 					};
 				});
 
@@ -77,7 +76,7 @@ function PropertyInputNodeComponent(props: Props) {
 				),
 				nodeEditorActions.setNodeInputs(props.graphId, props.nodeId, inputs),
 			);
-			params.submitAction("Update selected PropertyInputNode property");
+			params.submitAction("Update selected PropertyOutputNode property");
 		});
 	};
 
@@ -135,4 +134,4 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	};
 };
 
-export const PropertyInputNode = connectActionState(mapStateToProps)(PropertyInputNodeComponent);
+export const PropertyOutputNode = connectActionState(mapStateToProps)(PropertyOutputNodeComponent);

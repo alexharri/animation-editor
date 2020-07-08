@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { StopwatchIcon } from "~/components/icons/StopwatchIcon";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import {
@@ -18,6 +18,8 @@ import {
 } from "~/composition/util/compositionPropertyUtils";
 import { PropertyName } from "~/types";
 import { usePropertyNumberInput } from "~/composition/hook/usePropertyNumberInput";
+import { requestAction } from "~/listener/requestAction";
+import { compositionActions } from "~/composition/state/compositionReducer";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -25,7 +27,10 @@ interface OwnProps {
 	compositionId: string;
 	id: string;
 	propertyToValue: {
-		[propertyId: string]: number;
+		[propertyId: string]: {
+			rawValue: number;
+			computedValue: number;
+		};
 	};
 	depth: number;
 }
@@ -42,22 +47,47 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 
 	const value = props.propertyToValue[props.id];
 
-	const [open, setOpen] = useState(true);
-
 	if (property.type === "group") {
 		const { properties } = property;
+
+		const toggleGroupOpen = () => {
+			requestAction({ history: true }, (params) => {
+				params.dispatch(
+					compositionActions.setPropertyGroupCollapsed(property.id, !property.collapsed),
+				);
+				params.submitAction("Toggle property group collapsed");
+			});
+		};
+
 		return (
 			<>
-				<div className={s("container")} onClick={() => setOpen(!open)}>
+				<div className={s("container")}>
 					<div
 						className={s("contentContainer")}
 						style={{ marginLeft: 16 + props.depth * 16 }}
 					>
-						<div className={s("collapsedArrow", { open })} />
-						<div className={s("name")}>{getLayerPropertyGroupLabel(property.name)}</div>
+						<div
+							className={s("collapsedArrow", { open: !property.collapsed })}
+							onClick={toggleGroupOpen}
+						/>
+						<div
+							className={s("name", {
+								active: props.isSelected,
+							})}
+							onMouseDown={separateLeftRightMouse({
+								left: (e) =>
+									compositionTimelineHandlers.onPropertyNameMouseDown(
+										e,
+										props.compositionId,
+										property.id,
+									),
+							})}
+						>
+							{getLayerPropertyGroupLabel(property.name)}
+						</div>
 					</div>
 				</div>
-				{open &&
+				{!property.collapsed &&
 					properties.map((id) => (
 						<CompositionTimelineLayerProperty
 							compositionId={props.compositionId}
@@ -114,7 +144,8 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 						max={property.max}
 						onChange={onValueChange}
 						onChangeEnd={onValueChangeEnd}
-						value={value}
+						value={value.rawValue}
+						showValue={value.computedValue}
 						tick={
 							property.name === PropertyName.Scale ||
 							property.name === PropertyName.Opacity

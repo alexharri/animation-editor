@@ -19,6 +19,7 @@ import { NodeEditorNodeType } from "~/types";
 import { Vec2LerpNode } from "~/nodeEditor/nodes/Vec2LerpNode";
 import { Vec2InputNode } from "~/nodeEditor/nodes/Vec2InputNode";
 import { PropertyInputNode } from "~/nodeEditor/nodes/property/PropertyInputNode";
+import { PropertyOutputNode } from "~/nodeEditor/nodes/property/PropertyOutputNode";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -153,7 +154,7 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 								}
 
 								case NodeEditorNodeType.property_output: {
-									NodeComponent = PropertyInputNode;
+									NodeComponent = PropertyOutputNode;
 									break;
 								}
 

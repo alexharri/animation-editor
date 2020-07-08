@@ -22,9 +22,6 @@ export enum NodeEditorNodeType {
 
 	expr = "expr",
 
-	layer_transform_output = "layer_transform_output",
-	layer_transform_input = "layer_transform_input",
-
 	property_output = "property_output",
 	property_input = "property_input",
 }

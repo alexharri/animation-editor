@@ -8,10 +8,7 @@ import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { connectActionState } from "~/state/stateUtils";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { PropertyName } from "~/types";
-import {
-	getLayerCompositionProperties,
-	getLayerTransformProperties,
-} from "~/composition/util/compositionPropertyUtils";
+import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 
 const styles = ({ css }: StyleParams) => ({
 	element: css`
@@ -36,23 +33,16 @@ type Props = OwnProps & StateProps;
 const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
 
-	const getTransformProperties = (state: ActionState) =>
-		getLayerTransformProperties(layer.id, state.compositions);
-
-	const { computePropertyValues } = useComputeHistory((state) => {
-		const transformProperties = getTransformProperties(state);
-
-		return { computePropertyValues: computeLayerGraph(transformProperties, graph) };
+	const { computePropertyValues } = useComputeHistory(() => {
+		return { computePropertyValues: computeLayerGraph(graph) };
 	});
 
 	const propertyToValue = useActionState((actionState) => {
-		const transformProperties = getTransformProperties(actionState);
-
 		const context: ComputeNodeContext = {
 			computed: {},
-			composition: actionState.compositions.compositions[layer.compositionId],
-			layer,
-			properties: transformProperties,
+			compositionId: props.compositionId,
+			layerId: props.layerId,
+			compositionState: actionState.compositions,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
 		};
@@ -67,7 +57,7 @@ const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 
 	const nameToProperty = properties.reduce((obj, p) => {
 		const value = propertyToValue[p.id] ?? p.value;
-		(obj as any)[PropertyName[p.name]] = value;
+		(obj as any)[PropertyName[p.name]] = value.computedValue;
 		return obj;
 	}, {} as { [key in keyof typeof PropertyName]: number });
 

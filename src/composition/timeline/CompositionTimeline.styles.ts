@@ -3,7 +3,7 @@ import { cssVariables, cssZIndex } from "~/cssVariables";
 
 export default ({ css }: StyleParams) => ({
 	header: css`
-		height: 24px;
+		height: 32px;
 	`,
 
 	wrapper: css`
@@ -16,7 +16,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	left: css`
-		background: ${cssVariables.dark600};
+		background: ${cssVariables.dark500};
 		margin-right: 4px;
 	`,
 

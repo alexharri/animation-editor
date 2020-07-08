@@ -21,7 +21,6 @@ import { computeAreaToViewport } from "~/area/util/areaToViewport";
 import { AreaType } from "~/constants";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
 import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
-import { getLayerTransformProperties } from "~/composition/util/compositionPropertyUtils";
 
 const ZOOM_FAC = 0.25;
 
@@ -355,8 +354,7 @@ export const compositionTimelineHandlers = {
 				return;
 			}
 
-			const transformProperties = getLayerTransformProperties(layer.id, compositionState);
-			const graph = createLayerGraph(layerId, transformProperties);
+			const graph = createLayerGraph(layerId);
 
 			dispatch(compositionActions.setLayerGraphId(layerId, graph.id));
 			dispatch(nodeEditorActions.setGraph(graph));

@@ -7,7 +7,7 @@ export default ({ css }: StyleParams) => ({
 		padding: 0 24px 0 0;
 		margin-left: 0;
 		border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-		background: ${cssVariables.dark700};
+		background: ${cssVariables.dark500};
 
 		&:last-of-type {
 			border-bottom: none;

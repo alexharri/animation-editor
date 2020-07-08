@@ -105,6 +105,10 @@ export const compositionActions = {
 		return (propertyId: string, value: number) => action({ propertyId, value });
 	}),
 
+	setPropertyGroupCollapsed: createAction("comp/SET_PROP_GROUP_COLLAPSED", (action) => {
+		return (propertyId: string, collapsed: boolean) => action({ propertyId, collapsed });
+	}),
+
 	setPropertyTimelineId: createAction("comp/SET_PROPERTY_TIMELINE_ID", (action) => {
 		return (propertyId: string, timelineId: string) => action({ propertyId, timelineId });
 	}),
@@ -167,6 +171,21 @@ export const compositionReducer = (
 					(item: CompositionProperty) => ({
 						...item,
 						value,
+					}),
+				),
+			};
+		}
+
+		case getType(compositionActions.setPropertyGroupCollapsed): {
+			const { propertyId, collapsed } = action.payload;
+			return {
+				...state,
+				properties: modifyItemInUnionMap(
+					state.properties,
+					propertyId,
+					(item: CompositionPropertyGroup) => ({
+						...item,
+						collapsed,
 					}),
 				),
 			};

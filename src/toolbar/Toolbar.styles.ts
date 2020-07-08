@@ -139,7 +139,7 @@ export default ({ css }: StyleParams) => ({
 		padding: 0 10px 0 0;
 
 		&:hover {
-			background: ${cssVariables.dark700};
+			background: ${cssVariables.dark800};
 		}
 	`,
 

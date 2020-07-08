@@ -1,13 +1,14 @@
 import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType, ValueType } from "~/types";
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
-import { Composition, CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
+import { CompositionProperty } from "~/composition/compositionTypes";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 import { interpolate } from "~/util/math";
 import { getExpressionIO } from "~/util/math/expressions";
 import * as mathjs from "mathjs";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { CompositionState } from "~/composition/state/compositionReducer";
 
 const Type = NodeEditorNodeType;
 
@@ -18,9 +19,9 @@ export type ComputeNodeArg = {
 
 export interface ComputeNodeContext {
 	computed: { [nodeId: string]: ComputeNodeArg[] };
-	composition: Composition;
-	layer: CompositionLayer;
-	properties: CompositionProperty[];
+	compositionState: CompositionState;
+	compositionId: string;
+	layerId: string;
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
 }
@@ -154,23 +155,6 @@ const compute: {
 		return [toArg.number(deg * RAD_TO_DEG_FAC)];
 	},
 
-	[Type.layer_transform_output]: (args) => {
-		return args;
-	},
-
-	[Type.layer_transform_input]: (_, ctx) => {
-		return ctx.properties.map((p) => {
-			const value = p.timelineId
-				? getTimelineValueAtIndex(
-						ctx.composition.frameIndex,
-						ctx.timelines[p.timelineId],
-						ctx.timelineSelection[p.timelineId],
-				  )
-				: p.value;
-			return toArg.number(value);
-		});
-	},
-
 	[Type.num_input]: (_args, _ctx, state: NodeEditorNodeState<NodeEditorNodeType.num_input>) => {
 		return [toArg.number(state.value)];
 	},
@@ -279,12 +263,44 @@ const compute: {
 		return [resolve(res)];
 	},
 
-	[Type.property_input]: () => {
-		throw new Error("Not implemented");
+	[Type.property_input]: (
+		_args,
+		ctx,
+		state: NodeEditorNodeState<NodeEditorNodeType.property_input>,
+	) => {
+		const { compositionState } = ctx;
+
+		const composition = compositionState.compositions[ctx.compositionId];
+		const selectedProperty = compositionState.properties[state.propertyId];
+
+		if (!selectedProperty) {
+			return [];
+		}
+
+		const properties =
+			selectedProperty.type === "group"
+				? selectedProperty.properties
+						.map((id) => compositionState.properties[id])
+						.filter(
+							(property): property is CompositionProperty =>
+								property.type === "property",
+						)
+				: [selectedProperty];
+
+		return properties.map((property) => {
+			const value = property.timelineId
+				? getTimelineValueAtIndex(
+						composition.frameIndex,
+						ctx.timelines[property.timelineId],
+						ctx.timelineSelection[property.timelineId],
+				  )
+				: property.value;
+			return toArg.number(value);
+		});
 	},
 
-	[Type.property_output]: () => {
-		throw new Error("Not implemented");
+	[Type.property_output]: (args) => {
+		return args;
 	},
 
 	[Type.empty]: () => {
@@ -305,21 +321,6 @@ export const computeNodeOutputArgs = (
 	const inputs = node.inputs.map(({ pointer, type, value: _value }, i) => {
 		const value = mostRecentNode?.inputs[i].value ?? _value;
 		let defaultValue = { type, value };
-
-		if (node.type === Type.layer_transform_output) {
-			const p = ctx.properties[i];
-
-			defaultValue = {
-				type,
-				value: p.timelineId
-					? getTimelineValueAtIndex(
-							ctx.composition.frameIndex,
-							ctx.timelines[p.timelineId],
-							ctx.timelineSelection[p.timelineId],
-					  )
-					: p.value,
-			};
-		}
 
 		if (!pointer || !ctx.computed[pointer.nodeId]) {
 			return defaultValue;

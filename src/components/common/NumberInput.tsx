@@ -31,6 +31,7 @@ interface Props {
 	tick?: number;
 	pxPerTick?: number;
 	value: number | number[];
+	showValue?: number;
 	onChange: (value: number) => void;
 	onChangeEnd?: (type: "relative" | "absolute") => void;
 	shiftSnap?: number;
@@ -133,7 +134,7 @@ export class NumberInput extends React.Component<Props, State> {
 				? "Mixed"
 				: (this.state.useState
 						? this.state.value
-						: getUnmixedValue(this.props.value)
+						: this.props.showValue ?? getUnmixedValue(this.props.value)
 				  ).toFixed(
 						typeof this.props.decimalPlaces === "number" ? this.props.decimalPlaces : 1,
 				  );
@@ -141,7 +142,13 @@ export class NumberInput extends React.Component<Props, State> {
 		return (
 			<div className={s("container", { fullWidth })} style={{ width }}>
 				<button
-					className={s("button", { fillWidth })}
+					className={s("button", {
+						fillWidth,
+						computed:
+							!this.state.useState &&
+							typeof this.props.showValue === "number" &&
+							this.props.showValue !== getUnmixedValue(this.props.value),
+					})}
 					onMouseDown={this.onMouseDown}
 					tabIndex={-1}
 				>
