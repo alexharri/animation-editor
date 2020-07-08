@@ -7,6 +7,8 @@ import { computeLayerGraph } from "~/nodeEditor/graph/computeLayerGraph";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { connectActionState } from "~/state/stateUtils";
 import { CompositionLayer } from "~/composition/compositionTypes";
+import { PropertyName } from "~/types";
+import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 
 const styles = ({ css }: StyleParams) => ({
 	element: css`
@@ -30,22 +32,17 @@ type Props = OwnProps & StateProps;
 
 const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
-	const allProperties = useActionState((state) => state.compositions.properties);
-
-	const properties = useComputeHistory((state) =>
-		layer.properties.map((id) => state.compositions.properties[id]),
-	);
 
 	const { computePropertyValues } = useComputeHistory(() => {
-		return { computePropertyValues: computeLayerGraph(properties, graph) };
+		return { computePropertyValues: computeLayerGraph(graph) };
 	});
 
 	const propertyToValue = useActionState((actionState) => {
 		const context: ComputeNodeContext = {
 			computed: {},
-			composition: actionState.compositions.compositions[layer.compositionId],
-			layer,
-			properties: layer.properties.map((id) => actionState.compositions.properties[id]),
+			compositionId: props.compositionId,
+			layerId: props.layerId,
+			compositionState: actionState.compositions,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
 		};
@@ -54,24 +51,29 @@ const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 		return computePropertyValues(context, mostRecentGraph);
 	});
 
-	const nameToProperty = layer.properties.reduce<{ [key: string]: number }>((obj, propertyId) => {
-		const p = allProperties[propertyId];
-		const value = propertyToValue[propertyId];
-		obj[p.name] = value;
-		return obj;
-	}, {});
+	const properties = useActionState((state) => {
+		return getLayerCompositionProperties(layer.id, state.compositions);
+	});
 
-	const { width, height, x, y } = nameToProperty;
+	const nameToProperty = properties.reduce((obj, p) => {
+		const value = propertyToValue[p.id] ?? p.value;
+		(obj as any)[PropertyName[p.name]] = value.computedValue;
+		return obj;
+	}, {} as { [key in keyof typeof PropertyName]: number });
+
+	const { Width, Height, PositionX, PositionY, Scale, Opacity, Rotation } = nameToProperty;
 
 	return (
 		<div
 			className={s("element")}
 			style={{
-				width: width,
-				height: height,
-				left: x,
-				top: y,
+				width: Width,
+				height: Height,
+				left: 0,
+				top: 0,
+				opacity: Opacity,
 				border: props.isSelected ? "1px solid cyan" : undefined,
+				transform: `translateX(${PositionX}px) translateY(${PositionY}px) scale(${Scale}) rotate(${Rotation}deg)`,
 			}}
 		></div>
 	);

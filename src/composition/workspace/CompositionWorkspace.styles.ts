@@ -46,7 +46,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		right: 0;
 		bottom: ${FOOTER_HEIGHT}px;
-		background: ${cssVariables.dark700};
+		background: ${cssVariables.dark800};
 		overflow: hidden;
 	`,
 

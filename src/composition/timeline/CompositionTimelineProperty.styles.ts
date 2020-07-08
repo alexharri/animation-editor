@@ -3,17 +3,50 @@ import { cssVariables } from "~/cssVariables";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
-		display: flex;
 		height: 17px;
 		padding: 0 24px 0 0;
-		margin-left: 24px;
+		margin-left: 0;
 		border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-		background: ${cssVariables.dark700};
-		box-sizing: border-box;
-		align-items: stretch;
+		background: ${cssVariables.dark500};
 
 		&:last-of-type {
 			border-bottom: none;
+		}
+	`,
+
+	contentContainer: css`
+		height: 16px;
+		display: flex;
+		align-items: stretch;
+	`,
+
+	collapsedArrow: css`
+		width: 16px;
+		height: 16px;
+		position: relative;
+
+		&--open {
+			transform: translate(0, 0px) rotate(90deg);
+		}
+
+		&:before,
+		&:after {
+			content: "";
+			position: absolute;
+			top: 7px;
+			left: 4px;
+			right: 6px;
+			height: 1px;
+			transform-origin: 100% 50%;
+			background: ${cssVariables.light300};
+		}
+
+		&:before {
+			transform: rotate(45deg);
+		}
+
+		&:after {
+			transform: rotate(-45deg);
 		}
 	`,
 

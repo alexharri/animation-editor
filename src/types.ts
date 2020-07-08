@@ -22,8 +22,8 @@ export enum NodeEditorNodeType {
 
 	expr = "expr",
 
-	layer_output = "layer_output",
-	layer_input = "layer_input",
+	property_output = "property_output",
+	property_input = "property_input",
 }
 
 export enum ValueType {
@@ -31,6 +31,24 @@ export enum ValueType {
 	Vec2 = "vec2",
 	Rect = "rect",
 	Any = "any",
+}
+
+export enum PropertyGroupName {
+	Transform,
+	Dimensions,
+}
+
+export enum PropertyName {
+	// Transform Properties
+	Scale,
+	PositionX,
+	PositionY,
+	Rotation,
+	Opacity,
+
+	// Other Properties
+	Width,
+	Height,
 }
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;

@@ -22,7 +22,6 @@ export const expressionNodeHandlers = {
 			const graph = getActionState().nodeEditor.graphs[graphId];
 
 			const toUpdate = getExpressionUpdateIO(expression, graph, nodeId);
-			console.log(toUpdate);
 
 			params.dispatch(
 				nodeEditorActions.removeNodeInputs(graphId, nodeId, toUpdate.inputIndicesToRemove),

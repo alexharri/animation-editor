@@ -2,16 +2,21 @@ import { ActionType, createAction, getType } from "typesafe-actions";
 import {
 	Composition,
 	CompositionLayer,
-	CompositionLayerProperty,
+	CompositionProperty,
+	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
-import { TimelineColors } from "~/constants";
-import { ValueType } from "~/types";
-import { getDefaultLayerProperties } from "~/composition/util/layerPropertyUtils";
-import { removeKeysFromMap, addListToMap, modifyItemInMap } from "~/util/mapUtils";
+import { getDefaultLayerProperties } from "~/composition/util/compositionPropertyUtils";
+import {
+	removeKeysFromMap,
+	addListToMap,
+	modifyItemInMap,
+	modifyItemInUnionMap,
+} from "~/util/mapUtils";
 
 const createLayerId = (layers: CompositionState["layers"]) =>
 	(
 		Math.max(
+			0,
 			...Object.keys(layers)
 				.map((x) => parseInt(x))
 				.filter((x) => !isNaN(x)),
@@ -38,6 +43,7 @@ const createPropertyIdFn = (properties: CompositionState["properties"]) => {
 		n++;
 		return (
 			Math.max(
+				0,
 				...Object.keys(properties)
 					.map((x) => parseInt(x))
 					.filter((x) => !isNaN(x)),
@@ -54,7 +60,7 @@ export interface CompositionState {
 		[layerId: string]: CompositionLayer;
 	};
 	properties: {
-		[propertyId: string]: CompositionLayerProperty;
+		[propertyId: string]: CompositionProperty | CompositionPropertyGroup;
 	};
 }
 
@@ -69,66 +75,8 @@ export const initialCompositionState: CompositionState = {
 			height: 400,
 		},
 	},
-	layers: {
-		"0": {
-			id: "0",
-			compositionId: "0",
-			graphId: "0",
-			type: "rect",
-			name: "Rect",
-			index: 10,
-			length: 50,
-			properties: ["0", "1", "2", "3"],
-		},
-	},
-	properties: {
-		"0": {
-			id: "0",
-			layerId: "0",
-			compositionId: "0",
-			name: "x",
-			timelineId: "0",
-			label: "X Position",
-			type: ValueType.Number,
-			value: 100,
-			color: TimelineColors.XPosition,
-		},
-		"1": {
-			id: "1",
-			layerId: "0",
-			compositionId: "0",
-			name: "y",
-			timelineId: "",
-			label: "Y Position",
-			type: ValueType.Number,
-			value: 50,
-			color: TimelineColors.YPosition,
-		},
-		"2": {
-			id: "2",
-			layerId: "0",
-			compositionId: "0",
-			name: "width",
-			timelineId: "",
-			label: "Width",
-			type: ValueType.Number,
-			color: TimelineColors.Width,
-			value: 200,
-			min: 0,
-		},
-		"3": {
-			id: "3",
-			layerId: "0",
-			compositionId: "0",
-			name: "height",
-			timelineId: "",
-			label: "Height",
-			type: ValueType.Number,
-			color: TimelineColors.Height,
-			value: 75,
-			min: 0,
-		},
-	},
+	layers: {},
+	properties: {},
 };
 
 export const compositionActions = {
@@ -155,6 +103,10 @@ export const compositionActions = {
 
 	setPropertyValue: createAction("comp/SET_PROPERTY_VALUE", (action) => {
 		return (propertyId: string, value: number) => action({ propertyId, value });
+	}),
+
+	setPropertyGroupCollapsed: createAction("comp/SET_PROP_GROUP_COLLAPSED", (action) => {
+		return (propertyId: string, collapsed: boolean) => action({ propertyId, collapsed });
 	}),
 
 	setPropertyTimelineId: createAction("comp/SET_PROPERTY_TIMELINE_ID", (action) => {
@@ -213,13 +165,29 @@ export const compositionReducer = (
 			const { propertyId, value } = action.payload;
 			return {
 				...state,
-				properties: {
-					...state.properties,
-					[propertyId]: {
-						...state.properties[propertyId],
+				properties: modifyItemInUnionMap(
+					state.properties,
+					propertyId,
+					(item: CompositionProperty) => ({
+						...item,
 						value,
-					},
-				},
+					}),
+				),
+			};
+		}
+
+		case getType(compositionActions.setPropertyGroupCollapsed): {
+			const { propertyId, collapsed } = action.payload;
+			return {
+				...state,
+				properties: modifyItemInUnionMap(
+					state.properties,
+					propertyId,
+					(item: CompositionPropertyGroup) => ({
+						...item,
+						collapsed,
+					}),
+				),
 			};
 		}
 
@@ -227,13 +195,14 @@ export const compositionReducer = (
 			const { propertyId, timelineId } = action.payload;
 			return {
 				...state,
-				properties: {
-					...state.properties,
-					[propertyId]: {
-						...state.properties[propertyId],
+				properties: modifyItemInUnionMap(
+					state.properties,
+					propertyId,
+					(item: CompositionProperty) => ({
+						...item,
 						timelineId,
-					},
-				},
+					}),
+				),
 			};
 		}
 
@@ -244,7 +213,7 @@ export const compositionReducer = (
 
 			const layerId = createLayerId(state.layers);
 
-			const properties = getDefaultLayerProperties({
+			const { nestedProperties, topLevelProperties } = getDefaultLayerProperties({
 				compositionId,
 				layerId,
 				createId: createPropertyIdFn(state.properties),
@@ -260,9 +229,11 @@ export const compositionReducer = (
 					"Rect Layer",
 					composition.layers.map((id) => state.layers[id]),
 				),
-				properties: properties.map((p) => p.id),
+				properties: topLevelProperties.map((p) => p.id),
 				type: "rect",
 			};
+
+			const propertiesToAdd = [...topLevelProperties, ...nestedProperties];
 
 			return {
 				...state,
@@ -277,7 +248,7 @@ export const compositionReducer = (
 					...state.layers,
 					[layer.id]: layer,
 				},
-				properties: addListToMap(state.properties, properties, "id"),
+				properties: addListToMap(state.properties, propertiesToAdd, "id"),
 			};
 		}
 

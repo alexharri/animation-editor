@@ -1,5 +1,6 @@
 import { getType, ActionType } from "typesafe-actions";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
+import { OpenCustomContextMenuOptions } from "~/contextMenu/contextMenuTypes";
 
 type ContextMenuAction = ActionType<typeof contextMenuActions>;
 
@@ -25,6 +26,7 @@ export interface ContextMenuState {
 	options: ContextMenuOption[];
 	position: Vec2;
 	close: (() => void) | null;
+	customContextMenu: null | OpenCustomContextMenuOptions;
 }
 
 export const initialContextMenuState: ContextMenuState = {
@@ -33,6 +35,7 @@ export const initialContextMenuState: ContextMenuState = {
 	options: [],
 	position: Vec2.new(0, 0),
 	close: null,
+	customContextMenu: null,
 };
 
 export const contextMenuReducer = (
@@ -52,6 +55,14 @@ export const contextMenuReducer = (
 			};
 		}
 
+		case getType(contextMenuActions.openCustomContextMenu): {
+			const { options } = action.payload;
+			return {
+				...state,
+				customContextMenu: options,
+			};
+		}
+
 		case getType(contextMenuActions.closeContextMenu): {
 			return {
 				...state,
@@ -60,6 +71,7 @@ export const contextMenuReducer = (
 				options: [],
 				position: Vec2.new(0, 0),
 				close: null,
+				customContextMenu: null,
 			};
 		}
 

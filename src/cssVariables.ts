@@ -17,7 +17,8 @@ export const cssVariables = {
 	gray600: "#444",
 	gray500: "#3d3d3d",
 
-	dark700: "#333",
+	dark800: "#333",
+	dark700: "#2d2d2d",
 	dark600: "#272727",
 	dark500: "#222",
 	dark300: "#111",

@@ -18,6 +18,8 @@ import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { NodeEditorNodeType } from "~/types";
 import { Vec2LerpNode } from "~/nodeEditor/nodes/Vec2LerpNode";
 import { Vec2InputNode } from "~/nodeEditor/nodes/Vec2InputNode";
+import { PropertyInputNode } from "~/nodeEditor/nodes/property/PropertyInputNode";
+import { PropertyOutputNode } from "~/nodeEditor/nodes/property/PropertyOutputNode";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -143,6 +145,16 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 							switch (props.graph.nodes[nodeId].type) {
 								case NodeEditorNodeType.expr: {
 									NodeComponent = ExpressionNode;
+									break;
+								}
+
+								case NodeEditorNodeType.property_input: {
+									NodeComponent = PropertyInputNode;
+									break;
+								}
+
+								case NodeEditorNodeType.property_output: {
+									NodeComponent = PropertyOutputNode;
 									break;
 								}
 

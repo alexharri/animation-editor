@@ -9,7 +9,7 @@ import {
 	getTimelineValueAtIndex,
 	createTimelineForLayerProperty,
 } from "~/timeline/timelineUtils";
-import { Composition } from "~/composition/compositionTypes";
+import { Composition, CompositionProperty } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
@@ -183,7 +183,7 @@ export const compositionTimelineHandlers = {
 	) => {
 		const { compositions, timelines, timelineSelection } = getActionState();
 		const composition = compositions.compositions[compositionId];
-		const property = compositions.properties[propertyId];
+		const property = compositions.properties[propertyId] as CompositionProperty;
 
 		if (timelineId) {
 			// Delete timeline and make the value of the timeline at the current time
@@ -196,9 +196,11 @@ export const compositionTimelineHandlers = {
 			);
 
 			requestAction({ history: true }, ({ dispatch, submitAction }) => {
-				dispatch(timelineActions.removeTimeline(timelineId));
-				dispatch(compositionActions.setPropertyValue(propertyId, value));
-				dispatch(compositionActions.setPropertyTimelineId(propertyId, ""));
+				dispatch(
+					timelineActions.removeTimeline(timelineId),
+					compositionActions.setPropertyValue(propertyId, value),
+					compositionActions.setPropertyTimelineId(propertyId, ""),
+				);
 				submitAction("Remove timeline from property");
 			});
 			return;
@@ -207,8 +209,10 @@ export const compositionTimelineHandlers = {
 		// Create timeline with a single keyframe at the current time
 		requestAction({ history: true }, ({ dispatch, submitAction }) => {
 			const timeline = createTimelineForLayerProperty(property.value, composition.frameIndex);
-			dispatch(timelineActions.setTimeline(timeline.id, timeline));
-			dispatch(compositionActions.setPropertyTimelineId(propertyId, timeline.id));
+			dispatch(
+				timelineActions.setTimeline(timeline.id, timeline),
+				compositionActions.setPropertyTimelineId(propertyId, timeline.id),
+			);
 			submitAction("Add timeline to property");
 		});
 	},
@@ -268,22 +272,36 @@ export const compositionTimelineHandlers = {
 			const removeLayer = () => {
 				const compositionState = getActionState().compositions;
 				const layer = compositionState.layers[layerId];
-				const properties = layer.properties.map((id) => compositionState.properties[id]);
 
 				// Remove all timelines referenced by properties of the deleted layer.
 				//
 				// In the future, timelines may be referenced in more ways than just by animated
 				// properties. When that is the case we will have to check for other references to
 				// the timelines we're deleting.
-				const timelineIdsToRemove = properties
-					.filter((p) => p.timelineId)
-					.map((p) => p.timelineId);
-				for (let i = 0; i < timelineIdsToRemove.length; i += 1) {
-					params.dispatch(timelineActions.removeTimeline(timelineIdsToRemove[i]));
-				}
+				const timelineIdsToRemove: string[] = [];
 
-				params.dispatch(compositionActions.removeLayer(layer.id));
-				params.dispatch(contextMenuActions.closeContextMenu());
+				function crawl(propertyId: string) {
+					const property = compositionState.properties[propertyId];
+
+					if (property.type === "group") {
+						property.properties.forEach(crawl);
+						return;
+					}
+
+					if (property.timelineId) {
+						timelineIdsToRemove.push(property.timelineId);
+					}
+				}
+				layer.properties.forEach(crawl);
+
+				timelineIdsToRemove.forEach((id) =>
+					params.dispatch(timelineActions.removeTimeline(id)),
+				);
+
+				params.dispatch(
+					compositionActions.removeLayer(layer.id),
+					contextMenuActions.closeContextMenu(),
+				);
 				params.submitAction("Delete layer");
 			};
 
@@ -336,8 +354,8 @@ export const compositionTimelineHandlers = {
 				return;
 			}
 
-			const properties = layer.properties.map((id) => compositionState.properties[id]);
-			const graph = createLayerGraph(layerId, properties);
+			const graph = createLayerGraph(layerId);
+
 			dispatch(compositionActions.setLayerGraphId(layerId, graph.id));
 			dispatch(nodeEditorActions.setGraph(graph));
 			submitAction("Create layer graph");

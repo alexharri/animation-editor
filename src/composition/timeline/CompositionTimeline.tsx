@@ -7,7 +7,7 @@ import {
 	compositionTimelineAreaActions,
 } from "~/composition/timeline/compositionTimelineAreaReducer";
 import styles from "~/composition/timeline/CompositionTimeline.styles";
-import { Composition, CompositionLayerProperty } from "~/composition/compositionTypes";
+import { Composition, CompositionProperty } from "~/composition/compositionTypes";
 import { splitRect, capToRange } from "~/util/math";
 import { RequestActionCallback, requestAction } from "~/listener/requestAction";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -20,6 +20,7 @@ import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
+import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -80,19 +81,17 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 	if (props.selection.compositionId === props.composition.id) {
 		const layers = props.composition.layers.map((id) => props.compositionState.layers[id]);
 
-		const properties: CompositionLayerProperty[] = [];
+		const properties: CompositionProperty[] = [];
 
 		for (let i = 0; i < layers.length; i += 1) {
-			const propertyIds = layers[i].properties;
-			for (let j = 0; j < propertyIds.length; j += 1) {
-				if (!props.selection.properties[propertyIds[j]]) {
-					continue;
-				}
-				properties.push(props.compositionState.properties[propertyIds[j]]);
-			}
+			properties.push(...getLayerCompositionProperties(layers[i].id, props.compositionState));
 		}
 
 		for (let i = 0; i < properties.length; i += 1) {
+			if (!props.selection.properties[properties[i].id]) {
+				continue;
+			}
+
 			if (properties[i].timelineId) {
 				timelineIds.push(properties[i].timelineId);
 				colors[properties[i].timelineId] = properties[i].color;

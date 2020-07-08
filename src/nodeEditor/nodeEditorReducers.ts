@@ -13,6 +13,10 @@ import {
 import { rectsIntersect } from "~/util/math";
 import { calculateNodeHeight } from "~/nodeEditor/util/calculateNodeHeight";
 import { removeKeysFromMap } from "~/util/mapUtils";
+import {
+	removeNodeAndReferencesToItInGraph,
+	removeReferencesToNodeInGraph,
+} from "~/nodeEditor/nodeEditorUtils";
 
 type NodeEditorAction = ActionType<typeof actions>;
 
@@ -57,6 +61,7 @@ export interface NodeEditorGraphState {
 const createNodeId = (nodes: { [key: string]: any }) =>
 	(
 		Math.max(
+			0,
 			...Object.keys(nodes)
 				.map((x) => parseInt(x))
 				.filter((x) => !isNaN(x)),
@@ -193,25 +198,21 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 
 		case getType(actions.removeNode): {
 			const { nodeId } = action.payload;
+
 			return {
-				...state,
+				...removeNodeAndReferencesToItInGraph(nodeId, state),
 				selection: {
-					nodes: Object.keys(state.selection.nodes).reduce<Selection>((obj, key) => {
-						if (key !== nodeId) {
-							obj[key] = state.selection.nodes[key];
-						}
-						return obj;
-					}, {}),
+					nodes: removeKeysFromMap(state.selection.nodes, [nodeId]),
 				},
-				nodes: Object.keys(state.nodes).reduce<NodeEditorGraphState["nodes"]>(
-					(obj, key) => {
-						if (key !== nodeId) {
-							obj[key] = state.nodes[key];
-						}
-						return obj;
-					},
-					{},
-				),
+			};
+		}
+
+		case getType(actions.removeReferencesToNodeInGraph): {
+			const { nodeId } = action.payload;
+
+			return {
+				...removeReferencesToNodeInGraph(nodeId, state),
+				selection: state.selection,
 			};
 		}
 
@@ -449,6 +450,42 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 			};
 		}
 
+		case getType(actions.setNodeOutputs): {
+			const { nodeId, outputs } = action.payload;
+			const node = state.nodes[nodeId];
+			return {
+				...state,
+				nodes: {
+					...state.nodes,
+					[nodeId]: { ...node, outputs },
+				},
+			};
+		}
+
+		case getType(actions.setNodeInputs): {
+			const { nodeId, inputs } = action.payload;
+			const node = state.nodes[nodeId];
+			return {
+				...state,
+				nodes: {
+					...state.nodes,
+					[nodeId]: { ...node, inputs },
+				},
+			};
+		}
+
+		case getType(actions.addNodeOutput): {
+			const { nodeId, output } = action.payload;
+			const node = state.nodes[nodeId];
+			return {
+				...state,
+				nodes: {
+					...state.nodes,
+					[nodeId]: { ...node, outputs: [...node.outputs, output] },
+				},
+			};
+		}
+
 		case getType(actions.addNodeInput): {
 			const { nodeId, input } = action.payload;
 			const node = state.nodes[nodeId];
@@ -463,7 +500,6 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 
 		case getType(actions.addNodeOutput): {
 			const { nodeId, output } = action.payload;
-			console.log({ output });
 			const node = state.nodes[nodeId];
 			return {
 				...state,

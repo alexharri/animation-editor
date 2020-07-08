@@ -7,6 +7,7 @@ const borderWidth = 1;
 const headerHeight = 20;
 const spacing = 8;
 const bottomPadding = 16;
+const selectHeight = 18;
 
 export const NODE_HEIGHT_CONSTANTS = {
 	inputHeight,
@@ -15,6 +16,7 @@ export const NODE_HEIGHT_CONSTANTS = {
 	headerHeight,
 	spacing,
 	bottomPadding,
+	selectHeight,
 };
 
 const getVec2InputHeight = (node: NodeEditorNode<NodeEditorNodeType>, index: number) => {
@@ -48,6 +50,21 @@ const getCombinedInputsHeight = (
 	return out;
 };
 
+const aboveOutputs: Partial<
+	{ [key in NodeEditorNodeType]: (node: NodeEditorNode<any>) => number }
+> = {
+	[NodeEditorNodeType.property_input]: () => {
+		return selectHeight + spacing;
+	},
+	[NodeEditorNodeType.property_output]: () => {
+		return selectHeight + spacing;
+	},
+};
+
+export const getAboveOutputs = (node: NodeEditorNode<NodeEditorNodeType>): number => {
+	return aboveOutputs[node.type]?.(node) ?? 0;
+};
+
 const aboveInputs: Partial<
 	{ [key in NodeEditorNodeType]: (node: NodeEditorNode<any>) => number }
 > = {
@@ -67,6 +84,7 @@ export const calculateNodeHeight = (node: NodeEditorNode<NodeEditorNodeType>): n
 		borderWidth * 2 +
 		headerHeight +
 		spacing +
+		getAboveOutputs(node) +
 		outputs.length * outputHeight +
 		spacing +
 		getAboveInputs(node) +
@@ -84,6 +102,7 @@ export const calculateNodeInputY = (
 		borderWidth +
 		headerHeight +
 		spacing +
+		getAboveOutputs(node) +
 		outputs.length * outputHeight +
 		(outputs.length ? spacing : 0) +
 		getAboveInputs(node) +
@@ -102,7 +121,14 @@ export const calculateNodeOutputPosition = (
 ): Vec2 => {
 	return node.position
 		.addX(node.width)
-		.addY(borderWidth + headerHeight + spacing + outputIndex * outputHeight + outputHeight / 2);
+		.addY(
+			borderWidth +
+				headerHeight +
+				spacing +
+				getAboveOutputs(node) +
+				outputIndex * outputHeight +
+				outputHeight / 2,
+		);
 };
 
 export const calculateNodeInputPosition = (
@@ -113,6 +139,7 @@ export const calculateNodeInputPosition = (
 		borderWidth +
 			headerHeight +
 			spacing +
+			getAboveOutputs(node) +
 			node.outputs.length * outputHeight +
 			(node.outputs.length ? spacing : 0) +
 			getAboveInputs(node) +

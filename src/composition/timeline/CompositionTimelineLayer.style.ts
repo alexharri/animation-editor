@@ -4,7 +4,7 @@ import { cssVariables } from "~/cssVariables";
 export default ({ css }: StyleParams) => ({
 	container: css`
 		display: flex;
-		padding-left: 24px;
+		padding-left: 9px;
 		background: ${cssVariables.dark700};
 		margin: 1px 0;
 		border-radius: 2px;

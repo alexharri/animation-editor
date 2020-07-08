@@ -154,10 +154,10 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 				},
 			];
 
-		case NodeEditorNodeType.layer_input:
+		case NodeEditorNodeType.property_input:
 			return [];
 
-		case NodeEditorNodeType.layer_output:
+		case NodeEditorNodeType.property_output:
 			return [];
 
 		case NodeEditorNodeType.expr:
@@ -256,10 +256,10 @@ export const getNodeEditorNodeDefaultOutputs = (
 				},
 			];
 
-		case NodeEditorNodeType.layer_input:
+		case NodeEditorNodeType.property_input:
 			return [];
 
-		case NodeEditorNodeType.layer_output:
+		case NodeEditorNodeType.property_output:
 			return [];
 
 		case NodeEditorNodeType.expr:
@@ -274,6 +274,9 @@ export const getNodeEditorNodeDefaultState = <T extends NodeEditorNodeType>(type
 	switch (type) {
 		case NodeEditorNodeType.expr:
 			return { expression: "", textareaHeight: 80 } as NodeEditorNodeStateMap["expr"];
+
+		case NodeEditorNodeType.num_input:
+			return { value: 0, type: "value" };
 
 		default:
 			return {} as any;
@@ -312,8 +315,8 @@ type NodeEditorNodeStateMap = {
 	[NodeEditorNodeType.vec2_input]: {};
 	[NodeEditorNodeType.empty]: {};
 	[NodeEditorNodeType.rect_translate]: {};
-	[NodeEditorNodeType.layer_input]: {};
-	[NodeEditorNodeType.layer_output]: {};
+	[NodeEditorNodeType.property_input]: { propertyId: string };
+	[NodeEditorNodeType.property_output]: { propertyId: string };
 	[NodeEditorNodeType.expr]: {
 		expression: string;
 		textareaHeight: number;

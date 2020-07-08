@@ -29,6 +29,10 @@ export default ({ css }: StyleParams) => ({
 		&--fillWidth {
 			width: 100%;
 		}
+
+		&--computed {
+			color: red;
+		}
 	`,
 
 	button__label: css`

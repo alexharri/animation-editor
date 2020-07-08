@@ -2,7 +2,7 @@ import React from "react";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import styles from "~/composition/timeline/CompositionTimelineLayer.style";
-import { CompositionTimelineLayerProperty } from "~/composition/timeline/CompositionTimelineLayerProperty";
+import { CompositionTimelineLayerProperty } from "~/composition/timeline/CompositionTimelineProperty";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
@@ -30,25 +30,21 @@ type Props = OwnProps & StateProps;
 const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
 
-	const properties = useComputeHistory((state) =>
-		layer.properties.map((id) => state.compositions.properties[id]),
-	);
-
 	const { computePropertyValues } = useComputeHistory(() => {
-		return { computePropertyValues: computeLayerGraph(properties, graph) };
+		return { computePropertyValues: computeLayerGraph(graph) };
 	});
 
 	const propertyToValue = useActionState((actionState) => {
 		const context: ComputeNodeContext = {
 			computed: {},
-			composition: actionState.compositions.compositions[layer.compositionId],
-			layer,
-			properties: layer.properties.map((id) => actionState.compositions.properties[id]),
+			compositionId: props.compositionId,
+			layerId: props.id,
+			compositionState: actionState.compositions,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
 		};
 
-		return computePropertyValues(context);
+		return computePropertyValues(context, graph && actionState.nodeEditor.graphs[graph.id]);
 	});
 
 	return (
@@ -94,13 +90,14 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 					</div>
 				)}
 			</div>
-			{layer.properties.map((propertyId, i) => {
+			{layer.properties.map((id) => {
 				return (
 					<CompositionTimelineLayerProperty
 						compositionId={props.compositionId}
-						id={propertyId}
-						value={propertyToValue[propertyId as any]}
-						key={i}
+						id={id}
+						key={id}
+						propertyToValue={propertyToValue}
+						depth={0}
 					/>
 				);
 			})}

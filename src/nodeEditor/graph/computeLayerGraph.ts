@@ -1,32 +1,45 @@
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType } from "~/types";
-import { CompositionLayerProperty } from "~/composition/compositionTypes";
+import { CompositionProperty } from "~/composition/compositionTypes";
 import { ComputeNodeContext, computeNodeOutputArgs } from "~/nodeEditor/graph/computeNode";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
+import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 
-export const computeLayerGraph = (
-	properties: CompositionLayerProperty[],
-	graph?: NodeEditorGraphState,
-): ((
+type Fn = (
 	context: ComputeNodeContext,
 	graph?: NodeEditorGraphState,
 ) => {
-	[propertyId: string]: number;
-}) => {
-	const computeRawPropertyValues = (
-		context: ComputeNodeContext,
-	): { [propertyId: string]: number } => {
-		return context.properties.reduce<{
-			[propertyId: string]: number;
+	[propertyId: string]: {
+		computedValue: number;
+		rawValue: number;
+	};
+};
+
+export const computeLayerGraph = (graph?: NodeEditorGraphState): Fn => {
+	const computeRawPropertyValues: Fn = (context) => {
+		const { compositionState } = context;
+
+		const composition = compositionState.compositions[context.compositionId];
+		const properties = getLayerCompositionProperties(context.layerId, compositionState);
+
+		return properties.reduce<{
+			[propertyId: string]: {
+				computedValue: number;
+				rawValue: number;
+			};
 		}>((obj, p) => {
-			obj[p.id] = p.timelineId
+			const rawValue = p.timelineId
 				? getTimelineValueAtIndex(
-						context.composition.frameIndex,
+						composition.frameIndex,
 						context.timelines[p.timelineId],
 						context.timelineSelection[p.timelineId],
 				  )
 				: p.value;
+			obj[p.id] = {
+				rawValue,
+				computedValue: rawValue,
+			};
 			return obj;
 		}, {});
 	};
@@ -35,21 +48,17 @@ export const computeLayerGraph = (
 		return computeRawPropertyValues;
 	}
 
-	let outputNode: NodeEditorNode<NodeEditorNodeType.layer_output> | undefined;
+	const outputNodes: NodeEditorNode<NodeEditorNodeType.property_output>[] = [];
 
 	const keys = Object.keys(graph.nodes);
 	for (let i = 0; i < keys.length; i += 1) {
 		const node = graph.nodes[keys[i]];
-		if (node.type === NodeEditorNodeType.layer_output) {
-			if (outputNode) {
-				console.warn(`More than one '${NodeEditorNodeType.layer_output}' node in graph`);
-			} else {
-				outputNode = node as NodeEditorNode<NodeEditorNodeType.layer_output>;
-			}
+		if (node.type === NodeEditorNodeType.property_output) {
+			outputNodes.push(node as NodeEditorNode<NodeEditorNodeType.property_output>);
 		}
 	}
 
-	if (!outputNode) {
+	if (!outputNodes.length) {
 		return computeRawPropertyValues;
 	}
 
@@ -81,26 +90,79 @@ export const computeLayerGraph = (
 		return out;
 	};
 
-	const toCompute = getNodes(outputNode);
+	const toComputeArr = outputNodes.map((outputNode) => getNodes(outputNode));
 
 	return (
 		context: ComputeNodeContext,
-		mostRecentGraph: NodeEditorGraphState = graph,
-	): { [propertyId: string]: number } => {
-		for (let i = 0; i < toCompute.length; i += 1) {
-			const node = graph.nodes[toCompute[i]];
-			const mostRecentNode = mostRecentGraph.nodes[toCompute[i]];
-			context.computed[node.id] = computeNodeOutputArgs(node, context, mostRecentNode);
-		}
 
-		return context.computed[outputNode!.id]
-			.map((x) => x.value)
-			.reduce<{
-				[propertyId: string]: number;
-			}>((obj, value, i) => {
-				const p = properties[i];
-				obj[p.id] = value;
-				return obj;
-			}, {});
+		// The reason we pass `mostRecentGraph` is so that we can access the latest
+		// state of the nodes within it (for example num_input `value` state).
+		mostRecentGraph: NodeEditorGraphState = graph,
+	): {
+		[propertyId: string]: {
+			computedValue: number;
+			rawValue: number;
+		};
+	} => {
+		try {
+			for (let i = 0; i < toComputeArr.length; i += 1) {
+				const toCompute = toComputeArr[i];
+
+				for (let j = 0; j < toCompute.length; j += 1) {
+					const node = graph.nodes[toCompute[j]];
+					const mostRecentNode = mostRecentGraph.nodes[toCompute[j]];
+					context.computed[node.id] = computeNodeOutputArgs(
+						node,
+						context,
+						mostRecentNode,
+					);
+				}
+			}
+
+			const propertyIdToValue = computeRawPropertyValues(context);
+
+			for (let i = 0; i < outputNodes.length; i += 1) {
+				const outputNode = outputNodes[i];
+
+				const selectedProperty =
+					context.compositionState.properties[outputNode.state.propertyId];
+
+				if (!selectedProperty) {
+					continue;
+				}
+
+				const properties =
+					selectedProperty.type === "group"
+						? selectedProperty.properties
+								.map((id) => context.compositionState.properties[id])
+								.filter(
+									(property): property is CompositionProperty =>
+										property.type === "property",
+								)
+						: [selectedProperty];
+
+				for (let j = 0; j < properties.length; j += 1) {
+					const property = properties[j];
+
+					// Do not modify the property:value map if the input does not have
+					// a pointer.
+					//
+					// This allows us to, for example, have two property_output nodes that
+					// both reference Transform but modify different properties of the
+					// Transform group.
+					if (!outputNode.inputs[j].pointer) {
+						continue;
+					}
+
+					propertyIdToValue[property.id].computedValue =
+						context.computed[outputNode.id][j].value;
+				}
+			}
+
+			return propertyIdToValue;
+		} catch (e) {
+			console.error(e);
+			return {};
+		}
 	};
 };

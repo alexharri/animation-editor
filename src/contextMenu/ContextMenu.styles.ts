@@ -1,6 +1,10 @@
 import { StyleParams } from "~/util/stylesheets";
 import { cssZIndex, cssVariables } from "~/cssVariables";
-import { DEFAULT_CONTEXT_MENU_WIDTH, CONTEXT_MENU_OPTION_HEIGHT } from "~/constants";
+import {
+	DEFAULT_CONTEXT_MENU_WIDTH,
+	CONTEXT_MENU_OPTION_HEIGHT,
+	CONTEXT_MENU_OPTION_PADDING_LEFT,
+} from "~/constants";
 
 export default ({ css }: StyleParams) => ({
 	background: css`
@@ -27,7 +31,7 @@ export default ({ css }: StyleParams) => ({
 
 	name: css`
 		color: ${cssVariables.light400};
-		padding-left: 32px;
+		padding-left: ${CONTEXT_MENU_OPTION_PADDING_LEFT}px;
 		line-height: ${CONTEXT_MENU_OPTION_HEIGHT}px;
 		font-size: 12px;
 		font-family: ${cssVariables.fontFamily};
@@ -43,7 +47,7 @@ export default ({ css }: StyleParams) => ({
 
 	option: css`
 		padding: 0;
-		padding-left: 32px;
+		padding-left: ${CONTEXT_MENU_OPTION_PADDING_LEFT}px;
 		border: none;
 		background: transparent;
 		display: block;

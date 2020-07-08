@@ -1,3 +1,6 @@
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
+import { removeKeysFromMap } from "~/util/mapUtils";
+
 export const transformGlobalToNodeEditorPosition = (
 	globalPos: Vec2,
 	viewport: Rect,
@@ -44,4 +47,72 @@ export const nodeEditorPositionToViewport = (
 		.scale(options.scale)
 		.add(options.pan)
 		.add(Vec2.new(options.viewport.width / 2, options.viewport.height / 2));
+};
+
+export const findInputsThatReferenceNodeOutputs = (nodeId: string, graph: NodeEditorGraphState) => {
+	const results: Array<{ nodeId: string; inputIndex: number }> = [];
+
+	for (const key in graph.nodes) {
+		const node = graph.nodes[key];
+
+		for (let i = 0; i < node.inputs.length; i += 1) {
+			const input = node.inputs[i];
+
+			if (!input.pointer) {
+				continue;
+			}
+
+			if (input.pointer.nodeId === nodeId) {
+				results.push({ inputIndex: i, nodeId: key });
+			}
+		}
+	}
+
+	return results;
+};
+
+export const removeReferencesToNodeInGraph = (
+	nodeId: string,
+	graph: NodeEditorGraphState,
+): NodeEditorGraphState => {
+	const refs = findInputsThatReferenceNodeOutputs(nodeId, graph);
+
+	const newGraph: NodeEditorGraphState = {
+		...graph,
+		nodes: { ...graph.nodes },
+	};
+
+	for (let i = 0; i < refs.length; i += 1) {
+		const { inputIndex, nodeId } = refs[i];
+
+		const node = newGraph.nodes[nodeId];
+
+		newGraph.nodes[nodeId] = {
+			...node,
+			inputs: node.inputs.map((input, i) =>
+				i === inputIndex
+					? {
+							...input,
+							pointer: null,
+					  }
+					: input,
+			),
+		};
+	}
+
+	return newGraph;
+};
+
+export const removeNodeAndReferencesToItInGraph = (
+	nodeId: string,
+	graph: NodeEditorGraphState,
+): NodeEditorGraphState => {
+	let newGraph = removeReferencesToNodeInGraph(nodeId, graph);
+
+	newGraph = {
+		...graph,
+		nodes: removeKeysFromMap(newGraph.nodes, [nodeId]),
+	};
+
+	return newGraph;
 };

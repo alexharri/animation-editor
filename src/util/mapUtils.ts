@@ -7,10 +7,10 @@ export const removeKeysFromMap = <T extends { [key: string]: any }>(obj: T, keys
 	}, {} as T);
 };
 
-export const addListToMap = <M extends { [key: string]: T }, T>(
+export const addListToMap = <M extends { [key: string]: T }, T, U extends T = T>(
 	map: M,
-	items: T[],
-	idField: keyof T,
+	items: U[],
+	idField: keyof T & keyof U,
 ): M => {
 	return {
 		...map,
@@ -24,11 +24,45 @@ export const addListToMap = <M extends { [key: string]: T }, T>(
 
 export const modifyItemInMap = <M extends { [key: string]: T }, T = M[string]>(
 	map: M,
-	id: string,
+	key: string,
 	fn: (item: T) => T,
 ): M => {
+	if (!map.hasOwnProperty(key)) {
+		throw new Error(`Key '${key}' does not exist in map.`);
+	}
+
 	return {
 		...map,
-		[id]: fn(map[id]),
+		[key]: fn(map[key]),
 	};
+};
+
+export const modifyItemInUnionMap = <
+	M extends { [key: string]: T },
+	T = M[string],
+	U extends T = T
+>(
+	map: M,
+	key: string,
+	fn: (item: U) => U,
+): M => {
+	if (!map.hasOwnProperty(key)) {
+		throw new Error(`Key '${key}' does not exist in map.`);
+	}
+
+	return {
+		...map,
+		[key]: fn(map[key] as U),
+	};
+};
+
+export const reduceMap = <M extends { [key: string]: T }, T = M[string]>(
+	map: M,
+	fn: (item: T) => T,
+): M => {
+	const keys = Object.keys(map);
+	return keys.reduce((obj, key) => {
+		(obj as any)[key] = fn(map[key]);
+		return obj;
+	}, {} as M);
 };
