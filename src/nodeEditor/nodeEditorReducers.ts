@@ -13,7 +13,10 @@ import {
 import { rectsIntersect } from "~/util/math";
 import { calculateNodeHeight } from "~/nodeEditor/util/calculateNodeHeight";
 import { removeKeysFromMap } from "~/util/mapUtils";
-import { removeNodeAndReferencesToItInGraph } from "~/nodeEditor/nodeEditorUtils";
+import {
+	removeNodeAndReferencesToItInGraph,
+	removeReferencesToNodeInGraph,
+} from "~/nodeEditor/nodeEditorUtils";
 
 type NodeEditorAction = ActionType<typeof actions>;
 
@@ -201,6 +204,15 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 				selection: {
 					nodes: removeKeysFromMap(state.selection.nodes, [nodeId]),
 				},
+			};
+		}
+
+		case getType(actions.removeReferencesToNodeInGraph): {
+			const { nodeId } = action.payload;
+
+			return {
+				...removeReferencesToNodeInGraph(nodeId, state),
+				selection: state.selection,
 			};
 		}
 
@@ -434,6 +446,42 @@ function graphReducer(state: NodeEditorGraphState, action: NodeEditorAction): No
 								: input,
 						),
 					},
+				},
+			};
+		}
+
+		case getType(actions.setNodeOutputs): {
+			const { nodeId, outputs } = action.payload;
+			const node = state.nodes[nodeId];
+			return {
+				...state,
+				nodes: {
+					...state.nodes,
+					[nodeId]: { ...node, outputs },
+				},
+			};
+		}
+
+		case getType(actions.setNodeInputs): {
+			const { nodeId, inputs } = action.payload;
+			const node = state.nodes[nodeId];
+			return {
+				...state,
+				nodes: {
+					...state.nodes,
+					[nodeId]: { ...node, inputs },
+				},
+			};
+		}
+
+		case getType(actions.addNodeOutput): {
+			const { nodeId, output } = action.payload;
+			const node = state.nodes[nodeId];
+			return {
+				...state,
+				nodes: {
+					...state.nodes,
+					[nodeId]: { ...node, outputs: [...node.outputs, output] },
 				},
 			};
 		}

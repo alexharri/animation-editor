@@ -74,6 +74,20 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 
 	return [
 		{
+			label: "Property",
+			options: [
+				createAddNodeOption({
+					type: NodeEditorNodeType.property_input,
+					label: "Property input",
+				}),
+				createAddNodeOption({
+					type: NodeEditorNodeType.property_output,
+					label: "Property output",
+				}),
+			],
+			default: true,
+		},
+		{
 			label: "Layer",
 			options: [
 				createAddNodeOption({
@@ -105,7 +119,6 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 					},
 				}),
 			],
-			default: true,
 		},
 		{
 			label: "Number",

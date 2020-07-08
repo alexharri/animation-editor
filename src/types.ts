@@ -24,6 +24,9 @@ export enum NodeEditorNodeType {
 
 	layer_transform_output = "layer_transform_output",
 	layer_transform_input = "layer_transform_input",
+
+	property_output = "property_output",
+	property_input = "property_input",
 }
 
 export enum ValueType {
@@ -50,7 +53,6 @@ export enum PropertyName {
 	Width,
 	Height,
 }
-console.log({ PropertyName });
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
 export interface JsonArray extends Array<Json> {}

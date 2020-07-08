@@ -71,7 +71,7 @@ export const findInputsThatReferenceNodeOutputs = (nodeId: string, graph: NodeEd
 	return results;
 };
 
-export const removeNodeAndReferencesToItInGraph = (
+export const removeReferencesToNodeInGraph = (
 	nodeId: string,
 	graph: NodeEditorGraphState,
 ): NodeEditorGraphState => {
@@ -79,7 +79,7 @@ export const removeNodeAndReferencesToItInGraph = (
 
 	const newGraph: NodeEditorGraphState = {
 		...graph,
-		nodes: removeKeysFromMap(graph.nodes, [nodeId]),
+		nodes: { ...graph.nodes },
 	};
 
 	for (let i = 0; i < refs.length; i += 1) {
@@ -99,6 +99,20 @@ export const removeNodeAndReferencesToItInGraph = (
 			),
 		};
 	}
+
+	return newGraph;
+};
+
+export const removeNodeAndReferencesToItInGraph = (
+	nodeId: string,
+	graph: NodeEditorGraphState,
+): NodeEditorGraphState => {
+	let newGraph = removeReferencesToNodeInGraph(nodeId, graph);
+
+	newGraph = {
+		...graph,
+		nodes: removeKeysFromMap(newGraph.nodes, [nodeId]),
+	};
 
 	return newGraph;
 };

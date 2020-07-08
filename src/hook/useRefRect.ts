@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 
 const getRefRect = <T extends HTMLElement>(ref: React.RefObject<T>): Rect => {
 	if (!ref.current) {
@@ -19,7 +19,7 @@ const getRefRect = <T extends HTMLElement>(ref: React.RefObject<T>): Rect => {
 export const useRefRect = <T extends HTMLElement>(ref: React.RefObject<T>): Rect | null => {
 	const [rect, setRect] = useState(ref.current ? getRefRect(ref) : null);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const onResize = () => {
 			setRect(ref.current ? getRefRect(ref) : null);
 		};
@@ -39,4 +39,17 @@ export const useRefRect = <T extends HTMLElement>(ref: React.RefObject<T>): Rect
 	}, []);
 
 	return rect;
+};
+
+export const useGetRefRectFn = <T extends HTMLElement>(
+	ref: React.RefObject<T>,
+): (() => Rect | null) => {
+	const getRect = () => {
+		if (!ref.current) {
+			return null;
+		}
+		return ref.current.getBoundingClientRect();
+	};
+
+	return getRect;
 };

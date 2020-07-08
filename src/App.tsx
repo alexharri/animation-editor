@@ -8,6 +8,7 @@ import { AreaRoot } from "~/area/components/AreaRoot";
 import { ContextMenu } from "~/contextMenu/ContextMenu";
 import { addListener, removeListener } from "~/listener/addListener";
 import { isKeyCodeOf } from "~/listener/keyboard";
+import { CustomContextMenu } from "~/contextMenu/CustomContextMenu";
 
 export const AppComponent: React.FC = () => {
 	useEffect(() => {
@@ -27,6 +28,7 @@ export const AppComponent: React.FC = () => {
 		<>
 			<Provider store={store}>
 				<ContextMenu />
+				<CustomContextMenu />
 				<Toolbar />
 				<AreaRoot />
 			</Provider>

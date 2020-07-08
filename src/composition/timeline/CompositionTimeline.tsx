@@ -20,10 +20,7 @@ import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import {
-	getLayerCompositionProperties,
-	getLayerTransformProperties,
-} from "~/composition/util/compositionPropertyUtils";
+import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 
 const s = compileStylesheetLabelled(styles);
 

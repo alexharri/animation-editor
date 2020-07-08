@@ -164,10 +164,21 @@ export const nodeEditorActions = {
 	removeNode: createAction("nodeEditorGraph/REMOVE_NODE", (action) => {
 		return (graphId: string, nodeId: string) => action({ graphId, nodeId });
 	}),
+	removeReferencesToNodeInGraph: createAction("nodeEditorGraph/REMOVE_NODE_REFS", (action) => {
+		return (graphId: string, nodeId: string) => action({ graphId, nodeId });
+	}),
 
 	/**
 	 * Node IO
 	 */
+	setNodeInputs: createAction("nodeEditorGraph/SET_INPUTS", (action) => {
+		return (graphId: string, nodeId: string, inputs: NodeEditorNodeInput[]) =>
+			action({ graphId, nodeId, inputs });
+	}),
+	setNodeOutputs: createAction("nodeEditorGraph/SET_OUTPUTS", (action) => {
+		return (graphId: string, nodeId: string, outputs: NodeEditorNodeOutput[]) =>
+			action({ graphId, nodeId, outputs });
+	}),
 	addNodeInput: createAction("nodeEditorGraph/ADD_INPUT", (action) => {
 		return (graphId: string, nodeId: string, input: NodeEditorNodeInput) =>
 			action({ graphId, nodeId, input });

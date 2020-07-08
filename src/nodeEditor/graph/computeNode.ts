@@ -279,11 +279,24 @@ const compute: {
 		return [resolve(res)];
 	},
 
+	[Type.property_input]: () => {
+		throw new Error("Not implemented");
+	},
+
+	[Type.property_output]: () => {
+		throw new Error("Not implemented");
+	},
+
 	[Type.empty]: () => {
 		return [];
 	},
 };
 
+/**
+ *
+ * @returns an array representing the computed values of the node's
+ * 			outputs according to the context
+ */
 export const computeNodeOutputArgs = (
 	node: NodeEditorNode<NodeEditorNodeType>,
 	ctx: ComputeNodeContext,
@@ -295,10 +308,6 @@ export const computeNodeOutputArgs = (
 
 		if (node.type === Type.layer_transform_output) {
 			const p = ctx.properties[i];
-
-			if (p.timelineId && !ctx.timelines[p.timelineId]) {
-				// console.log(ctx, p);
-			}
 
 			defaultValue = {
 				type,
@@ -318,5 +327,6 @@ export const computeNodeOutputArgs = (
 
 		return pointer ? ctx.computed[pointer.nodeId][pointer.outputIndex] : defaultValue;
 	});
+
 	return compute[node.type](inputs, ctx, mostRecentNode?.state || node.state);
 };

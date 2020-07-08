@@ -13,7 +13,7 @@ import { useComputeHistory } from "~/hook/useComputeHistory";
 import { useActionState } from "~/hook/useActionState";
 import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
-import { getLayerTransformProperties } from "~/composition/util/compositionPropertyUtils";
+import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -32,7 +32,7 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
 
 	const getProperties = (state: ActionState) =>
-		getLayerTransformProperties(layer.id, state.compositions);
+		getLayerCompositionProperties(layer.id, state.compositions);
 
 	const { computePropertyValues } = useComputeHistory((state) => {
 		const properties = getProperties(state);
@@ -52,8 +52,6 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 
 		return computePropertyValues(context);
 	});
-
-	const properties = useComputeHistory(getProperties);
 
 	return (
 		<>
@@ -98,13 +96,14 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 					</div>
 				)}
 			</div>
-			{properties.map((property, i) => {
+			{layer.properties.map((id) => {
 				return (
 					<CompositionTimelineLayerProperty
 						compositionId={props.compositionId}
-						id={property.id}
-						value={propertyToValue[property.id as any]}
-						key={i}
+						id={id}
+						key={id}
+						propertyToValue={propertyToValue}
+						depth={0}
 					/>
 				);
 			})}
