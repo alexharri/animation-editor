@@ -35,6 +35,22 @@ type Props = OwnProps & StateProps;
 function PropertyInputNodeComponent(props: Props) {
 	const { areaId, graphId, nodeId, outputs } = props;
 
+	const onSelectLayer = (layerId: string) => {
+		requestAction({ history: true }, (params) => {
+			params.dispatch(
+				nodeEditorActions.removeReferencesToNodeInGraph(props.graphId, props.nodeId),
+				nodeEditorActions.updateNodeState<NodeEditorNodeType.property_input>(
+					props.graphId,
+					props.nodeId,
+					{ layerId, propertyId: "" },
+				),
+				nodeEditorActions.setNodeOutputs(props.graphId, props.nodeId, []),
+			);
+
+			params.submitAction("Update selected PropertyInputNode property");
+		});
+	};
+
 	const onSelectProperty = (propertyId: string) => {
 		requestAction({ history: true }, (params) => {
 			params.dispatch(
@@ -83,7 +99,9 @@ function PropertyInputNodeComponent(props: Props) {
 			<PropertyNodeSelectProperty
 				layerId={props.layerId}
 				onSelectProperty={onSelectProperty}
+				onSelectLayer={onSelectLayer}
 				selectedPropertyId={props.state.propertyId}
+				selectedLayerId={props.state.layerId}
 			/>
 			{outputs.map((output, i) => {
 				return (

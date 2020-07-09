@@ -26,6 +26,9 @@ export default ({ css }: StyleParams) => ({
 		color: ${cssVariables.white500};
 		background: ${cssVariables.gray700};
 		padding-left: 16px;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow-x: hidden;
 	`,
 
 	input: css`

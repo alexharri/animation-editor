@@ -315,7 +315,7 @@ type NodeEditorNodeStateMap = {
 	[NodeEditorNodeType.vec2_input]: {};
 	[NodeEditorNodeType.empty]: {};
 	[NodeEditorNodeType.rect_translate]: {};
-	[NodeEditorNodeType.property_input]: { propertyId: string };
+	[NodeEditorNodeType.property_input]: { layerId: string; propertyId: string };
 	[NodeEditorNodeType.property_output]: { propertyId: string };
 	[NodeEditorNodeType.expr]: {
 		expression: string;
