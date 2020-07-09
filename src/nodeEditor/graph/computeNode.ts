@@ -349,7 +349,7 @@ export const computeNodeOutputArgs = (
 	}
 
 	const inputs = node.inputs.map(({ pointer, type, value: _value }, i) => {
-		const value = nodeToUse?.inputs[i]?.value ?? _value;
+		const value = nodeToUse?.inputs[i].value ?? _value;
 		let defaultValue = { type, value };
 
 		if (!pointer || !ctx.computed[pointer.nodeId]) {
