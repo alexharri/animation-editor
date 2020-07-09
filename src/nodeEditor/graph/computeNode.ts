@@ -318,8 +318,38 @@ export const computeNodeOutputArgs = (
 	ctx: ComputeNodeContext,
 	mostRecentNode?: NodeEditorNode<NodeEditorNodeType>,
 ): ComputeNodeArg[] => {
+	let nodeToUse = mostRecentNode;
+
+	// Check whether or not we can make use of mostRecentNode
+	nodeToUse: {
+		if (!nodeToUse) {
+			nodeToUse = node;
+			break nodeToUse;
+		}
+
+		for (let i = 0; i < node.inputs.length; i += 1) {
+			const a = node.inputs[i];
+			const b = nodeToUse.inputs[i];
+
+			if (!b || a.type !== b.type) {
+				nodeToUse = node;
+				break nodeToUse;
+			}
+		}
+
+		for (let i = 0; i < node.outputs.length; i += 1) {
+			const a = node.outputs[i];
+			const b = nodeToUse.outputs[i];
+
+			if (!b || a.type !== b.type) {
+				nodeToUse = node;
+				break nodeToUse;
+			}
+		}
+	}
+
 	const inputs = node.inputs.map(({ pointer, type, value: _value }, i) => {
-		const value = mostRecentNode?.inputs[i].value ?? _value;
+		const value = nodeToUse?.inputs[i]?.value ?? _value;
 		let defaultValue = { type, value };
 
 		if (!pointer || !ctx.computed[pointer.nodeId]) {
@@ -329,5 +359,5 @@ export const computeNodeOutputArgs = (
 		return pointer ? ctx.computed[pointer.nodeId][pointer.outputIndex] : defaultValue;
 	});
 
-	return compute[node.type](inputs, ctx, mostRecentNode?.state || node.state);
+	return compute[node.type](inputs, ctx, nodeToUse?.state || node.state);
 };

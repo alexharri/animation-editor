@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { StyleParams, compileStylesheetLabelled } from "~/util/stylesheets";
 import { cssVariables } from "~/cssVariables";
 import { CompositionState } from "~/composition/state/compositionReducer";
-import { connectActionState } from "~/state/stateUtils";
+import { connectActionState, getActionState } from "~/state/stateUtils";
 import {
 	getLayerPropertyLabel,
 	getLayerPropertyGroupLabel,
@@ -37,6 +37,9 @@ const styles = ({ css }: StyleParams) => ({
 		text-align: left;
 		padding: 0 6px;
 		border-radius: 4px;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow-x: hidden;
 	`,
 
 	dropdownContainer: css`
@@ -104,9 +107,7 @@ const Property: React.FC<PropertyProps> = (props) => {
 	const { depth, properties, propertyId, selectedPropertyId } = props;
 
 	const property = properties[propertyId];
-
 	const onClick = () => props.onSelectProperty(propertyId);
-
 	const depthLeft = 16 * depth;
 
 	const activeDot = propertyId === selectedPropertyId && (
@@ -155,24 +156,108 @@ const Property: React.FC<PropertyProps> = (props) => {
 	);
 };
 
+interface LayerProps {
+	selectedLayerId: string;
+	layerId: string;
+	onSelectLayer: (layerId: string) => void;
+	layers: CompositionState["layers"];
+}
+
+const Layer: React.FC<LayerProps> = (props) => {
+	const { layerId, layers, onSelectLayer, selectedLayerId } = props;
+
+	const activeDot = layerId === selectedLayerId && (
+		<div
+			className={s("activeDot")}
+			style={{ left: CONTEXT_MENU_OPTION_PADDING_LEFT / 2 + 4 }}
+		/>
+	);
+
+	return (
+		<div className={s("container")} onClick={() => onSelectLayer(layerId)}>
+			{activeDot}
+			<div
+				className={s("contentContainer")}
+				style={{ marginLeft: CONTEXT_MENU_OPTION_PADDING_LEFT }}
+			>
+				<div className={s("name")}>{layers[layerId].name}</div>
+			</div>
+		</div>
+	);
+};
+
 interface OwnProps {
 	layerId: string;
 	selectedPropertyId: string;
 	onSelectProperty: (propertyId: string) => void;
+	selectedLayerId?: string;
+	onSelectLayer?: (layerId: string) => void;
 }
 interface StateProps {
+	layers: CompositionState["layers"];
 	properties: CompositionState["properties"];
 	propertyIds: string[];
 }
 type Props = OwnProps & StateProps;
 
 const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
-	const selectRef = useRef<HTMLButtonElement>(null);
-	const getSelectRect = useGetRefRectFn(selectRef);
+	const selectPropertyRef = useRef<HTMLButtonElement>(null);
+	const selectLayerRef = useRef<HTMLButtonElement>(null);
+
+	const getSelectPropertyRect = useGetRefRectFn(selectPropertyRef);
+	const getSelectLayerRect = useGetRefRectFn(selectLayerRef);
 
 	const selectedProperty = props.properties[props.selectedPropertyId];
+	const selectedLayer = props.layers[props.selectedLayerId || ""];
 
-	const openContextMenu = () => {
+	const openLayerContextMenu = () => {
+		requestAction({ history: false }, (params) => {
+			const onSelectLayer = (layerId: string) => {
+				params.cancelAction();
+				props.onSelectLayer!(layerId);
+			};
+
+			const compositionState = getActionState().compositions;
+			const layer = compositionState.layers[props.layerId];
+			const composition = compositionState.compositions[layer.compositionId];
+			const layerIds = composition.layers;
+
+			const Component: React.FC<ContextMenuBaseProps> = ({ updateRect }) => {
+				const ref = useRef(null);
+				const rect = useRefRect(ref);
+
+				useEffect(() => {
+					updateRect(rect!);
+				}, [rect]);
+
+				return (
+					<div className={s("dropdownContainer")} ref={ref}>
+						{layerIds.map((layerId) => (
+							<Layer
+								layers={props.layers}
+								layerId={layerId}
+								selectedLayerId={props.selectedLayerId!}
+								onSelectLayer={onSelectLayer}
+								key={layerId}
+							/>
+						))}
+					</div>
+				);
+			};
+
+			const selectRect = getSelectLayerRect()!;
+
+			const options: OpenCustomContextMenuOptions = {
+				component: Component,
+				props: {},
+				position: Vec2.new(selectRect.left, selectRect.top),
+				close: () => params.cancelAction(),
+			};
+			params.dispatch(contextMenuActions.openCustomContextMenu(options));
+		});
+	};
+
+	const openPropertyContextMenu = () => {
 		requestAction({ history: false }, (params) => {
 			const onSelectProperty = (propertyId: string) => {
 				params.cancelAction();
@@ -203,7 +288,7 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 				);
 			};
 
-			const selectRect = getSelectRect()!;
+			const selectRect = getSelectPropertyRect()!;
 
 			const options: OpenCustomContextMenuOptions = {
 				component: Component,
@@ -216,29 +301,55 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 	};
 
 	return (
-		<div className={s("wrapper")}>
-			<button
-				className={s("select")}
-				onClick={openContextMenu}
-				onMouseDown={(e) => {
-					e.stopPropagation();
-					e.preventDefault();
-				}}
-				ref={selectRef}
-			>
-				{selectedProperty
-					? selectedProperty.type === "property"
-						? getLayerPropertyLabel(selectedProperty.name)
-						: getLayerPropertyGroupLabel(selectedProperty.name)
-					: "Not selected"}
-			</button>
-		</div>
+		<>
+			{typeof props.onSelectLayer === "function" && (
+				<div className={s("wrapper")}>
+					<button
+						className={s("select")}
+						onClick={openLayerContextMenu}
+						onMouseDown={(e) => {
+							e.stopPropagation();
+							e.preventDefault();
+						}}
+						ref={selectLayerRef}
+					>
+						{selectedLayer ? selectedLayer.name : "No layer selected"}
+					</button>
+				</div>
+			)}
+			{(typeof props.onSelectLayer === "function" ? props.selectedLayerId : true) && (
+				<div className={s("wrapper")}>
+					<button
+						className={s("select")}
+						onClick={openPropertyContextMenu}
+						onMouseDown={(e) => {
+							e.stopPropagation();
+							e.preventDefault();
+						}}
+						ref={selectPropertyRef}
+					>
+						{selectedProperty
+							? selectedProperty.type === "property"
+								? getLayerPropertyLabel(selectedProperty.name)
+								: getLayerPropertyGroupLabel(selectedProperty.name)
+							: "Not selected"}
+					</button>
+				</div>
+			)}
+		</>
 	);
 };
 
-const mapState: MapActionState<StateProps, OwnProps> = ({ compositions }, { layerId }) => ({
+const mapState: MapActionState<StateProps, OwnProps> = (
+	{ compositions },
+	{ selectedLayerId, layerId },
+) => ({
+	layers: compositions.layers,
 	properties: compositions.properties,
-	propertyIds: compositions.layers[layerId].properties,
+
+	// `selectedLayerId` is undefined for `property_output` but a string (empty or
+	// not) for `property_input`.
+	propertyIds: compositions.layers[selectedLayerId ?? layerId]?.properties || [],
 });
 
 export const PropertyNodeSelectProperty = connectActionState(mapState)(

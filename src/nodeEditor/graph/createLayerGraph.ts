@@ -11,7 +11,7 @@ export const createLayerGraph = (layerId: string): NodeEditorGraphState => {
 			[nodeId]: {
 				id: nodeId,
 				position: Vec2.new(0, 0),
-				state: { propertyId: "" },
+				state: { layerId: "", propertyId: "" },
 				type: NodeEditorNodeType.property_output,
 				width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
 				outputs: [],
