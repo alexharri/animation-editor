@@ -9,7 +9,7 @@ import { AreaType } from "~/constants";
 const actions = {
 	zoom: (
 		{ dispatch, cancelAction, submitAction }: RequestActionParams,
-		e: React.MouseEvent,
+		mousePos: Vec2,
 		areaId: string,
 		viewport: Rect,
 		pan: Vec2,
@@ -22,7 +22,7 @@ const actions = {
 
 		const fac = isKeyDown("Alt") ? 0.5 : 2;
 
-		const pos = Vec2.fromEvent(e)
+		const pos = mousePos
 			.sub(Vec2.new(pan))
 			.sub(Vec2.new(viewport.width / 2, viewport.height / 2))
 			.sub(Vec2.new(viewport));
@@ -46,8 +46,6 @@ const actions = {
 
 export const compositionWorkspaceHandlers = {
 	onPanStart: (e: React.MouseEvent, areaId: string) => {
-		e.preventDefault();
-
 		const areaState = getAreaActionState<AreaType.NodeEditor>(areaId);
 		const initialPos = Vec2.fromEvent(e);
 
@@ -64,13 +62,12 @@ export const compositionWorkspaceHandlers = {
 	},
 
 	onZoomClick: (e: React.MouseEvent, areaId: string) => {
-		e.preventDefault();
-
+		const mousePos = Vec2.fromEvent(e);
 		const areaState = getAreaActionState<AreaType.CompositionWorkspace>(areaId);
 		const viewport = getAreaViewport(areaId, AreaType.CompositionWorkspace);
 
 		requestAction({}, (params) => {
-			actions.zoom(params, e, areaId, viewport, areaState.pan, areaState.scale);
+			actions.zoom(params, mousePos, areaId, viewport, areaState.pan, areaState.scale);
 		});
 	},
 };

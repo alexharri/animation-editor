@@ -309,7 +309,6 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 						onClick={openLayerContextMenu}
 						onMouseDown={(e) => {
 							e.stopPropagation();
-							e.preventDefault();
 						}}
 						ref={selectLayerRef}
 					>
@@ -324,7 +323,6 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 						onClick={openPropertyContextMenu}
 						onMouseDown={(e) => {
 							e.stopPropagation();
-							e.preventDefault();
 						}}
 						ref={selectPropertyRef}
 					>

@@ -8,7 +8,7 @@ import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { CardinalDirection } from "~/types";
 import { AreaType } from "~/constants";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
-import { CompositionTimelineAreaState } from "~/composition/timeline/compositionTimelineAreaReducer";
+import { CompositionTimelineAreaState } from "~/composition/timeline/compTimeAreaReducer";
 
 type AreaAction = ActionType<typeof actions>;
 

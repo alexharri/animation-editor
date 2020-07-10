@@ -27,14 +27,10 @@ export interface RequestActionCallback {
 	(params: RequestActionParams): void;
 }
 
-export const requestAction = (
+const performRequestedAction = (
 	{ history = false, shouldAddToStack }: Options,
 	callback: RequestActionCallback,
-) => {
-	if (getActionId()) {
-		return;
-	}
-
+): void => {
 	const actionId = (++_n).toString();
 	const cancelTokens: string[] = [];
 
@@ -126,5 +122,19 @@ export const requestAction = (
 		execOnComplete: (cb) => {
 			onCompleteCallback = cb;
 		},
+	});
+};
+
+export const requestAction = (options: Options, callback: RequestActionCallback): void => {
+	if (!getActionId()) {
+		performRequestedAction(options, callback);
+		return;
+	}
+
+	requestAnimationFrame(() => {
+		if (!getActionId()) {
+			performRequestedAction(options, callback);
+			return;
+		}
 	});
 };

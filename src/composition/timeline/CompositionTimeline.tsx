@@ -5,17 +5,17 @@ import { connectActionState } from "~/state/stateUtils";
 import {
 	CompositionTimelineAreaState,
 	compositionTimelineAreaActions,
-} from "~/composition/timeline/compositionTimelineAreaReducer";
+} from "~/composition/timeline/compTimeAreaReducer";
 import styles from "~/composition/timeline/CompositionTimeline.styles";
 import { Composition, CompositionProperty } from "~/composition/compositionTypes";
 import { splitRect, capToRange } from "~/util/math";
 import { RequestActionCallback, requestAction } from "~/listener/requestAction";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { CompositionTimelineLayer } from "~/composition/timeline/CompositionTimelineLayer";
+import { CompTimeLayer } from "~/composition/timeline/CompTimeLayer";
 import { ViewBounds } from "~/timeline/ViewBounds";
 import { areaActions } from "~/area/state/areaActions";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
+import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { CompositionState } from "~/composition/state/compositionReducer";
@@ -108,19 +108,17 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				style={viewportLeft}
 				ref={outRef}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) =>
-						compositionTimelineHandlers.onMouseDownOut(e, outRef, props.composition.id),
-					right: (e) =>
-						compositionTimelineHandlers.onRightClickOut(e, props.composition.id),
+					left: (e) => compTimeHandlers.onMouseDownOut(e, outRef, props.composition.id),
+					right: (e) => compTimeHandlers.onRightClickOut(e, props.composition.id),
 				})}
 			>
 				<div className={s("header")} />
-				{composition.layers.map((layerId, i) => {
+				{composition.layers.map((layerId) => {
 					return (
-						<CompositionTimelineLayer
+						<CompTimeLayer
 							compositionId={props.composition.id}
 							id={layerId}
-							key={i}
+							key={layerId}
 						/>
 					);
 				})}
@@ -129,10 +127,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				className={s("separator")}
 				style={{ width: SEPARATOR_WIDTH, left: viewportLeft.width }}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) => {
-						e.preventDefault();
-						requestAction({ history: false }, onMouseDown);
-					},
+					left: () => requestAction({ history: false }, onMouseDown),
 				})}
 			/>
 			<div className={s("right")} style={viewportRight}>
@@ -163,7 +158,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 					className={s("scrubContainer")}
 					onMouseDown={separateLeftRightMouse({
 						left: (e) =>
-							compositionTimelineHandlers.onScrubMouseDown(e, {
+							compTimeHandlers.onScrubMouseDown(e, {
 								composition: props.composition,
 								viewBounds: props.viewBounds,
 								viewport: viewportRight,
@@ -183,7 +178,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 						ref={zoomTarget}
 						onMouseDown={separateLeftRightMouse({
 							left: (e) =>
-								compositionTimelineHandlers.onZoomClick(e, props.areaId, {
+								compTimeHandlers.onZoomClick(e, props.areaId, {
 									viewBounds: props.viewBounds,
 									left: viewportRight.left,
 									width: viewportRight.width,
@@ -195,7 +190,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 						ref={panTarget}
 						onMouseDown={separateLeftRightMouse({
 							left: (e) =>
-								compositionTimelineHandlers.onPanViewBounds(e, props.areaId, {
+								compTimeHandlers.onPanViewBounds(e, props.areaId, {
 									left: viewportRight.left,
 									width: viewportRight.width,
 									length: props.composition.length,

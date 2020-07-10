@@ -10,7 +10,6 @@ import {
 	calculateNodeInputPosition,
 } from "~/nodeEditor/util/calculateNodeHeight";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { clearElementFocus } from "~/util/focus";
 import { NODE_EDITOR_MIN_NODE_WIDTH, AreaType } from "~/constants";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { nodeValidInputToOutputsMap } from "~/nodeEditor/nodeEditorIO";
@@ -102,9 +101,6 @@ export const nodeHandlers = {
 	},
 
 	mouseDown: (e: React.MouseEvent, areaId: string, graphId: string, nodeId: string) => {
-		e.preventDefault();
-		clearElementFocus();
-
 		const shouldAddToStack = (prevState: ActionState, nextState: ActionState): boolean => {
 			// Check if move vector has changed
 
@@ -135,16 +131,17 @@ export const nodeHandlers = {
 			return false;
 		};
 
+		const { pan, scale } = getAreaActionState<AreaType.NodeEditor>(areaId);
+		const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
+		const transformMousePosition = (mousePosition: Vec2) =>
+			transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+
+		const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
+
 		requestAction(
 			{ history: true, shouldAddToStack },
 			({ submitAction, dispatch, addListener }) => {
 				const shiftKeyDownAtMouseDown = isKeyDown("Shift");
-
-				const { pan, scale } = getAreaActionState<AreaType.NodeEditor>(areaId);
-
-				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
-				const transformMousePosition = (mousePosition: Vec2) =>
-					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 
 				const graph = getActionState().nodeEditor.graphs[graphId];
 
@@ -159,7 +156,6 @@ export const nodeHandlers = {
 					dispatch(nodeEditorActions.addNodeToSelection(graphId, nodeId));
 				}
 
-				const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
 				let hasMoved = false;
 
 				addListener.repeated("mousemove", (e) => {
@@ -423,51 +419,50 @@ export const nodeHandlers = {
 		graphId: string,
 		nodeId: string,
 	) => {
-		e.preventDefault();
-		requestAction(
-			{ history: true },
-			({ submitAction, cancelAction, dispatch, addListener }) => {
-				const { pan, scale } = getAreaActionState<AreaType.NodeEditor>(areaId);
+		const { pan, scale } = getAreaActionState<AreaType.NodeEditor>(areaId);
+		const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 
-				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
-				const transformMousePosition = (mousePosition: Vec2) =>
-					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+		const transformMousePosition = (mousePosition: Vec2) =>
+			transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
 
-				const graph = getActionState().nodeEditor.graphs[graphId];
+		const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
 
-				const node = graph.nodes[nodeId];
+		requestAction({ history: true }, (params) => {
+			const { submitAction, cancelAction, dispatch, addListener } = params;
 
-				const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
-				let hasMoved = false;
+			const graph = getActionState().nodeEditor.graphs[graphId];
 
-				addListener.repeated("mousemove", (e) => {
-					const mousePos = transformMousePosition(Vec2.fromEvent(e));
-					if (!hasMoved) {
-						// We don't consider the mouse to be "moved" until the mouse has moved at least
-						// 5px from where it was initially.
-						if (getDistance(initialMousePos, mousePos) > 5 / scale) {
-							hasMoved = true;
-						} else {
-							return;
-						}
-					}
+			const node = graph.nodes[nodeId];
 
-					const width = Math.max(
-						NODE_EDITOR_MIN_NODE_WIDTH,
-						Math.round(mousePos.x - node.position.x),
-					);
-					dispatch(nodeEditorActions.setNodeWidth(graphId, nodeId, width));
-				});
+			let hasMoved = false;
 
-				addListener.once("mouseup", () => {
-					if (!hasMoved) {
-						cancelAction();
+			addListener.repeated("mousemove", (e) => {
+				const mousePos = transformMousePosition(Vec2.fromEvent(e));
+				if (!hasMoved) {
+					// We don't consider the mouse to be "moved" until the mouse has moved at least
+					// 5px from where it was initially.
+					if (getDistance(initialMousePos, mousePos) > 5 / scale) {
+						hasMoved = true;
+					} else {
 						return;
 					}
+				}
 
-					submitAction("Resize node width");
-				});
-			},
-		);
+				const width = Math.max(
+					NODE_EDITOR_MIN_NODE_WIDTH,
+					Math.round(mousePos.x - node.position.x),
+				);
+				dispatch(nodeEditorActions.setNodeWidth(graphId, nodeId, width));
+			});
+
+			addListener.once("mouseup", () => {
+				if (!hasMoved) {
+					cancelAction();
+					return;
+				}
+
+				submitAction("Resize node width");
+			});
+		});
 	},
 };

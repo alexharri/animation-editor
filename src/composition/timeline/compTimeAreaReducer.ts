@@ -24,7 +24,7 @@ export const compositionTimelineAreaActions = {
 
 type Action = ActionType<typeof compositionTimelineAreaActions>;
 
-export const compositionTimelineAreaReducer = (
+export const compTimeAreaReducer = (
 	state = initialCompositionTimelineAreaState,
 	action: Action,
 ): CompositionTimelineAreaState => {

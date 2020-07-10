@@ -9,14 +9,12 @@ import { computeAreaToViewport } from "~/area/util/areaToViewport";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
 
 export const handleDragAreaResize = (
-	e: React.MouseEvent,
+	_e: React.MouseEvent,
 	row: AreaRowLayout,
 	horizontal: boolean,
 	areaIndex: number, // 1 is the first separator
-) =>
+) => {
 	requestAction({}, ({ addListener, dispatch, submitAction, cancelAction }) => {
-		e.preventDefault();
-
 		const areaState = getActionState().area;
 		const areaToViewport = computeAreaToViewport(
 			areaState.layout,
@@ -89,3 +87,4 @@ export const handleDragAreaResize = (
 			submitAction("Resize areas");
 		});
 	});
+};
