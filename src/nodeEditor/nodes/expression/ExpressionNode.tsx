@@ -4,14 +4,10 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { separateLeftRightMouse } from "~/util/mouse";
-import {
-	NodeEditorNodeState,
-	NodeEditorNodeInput,
-	NodeEditorNodeOutput,
-} from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorNodeType } from "~/types";
+import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
 import { expressionNodeHandlers } from "~/nodeEditor/nodes/expression/expressionNodeHandlers";
 import { NodeBody } from "~/nodeEditor/components/NodeBody";
+import { ExpressionNodeTextarea } from "~/nodeEditor/nodes/expression/ExpressionNodeTextarea";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -23,13 +19,12 @@ interface OwnProps {
 interface StateProps {
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
-	state: NodeEditorNodeState<NodeEditorNodeType.expr>;
 }
 
 type Props = OwnProps & StateProps;
 
 function ExpressionNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, inputs, state } = props;
+	const { areaId, graphId, nodeId, outputs, inputs } = props;
 
 	return (
 		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
@@ -53,13 +48,10 @@ function ExpressionNodeComponent(props: Props) {
 				);
 			})}
 			<div style={{ position: "relative" }}>
-				<textarea
+				<ExpressionNodeTextarea
+					nodeId={nodeId}
+					graphId={graphId}
 					className={s("expressionTextarea")}
-					onMouseDown={(e) => e.stopPropagation()}
-					key={state.expression}
-					defaultValue={state.expression}
-					onBlur={(e) => expressionNodeHandlers.onBlur(e, props.graphId, props.nodeId)}
-					style={{ height: state.textareaHeight }}
 				/>
 				<div
 					className={s("expressionTextarea__resize")}
@@ -116,7 +108,6 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	return {
 		inputs: node.inputs,
 		outputs: node.outputs,
-		state: node.state as StateProps["state"],
 	};
 };
 

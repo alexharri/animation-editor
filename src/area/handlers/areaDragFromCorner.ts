@@ -50,10 +50,10 @@ export const handleAreaDragFromCorner = (
 	corner: IntercardinalDirection,
 	areaId: string,
 	viewport: Rect,
-) =>
-	requestAction({}, ({ addListener, dispatch, submitAction, cancelAction }) => {
-		e.preventDefault();
+) => {
+	const initialMousePosition = Vec2.fromEvent(e);
 
+	requestAction({}, ({ addListener, dispatch, submitAction, cancelAction }) => {
 		const areaState = getActionState().area;
 		const areaToRow = computeAreaToParentRow(areaState);
 		const areaToViewport = computeAreaToViewport(
@@ -198,8 +198,6 @@ export const handleAreaDragFromCorner = (
 			};
 		}
 
-		const initialMousePosition = Vec2.fromEvent(e);
-
 		addListener.repeated("mousemove", (e) => {
 			const vec = Vec2.fromEvent(e);
 
@@ -251,3 +249,4 @@ export const handleAreaDragFromCorner = (
 			onMouseUpFn();
 		});
 	});
+};

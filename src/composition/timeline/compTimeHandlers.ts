@@ -3,17 +3,16 @@ import { isKeyDown } from "~/listener/keyboard";
 import { capToRange, interpolate, getDistance } from "~/util/math";
 import { animate } from "~/util/animation/animate";
 import { areaActions } from "~/area/state/areaActions";
-import { compositionTimelineAreaActions } from "~/composition/timeline/compositionTimelineAreaReducer";
+import { compositionTimelineAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import {
 	transformGlobalToTimelineX,
 	getTimelineValueAtIndex,
 	createTimelineForLayerProperty,
 } from "~/timeline/timelineUtils";
-import { Composition, CompositionProperty } from "~/composition/compositionTypes";
+import { Composition, CompositionProperty, CompositionLayer } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
-import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
@@ -21,10 +20,12 @@ import { computeAreaToViewport } from "~/area/util/areaToViewport";
 import { AreaType } from "~/constants";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
 import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
+import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
+import { didCompSelectionChange } from "~/composition/util/compSelectionUtils";
 
 const ZOOM_FAC = 0.25;
 
-export const compositionTimelineHandlers = {
+export const compTimeHandlers = {
 	onScrubMouseDown: (
 		e: React.MouseEvent,
 		options: {
@@ -33,15 +34,15 @@ export const compositionTimelineHandlers = {
 			viewport: Rect;
 		},
 	) => {
-		e.preventDefault();
-
 		const { composition, viewport, viewBounds } = options;
+
+		const initialPosition = Vec2.fromEvent(e);
 
 		const fn: RequestActionCallback = (params) => {
 			const { addListener, dispatch, submitAction } = params;
 
-			const onMove = (e: MouseEvent | React.MouseEvent) => {
-				const pos = Vec2.fromEvent(e);
+			const onMove = (e?: MouseEvent) => {
+				const pos = e ? Vec2.fromEvent(e) : initialPosition;
 				const x = transformGlobalToTimelineX(
 					pos.x,
 					viewBounds,
@@ -57,7 +58,7 @@ export const compositionTimelineHandlers = {
 				);
 			};
 			addListener.repeated("mousemove", onMove);
-			onMove(e);
+			onMove();
 
 			addListener.once("mouseup", () => {
 				submitAction("Move scrubber");
@@ -121,18 +122,17 @@ export const compositionTimelineHandlers = {
 			left: number;
 		},
 	) => {
-		e.preventDefault();
+		const { viewBounds, length, width, left } = options;
+
+		const initialPos = transformGlobalToTimelineX(
+			Vec2.fromEvent(e).x,
+			viewBounds,
+			left,
+			width,
+			length,
+		);
 
 		const fn: RequestActionCallback = ({ addListener, submitAction, dispatch }) => {
-			const { viewBounds, length, width, left } = options;
-
-			const initialPos = transformGlobalToTimelineX(
-				Vec2.fromEvent(e).x,
-				viewBounds,
-				left,
-				width,
-				length,
-			);
 			let initialT = initialPos / length;
 
 			addListener.repeated("mousemove", (e) => {
@@ -226,7 +226,6 @@ export const compositionTimelineHandlers = {
 			return;
 		}
 
-		e.preventDefault();
 		requestAction({ history: true }, (params) => {
 			const { dispatch, submitAction } = params;
 			dispatch(compositionActions.clearCompositionSelection(compositionId));
@@ -236,94 +235,19 @@ export const compositionTimelineHandlers = {
 
 	onRightClickOut: (e: React.MouseEvent, compositionId: string) => {
 		const position = Vec2.fromEvent(e);
-
-		requestAction({ history: true }, (params) => {
-			const addRectLayer = () => {
-				params.dispatch(compositionActions.createRectLayer(compositionId));
-				params.dispatch(contextMenuActions.closeContextMenu());
-				params.submitAction("Add Rect Layer");
-			};
-
-			params.dispatch(
-				contextMenuActions.openContextMenu(
-					"Composition Timeline",
-					[
-						{
-							label: "Add new layer",
-							options: [
-								{
-									label: "Rect",
-									onSelect: addRectLayer,
-								},
-							],
-						},
-					],
-					position,
-					params.cancelAction,
-				),
-			);
-		});
+		createCompTimeContextMenu(position, { compositionId });
 	},
 
-	onLayerRightClick: (e: React.MouseEvent, layerId: string) => {
+	onLayerRightClick: (e: React.MouseEvent, layer: CompositionLayer) => {
 		const position = Vec2.fromEvent(e);
-
-		requestAction({ history: true }, (params) => {
-			const removeLayer = () => {
-				const compositionState = getActionState().compositions;
-				const layer = compositionState.layers[layerId];
-
-				// Remove all timelines referenced by properties of the deleted layer.
-				//
-				// In the future, timelines may be referenced in more ways than just by animated
-				// properties. When that is the case we will have to check for other references to
-				// the timelines we're deleting.
-				const timelineIdsToRemove: string[] = [];
-
-				function crawl(propertyId: string) {
-					const property = compositionState.properties[propertyId];
-
-					if (property.type === "group") {
-						property.properties.forEach(crawl);
-						return;
-					}
-
-					if (property.timelineId) {
-						timelineIdsToRemove.push(property.timelineId);
-					}
-				}
-				layer.properties.forEach(crawl);
-
-				timelineIdsToRemove.forEach((id) =>
-					params.dispatch(timelineActions.removeTimeline(id)),
-				);
-
-				params.dispatch(
-					compositionActions.removeLayer(layer.id),
-					contextMenuActions.closeContextMenu(),
-				);
-				params.submitAction("Delete layer");
-			};
-
-			params.dispatch(
-				contextMenuActions.openContextMenu(
-					"Layer",
-					[
-						{
-							label: "Delete",
-							onSelect: removeLayer,
-						},
-					],
-					position,
-					params.cancelAction,
-				),
-			);
+		createCompTimeContextMenu(position, {
+			compositionId: layer.compositionId,
+			layerId: layer.id,
 		});
 	},
 
-	onLayerNameMouseDown: (e: React.MouseEvent, compositionId: string, propertyId: string) => {
-		e.preventDefault();
-		requestAction({ history: true }, (params) => {
+	onLayerNameMouseDown: (_e: React.MouseEvent, compositionId: string, propertyId: string) => {
+		requestAction({ history: true, shouldAddToStack: didCompSelectionChange }, (params) => {
 			const { dispatch, submitAction } = params;
 
 			if (isKeyDown("Command")) {
@@ -337,9 +261,7 @@ export const compositionTimelineHandlers = {
 		});
 	},
 
-	onLayerGraphMouseDown: (e: React.MouseEvent, layerId: string) => {
-		e.preventDefault();
-
+	onLayerGraphMouseDown: (_e: React.MouseEvent, layerId: string) => {
 		const compositionState = getActionState().compositions;
 		const layer = compositionState.layers[layerId];
 
@@ -363,15 +285,13 @@ export const compositionTimelineHandlers = {
 	},
 
 	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, layerId: string) => {
-		e.preventDefault();
+		const initialMousePos = Vec2.fromEvent(e);
 
 		const compositionState = getActionState().compositions;
 		const layer = compositionState.layers[layerId];
 
 		requestAction({ history: true }, (params) => {
 			const { dispatch, cancelAction, submitAction, addListener } = params;
-
-			const initialMousePos = Vec2.fromEvent(e);
 
 			let hasMoved = false;
 			let mousePos!: Vec2;
@@ -441,9 +361,8 @@ export const compositionTimelineHandlers = {
 		});
 	},
 
-	onPropertyNameMouseDown: (e: React.MouseEvent, compositionId: string, propertyId: string) => {
-		e.preventDefault();
-		requestAction({ history: true }, (params) => {
+	onPropertyNameMouseDown: (_e: React.MouseEvent, compositionId: string, propertyId: string) => {
+		requestAction({ history: true, shouldAddToStack: didCompSelectionChange }, (params) => {
 			const { dispatch, submitAction } = params;
 
 			if (isKeyDown("Command")) {

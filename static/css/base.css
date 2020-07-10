@@ -24,3 +24,11 @@ body {
 	padding: 0;
 	overflow: hidden;
 }
+
+div {
+	user-select: none;
+}
+
+button {
+	outline: none;
+}

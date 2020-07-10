@@ -3,7 +3,7 @@ import { AreaType } from "~/constants";
 import { NodeEditor } from "~/nodeEditor/NodeEditor";
 import { nodeEditorAreaReducer } from "~/nodeEditor/nodeEditorAreaReducer";
 import HistoryEditor from "~/historyEditor/HistoryEditor";
-import { compositionTimelineAreaReducer } from "~/composition/timeline/compositionTimelineAreaReducer";
+import { compTimeAreaReducer } from "~/composition/timeline/compTimeAreaReducer";
 import { CompositionTimeline } from "~/composition/timeline/CompositionTimeline";
 import { CompositionWorkspace } from "~/composition/workspace/CompositionWorkspace";
 import { compositionWorkspaceAreaReducer } from "~/composition/workspace/compositionWorkspaceAreaReducer";
@@ -23,7 +23,7 @@ export const areaStateReducerRegistry: {
 	[T in AreaType]: (state: AreaState<T>, action: any) => AreaState<T>;
 } = {
 	[AreaType.VectorEditor]: () => ({} as any),
-	[AreaType.CompositionTimeline]: compositionTimelineAreaReducer,
+	[AreaType.CompositionTimeline]: compTimeAreaReducer,
 	[AreaType.CompositionWorkspace]: compositionWorkspaceAreaReducer,
 	[AreaType.NodeEditor]: nodeEditorAreaReducer,
 	[AreaType.History]: () => ({}),

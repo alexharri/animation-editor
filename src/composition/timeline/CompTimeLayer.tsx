@@ -1,11 +1,12 @@
 import React from "react";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { CompositionLayer } from "~/composition/compositionTypes";
-import styles from "~/composition/timeline/CompositionTimelineLayer.style";
-import { CompositionTimelineLayerProperty } from "~/composition/timeline/CompositionTimelineProperty";
+import styles from "~/composition/timeline/CompTimeLayer.style";
+import { CompTimeLayerProperty } from "~/composition/timeline/CompTimeProperty";
+import { CompTimeLayerName } from "~/composition/timeline/layer/CompTimeLayerName";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
+import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { GraphIcon } from "~/components/icons/GraphIcon";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { computeLayerGraph } from "~/nodeEditor/graph/computeLayerGraph";
@@ -27,7 +28,7 @@ interface StateProps {
 }
 type Props = OwnProps & StateProps;
 
-const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
+const CompTimeLayerComponent: React.FC<Props> = (props) => {
 	const { layer, graph } = props;
 
 	const { computePropertyValues } = useComputeHistory(() => {
@@ -52,27 +53,15 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 			<div
 				className={s("container")}
 				onMouseDown={separateLeftRightMouse({
-					right: (e) => compositionTimelineHandlers.onLayerRightClick(e, layer.id),
+					right: (e) => compTimeHandlers.onLayerRightClick(e, layer),
 				})}
 			>
-				<div
-					className={s("name", { active: props.isSelected })}
-					onMouseDown={separateLeftRightMouse({
-						left: (e) =>
-							compositionTimelineHandlers.onLayerNameMouseDown(
-								e,
-								props.compositionId,
-								layer.id,
-							),
-					})}
-				>
-					{layer.name}
-				</div>
+				<CompTimeLayerName layerId={props.id} />
 				<div
 					title={layer.graphId ? "Delete Layer Graph" : "Create Layer Graph"}
 					className={s("graph", { active: !!layer.graphId })}
 					onMouseDown={separateLeftRightMouse({
-						left: (e) => compositionTimelineHandlers.onLayerGraphMouseDown(e, layer.id),
+						left: (e) => compTimeHandlers.onLayerGraphMouseDown(e, layer.id),
 					})}
 				>
 					<GraphIcon />
@@ -82,8 +71,7 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 						title="Open Graph in area"
 						className={s("openGraphInArea", { active: true })}
 						onMouseDown={separateLeftRightMouse({
-							left: (e) =>
-								compositionTimelineHandlers.onOpenGraphInAreaMouseDown(e, layer.id),
+							left: (e) => compTimeHandlers.onOpenGraphInAreaMouseDown(e, layer.id),
 						})}
 					>
 						<OpenInAreaIcon />
@@ -92,7 +80,7 @@ const CompositionTimelineLayerComponent: React.FC<Props> = (props) => {
 			</div>
 			{layer.properties.map((id) => {
 				return (
-					<CompositionTimelineLayerProperty
+					<CompTimeLayerProperty
 						compositionId={props.compositionId}
 						id={id}
 						key={id}
@@ -117,6 +105,4 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	};
 };
 
-export const CompositionTimelineLayer = connectActionState(mapStateToProps)(
-	CompositionTimelineLayerComponent,
-);
+export const CompTimeLayer = connectActionState(mapStateToProps)(CompTimeLayerComponent);

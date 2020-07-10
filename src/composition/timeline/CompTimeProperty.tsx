@@ -10,8 +10,8 @@ import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { NumberInput } from "~/components/common/NumberInput";
 import { Timeline } from "~/timeline/timelineTypes";
-import styles from "~/composition/timeline/CompositionTimelineProperty.styles";
-import { compositionTimelineHandlers } from "~/composition/timeline/compositionTimelineHandlers";
+import styles from "~/composition/timeline/CompTimeProperty.styles";
+import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import {
 	getLayerPropertyLabel,
 	getLayerPropertyGroupLabel,
@@ -42,7 +42,7 @@ interface StateProps {
 }
 type Props = OwnProps & StateProps;
 
-const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
+const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 	const { property, composition, timeline } = props;
 
 	const value = props.propertyToValue[props.id];
@@ -76,7 +76,7 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 							})}
 							onMouseDown={separateLeftRightMouse({
 								left: (e) =>
-									compositionTimelineHandlers.onPropertyNameMouseDown(
+									compTimeHandlers.onPropertyNameMouseDown(
 										e,
 										props.compositionId,
 										property.id,
@@ -89,7 +89,7 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 				</div>
 				{!property.collapsed &&
 					properties.map((id) => (
-						<CompositionTimelineLayerProperty
+						<CompTimeLayerProperty
 							compositionId={props.compositionId}
 							id={id}
 							key={id}
@@ -114,7 +114,7 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 					className={s("timelineIcon", { active: !!property.timelineId })}
 					onMouseDown={separateLeftRightMouse({
 						left: () =>
-							compositionTimelineHandlers.onPropertyKeyframeIconMouseDown(
+							compTimeHandlers.onPropertyKeyframeIconMouseDown(
 								props.compositionId,
 								property.id,
 								property.timelineId,
@@ -129,7 +129,7 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 					})}
 					onMouseDown={separateLeftRightMouse({
 						left: (e) =>
-							compositionTimelineHandlers.onPropertyNameMouseDown(
+							compTimeHandlers.onPropertyNameMouseDown(
 								e,
 								props.compositionId,
 								property.id,
@@ -150,6 +150,12 @@ const CompositionTimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 							property.name === PropertyName.Scale ||
 							property.name === PropertyName.Opacity
 								? 0.01
+								: 1
+						}
+						decimalPlaces={
+							property.name === PropertyName.Scale ||
+							property.name === PropertyName.Opacity
+								? 2
 								: 1
 						}
 					/>
@@ -177,6 +183,6 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	};
 };
 
-export const CompositionTimelineLayerProperty = connectActionState(mapStateToProps)(
-	CompositionTimelineLayerPropertyComponent,
+export const CompTimeLayerProperty = connectActionState(mapStateToProps)(
+	CompTimeLayerPropertyComponent,
 );

@@ -13,7 +13,7 @@ import { isKeyDown } from "~/listener/keyboard";
 import { createToTimelineViewportY, createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { areaActions } from "~/area/state/areaActions";
-import { compositionTimelineAreaActions } from "~/composition/timeline/compositionTimelineAreaReducer";
+import { compositionTimelineAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import { AreaType } from "~/constants";
 
 const PAN_FAC = 0.0004;
@@ -30,14 +30,11 @@ const actions = {
 		},
 	) => {
 		const { timelines } = options;
-
-		e.preventDefault();
+		const initialMousePos = Vec2.fromEvent(e);
 
 		requestAction(
 			{ history: true },
 			({ addListener, dispatch, cancelAction, submitAction }) => {
-				const initialMousePos = Vec2.fromEvent(e);
-
 				let hasMoved = false;
 
 				addListener.repeated("mousemove", (e) => {
@@ -237,7 +234,7 @@ const actions = {
 
 	keyframeAltMouseDown: (
 		params: RequestActionParams,
-		initialEv: React.MouseEvent,
+		initialMousePos: Vec2,
 		timelineIndex: number,
 		index: number,
 		initialPos: Vec2,
@@ -252,7 +249,6 @@ const actions = {
 		const { dispatch, addListener, removeListener, submitAction } = params;
 
 		const timeline = timelines[timelineIndex];
-		const initialMousePos = Vec2.fromEvent(initialEv);
 
 		let upToken: string;
 		const moveToken = addListener.repeated("mousemove", (e) => {
@@ -643,7 +639,6 @@ export const timelineHandlers = {
 	) => {
 		const { timelines } = options;
 
-		e.preventDefault();
 		const initialPos = Vec2.fromEvent(e);
 
 		const mousePos = transformGlobalToTimelinePosition(initialPos, options);
@@ -675,12 +670,18 @@ export const timelineHandlers = {
 				const cp1 = getControlPointAsVector("cp1", k0, k1);
 
 				if (cp0 && getDistanceInPx(cp0, mousePos) < MIN_DIST) {
-					timelineHandlers.onControlPointMouseDown(e, ti, i, "right", options);
+					timelineHandlers.onControlPointMouseDown(initialPos, ti, i, "right", options);
 					return;
 				}
 
 				if (cp1 && getDistanceInPx(cp1, mousePos) < MIN_DIST) {
-					timelineHandlers.onControlPointMouseDown(e, ti, i + 1, "left", options);
+					timelineHandlers.onControlPointMouseDown(
+						initialPos,
+						ti,
+						i + 1,
+						"left",
+						options,
+					);
 					return;
 				}
 			}
@@ -692,7 +693,14 @@ export const timelineHandlers = {
 				if (getDistanceInPx(keyframePos, mousePos) < MIN_DIST) {
 					if (isKeyDown("Alt")) {
 						requestAction({ history: true }, (params) => {
-							actions.keyframeAltMouseDown(params, e, ti, i, initialPos, options);
+							actions.keyframeAltMouseDown(
+								params,
+								initialPos,
+								ti,
+								i,
+								initialPos,
+								options,
+							);
 						});
 						return;
 					}
@@ -711,8 +719,6 @@ export const timelineHandlers = {
 		 * If mouseup is fired without moving, clear selection.
 		 */
 		requestAction({ history: true }, ({ dispatch, submitAction, addListener }) => {
-			const initialMousePos = Vec2.fromEvent(e);
-
 			let hasMoved = false;
 			const wasShiftDown = isKeyDown("Shift");
 
@@ -720,7 +726,7 @@ export const timelineHandlers = {
 				const mousePos = Vec2.fromEvent(e);
 
 				if (!hasMoved) {
-					if (getDistance(initialMousePos, mousePos) < 5) {
+					if (getDistance(initialPos, mousePos) < 5) {
 						return;
 					}
 
@@ -728,7 +734,7 @@ export const timelineHandlers = {
 				}
 
 				const dragSelectRect = rectOfTwoVecs(
-					transformGlobalToTimelinePosition(initialMousePos, options),
+					transformGlobalToTimelinePosition(initialPos, options),
 					transformGlobalToTimelinePosition(mousePos, options),
 				);
 
@@ -775,7 +781,7 @@ export const timelineHandlers = {
 	},
 
 	onControlPointMouseDown: (
-		e: React.MouseEvent,
+		initialMousePos: Vec2,
 		timelineIndex: number,
 		index: number,
 		direction: "left" | "right",
@@ -789,7 +795,7 @@ export const timelineHandlers = {
 		requestAction({ history: true }, (params) => {
 			actions.controlPointMouseDown(
 				params,
-				Vec2.fromEvent(e),
+				initialMousePos,
 				timelineIndex,
 				index,
 				direction,

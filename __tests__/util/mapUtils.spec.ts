@@ -1,4 +1,10 @@
-import { removeKeysFromMap, addListToMap, modifyItemInMap, reduceMap } from "~/util/mapUtils";
+import {
+	removeKeysFromMap,
+	addListToMap,
+	modifyItemInMap,
+	reduceMap,
+	isMapShallowEqual,
+} from "~/util/mapUtils";
 
 describe("removeKeysFromMap", () => {
 	test("it removes a single key", () => {
@@ -135,5 +141,35 @@ describe("reduceMap", () => {
 			b: 4,
 		};
 		expect(reduceMap(input, (value) => value * 2)).toEqual(output);
+	});
+});
+
+describe("isMapShallowEqual", () => {
+	test("it works as expected", () => {
+		{
+			const a: { [key: string]: number } = {
+				a: 1,
+			};
+			const b: { [key: string]: number } = {};
+			expect(isMapShallowEqual(a, b)).toEqual(false);
+		}
+
+		{
+			const a: { [key: string]: number } = {};
+			const b: { [key: string]: number } = {
+				a: 1,
+			};
+			expect(isMapShallowEqual(a, b)).toEqual(false);
+		}
+
+		{
+			const a: { [key: string]: boolean } = {
+				a: true,
+			};
+			const b: { [key: string]: boolean } = {
+				a: false,
+			};
+			expect(isMapShallowEqual(a, b)).toEqual(false);
+		}
 	});
 });

@@ -3,7 +3,6 @@ import { requestAction } from "~/listener/requestAction";
 import { nodeEditorAreaActions } from "~/nodeEditor/nodeEditorAreaActions";
 import { getAreaActionState } from "~/state/stateUtils";
 import { isKeyDown } from "~/listener/keyboard";
-import { isLeftClick } from "~/util/mouse";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { transformGlobalToNodeEditorRect } from "~/nodeEditor/nodeEditorUtils";
@@ -21,12 +20,9 @@ export const nodeEditorHandlers = {
 		scale: number,
 		pan: Vec2,
 	) => {
-		e.preventDefault();
-		clearElementFocus();
+		const initialMousePos = Vec2.fromEvent(e);
 
 		requestAction({ history: true }, ({ addListener, dispatch, submitAction }) => {
-			const initialMousePos = Vec2.fromEvent(e);
-
 			let hasMoved = false;
 
 			addListener.repeated("mousemove", (e) => {
@@ -98,8 +94,6 @@ export const nodeEditorHandlers = {
 	},
 
 	onPanStart: (areaId: string, e: React.MouseEvent) => {
-		e.preventDefault();
-
 		const areaState = getAreaActionState<AreaType.NodeEditor>(areaId);
 		const initialPos = Vec2.fromEvent(e);
 
@@ -116,12 +110,7 @@ export const nodeEditorHandlers = {
 	},
 
 	onZoomClick: (e: React.MouseEvent, areaId: string) => {
-		e.preventDefault();
-
-		if (!isLeftClick(e)) {
-			return;
-		}
-
+		const mousePos = Vec2.fromEvent(e);
 		const areaState = getAreaActionState<AreaType.NodeEditor>(areaId);
 
 		if (
@@ -135,7 +124,7 @@ export const nodeEditorHandlers = {
 			const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 			const fac = isKeyDown("Alt") ? 0.5 : 2;
 
-			const pos = Vec2.fromEvent(e)
+			const pos = mousePos
 				.sub(Vec2.new(areaState.pan))
 				.sub(Vec2.new(viewport.width / 2, viewport.height / 2))
 				.sub(Vec2.new(viewport));

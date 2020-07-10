@@ -1,6 +1,6 @@
 import { AreaType } from "~/constants";
 import { initialNodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
-import { initialCompositionTimelineAreaState } from "~/composition/timeline/compositionTimelineAreaReducer";
+import { initialCompositionTimelineAreaState } from "~/composition/timeline/compTimeAreaReducer";
 import { initialCompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { AreaState } from "~/types/areaTypes";
 

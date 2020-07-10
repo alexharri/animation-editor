@@ -1,9 +1,7 @@
 import { ViewBoundsProps } from "~/timeline/ViewBounds";
 
 export const viewBoundsHandlers = {
-	onLeftHandleMouseDown: (e: React.MouseEvent, props: ViewBoundsProps) => {
-		e.preventDefault();
-
+	onLeftHandleMouseDown: (_e: React.MouseEvent, props: ViewBoundsProps) => {
 		props.requestUpdate(({ addListener, update, submit }) => {
 			const { viewBounds, left, width } = props;
 			addListener.repeated("mousemove", (e) => {
@@ -21,9 +19,7 @@ export const viewBoundsHandlers = {
 		});
 	},
 
-	onRightHandleMouseDown: (e: React.MouseEvent, props: ViewBoundsProps) => {
-		e.preventDefault();
-
+	onRightHandleMouseDown: (_e: React.MouseEvent, props: ViewBoundsProps) => {
 		props.requestUpdate(({ addListener, update, submit }) => {
 			const { viewBounds, left, width } = props;
 			addListener.repeated("mousemove", (e) => {
@@ -45,12 +41,12 @@ export const viewBoundsHandlers = {
 	 * When the user moves the viewBounds bar around
 	 */
 	onMoveViewBounds: (e: React.MouseEvent, props: ViewBoundsProps) => {
-		e.preventDefault();
+		const initialMousePos = Vec2.fromEvent(e);
 
 		props.requestUpdate(({ addListener, update, submit }) => {
 			const { viewBounds, left, width } = props;
 
-			let initialT = Vec2.fromEvent(e).subX(left).x / width;
+			let initialT = initialMousePos.subX(left).x / width;
 
 			initialT = Math.max(initialT, viewBounds[0]);
 			initialT = Math.min(initialT, 1);

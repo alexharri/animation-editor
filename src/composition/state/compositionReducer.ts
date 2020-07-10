@@ -121,6 +121,10 @@ export const compositionActions = {
 		return (layerId: string) => action({ layerId });
 	}),
 
+	setLayerName: createAction("comp/SET_LAYER_NAME", (action) => {
+		return (layerId: string, name: string) => action({ layerId, name });
+	}),
+
 	setLayerGraphId: createAction("comp/SET_LAYER_GRAPH_ID", (action) => {
 		return (layerId: string, graphId: string) => action({ layerId, graphId });
 	}),
@@ -278,6 +282,17 @@ export const compositionReducer = (
 				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					graphId,
+				})),
+			};
+		}
+
+		case getType(compositionActions.setLayerName): {
+			const { layerId, name } = action.payload;
+			return {
+				...state,
+				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+					...layer,
+					name,
 				})),
 			};
 		}

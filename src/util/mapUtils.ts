@@ -66,3 +66,28 @@ export const reduceMap = <M extends { [key: string]: T }, T = M[string]>(
 		return obj;
 	}, {} as M);
 };
+
+export const isMapShallowEqual = <M extends { [key: string]: T }, T = M[string]>(
+	a: M,
+	b: M,
+): boolean => {
+	const keys = Object.keys(a);
+
+	if (keys.length !== Object.keys(b).length) {
+		return false;
+	}
+
+	for (let i = 0; i < keys.length; i += 1) {
+		const key = keys[i];
+
+		if (!b.hasOwnProperty(key)) {
+			return false;
+		}
+
+		if (a[key] !== b[key]) {
+			return false;
+		}
+	}
+
+	return true;
+};
