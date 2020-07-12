@@ -18,6 +18,7 @@ import {
 import { requestAction } from "~/listener/requestAction";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { CompTimePropertyValue } from "~/composition/timeline/property/value/CompTimePropertyValue";
+import { ValueType } from "~/types";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -103,6 +104,11 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 								property.timelineId,
 							),
 					})}
+					style={
+						property.valueType === ValueType.Color
+							? { pointerEvents: "none", opacity: "0" }
+							: {}
+					}
 				>
 					<StopwatchIcon />
 				</div>
