@@ -1,4 +1,4 @@
-import { NodeEditorNodeType, ValueType } from "~/types";
+import { NodeEditorNodeType, ValueType, RGBAColor } from "~/types";
 
 export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEditorNodeInput[] => {
 	switch (type) {
@@ -154,6 +154,47 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 				},
 			];
 
+		case NodeEditorNodeType.color_input:
+			return [];
+
+		case NodeEditorNodeType.color_from_rgba_factors:
+			return [
+				{
+					type: ValueType.Number,
+					name: "R",
+					value: 0,
+					pointer: null,
+				},
+				{
+					type: ValueType.Number,
+					name: "G",
+					value: 0,
+					pointer: null,
+				},
+				{
+					type: ValueType.Number,
+					name: "B",
+					value: 0,
+					pointer: null,
+				},
+				{
+					type: ValueType.Number,
+					name: "A",
+					value: 1,
+					pointer: null,
+				},
+			];
+
+		case NodeEditorNodeType.color_to_rgba_factors:
+			return [
+				{
+					type: ValueType.Color,
+					name: "Color",
+					value: 0,
+					pointer: null,
+				},
+			];
+
 		case NodeEditorNodeType.property_input:
 			return [];
 
@@ -256,6 +297,41 @@ export const getNodeEditorNodeDefaultOutputs = (
 				},
 			];
 
+		case NodeEditorNodeType.color_input:
+			return [
+				{
+					type: ValueType.Color,
+					name: "Color",
+				},
+			];
+		case NodeEditorNodeType.color_from_rgba_factors:
+			return [
+				{
+					type: ValueType.Color,
+					name: "Color",
+				},
+			];
+
+		case NodeEditorNodeType.color_to_rgba_factors:
+			return [
+				{
+					type: ValueType.Number,
+					name: "R",
+				},
+				{
+					type: ValueType.Number,
+					name: "G",
+				},
+				{
+					type: ValueType.Number,
+					name: "B",
+				},
+				{
+					type: ValueType.Number,
+					name: "A",
+				},
+			];
+
 		case NodeEditorNodeType.property_input:
 			return [];
 
@@ -277,6 +353,9 @@ export const getNodeEditorNodeDefaultState = <T extends NodeEditorNodeType>(type
 
 		case NodeEditorNodeType.num_input:
 			return { value: 0, type: "value" };
+
+		case NodeEditorNodeType.color_input:
+			return { color: [0, 0, 0, 1] } as NodeEditorNodeState<NodeEditorNodeType.color_input>;
 
 		default:
 			return {} as any;
@@ -315,6 +394,9 @@ type NodeEditorNodeStateMap = {
 	[NodeEditorNodeType.vec2_input]: {};
 	[NodeEditorNodeType.empty]: {};
 	[NodeEditorNodeType.rect_translate]: {};
+	[NodeEditorNodeType.color_input]: { color: RGBAColor };
+	[NodeEditorNodeType.color_from_rgba_factors]: {};
+	[NodeEditorNodeType.color_to_rgba_factors]: {};
 	[NodeEditorNodeType.property_input]: { layerId: string; propertyId: string };
 	[NodeEditorNodeType.property_output]: { propertyId: string };
 	[NodeEditorNodeType.expr]: {
@@ -339,4 +421,5 @@ export const nodeValidInputToOutputsMap: { [key in ValueType]: ValueType[] } = {
 	[ValueType.Number]: [ValueType.Any, ValueType.Number],
 	[ValueType.Rect]: [ValueType.Any, ValueType.Rect],
 	[ValueType.Vec2]: [ValueType.Any, ValueType.Vec2],
+	[ValueType.Color]: [ValueType.Any, ValueType.Color],
 };

@@ -66,7 +66,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	value: css`
-		width: 80px;
+		white-space: nowrap;
 	`,
 
 	timelineIcon: css`
@@ -87,5 +87,22 @@ export default ({ css }: StyleParams) => ({
 				fill: ${cssVariables.primary500};
 			}
 		}
+	`,
+
+	colorValueButton: css`
+		border: none;
+		background: black;
+		border-radius: 3px;
+		margin-top: 1px;
+		height: 14px;
+		width: 32px;
+	`,
+
+	colorPickerWrapper: css`
+		background: ${cssVariables.dark700};
+		border: 1px solid ${cssVariables.gray600};
+		padding: 16px;
+		border-radius: 4px;
+		border-bottom-left-radius: 0;
 	`,
 });

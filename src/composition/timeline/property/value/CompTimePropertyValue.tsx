@@ -1,0 +1,49 @@
+import React, { useContext } from "react";
+
+import { RGBAColor, ValueType } from "~/types";
+import { connectActionState } from "~/state/stateUtils";
+import { CompTimePropertyValueContext } from "~/composition/timeline/compTimeContext";
+import { CompositionProperty } from "~/composition/compositionTypes";
+import { CompTimePropertyNumberValue } from "~/composition/timeline/property/value/CompTimePropertyNumberValue";
+import { CompTimePropertyColorValue } from "~/composition/timeline/property/value/CompTimePropertyColorValue";
+
+interface OwnProps {
+	propertyId: string;
+}
+interface StateProps {
+	valueType: ValueType;
+}
+type Props = OwnProps & StateProps;
+
+const CompTimePropertyValueComponent: React.FC<Props> = (props) => {
+	const propertyToValue = useContext(CompTimePropertyValueContext);
+
+	const value = propertyToValue[props.propertyId];
+
+	if (props.valueType === ValueType.Color) {
+		return (
+			<CompTimePropertyColorValue
+				propertyId={props.propertyId}
+				value={value.computedValue as RGBAColor}
+			/>
+		);
+	}
+
+	if (props.valueType === ValueType.Number) {
+		return (
+			<CompTimePropertyNumberValue
+				propertyId={props.propertyId}
+				computedValue={value.computedValue as number}
+				rawValue={value.rawValue as number}
+			/>
+		);
+	}
+
+	return null;
+};
+
+const mapState: MapActionState<StateProps, OwnProps> = ({ compositions }, { propertyId }) => ({
+	valueType: (compositions.properties[propertyId] as CompositionProperty).valueType,
+});
+
+export const CompTimePropertyValue = connectActionState(mapState)(CompTimePropertyValueComponent);

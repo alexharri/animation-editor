@@ -44,8 +44,8 @@ export const NodeEditorTValueInput: React.FC<Props> = (props) => {
 				onChangeEnd={props.onChangeEnd}
 				max={1}
 				min={0}
-				decimalPlaces={4}
-				tick={0.001}
+				decimalPlaces={2}
+				tick={0.01}
 				fullWidth
 				fillWidth
 			/>

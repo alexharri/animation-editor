@@ -3,6 +3,10 @@ export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => 
 export type CardinalDirection = "n" | "w" | "s" | "e";
 export type IntercardinalDirection = "ne" | "nw" | "se" | "sw";
 
+export type HSLColor = [number, number, number];
+export type RGBColor = [number, number, number];
+export type RGBAColor = [number, number, number, number];
+
 export enum NodeEditorNodeType {
 	empty = "empty",
 
@@ -22,6 +26,10 @@ export enum NodeEditorNodeType {
 
 	expr = "expr",
 
+	color_from_rgba_factors = "color_from_rgba_factors",
+	color_to_rgba_factors = "color_to_rgba_factors",
+	color_input = "color_input",
+
 	property_output = "property_output",
 	property_input = "property_input",
 }
@@ -30,16 +38,25 @@ export enum ValueType {
 	Number = "number",
 	Vec2 = "vec2",
 	Rect = "rect",
+	Color = "color",
 	Any = "any",
+}
+
+export enum ValueFormat {
+	Percentage,
+	Rotation,
 }
 
 export enum PropertyGroupName {
 	Transform,
 	Dimensions,
+	Content,
 }
 
 export enum PropertyName {
 	// Transform Properties
+	AnchorX,
+	AnchorY,
 	Scale,
 	PositionX,
 	PositionY,
@@ -49,6 +66,10 @@ export enum PropertyName {
 	// Other Properties
 	Width,
 	Height,
+	Fill,
+	StrokeColor,
+	StrokeWidth,
+	BorderRadius,
 }
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;

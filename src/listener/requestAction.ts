@@ -79,6 +79,16 @@ const performRequestedAction = (
 		},
 
 		submitAction: (name = "Unknown action") => {
+			if (!getActionId()) {
+				console.warn("Attempted to submit an action that does not exist.");
+				return;
+			}
+
+			if (getActionId() !== actionId) {
+				console.warn("Attempted to submit with the wrong action id.");
+				return;
+			}
+
 			if (
 				typeof shouldAddToStack === "function"
 					? !shouldAddToStack(getCurrentState(), getActionState())

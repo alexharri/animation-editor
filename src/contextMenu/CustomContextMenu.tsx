@@ -5,7 +5,7 @@ import { cssZIndex } from "~/cssVariables";
 import { useState } from "react";
 import { connectActionState } from "~/state/stateUtils";
 
-const CLOSE_MENU_BUFFER = 100;
+const DEFAULT_CLOSE_MENU_BUFFER = 100;
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	background: css`
@@ -23,6 +23,14 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		top: 0;
 		left: 0;
 		z-index: ${cssZIndex.contextMenu};
+
+		&--center {
+			transform: translate(-50%, -50%);
+		}
+
+		&--bottomLeft {
+			transform: translate(0, -100%);
+		}
 	`,
 }));
 
@@ -40,6 +48,9 @@ const CustomContextMenuComponent: React.FC<Props> = (props) => {
 		return null;
 	}
 
+	const center = options.alignPosition === "center";
+	const bottomLeft = options.alignPosition === "bottom-left";
+
 	const onMouseMove = (e: React.MouseEvent) => {
 		const vec = Vec2.fromEvent(e);
 		const { x, y } = vec;
@@ -48,11 +59,13 @@ const CustomContextMenuComponent: React.FC<Props> = (props) => {
 			return;
 		}
 
+		const closeMenuBuffer = options.closeMenuBuffer ?? DEFAULT_CLOSE_MENU_BUFFER;
+
 		if (
-			x < rect.left - CLOSE_MENU_BUFFER ||
-			x > rect.left + rect.width + CLOSE_MENU_BUFFER ||
-			y < rect.top - CLOSE_MENU_BUFFER ||
-			y > rect.top + rect.height + CLOSE_MENU_BUFFER
+			x < rect.left - closeMenuBuffer ||
+			x > rect.left + rect.width + closeMenuBuffer ||
+			y < rect.top - closeMenuBuffer ||
+			y > rect.top + rect.height + closeMenuBuffer
 		) {
 			options.close();
 		}
@@ -68,7 +81,7 @@ const CustomContextMenuComponent: React.FC<Props> = (props) => {
 				onMouseDown={() => options.close()}
 			/>
 			<div
-				className={s("wrapper")}
+				className={s("wrapper", { center, bottomLeft })}
 				style={{ top: options.position.y, left: options.position.x }}
 			>
 				<Component {...options.props} updateRect={setRect} />

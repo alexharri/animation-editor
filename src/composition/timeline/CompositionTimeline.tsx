@@ -11,7 +11,7 @@ import { Composition, CompositionProperty } from "~/composition/compositionTypes
 import { splitRect, capToRange } from "~/util/math";
 import { RequestActionCallback, requestAction } from "~/listener/requestAction";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { CompTimeLayer } from "~/composition/timeline/CompTimeLayer";
+import { CompTimeLayer } from "~/composition/timeline/layer/CompTimeLayer";
 import { ViewBounds } from "~/timeline/ViewBounds";
 import { areaActions } from "~/area/state/areaActions";
 import { useKeyDownEffect } from "~/hook/useKeyDown";

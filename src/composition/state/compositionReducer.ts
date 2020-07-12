@@ -12,6 +12,7 @@ import {
 	modifyItemInMap,
 	modifyItemInUnionMap,
 } from "~/util/mapUtils";
+import { RGBAColor } from "~/types";
 
 const createLayerId = (layers: CompositionState["layers"]) =>
 	(
@@ -102,7 +103,7 @@ export const compositionActions = {
 	}),
 
 	setPropertyValue: createAction("comp/SET_PROPERTY_VALUE", (action) => {
-		return (propertyId: string, value: number) => action({ propertyId, value });
+		return (propertyId: string, value: number | RGBAColor) => action({ propertyId, value });
 	}),
 
 	setPropertyGroupCollapsed: createAction("comp/SET_PROP_GROUP_COLLAPSED", (action) => {
@@ -174,7 +175,7 @@ export const compositionReducer = (
 					propertyId,
 					(item: CompositionProperty) => ({
 						...item,
-						value,
+						value: value as any,
 					}),
 				),
 			};
