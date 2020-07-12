@@ -8,7 +8,6 @@ import {
 } from "~/composition/compositionTypes";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { NumberInput } from "~/components/common/NumberInput";
 import { Timeline } from "~/timeline/timelineTypes";
 import styles from "~/composition/timeline/property/CompTimeProperty.styles";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
@@ -16,23 +15,15 @@ import {
 	getLayerPropertyLabel,
 	getLayerPropertyGroupLabel,
 } from "~/composition/util/compositionPropertyUtils";
-import { PropertyName, ValueType } from "~/types";
-import { usePropertyNumberInput } from "~/composition/hook/usePropertyNumberInput";
 import { requestAction } from "~/listener/requestAction";
 import { compositionActions } from "~/composition/state/compositionReducer";
-import { CompTimeColorProperty } from "~/composition/timeline/property/CompTimeColorProperty";
+import { CompTimePropertyValue } from "~/composition/timeline/property/value/CompTimePropertyValue";
 
 const s = compileStylesheetLabelled(styles);
 
 interface OwnProps {
 	compositionId: string;
 	id: string;
-	propertyToValue: {
-		[propertyId: string]: {
-			rawValue: number;
-			computedValue: number;
-		};
-	};
 	depth: number;
 }
 interface StateProps {
@@ -44,9 +35,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
-	const { property, composition, timeline } = props;
-
-	const value = props.propertyToValue[props.id];
+	const { property } = props;
 
 	if (property.type === "group") {
 		const { properties } = property;
@@ -94,30 +83,12 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 							compositionId={props.compositionId}
 							id={id}
 							key={id}
-							propertyToValue={props.propertyToValue}
 							depth={props.depth + 1}
 						/>
 					))}
 			</>
 		);
 	}
-
-	if (property.valueType === ValueType.Color) {
-		return (
-			<CompTimeColorProperty
-				propertyId={property.id}
-				compositionId={props.compositionId}
-				depth={props.depth}
-				propertyToValue={props.propertyToValue}
-			/>
-		);
-	}
-
-	const [onValueChange, onValueChangeEnd] = usePropertyNumberInput(
-		timeline,
-		property,
-		composition,
-	);
 
 	return (
 		<div className={s("container")}>
@@ -150,28 +121,7 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 				>
 					{getLayerPropertyLabel(property.name)}
 				</div>
-				<div className={s("value")}>
-					<NumberInput
-						min={property.min}
-						max={property.max}
-						onChange={onValueChange}
-						onChangeEnd={onValueChangeEnd}
-						value={value.rawValue}
-						showValue={value.computedValue}
-						tick={
-							property.name === PropertyName.Scale ||
-							property.name === PropertyName.Opacity
-								? 0.01
-								: 1
-						}
-						decimalPlaces={
-							property.name === PropertyName.Scale ||
-							property.name === PropertyName.Opacity
-								? 2
-								: 1
-						}
-					/>
-				</div>
+				<CompTimePropertyValue propertyId={property.id} />
 			</div>
 		</div>
 	);

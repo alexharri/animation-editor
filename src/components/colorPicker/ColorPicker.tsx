@@ -53,8 +53,16 @@ function renderBlock(ctx: CanvasRenderingContext2D, hue: number) {
 
 	ctx.fillStyle = white;
 	ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
 	ctx.fillStyle = black;
 	ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+	// Ensure that corners are not diluted in any way
+	ctx.fillStyle = "#ffffff";
+	ctx.fillRect(0, 0, 1, 1);
+
+	ctx.fillStyle = `rgb(${color.join(",")})`;
+	ctx.fillRect(WIDTH - 1, 0, 1, 1);
 }
 
 const Strip: React.FC<{ hue: number; onHueChange: (hue: number) => void }> = (props) => {

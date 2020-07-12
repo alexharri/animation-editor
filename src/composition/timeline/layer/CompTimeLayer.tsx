@@ -8,12 +8,8 @@ import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { GraphIcon } from "~/components/icons/GraphIcon";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { computeLayerGraph } from "~/nodeEditor/graph/computeLayerGraph";
-import { useComputeHistory } from "~/hook/useComputeHistory";
-import { useActionState } from "~/hook/useActionState";
-import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
+import { CompTimeLayerPropertyToValue } from "~/composition/timeline/layer/CompTimeLayerPropertyToValue";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -23,30 +19,12 @@ interface OwnProps {
 }
 interface StateProps {
 	layer: CompositionLayer;
-	graph?: NodeEditorGraphState;
 	isSelected: boolean;
 }
 type Props = OwnProps & StateProps;
 
 const CompTimeLayerComponent: React.FC<Props> = (props) => {
-	const { layer, graph } = props;
-
-	const { computePropertyValues } = useComputeHistory(() => {
-		return { computePropertyValues: computeLayerGraph(graph) };
-	});
-
-	const propertyToValue = useActionState((actionState) => {
-		const context: ComputeNodeContext = {
-			computed: {},
-			compositionId: props.compositionId,
-			layerId: props.id,
-			compositionState: actionState.compositions,
-			timelines: actionState.timelines,
-			timelineSelection: actionState.timelineSelection,
-		};
-
-		return computePropertyValues(context, graph && actionState.nodeEditor.graphs[graph.id]);
-	});
+	const { layer } = props;
 
 	return (
 		<>
@@ -78,29 +56,33 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 					</div>
 				)}
 			</div>
-			{layer.properties.map((id) => {
-				return (
-					<CompTimeLayerProperty
-						compositionId={props.compositionId}
-						id={id}
-						key={id}
-						propertyToValue={propertyToValue}
-						depth={0}
-					/>
-				);
-			})}
+			<CompTimeLayerPropertyToValue
+				compositionId={layer.compositionId}
+				layerId={layer.id}
+				graphId={layer.graphId}
+			>
+				{layer.properties.map((id) => {
+					return (
+						<CompTimeLayerProperty
+							compositionId={props.compositionId}
+							id={id}
+							key={id}
+							depth={0}
+						/>
+					);
+				})}
+			</CompTimeLayerPropertyToValue>
 		</>
 	);
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ nodeEditor, compositions, compositionSelection },
+	{ compositions, compositionSelection },
 	{ id },
 ) => {
 	const layer = compositions.layers[id];
 	return {
 		layer,
-		graph: layer.graphId ? nodeEditor.graphs[layer.graphId] : undefined,
 		isSelected: !!compositionSelection.layers[id],
 	};
 };

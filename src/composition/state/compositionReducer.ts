@@ -175,7 +175,7 @@ export const compositionReducer = (
 					propertyId,
 					(item: CompositionProperty) => ({
 						...item,
-						value,
+						value: value as any,
 					}),
 				),
 			};
