@@ -132,4 +132,22 @@ export default ({ css }: StyleParams) => ({
 		height: 2px;
 		cursor: ns-resize;
 	`,
+
+	colorInput__colorPickerWrapper: css`
+		background: ${cssVariables.dark700};
+		border: 1px solid ${cssVariables.gray600};
+		padding: 16px;
+		border-radius: 4px;
+		border-bottom-left-radius: 0;
+	`,
+
+	colorInput__colorValue: css`
+		margin-left: ${NODE_EDITOR_NODE_H_PADDING};
+		border: none;
+		background: black;
+		border-radius: 3px;
+		margin-top: 1px;
+		height: 14px;
+		width: 32px;
+	`,
 });

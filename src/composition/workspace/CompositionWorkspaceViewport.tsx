@@ -27,7 +27,7 @@ const CompositionWorkspaceViewportComponent: React.FC<Props> = (props) => {
 	const { width, height, layerIds } = props;
 
 	return (
-		<div className={s("container")} style={{ width, height }}>
+		<svg className={s("container")} width={width} height={height}>
 			{layerIds.map((id) => (
 				<CompositionWorkspaceLayer
 					key={id}
@@ -35,7 +35,7 @@ const CompositionWorkspaceViewportComponent: React.FC<Props> = (props) => {
 					layerId={id}
 				/>
 			))}
-		</div>
+		</svg>
 	);
 };
 

@@ -10,16 +10,17 @@ import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { NumberInput } from "~/components/common/NumberInput";
 import { Timeline } from "~/timeline/timelineTypes";
-import styles from "~/composition/timeline/CompTimeProperty.styles";
+import styles from "~/composition/timeline/property/CompTimeProperty.styles";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import {
 	getLayerPropertyLabel,
 	getLayerPropertyGroupLabel,
 } from "~/composition/util/compositionPropertyUtils";
-import { PropertyName } from "~/types";
+import { PropertyName, ValueType } from "~/types";
 import { usePropertyNumberInput } from "~/composition/hook/usePropertyNumberInput";
 import { requestAction } from "~/listener/requestAction";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { CompTimeColorProperty } from "~/composition/timeline/property/CompTimeColorProperty";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -98,6 +99,17 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 						/>
 					))}
 			</>
+		);
+	}
+
+	if (property.valueType === ValueType.Color) {
+		return (
+			<CompTimeColorProperty
+				propertyId={property.id}
+				compositionId={props.compositionId}
+				depth={props.depth}
+				propertyToValue={props.propertyToValue}
+			/>
 		);
 	}
 

@@ -1,8 +1,8 @@
 import React from "react";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { CompositionLayer } from "~/composition/compositionTypes";
-import styles from "~/composition/timeline/CompTimeLayer.style";
-import { CompTimeLayerProperty } from "~/composition/timeline/CompTimeProperty";
+import styles from "~/composition/timeline/layer/CompTimeLayer.style";
+import { CompTimeLayerProperty } from "~/composition/timeline/property/CompTimeProperty";
 import { CompTimeLayerName } from "~/composition/timeline/layer/CompTimeLayerName";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";

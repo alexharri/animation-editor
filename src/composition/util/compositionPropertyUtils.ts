@@ -6,9 +6,12 @@ import { CompositionState } from "~/composition/state/compositionReducer";
 const propertyGroupNameToLabel: { [key in keyof typeof PropertyGroupName]: string } = {
 	Dimensions: "Dimensions",
 	Transform: "Transform",
+	Content: "Content",
 };
 
 const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
+	AnchorX: "Anchor X",
+	AnchorY: "Anchor Y",
 	Scale: "Scale",
 	Rotation: "Rotation",
 	PositionX: "X Position",
@@ -17,6 +20,10 @@ const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
 
 	Height: "Height",
 	Width: "Width",
+	Fill: "Fill",
+	StrokeColor: "Stroke Color",
+	StrokeWidth: "Stroke Width",
+	BorderRadius: "Border Radius",
 };
 
 export const getLayerPropertyLabel = (name: PropertyName): string => {
@@ -39,6 +46,28 @@ const createDefaultTransformProperties = (opts: Options): CompositionProperty[] 
 	const { compositionId, createId, layerId } = opts;
 
 	return [
+		{
+			type: "property",
+			id: createId(),
+			layerId,
+			compositionId,
+			name: PropertyName.AnchorX,
+			timelineId: "",
+			valueType: ValueType.Number,
+			value: 0,
+			color: TimelineColors.XPosition,
+		},
+		{
+			type: "property",
+			id: createId(),
+			layerId,
+			compositionId,
+			name: PropertyName.AnchorY,
+			timelineId: "",
+			valueType: ValueType.Number,
+			value: 0,
+			color: TimelineColors.YPosition,
+		},
 		{
 			type: "property",
 			id: createId(),
@@ -130,6 +159,61 @@ const createDefaultDimensionProperties = (opts: Options): CompositionProperty[] 
 	];
 };
 
+const createDefaultContentsProperties = (opts: Options): CompositionProperty[] => {
+	const { compositionId, createId, layerId } = opts;
+
+	return [
+		{
+			type: "property",
+			id: createId(),
+			layerId,
+			compositionId,
+			name: PropertyName.Fill,
+			timelineId: "",
+			valueType: ValueType.Color,
+			color: TimelineColors.Width,
+			value: [255, 0, 0],
+			min: 0,
+		},
+		{
+			type: "property",
+			id: createId(),
+			layerId,
+			compositionId,
+			name: PropertyName.StrokeWidth,
+			timelineId: "",
+			valueType: ValueType.Number,
+			color: TimelineColors.Height,
+			value: 0,
+			min: 0,
+		},
+		{
+			type: "property",
+			id: createId(),
+			layerId,
+			compositionId,
+			name: PropertyName.StrokeColor,
+			timelineId: "",
+			valueType: ValueType.Color,
+			color: TimelineColors.Height,
+			value: [0, 0, 255],
+			min: 0,
+		},
+		{
+			type: "property",
+			id: createId(),
+			layerId,
+			compositionId,
+			name: PropertyName.BorderRadius,
+			timelineId: "",
+			valueType: ValueType.Number,
+			color: TimelineColors.Height,
+			value: 0,
+			min: 0,
+		},
+	];
+};
+
 export const getDefaultLayerProperties = (
 	opts: Options,
 ): {
@@ -154,9 +238,18 @@ export const getDefaultLayerProperties = (
 		collapsed: true,
 	};
 
+	const contentProperties = createDefaultContentsProperties(opts);
+	const contentGroup: CompositionPropertyGroup = {
+		type: "group",
+		name: PropertyGroupName.Content,
+		id: opts.createId(),
+		properties: contentProperties.map((p) => p.id),
+		collapsed: true,
+	};
+
 	return {
-		nestedProperties: [...transformProperties, ...dimensionProperties],
-		topLevelProperties: [dimensionsGroup, transformGroup],
+		nestedProperties: [...transformProperties, ...dimensionProperties, ...contentProperties],
+		topLevelProperties: [contentGroup, dimensionsGroup, transformGroup],
 	};
 };
 

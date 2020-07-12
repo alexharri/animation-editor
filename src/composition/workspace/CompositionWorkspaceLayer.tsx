@@ -55,27 +55,49 @@ const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 		return getLayerCompositionProperties(layer.id, state.compositions);
 	});
 
-	const nameToProperty = properties.reduce((obj, p) => {
-		const value = propertyToValue[p.id] ?? p.value;
-		(obj as any)[PropertyName[p.name]] = value.computedValue;
-		return obj;
-	}, {} as { [key in keyof typeof PropertyName]: number });
+	const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
+		(obj, p) => {
+			const value = propertyToValue[p.id] ?? p.value;
+			(obj as any)[PropertyName[p.name]] = value.computedValue;
+			return obj;
+		},
+		{} as any,
+	);
 
-	const { Width, Height, PositionX, PositionY, Scale, Opacity, Rotation } = nameToProperty;
+	const {
+		Width,
+		Height,
+		PositionX,
+		PositionY,
+		Scale,
+		Opacity,
+		Rotation,
+		Fill,
+		StrokeWidth,
+		StrokeColor,
+		BorderRadius,
+	} = nameToProperty;
+
+	const fillColor = `rgba(${Fill.join(",")})`;
+	const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
 	return (
-		<div
+		<rect
+			width={Width}
+			height={Height}
+			rx={BorderRadius}
 			className={s("element")}
 			style={{
-				width: Width,
-				height: Height,
 				left: 0,
 				top: 0,
 				opacity: Opacity,
-				border: props.isSelected ? "1px solid cyan" : undefined,
+				fill: fillColor,
+				strokeWidth: StrokeWidth,
+				stroke: strokeColor,
 				transform: `translateX(${PositionX}px) translateY(${PositionY}px) scale(${Scale}) rotate(${Rotation}deg)`,
+				transformOrigin: `${Width / 2}px ${Height / 2}px`,
 			}}
-		></div>
+		/>
 	);
 };
 

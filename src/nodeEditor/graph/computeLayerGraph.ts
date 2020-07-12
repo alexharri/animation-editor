@@ -11,8 +11,8 @@ type Fn = (
 	graph?: NodeEditorGraphState,
 ) => {
 	[propertyId: string]: {
-		computedValue: number;
-		rawValue: number;
+		computedValue: any;
+		rawValue: any;
 	};
 };
 
@@ -25,8 +25,8 @@ export const computeLayerGraph = (graph?: NodeEditorGraphState): Fn => {
 
 		return properties.reduce<{
 			[propertyId: string]: {
-				computedValue: number;
-				rawValue: number;
+				computedValue: any;
+				rawValue: any;
 			};
 		}>((obj, p) => {
 			const rawValue = p.timelineId

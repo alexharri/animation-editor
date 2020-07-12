@@ -1,10 +1,10 @@
 import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorNodeType, ValueType } from "~/types";
+import { NodeEditorNodeType, ValueType, RGBAColor } from "~/types";
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
-import { interpolate } from "~/util/math";
+import { interpolate, capToRange } from "~/util/math";
 import { getExpressionIO } from "~/util/math/expressions";
 import * as mathjs from "mathjs";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
@@ -36,6 +36,31 @@ const parseNum = (arg: ComputeNodeArg): number => {
 				throw new Error("Unsuccessful conversion from Arg of type Any to Number");
 			}
 			return n;
+		}
+		default:
+			throw new Error(`Unexpected Arg Type '${arg.type}'`);
+	}
+};
+
+const parseColor = (arg: ComputeNodeArg): RGBAColor => {
+	switch (arg.type) {
+		case ValueType.Color:
+			return arg.value;
+		case ValueType.Any: {
+			if (Array.isArray(arg.value)) {
+				const [r, g, b, a] = arg.value.map((n) => capToRange(0, 255, parseInt(n)));
+				const color: RGBAColor = [r, g, b, a];
+
+				for (let i = 0; i < color.length; i += 1) {
+					if (isNaN(color[i])) {
+						throw new Error("Unsuccessful conversion from Arg of type Any to Number");
+					}
+				}
+
+				return color;
+			}
+
+			throw new Error("Unsuccessful conversion from Arg of type Any to Number");
 		}
 		default:
 			throw new Error(`Unexpected Arg Type '${arg.type}'`);
@@ -132,6 +157,10 @@ const toArg = {
 		type: ValueType.Rect,
 		value,
 	}),
+	color: (value: RGBAColor) => ({
+		type: ValueType.Color,
+		value,
+	}),
 	any: (value: any) => ({
 		type: ValueType.Any,
 		value,
@@ -208,6 +237,24 @@ const compute: {
 		const x = parseNum(args[0]);
 		const y = parseNum(args[1]);
 		return [toArg.vec2(Vec2.new(x, y))];
+	},
+
+	[Type.color_input]: (
+		_args,
+		_ctx,
+		state: NodeEditorNodeState<NodeEditorNodeType.color_input>,
+	) => {
+		return [toArg.color(state.color)];
+	},
+
+	[Type.color_from_rgba_factors]: (args) => {
+		const [r, g, b, a] = args.map((x) => parseNum(x));
+		return [toArg.color([r, g, b, a])];
+	},
+
+	[Type.color_to_rgba_factors]: (args) => {
+		const color = parseColor(args[0]);
+		return color.map((x) => toArg.number(x));
 	},
 
 	[Type.expr]: (args, _ctx, state: NodeEditorNodeState<NodeEditorNodeType.expr>) => {

@@ -120,7 +120,23 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 					label: "Linear Interpolation",
 				}),
 			],
-			default: true,
+		},
+		{
+			label: "Color",
+			options: [
+				createAddNodeOption({
+					type: NodeEditorNodeType.color_input,
+					label: "Color Input",
+				}),
+				createAddNodeOption({
+					type: NodeEditorNodeType.color_from_rgba_factors,
+					label: "From RGBA Factors",
+				}),
+				createAddNodeOption({
+					type: NodeEditorNodeType.color_to_rgba_factors,
+					label: "To RGBA Factors",
+				}),
+			],
 		},
 		{
 			label: "Conversion",
@@ -134,7 +150,6 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 					label: "Radians to Degrees",
 				}),
 			],
-			default: true,
 		},
 		{
 			label: "Math",
@@ -144,7 +159,6 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 					label: "Expression",
 				}),
 			],
-			default: true,
 		},
 	];
 };
