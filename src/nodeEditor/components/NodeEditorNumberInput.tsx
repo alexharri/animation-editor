@@ -33,10 +33,16 @@ interface Props {
 	horizontalPadding?: boolean;
 	paddingRight?: boolean;
 	paddingLeft?: boolean;
+	decimalPlaces?: number;
 }
 
 export const NodeEditorNumberInput: React.FC<Props> = (props) => {
-	const { horizontalPadding = false, paddingLeft = false, paddingRight = false } = props;
+	const {
+		horizontalPadding = false,
+		paddingLeft = false,
+		paddingRight = false,
+		decimalPlaces,
+	} = props;
 	return (
 		<div className={s("container", { horizontalPadding, paddingLeft, paddingRight })}>
 			<NumberInput
@@ -46,7 +52,7 @@ export const NodeEditorNumberInput: React.FC<Props> = (props) => {
 				onChangeEnd={props.onChangeEnd}
 				max={props.max}
 				min={props.min}
-				decimalPlaces={1}
+				decimalPlaces={decimalPlaces}
 				fillWidth
 				fullWidth
 			/>

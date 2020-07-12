@@ -170,6 +170,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 					min={0}
 					max={255}
 					horizontalPadding
+					decimalPlaces={0}
 				/>
 			))}
 			{[3].map((i) => (
