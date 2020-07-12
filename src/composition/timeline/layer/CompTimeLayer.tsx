@@ -61,16 +61,14 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 				layerId={layer.id}
 				graphId={layer.graphId}
 			>
-				{layer.properties.map((id) => {
-					return (
-						<CompTimeLayerProperty
-							compositionId={props.compositionId}
-							id={id}
-							key={id}
-							depth={0}
-						/>
-					);
-				})}
+				{layer.properties.map((id) => (
+					<CompTimeLayerProperty
+						compositionId={props.compositionId}
+						id={id}
+						key={id}
+						depth={0}
+					/>
+				))}
 			</CompTimeLayerPropertyToValue>
 		</>
 	);
