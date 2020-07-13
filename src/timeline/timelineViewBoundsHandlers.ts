@@ -1,5 +1,7 @@
 import { ViewBoundsProps } from "~/timeline/ViewBounds";
 
+const MIN_FRAMES_BETWEEN = 24;
+
 export const viewBoundsHandlers = {
 	onLeftHandleMouseDown: (_e: React.MouseEvent, props: ViewBoundsProps) => {
 		props.requestUpdate(({ addListener, update, submit }) => {
@@ -7,9 +9,11 @@ export const viewBoundsHandlers = {
 			addListener.repeated("mousemove", (e) => {
 				const pos = Vec2.fromEvent(e);
 
+				const tOfFrame = 1 / props.compositionLength;
+
 				let t = pos.subX(left).x / width;
 
-				t = Math.min(t, viewBounds[1]);
+				t = Math.min(t, viewBounds[1] - tOfFrame * MIN_FRAMES_BETWEEN);
 				t = Math.max(t, 0);
 
 				update([t, viewBounds[1]]);
@@ -25,9 +29,11 @@ export const viewBoundsHandlers = {
 			addListener.repeated("mousemove", (e) => {
 				const pos = Vec2.fromEvent(e);
 
+				const tOfFrame = 1 / props.compositionLength;
+
 				let t = pos.subX(left).x / width;
 
-				t = Math.max(t, viewBounds[0]);
+				t = Math.max(t, viewBounds[0] + tOfFrame * MIN_FRAMES_BETWEEN);
 				t = Math.min(t, 1);
 
 				update([viewBounds[0], t]);

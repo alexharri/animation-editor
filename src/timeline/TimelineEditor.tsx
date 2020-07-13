@@ -6,6 +6,7 @@ import { connectActionState } from "~/state/stateUtils";
 import { timelineHandlers } from "~/timeline/timelineHandlers";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { Timeline } from "~/timeline/timelineTypes";
+import { cssVariables } from "~/cssVariables";
 
 interface OwnProps {
 	ids: string[];
@@ -57,7 +58,7 @@ const TimelineEditorComponent: React.FC<Props> = (props) => {
 	const { width, height } = viewport;
 
 	return (
-		<div>
+		<div style={{ background: cssVariables.gray400 }}>
 			<canvas
 				ref={canvasRef}
 				height={height}

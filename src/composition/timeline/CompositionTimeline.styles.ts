@@ -16,39 +16,13 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	left: css`
-		background: ${cssVariables.dark500};
+		background: ${cssVariables.dark600};
 		margin-right: 4px;
 	`,
 
 	right: css`
 		background: ${cssVariables.gray500};
 		overflow: hidden;
-	`,
-
-	scrubContainer: css`
-		height: 24px;
-		position: relative;
-		z-index: 1;
-		background: ${cssVariables.dark600};
-	`,
-
-	scrubHead: css`
-		height: 16px;
-		background: red;
-		width: 17px;
-		position: absolute;
-		top: 8px;
-		transform: translateX(-50%);
-		cursor: grab;
-	`,
-
-	scrubLine: css`
-		position: absolute;
-		top: 0;
-		left: 8px;
-		width: 1px;
-		background: red;
-		pointer-events: none;
 	`,
 
 	separator: css`

@@ -37,7 +37,11 @@ import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
 import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
-import { TIMELINE_CP_TX_MIN, TIMELINE_CP_TX_MAX } from "~/constants";
+import {
+	TIMELINE_CP_TX_MIN,
+	TIMELINE_CP_TX_MAX,
+	TIMELINE_CANVAS_END_START_BUFFER,
+} from "~/constants";
 
 const getPathFromKeyframes = (k0: TimelineKeyframe, k1: TimelineKeyframe): CubicBezier | Line => {
 	if (k0.controlPointRight && k1.controlPointLeft) {
@@ -211,9 +215,15 @@ export const transformGlobalToTimelineX = (
 	width: number,
 	length: number,
 ): number => {
-	const xt = (vecX - left) / width;
+	const canvasWidth = width - TIMELINE_CANVAS_END_START_BUFFER * 2;
+	const canvasLeft = left + TIMELINE_CANVAS_END_START_BUFFER;
+
+	const xt = (vecX - canvasLeft) / canvasWidth;
+
 	const [xMin, xMax] = viewBounds;
-	return (xMin + (xMax - xMin) * xt) * length;
+	let x = (xMin + (xMax - xMin) * xt) * (length - 1);
+
+	return x;
 };
 
 export const transformGlobalToTimelinePosition = (
@@ -227,9 +237,12 @@ export const transformGlobalToTimelinePosition = (
 ): Vec2 => {
 	const { timelines, viewBounds, viewport } = options;
 
-	let pos = vec.subY(viewport.top).subX(viewport.left);
+	const canvasWidth = viewport.width - TIMELINE_CANVAS_END_START_BUFFER * 2;
+	const canvasLeft = viewport.left + TIMELINE_CANVAS_END_START_BUFFER;
 
-	const xt = pos.x / viewport.width;
+	let pos = vec.subY(viewport.top).subX(canvasLeft);
+
+	const xt = pos.x / canvasWidth;
 	const yt = pos.y / viewport.height;
 
 	const timelinePaths = timelines.map((timeline) =>
@@ -239,7 +252,7 @@ export const transformGlobalToTimelinePosition = (
 	const [yUp, yLow] = getTimelineYBoundsFromPaths(timelines, timelinePaths);
 	const [xMin, xMax] = viewBounds;
 
-	const x = (xMin + (xMax - xMin) * xt) * options.length;
+	const x = (xMin + (xMax - xMin) * xt) * (options.length - 1);
 	pos.x = x;
 
 	const y = interpolate(yUp, yLow, yt);

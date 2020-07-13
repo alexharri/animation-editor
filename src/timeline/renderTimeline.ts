@@ -14,6 +14,7 @@ import {
 import { Timeline } from "~/timeline/timelineTypes";
 import { cssVariables } from "~/cssVariables";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { TIMELINE_CANVAS_END_START_BUFFER } from "~/constants";
 
 interface RenderTimelineOptions {
 	ctx: Ctx;
@@ -32,13 +33,20 @@ export const createToTimelineViewportX = (options: {
 	viewBounds: [number, number];
 	width: number;
 }): ((value: number) => number) => {
-	const { viewBounds, width } = options;
+	const { viewBounds, width: realWidth } = options;
+
+	const renderWidth = realWidth;
+	const canvasWidth = realWidth - TIMELINE_CANVAS_END_START_BUFFER * 2;
 
 	const [tMin, tMax] = viewBounds;
 
 	return (index: number) => {
 		const length = options.length;
-		return translateToRange((index / length) * width, tMin * width, tMax * width, width);
+		const t = index / length;
+		return (
+			translateToRange(t * renderWidth, tMin * renderWidth, tMax * renderWidth, canvasWidth) +
+			TIMELINE_CANVAS_END_START_BUFFER
+		);
 	};
 };
 
@@ -78,6 +86,35 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 
 	ctx.clearRect(0, 0, width, height);
 
+	const atZero = toViewportX(0);
+	const atEnd = toViewportX(options.length - 1);
+
+	if (atZero > 0) {
+		renderRect(
+			ctx,
+			{
+				left: atZero - TIMELINE_CANVAS_END_START_BUFFER - 1,
+				width: TIMELINE_CANVAS_END_START_BUFFER,
+				top: 0,
+				height,
+			},
+			{ fillColor: cssVariables.dark500 },
+		);
+	}
+
+	if (atEnd < width) {
+		renderRect(
+			ctx,
+			{
+				left: atEnd + 1,
+				width: TIMELINE_CANVAS_END_START_BUFFER,
+				top: 0,
+				height,
+			},
+			{ fillColor: cssVariables.dark500 },
+		);
+	}
+
 	const { _yBounds, _yPan } = timelines[0];
 
 	const timelinePaths = timelines.map((timeline) =>
@@ -94,12 +131,12 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 		const y = toViewportY(ticks[i]);
 		const x1 = options.width;
 		renderLine(ctx, Vec2.new(0, y), Vec2.new(x1, y), {
-			color: cssVariables.dark600,
+			color: cssVariables.dark500,
 			strokeWidth: 1,
 		});
 		ctx.font = `10px ${cssVariables.fontFamily}`;
 		ctx.fillStyle = cssVariables.light500;
-		ctx.fillText(ticks[i].toString(), 8, y);
+		ctx.fillText(ticks[i].toString(), 8, y - 2);
 	}
 
 	timelines.forEach((timeline) => {
