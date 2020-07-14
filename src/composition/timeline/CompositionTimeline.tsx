@@ -71,7 +71,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 
 		if (down) {
 			spaceDownAtTimeRef.current = Date.now();
-		} else if (Date.now() - spaceDownAtTimeRef.current < 500) {
+		} else if (Date.now() - spaceDownAtTimeRef.current < 250) {
 			requestAction({ history: true }, (params) => {
 				playbackParamsRef.current = params;
 

@@ -96,7 +96,7 @@ export const renderTimeline = (options: RenderTimelineOptions): void => {
 	ctx.clearRect(0, 0, width, height);
 
 	const atZero = toViewportX(0);
-	const atEnd = toViewportX(options.length - 1);
+	const atEnd = toViewportX(options.length);
 
 	if (atZero > 0) {
 		renderRect(
@@ -115,8 +115,8 @@ export const renderTimeline = (options: RenderTimelineOptions): void => {
 		renderRect(
 			ctx,
 			{
-				left: atEnd + 1,
-				width: TIMELINE_CANVAS_END_START_BUFFER,
+				left: atEnd,
+				width: width - atEnd + 1,
 				top: 0,
 				height,
 			},

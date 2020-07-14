@@ -80,7 +80,7 @@ const CompTimeScrubberComponent: React.FC<Props> = (props) => {
 		ctx.fillStyle = cssVariables.light500;
 
 		if (useSec) {
-			for (let i = start - (start % tickBy); i < end; i += tickBy) {
+			for (let i = start - (start % tickBy); i <= end; i += tickBy) {
 				const x = toTimelineX(i);
 
 				const t = `${Number((i / 60).toFixed(2))}s`;
@@ -94,7 +94,7 @@ const CompTimeScrubberComponent: React.FC<Props> = (props) => {
 			}
 		} else {
 			const fStart = start - (start % nBetween);
-			for (let i = fStart; i < end; i += nBetween) {
+			for (let i = fStart; i <= end; i += nBetween) {
 				const x = toTimelineX(i);
 				const d = i % 60;
 

@@ -33,7 +33,7 @@ export const compTimeHandlers = {
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
-	) => {
+	): void => {
 		const { composition, viewport, viewBounds } = options;
 
 		const initialPosition = Vec2.fromEvent(e);
@@ -75,7 +75,7 @@ export const compTimeHandlers = {
 			width: number;
 			left: number;
 		},
-	) => {
+	): void => {
 		const { viewBounds, width, left } = options;
 
 		const mousePos = Vec2.fromEvent(e).subX(left);
@@ -121,7 +121,7 @@ export const compTimeHandlers = {
 			width: number;
 			left: number;
 		},
-	) => {
+	): void => {
 		const { viewBounds, length, width, left } = options;
 
 		const initialPos = transformGlobalToTimelineX(
@@ -180,7 +180,7 @@ export const compTimeHandlers = {
 		compositionId: string,
 		propertyId: string,
 		timelineId: string,
-	) => {
+	): void => {
 		const { compositions, timelines, timelineSelection } = getActionState();
 		const composition = compositions.compositions[compositionId];
 		const property = compositions.properties[propertyId] as CompositionProperty;
@@ -221,7 +221,7 @@ export const compTimeHandlers = {
 		e: React.MouseEvent,
 		ref: React.RefObject<HTMLDivElement>,
 		compositionId: string,
-	) => {
+	): void => {
 		if (e.target !== ref.current) {
 			return;
 		}
@@ -233,12 +233,12 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onRightClickOut: (e: React.MouseEvent, compositionId: string) => {
+	onRightClickOut: (e: React.MouseEvent, compositionId: string): void => {
 		const position = Vec2.fromEvent(e);
 		createCompTimeContextMenu(position, { compositionId });
 	},
 
-	onLayerRightClick: (e: React.MouseEvent, layer: CompositionLayer) => {
+	onLayerRightClick: (e: React.MouseEvent, layer: CompositionLayer): void => {
 		const position = Vec2.fromEvent(e);
 		createCompTimeContextMenu(position, {
 			compositionId: layer.compositionId,
@@ -246,7 +246,11 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onLayerNameMouseDown: (_e: React.MouseEvent, compositionId: string, propertyId: string) => {
+	onLayerNameMouseDown: (
+		_e: React.MouseEvent,
+		compositionId: string,
+		propertyId: string,
+	): void => {
 		requestAction({ history: true, shouldAddToStack: didCompSelectionChange }, (params) => {
 			const { dispatch, submitAction } = params;
 
@@ -261,7 +265,7 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onLayerGraphMouseDown: (_e: React.MouseEvent, layerId: string) => {
+	onLayerGraphMouseDown: (_e: React.MouseEvent, layerId: string): void => {
 		const compositionState = getActionState().compositions;
 		const layer = compositionState.layers[layerId];
 
@@ -284,7 +288,7 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, layerId: string) => {
+	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, layerId: string): void => {
 		const initialMousePos = Vec2.fromEvent(e);
 
 		const compositionState = getActionState().compositions;
@@ -361,7 +365,11 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onPropertyNameMouseDown: (_e: React.MouseEvent, compositionId: string, propertyId: string) => {
+	onPropertyNameMouseDown: (
+		_e: React.MouseEvent,
+		compositionId: string,
+		propertyId: string,
+	): void => {
 		requestAction({ history: true, shouldAddToStack: didCompSelectionChange }, (params) => {
 			const { dispatch, submitAction } = params;
 

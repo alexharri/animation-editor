@@ -42,7 +42,7 @@ export const getSavedActionState = (): ActionState | null => {
 	}
 };
 
-export const saveActionState = () => {
+export const saveActionState = (): void => {
 	const actionState = getActionState();
 	const json = JSON.stringify(actionState);
 	localStorage.setItem(key, json);

@@ -269,7 +269,7 @@ export const transformGlobalToTimelineX = (
 	const xt = (vecX - canvasLeft) / canvasWidth;
 
 	const [xMin, xMax] = viewBounds;
-	const x = (xMin + (xMax - xMin) * xt) * (length - 1);
+	const x = (xMin + (xMax - xMin) * xt) * length;
 
 	return x;
 };
@@ -305,7 +305,7 @@ export const transformGlobalToTimelinePosition = (
 	);
 	const [xMin, xMax] = viewBounds;
 
-	const x = (xMin + (xMax - xMin) * xt) * (options.length - 1);
+	const x = (xMin + (xMax - xMin) * xt) * options.length;
 	pos.x = x;
 
 	const y = interpolate(yUp, yLow, yt);
