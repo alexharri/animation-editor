@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { connectActionState } from "~/state/stateUtils";
+import { connectActionState, getActionState } from "~/state/stateUtils";
 import {
 	CompositionTimelineAreaState,
 	compositionTimelineAreaActions,
@@ -9,7 +9,11 @@ import {
 import styles from "~/composition/timeline/CompositionTimeline.styles";
 import { Composition, CompositionProperty } from "~/composition/compositionTypes";
 import { splitRect, capToRange } from "~/util/math";
-import { RequestActionCallback, requestAction } from "~/listener/requestAction";
+import {
+	RequestActionCallback,
+	requestAction,
+	RequestActionParams,
+} from "~/listener/requestAction";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { CompTimeLayer } from "~/composition/timeline/layer/CompTimeLayer";
 import { ViewBounds } from "~/timeline/ViewBounds";
@@ -17,7 +21,7 @@ import { areaActions } from "~/area/state/areaActions";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { TimelineEditor } from "~/timeline/TimelineEditor";
-import { CompositionState } from "~/composition/state/compositionReducer";
+import { CompositionState, compositionActions } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { CompTimeScrubber } from "~/composition/timeline/core/CompTimeScrubber";
@@ -42,6 +46,9 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 
 	let [viewportLeft, viewportRight] = splitRect("horizontal", props, t, SEPARATOR_WIDTH);
 
+	const spaceDownAtTimeRef = useRef(0);
+	const playbackParamsRef = useRef<RequestActionParams | null>(null);
+
 	const zoomTarget = useRef<HTMLDivElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
 
@@ -53,6 +60,48 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 	useKeyDownEffect("Space", (down) => {
 		if (panTarget.current) {
 			panTarget.current.style.display = down ? "block" : "";
+		}
+
+		if (playbackParamsRef.current) {
+			spaceDownAtTimeRef.current = 0;
+			playbackParamsRef.current.cancelAction();
+			playbackParamsRef.current = null;
+			return;
+		}
+
+		if (down) {
+			spaceDownAtTimeRef.current = Date.now();
+		} else if (Date.now() - spaceDownAtTimeRef.current < 500) {
+			requestAction({ history: true }, (params) => {
+				playbackParamsRef.current = params;
+
+				const {
+					frameIndex: initialFrameIndex,
+				} = getActionState().compositions.compositions[props.areaState.compositionId];
+
+				const len = props.composition.length;
+				let f = initialFrameIndex;
+
+				const tick = () => {
+					if (params.cancelled()) {
+						playbackParamsRef.current = null;
+						return;
+					}
+
+					f++;
+
+					if (f >= len) {
+						playbackParamsRef.current = null;
+						params.cancelAction();
+					} else {
+						params.dispatch(compositionActions.setFrameIndex(props.composition.id, f));
+					}
+
+					requestAnimationFrame(tick);
+				};
+
+				requestAnimationFrame(tick);
+			});
 		}
 	});
 

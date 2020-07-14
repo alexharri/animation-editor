@@ -9,7 +9,7 @@ export function renderCircle(
 	ctx: CanvasRenderingContext2D,
 	vectors: Vec2 | Vec2[],
 	opts: RenderCircleOptions,
-) {
+): void {
 	const vecs = Array.isArray(vectors) ? vectors : [vectors];
 
 	const { color, radius, strokeWidth = 0, strokeColor } = opts;
@@ -43,7 +43,7 @@ export function renderRect(
 	ctx: CanvasRenderingContext2D,
 	rects: Rect | Rect[],
 	opts: RenderRectOptions,
-) {
+): void {
 	const recArr = Array.isArray(rects) ? rects : [rects];
 
 	const { fillColor, strokeWidth = 0, strokeColor } = opts;
@@ -78,7 +78,7 @@ export function renderDiamond(
 	ctx: CanvasRenderingContext2D,
 	vectors: Vec2 | Vec2[],
 	opts: RenderDiamondOptions,
-) {
+): void {
 	const vecs = Array.isArray(vectors) ? vectors : [vectors];
 
 	const { fillColor, width, height, strokeWidth = 0, strokeColor } = opts;
@@ -111,6 +111,7 @@ export function renderDiamond(
 export interface RenderLineOptions {
 	color: string;
 	strokeWidth: number;
+	lineDash?: number[];
 }
 
 export function renderLine(
@@ -118,7 +119,7 @@ export function renderLine(
 	a: Vec2,
 	b: Vec2,
 	opts: RenderLineOptions,
-) {
+): void {
 	const { color, strokeWidth } = opts;
 
 	ctx.beginPath();
@@ -126,7 +127,13 @@ export function renderLine(
 	ctx.lineTo(b.x, b.y);
 	ctx.strokeStyle = color;
 	ctx.lineWidth = strokeWidth;
+	if (opts.lineDash) {
+		ctx.setLineDash(opts.lineDash);
+	}
 	ctx.stroke();
+
+	// Reset
+	ctx.setLineDash([]);
 }
 
 export interface RenderCubicBezierOptions {
@@ -138,7 +145,7 @@ export function renderCubicBezier(
 	ctx: CanvasRenderingContext2D,
 	bezier: CubicBezier,
 	opts: RenderCubicBezierOptions,
-) {
+): void {
 	const { color, strokeWidth } = opts;
 	const [p0, p1, p2, p3] = bezier;
 
@@ -153,9 +160,13 @@ export function renderCubicBezier(
 export interface RenderPathOptions {
 	color: string;
 	strokeWidth: number;
+	lineDash: number[];
 }
 
-export function renderPath(ctx: Ctx, path: CubicBezier | Line, opts: RenderPathOptions) {
+/**
+ * @todo Implement `lineDash` option
+ */
+export function renderPath(ctx: Ctx, path: CubicBezier | Line, opts: RenderPathOptions): void {
 	if (path.length === 2) {
 		renderLine(ctx, path[0], path[1], opts);
 	} else {
@@ -172,7 +183,7 @@ export function renderQuadraticBezier(
 	ctx: CanvasRenderingContext2D,
 	vectors: [Vec2, Vec2, Vec2],
 	opts: RenderQuadraticBezierOptions,
-) {
+): void {
 	const [p0, p1, p2] = vectors;
 	const { color, strokeWidth } = opts;
 
@@ -181,5 +192,6 @@ export function renderQuadraticBezier(
 	ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
 	ctx.strokeStyle = color;
 	ctx.lineWidth = strokeWidth;
+
 	ctx.stroke();
 }
