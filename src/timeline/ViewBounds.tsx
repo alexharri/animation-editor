@@ -25,19 +25,16 @@ export interface ViewBoundsProps {
 export const ViewBounds: React.FC<ViewBoundsProps> = (props) => {
 	const { viewBounds, width: renderWidth } = props;
 
-	const width = renderWidth - VIEW_BOUNDS_HANDLE_WIDTH * 2;
+	const canvasWidth = renderWidth - VIEW_BOUNDS_HANDLE_WIDTH * 2;
 
-	const left = width * viewBounds[0] + VIEW_BOUNDS_HANDLE_WIDTH;
-	const right = width * (1 - viewBounds[1]) + VIEW_BOUNDS_HANDLE_WIDTH;
+	const left = canvasWidth * viewBounds[0] + VIEW_BOUNDS_HANDLE_WIDTH;
+	const right = canvasWidth * (1 - viewBounds[1]) + VIEW_BOUNDS_HANDLE_WIDTH;
 
 	return (
 		<div className={s("viewBounds")}>
 			<div
 				className={s("viewBounds__inner")}
-				style={{
-					left: `${left}px`,
-					right: `${right}px`,
-				}}
+				style={{ left, right }}
 				onMouseDown={separateLeftRightMouse({
 					left: (e) => viewBoundsHandlers.onMoveViewBounds(e, props),
 				})}
