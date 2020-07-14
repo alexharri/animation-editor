@@ -23,9 +23,9 @@ export interface ViewBoundsProps {
 }
 
 export const ViewBounds: React.FC<ViewBoundsProps> = (props) => {
-	const { viewBounds, width: realWidth } = props;
+	const { viewBounds, width: renderWidth } = props;
 
-	const width = realWidth - VIEW_BOUNDS_HANDLE_WIDTH * 2;
+	const width = renderWidth - VIEW_BOUNDS_HANDLE_WIDTH * 2;
 
 	const left = width * viewBounds[0] + VIEW_BOUNDS_HANDLE_WIDTH;
 	const right = width * (1 - viewBounds[1]) + VIEW_BOUNDS_HANDLE_WIDTH;
