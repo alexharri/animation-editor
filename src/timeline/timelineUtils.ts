@@ -37,7 +37,11 @@ import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
 import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
-import { TIMELINE_CP_TX_MIN, TIMELINE_CP_TX_MAX } from "~/constants";
+import {
+	TIMELINE_CP_TX_MIN,
+	TIMELINE_CP_TX_MAX,
+	TIMELINE_CANVAS_END_START_BUFFER,
+} from "~/constants";
 
 const getPathFromKeyframes = (k0: TimelineKeyframe, k1: TimelineKeyframe): CubicBezier | Line => {
 	if (k0.controlPointRight && k1.controlPointLeft) {
@@ -137,68 +141,116 @@ export function getTimelineValueAtIndex(
 }
 
 export const getTimelineYBoundsFromPaths = (
+	viewBounds: [number, number],
+	length: number,
 	timelines: Timeline[],
 	_timelinePaths: Array<CubicBezier | Line>[],
 ): [number, number] => {
-	if (timelines.length === 1 && timelines[0].keyframes.length === 1) {
-		const { value } = timelines[0].keyframes[0];
-		return [value + 10, value - 10];
-	}
-
-	// If no paths exist for a timeline, that means the timeline consists of
-	// a single keyframe.
-	//
-	// Since only the y value matters, we can replace it with a line that
-	// reflects the keyframe's y.
-	const timelinePaths = _timelinePaths.map<Array<CubicBezier | Line>>((paths, i) => {
-		if (paths.length === 0) {
-			const { value, index } = timelines[i].keyframes[0];
-			return [[Vec2.new(index, value), Vec2.new(index + 1, value)]];
+	const timelineYBounds = timelines.map((timeline, i): [number, number] => {
+		if (timeline.keyframes.length === 1) {
+			const { value } = timelines[0].keyframes[0];
+			return [value, value];
 		}
 
-		return paths;
-	});
+		let paths = _timelinePaths[i];
+		const originalPaths = [...paths];
 
-	// Check if all paths are on the same y value. This is most commonly the
-	// case for single-keyframe paths.
-	let areAllSameValue = true;
-	let firstValue = timelines[0].keyframes[0].value;
-	{
-		i: for (let i = 0; i < timelinePaths.length; i += 1) {
-			for (let j = i === 0 ? 1 : 0; j < timelinePaths[i].length; j += 1) {
-				for (let k = 0; k < timelinePaths.length; k += 1) {
-					const { y } = timelinePaths[i][j][k];
-					if (y !== firstValue) {
-						areAllSameValue = false;
-						break i;
+		const iStart = viewBounds[0] * (length - 1);
+		const iEnd = viewBounds[1] * (length - 1);
+
+		// Remove all paths before and after the viewbounds end
+		paths = paths.filter((path) => {
+			if (path[path.length - 1].x < iStart || path[0].x > iEnd) {
+				return false;
+			}
+			return true;
+		});
+
+		const controlPointYsToConsider: number[] = [];
+
+		// Split paths that intersect the viewbounds
+		if (paths.length > 0) {
+			const pathAtStart = paths[0];
+
+			if (pathAtStart[0].x < iStart) {
+				const [, newPathAtStart] = splitTimelinePathAtIndex(pathAtStart, iStart);
+				paths[0] = newPathAtStart;
+
+				if (pathAtStart.length === 4) {
+					for (let j = 1; j < 3; j += 1) {
+						if (pathAtStart[j].x > iStart) {
+							controlPointYsToConsider.push(pathAtStart[j].y);
+						}
 					}
 				}
 			}
-		}
-	}
 
-	if (areAllSameValue) {
-		return [firstValue + 10, firstValue - 10];
-	}
+			const pathAtEnd = paths[paths.length - 1];
 
-	let yUpper = -Infinity;
-	let yLower = Infinity;
+			if (pathAtEnd[pathAtEnd.length - 1].x > iEnd) {
+				const [newPathAtEnd] = splitTimelinePathAtIndex(pathAtEnd, iEnd);
+				paths[paths.length - 1] = newPathAtEnd;
 
-	for (let i = 0; i < timelinePaths.length; i += 1) {
-		for (let j = 0; j < timelinePaths[i].length; j += 1) {
-			for (let k = 0; k < timelinePaths[i][j].length; k += 1) {
-				const vec = timelinePaths[i][j][k];
-				if (yUpper < vec.y) {
-					yUpper = vec.y;
-				}
-				if (yLower > vec.y) {
-					yLower = vec.y;
+				if (pathAtEnd.length === 4) {
+					for (let j = 1; j < 3; j += 1) {
+						if (pathAtEnd[j].x < iEnd) {
+							controlPointYsToConsider.push(pathAtEnd[j].y);
+						}
+					}
 				}
 			}
+		} else {
+			const startIndex = originalPaths[0][0].x;
+			const lastPath = originalPaths[originalPaths.length - 1];
+			const y = startIndex > iStart ? originalPaths[0][0].y : lastPath[lastPath.length - 1].y;
+			return [y, y];
 		}
-	}
+
+		if (paths.length) {
+			let yUpper = -Infinity;
+			let yLower = Infinity;
+
+			for (let i = 0; i < paths.length; i += 1) {
+				for (let j = 0; j < paths[i].length; j += 1) {
+					const vec = paths[i][j];
+					if (yUpper < vec.y) {
+						yUpper = vec.y;
+					}
+					if (yLower > vec.y) {
+						yLower = vec.y;
+					}
+				}
+			}
+
+			for (let i = 0; i < controlPointYsToConsider.length; i += 1) {
+				const value = controlPointYsToConsider[i];
+				if (yUpper < value) {
+					yUpper = value;
+				}
+				if (yLower > value) {
+					yLower = value;
+				}
+			}
+
+			return [yUpper, yLower];
+		} else {
+			const value =
+				iEnd < timeline.keyframes[0].index
+					? timeline.keyframes[0].value
+					: timeline.keyframes[timeline.keyframes.length - 1].value;
+
+			return [value, value];
+		}
+	});
+
+	const yUpper = Math.max(...timelineYBounds.map(([value]) => value));
+	const yLower = Math.min(...timelineYBounds.map(([, value]) => value));
 
 	const diff = yUpper - yLower;
+
+	if (diff === 0) {
+		return [yUpper + 10, yUpper - 10];
+	}
 
 	// Add .1 of the diff on each side for padding.
 	return [yUpper + diff * 0.1, yLower - diff * 0.1];
@@ -211,9 +263,15 @@ export const transformGlobalToTimelineX = (
 	width: number,
 	length: number,
 ): number => {
-	const xt = (vecX - left) / width;
+	const canvasWidth = width - TIMELINE_CANVAS_END_START_BUFFER * 2;
+	const canvasLeft = left + TIMELINE_CANVAS_END_START_BUFFER;
+
+	const xt = (vecX - canvasLeft) / canvasWidth;
+
 	const [xMin, xMax] = viewBounds;
-	return (xMin + (xMax - xMin) * xt) * length;
+	const x = (xMin + (xMax - xMin) * xt) * length;
+
+	return x;
 };
 
 export const transformGlobalToTimelinePosition = (
@@ -227,16 +285,24 @@ export const transformGlobalToTimelinePosition = (
 ): Vec2 => {
 	const { timelines, viewBounds, viewport } = options;
 
-	let pos = vec.subY(viewport.top).subX(viewport.left);
+	const canvasWidth = viewport.width - TIMELINE_CANVAS_END_START_BUFFER * 2;
+	const canvasLeft = viewport.left + TIMELINE_CANVAS_END_START_BUFFER;
 
-	const xt = pos.x / viewport.width;
+	const pos = vec.subY(viewport.top).subX(canvasLeft);
+
+	const xt = pos.x / canvasWidth;
 	const yt = pos.y / viewport.height;
 
 	const timelinePaths = timelines.map((timeline) =>
 		timelineKeyframesToPathList(timeline.keyframes),
 	);
 
-	const [yUp, yLow] = getTimelineYBoundsFromPaths(timelines, timelinePaths);
+	const [yUp, yLow] = getTimelineYBoundsFromPaths(
+		viewBounds,
+		options.length,
+		timelines,
+		timelinePaths,
+	);
 	const [xMin, xMax] = viewBounds;
 
 	const x = (xMin + (xMax - xMin) * xt) * options.length;
@@ -249,7 +315,7 @@ export const transformGlobalToTimelinePosition = (
 };
 
 const _applyNewControlPointShift = (_timeline: Timeline): Timeline => {
-	let timeline = _timeline;
+	const timeline = _timeline;
 
 	const _newControlPointShift = timeline._newControlPointShift!;
 
@@ -294,7 +360,7 @@ const _applyNewControlPointShift = (_timeline: Timeline): Timeline => {
 };
 
 const _applyControlPointShift = (_timeline: Timeline, selection: TimelineSelection): Timeline => {
-	let timeline = _timeline;
+	const timeline = _timeline;
 
 	const _controlPointShift = timeline._controlPointShift!;
 
@@ -446,7 +512,7 @@ export const applyTimelineIndexAndValueShifts = (
 	_timeline: Timeline,
 	selection: TimelineSelection | undefined,
 ): Timeline => {
-	let timeline = _timeline;
+	const timeline = _timeline;
 
 	if (!selection) {
 		if (
@@ -524,7 +590,7 @@ export const applyTimelineIndexAndValueShifts = (
 /**
  * @returns ticks from lower to upper
  */
-export const generateTimelineTicksFromBounds = ([a, b]: [number, number]) => {
+export const generateTimelineTicksFromBounds = ([a, b]: [number, number]): number[] => {
 	const diff = Math.abs(a - b);
 
 	let fac = 0.0001;
@@ -560,6 +626,36 @@ export function getTimelineSelection(timelineId: string): TimelineSelection {
 	const selection = getActionState().timelineSelection;
 	return selection[timelineId] || { timelineId, keyframes: {} };
 }
+
+export const splitTimelinePathAtIndex = <T extends Line | CubicBezier>(
+	path: T,
+	index: number,
+): [T, T] => {
+	if (path.length === 2) {
+		const t = (index - path[0].x) / (path[1].x - path[0].x);
+		const mid = path[0].lerp(path[1], t);
+		return [[path[0], mid] as T, [mid, path[1]] as T];
+	}
+
+	const bezier = path as CubicBezier;
+	const yVals = path.map((p) => p.y);
+	const maxY = Math.max(...yVals);
+	const minY = Math.min(...yVals);
+
+	const intersectionLine: Line = [Vec2.new(index, maxY), Vec2.new(index, minY)];
+
+	const results = intersectCubicBezierLine(bezier, intersectionLine);
+
+	if (results.length === 0) {
+		console.warn("No results returned from 'intersectBezier3Line' when splitting keyframes.");
+	}
+
+	const splitT = results[0]?.t ?? 0.5;
+
+	const [a, b] = splitCubicBezier(bezier, splitT);
+
+	return [a as T, b as T];
+};
 
 export function splitKeyframesAtIndex(
 	k0: TimelineKeyframe,

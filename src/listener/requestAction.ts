@@ -7,7 +7,7 @@ import { HistoryState } from "~/state/history/historyReducer";
 let _n = 0;
 let _activeRequestToken: null | string = null;
 
-export const getActiveRequestToken = () => _activeRequestToken;
+export const getActiveRequestToken = (): null | string => _activeRequestToken;
 
 interface Options {
 	history?: boolean;
@@ -21,6 +21,7 @@ export interface RequestActionParams {
 	addListener: typeof _addListener;
 	removeListener: typeof removeListener;
 	execOnComplete: (callback: () => void) => void;
+	cancelled: () => boolean;
 }
 
 export interface RequestActionCallback {
@@ -62,6 +63,8 @@ const performRequestedAction = (
 	store.dispatch(historyActions.startAction(actionId));
 
 	callback({
+		cancelled: () => actionId !== getActionId(),
+
 		dispatch: (action, ...args) => {
 			if (Array.isArray(action)) {
 				store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));

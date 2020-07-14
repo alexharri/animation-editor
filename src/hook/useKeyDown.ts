@@ -9,18 +9,19 @@ import { keys } from "~/constants";
 export const useKeyDownEffect = (
 	key: keyof typeof keys,
 	callback: (isKeyDown: boolean) => void,
-) => {
+	dependencies?: React.DependencyList,
+): void => {
 	useEffect(() => {
-		addKeyDownChangeListener(key, callback);
+		addKeyDownChangeListener(key, { allowRepeated: false }, callback);
 		return () => removeKeyDownChangeListener(key, callback);
-	}, []);
+	}, dependencies ?? []);
 };
 
-export const useKeyDown = (key: keyof typeof keys) => {
+export const useKeyDown = (key: keyof typeof keys): boolean => {
 	const [isDown, setIsDown] = useState(isKeyDown(key));
 
 	useEffect(() => {
-		addKeyDownChangeListener(key, setIsDown);
+		addKeyDownChangeListener(key, { allowRepeated: false }, setIsDown);
 		return () => removeKeyDownChangeListener(key, setIsDown);
 	}, []);
 

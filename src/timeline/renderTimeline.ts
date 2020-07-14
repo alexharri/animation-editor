@@ -14,6 +14,7 @@ import {
 import { Timeline } from "~/timeline/timelineTypes";
 import { cssVariables } from "~/cssVariables";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { TIMELINE_CANVAS_END_START_BUFFER } from "~/constants";
 
 interface RenderTimelineOptions {
 	ctx: Ctx;
@@ -32,28 +33,37 @@ export const createToTimelineViewportX = (options: {
 	viewBounds: [number, number];
 	width: number;
 }): ((value: number) => number) => {
-	const { viewBounds, width } = options;
+	const { viewBounds, width: realWidth } = options;
+
+	const renderWidth = realWidth;
+	const canvasWidth = realWidth - TIMELINE_CANVAS_END_START_BUFFER * 2;
 
 	const [tMin, tMax] = viewBounds;
 
 	return (index: number) => {
 		const length = options.length;
-		return translateToRange((index / length) * width, tMin * width, tMax * width, width);
+		const t = index / length;
+		return (
+			translateToRange(t * renderWidth, tMin * renderWidth, tMax * renderWidth, canvasWidth) +
+			TIMELINE_CANVAS_END_START_BUFFER
+		);
 	};
 };
 
-export const createToTimelineViewportY = (options: {
-	timelines: Timeline[];
-	height: number;
-}): ((value: number) => number) => {
-	const { timelines, height } = options;
-
-	const timelinePaths = timelines.map((timeline) =>
-		timelineKeyframesToPathList(timeline.keyframes),
-	);
+export const createToTimelineViewportY = (
+	timelinePaths: (CubicBezier | Line)[][],
+	options: {
+		viewBounds: [number, number];
+		length: number;
+		timelines: Timeline[];
+		height: number;
+	},
+): ((value: number) => number) => {
+	const { timelines, height, viewBounds, length } = options;
 
 	const [yUpper, yLower] =
-		timelines[0]._yBounds || getTimelineYBoundsFromPaths(timelines, timelinePaths);
+		timelines[0]._yBounds ||
+		getTimelineYBoundsFromPaths(viewBounds, length, timelines, timelinePaths);
 	const yUpLowDiff = yUpper - yLower;
 
 	return (value: number) => {
@@ -63,27 +73,62 @@ export const createToTimelineViewportY = (options: {
 	};
 };
 
-export const createToTimelineViewport = (options: RenderTimelineOptions): ((vec: Vec2) => Vec2) => {
+export const createToTimelineViewport = (
+	timelinePaths: (CubicBezier | Line)[][],
+	options: RenderTimelineOptions,
+): ((vec: Vec2) => Vec2) => {
 	const toViewportX = createToTimelineViewportX(options);
-	const toViewportY = createToTimelineViewportY(options);
+	const toViewportY = createToTimelineViewportY(timelinePaths, options);
 	return (vec: Vec2) => Vec2.new(toViewportX(vec.x), toViewportY(vec.y));
 };
 
-export const renderTimeline = (options: RenderTimelineOptions) => {
-	const { ctx, timelines, width, height, selection } = options;
+export const renderTimeline = (options: RenderTimelineOptions): void => {
+	const { ctx, timelines, width, height, selection, viewBounds } = options;
 
-	const toViewportY = createToTimelineViewportY(options);
+	const timelinePaths = timelines.map((timeline) =>
+		timelineKeyframesToPathList(timeline.keyframes),
+	);
+
+	const toViewportY = createToTimelineViewportY(timelinePaths, options);
 	const toViewportX = createToTimelineViewportX(options);
 	const toViewport = (vec: Vec2) => Vec2.new(toViewportX(vec.x), toViewportY(vec.y));
 
 	ctx.clearRect(0, 0, width, height);
 
+	const atZero = toViewportX(0);
+	const atEnd = toViewportX(options.length);
+
+	if (atZero > 0) {
+		renderRect(
+			ctx,
+			{
+				left: atZero - TIMELINE_CANVAS_END_START_BUFFER - 1,
+				width: TIMELINE_CANVAS_END_START_BUFFER,
+				top: 0,
+				height,
+			},
+			{ fillColor: cssVariables.dark500 },
+		);
+	}
+
+	if (atEnd < width) {
+		renderRect(
+			ctx,
+			{
+				left: atEnd,
+				width: width - atEnd + 1,
+				top: 0,
+				height,
+			},
+			{ fillColor: cssVariables.dark500 },
+		);
+	}
+
 	const { _yBounds, _yPan } = timelines[0];
 
-	const timelinePaths = timelines.map((timeline) =>
-		timelineKeyframesToPathList(timeline.keyframes),
-	);
-	const [yUpper, yLower] = _yBounds || getTimelineYBoundsFromPaths(timelines, timelinePaths);
+	const [yUpper, yLower] =
+		_yBounds ||
+		getTimelineYBoundsFromPaths(viewBounds, options.length, timelines, timelinePaths);
 
 	/**
 	 * Ticks
@@ -94,12 +139,12 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 		const y = toViewportY(ticks[i]);
 		const x1 = options.width;
 		renderLine(ctx, Vec2.new(0, y), Vec2.new(x1, y), {
-			color: cssVariables.dark600,
+			color: cssVariables.dark500,
 			strokeWidth: 1,
 		});
 		ctx.font = `10px ${cssVariables.fontFamily}`;
 		ctx.fillStyle = cssVariables.light500;
-		ctx.fillText(ticks[i].toString(), 8, y);
+		ctx.fillText(ticks[i].toString(), 8, y - 2);
 	}
 
 	timelines.forEach((timeline) => {
@@ -110,13 +155,40 @@ export const renderTimeline = (options: RenderTimelineOptions) => {
 			CubicBezier | Line
 		>;
 
+		const color = options.colors[timeline.id] || "red";
 		for (let i = 0; i < paths.length; i += 1) {
-			const color = options.colors[timeline.id] || "red";
 			const path = transformedPaths[i];
 			if (path.length === 4) {
 				renderCubicBezier(ctx, path, { color, strokeWidth: 1 });
 			} else {
 				renderLine(ctx, path[0], path[1], { color, strokeWidth: 1 });
+			}
+		}
+
+		{
+			const { value: startValue, index: startIndex } = keyframes[0];
+			const { value: endValue, index: endIndex } = keyframes[keyframes.length - 1];
+
+			const startX = toViewportX(startIndex);
+			const startY = toViewportY(startValue);
+
+			const endX = toViewportX(endIndex);
+			const endY = toViewportY(endValue);
+
+			if (startX > 0) {
+				renderLine(ctx, Vec2.new(startX, startY), Vec2.new(0, startY), {
+					color,
+					strokeWidth: 1,
+					lineDash: [8, 8],
+				});
+			}
+
+			if (endX < width) {
+				renderLine(ctx, Vec2.new(endX, endY), Vec2.new(width, endY), {
+					color,
+					strokeWidth: 1,
+					lineDash: [8, 8],
+				});
 			}
 		}
 

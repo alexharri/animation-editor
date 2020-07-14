@@ -17,10 +17,11 @@ import { areaActions } from "~/area/state/areaActions";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { TimelineEditor } from "~/timeline/TimelineEditor";
-import { createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
+import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
+import { useCompositionTimelinePlayback } from "~/composition/timeline/useCompositionTimelinePlayback";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -56,6 +57,8 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 		}
 	});
 
+	useCompositionTimelinePlayback(props.composition.id);
+
 	const onMouseDown: RequestActionCallback = (params) => {
 		const { addListener, submitAction } = params;
 
@@ -68,12 +71,6 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 			submitAction();
 		});
 	};
-
-	const toTimelineX = createToTimelineViewportX({
-		length: props.composition.length,
-		viewBounds: props.viewBounds,
-		width: viewportRight.width,
-	});
 
 	const timelineIds: string[] = [];
 	const colors: Partial<{ [timelineId: string]: string }> = {};
@@ -134,6 +131,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				<ViewBounds
 					left={viewportRight.left}
 					width={viewportRight.width}
+					compositionLength={props.composition.length}
 					requestUpdate={(cb) => {
 						requestAction({ history: false }, (params) => {
 							cb({
@@ -154,24 +152,11 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 					}}
 					viewBounds={props.viewBounds}
 				/>
-				<div
-					className={s("scrubContainer")}
-					onMouseDown={separateLeftRightMouse({
-						left: (e) =>
-							compTimeHandlers.onScrubMouseDown(e, {
-								composition: props.composition,
-								viewBounds: props.viewBounds,
-								viewport: viewportRight,
-							}),
-					})}
-				>
-					<div
-						className={s("scrubHead")}
-						style={{ left: toTimelineX(props.composition.frameIndex) }}
-					>
-						<div className={s("scrubLine")} style={{ height: viewportRight.height }} />
-					</div>
-				</div>
+				<CompTimeScrubber
+					compositionId={props.composition.id}
+					viewportRight={viewportRight}
+					viewBounds={props.viewBounds}
+				/>
 				<div style={{ position: "relative" }}>
 					<div
 						className={s("zoomTarget")}

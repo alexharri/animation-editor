@@ -16,6 +16,7 @@ export const cssVariables = {
 	gray700: "#555",
 	gray600: "#444",
 	gray500: "#3d3d3d",
+	gray400: "#353535",
 
 	dark800: "#333",
 	dark700: "#2d2d2d",
@@ -55,6 +56,13 @@ export const cssZIndex = {
 		joinPreview: 25,
 		areaToOpenTarget: 99,
 		areaToOpen: 100,
+	},
+	compTime: {
+		scrubber: {
+			interactionArea: 1,
+			canvas: 2,
+			head: 3,
+		},
 	},
 	toolbar: 100,
 	contextMenuBackground: 500,

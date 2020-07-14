@@ -84,7 +84,7 @@ const actions = {
 			viewport: Rect;
 		},
 	) => {
-		const { timelines, viewport } = options;
+		const { timelines, viewport, viewBounds } = options;
 		const timeline = timelines[timelineIndex];
 
 		const selection = getTimelineSelection(timeline.id);
@@ -104,7 +104,12 @@ const actions = {
 		const timelinePaths = timelines.map((timeline) =>
 			timelineKeyframesToPathList(timeline.keyframes),
 		);
-		const yBounds = getTimelineYBoundsFromPaths(timelines, timelinePaths);
+		const yBounds = getTimelineYBoundsFromPaths(
+			viewBounds,
+			options.length,
+			timelines,
+			timelinePaths,
+		);
 
 		let yPan = 0;
 		let hasMoved = false;
@@ -136,7 +141,7 @@ const actions = {
 				width: viewport.width,
 				height: viewport.height,
 			};
-			const toViewportY = createToTimelineViewportY(renderOptions);
+			const toViewportY = createToTimelineViewportY(timelinePaths, renderOptions);
 			const toViewportX = createToTimelineViewportX(renderOptions);
 
 			yFac = (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
@@ -336,7 +341,12 @@ const actions = {
 		const timelinePaths = timelines.map((timeline) =>
 			timelineKeyframesToPathList(timeline.keyframes),
 		);
-		const yBounds = getTimelineYBoundsFromPaths(timelines, timelinePaths);
+		const yBounds = getTimelineYBoundsFromPaths(
+			viewBounds,
+			options.length,
+			timelines,
+			timelinePaths,
+		);
 
 		// Lock yBounds and init pan for all timelines.
 		//
@@ -429,11 +439,11 @@ const actions = {
 				width: viewport.width,
 				viewBounds,
 			};
-			const toViewportY = createToTimelineViewportY(renderOptions);
+			const toViewportY = createToTimelineViewportY(timelinePaths, renderOptions);
 			const toViewportX = createToTimelineViewportX(renderOptions);
 
 			const initialPos = transformGlobalToTimelinePosition(initialGlobalMousePos, options);
-			let pos = transformGlobalToTimelinePosition(mousePos, options).addY(yPan);
+			const pos = transformGlobalToTimelinePosition(mousePos, options).addY(yPan);
 
 			const yFac = (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
 
@@ -502,7 +512,7 @@ const actions = {
 			viewport: Rect;
 		},
 	) => {
-		const { timelines, viewport } = options;
+		const { timelines, viewport, viewBounds } = options;
 
 		const timeline = timelines[timelineIndex];
 		const k = timeline.keyframes[index];
@@ -517,7 +527,12 @@ const actions = {
 		const timelinePaths = timelines.map((timeline) =>
 			timelineKeyframesToPathList(timeline.keyframes),
 		);
-		const yBounds = getTimelineYBoundsFromPaths(timelines, timelinePaths);
+		const yBounds = getTimelineYBoundsFromPaths(
+			viewBounds,
+			options.length,
+			timelines,
+			timelinePaths,
+		);
 
 		// Lock yBounds and init pan for all timelines.
 		//
@@ -584,7 +599,7 @@ const actions = {
 			lastUsedMousePos = mousePos;
 
 			const initialPos = transformGlobalToTimelinePosition(initialGlobalMousePos, options);
-			let pos = transformGlobalToTimelinePosition(mousePos, options).addY(yPan);
+			const pos = transformGlobalToTimelinePosition(mousePos, options).addY(yPan);
 
 			let { x: indexShift, y: valueShift } = pos.sub(initialPos);
 
@@ -636,7 +651,7 @@ export const timelineHandlers = {
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
-	) => {
+	): void => {
 		const { timelines } = options;
 
 		const initialPos = Vec2.fromEvent(e);
@@ -791,7 +806,7 @@ export const timelineHandlers = {
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
-	) => {
+	): void => {
 		requestAction({ history: true }, (params) => {
 			actions.controlPointMouseDown(
 				params,
@@ -814,7 +829,7 @@ export const timelineHandlers = {
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
-	) => {
+	): void => {
 		requestAction({ history: true }, (params) => {
 			actions.keyframeMouseDown(params, initialMousePos, timelineIndex, index, options);
 		});

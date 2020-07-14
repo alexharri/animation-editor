@@ -35,13 +35,14 @@ export const getSavedActionState = (): ActionState | null => {
 
 	try {
 		const parsedJson = JSON.parse(json);
-		return parseItem(parsedJson);
+		const parsed = parseItem(parsedJson) as ActionState | null;
+		return parsed;
 	} catch (e) {
 		return null;
 	}
 };
 
-export const saveActionState = () => {
+export const saveActionState = (): void => {
 	const actionState = getActionState();
 	const json = JSON.stringify(actionState);
 	localStorage.setItem(key, json);
