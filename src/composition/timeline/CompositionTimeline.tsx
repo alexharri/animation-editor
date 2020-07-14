@@ -20,7 +20,7 @@ import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
-import { CompTimeScrubber } from "~/composition/timeline/core/CompTimeScrubber";
+import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
 import { useCompositionTimelinePlayback } from "~/composition/timeline/useCompositionTimelinePlayback";
 
 const s = compileStylesheetLabelled(styles);

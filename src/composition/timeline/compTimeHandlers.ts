@@ -9,7 +9,7 @@ import {
 	getTimelineValueAtIndex,
 	createTimelineForLayerProperty,
 } from "~/timeline/timelineUtils";
-import { Composition, CompositionProperty, CompositionLayer } from "~/composition/compositionTypes";
+import { CompositionProperty, CompositionLayer } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
@@ -29,12 +29,14 @@ export const compTimeHandlers = {
 	onScrubMouseDown: (
 		e: React.MouseEvent,
 		options: {
-			composition: Composition;
+			compositionId: string;
 			viewBounds: [number, number];
 			viewport: Rect;
 		},
 	): void => {
-		const { composition, viewport, viewBounds } = options;
+		const { compositionId, viewport, viewBounds } = options;
+
+		const composition = getActionState().compositions.compositions[compositionId];
 
 		const initialPosition = Vec2.fromEvent(e);
 
