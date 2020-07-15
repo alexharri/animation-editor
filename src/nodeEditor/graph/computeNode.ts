@@ -12,7 +12,7 @@ import { CompositionState } from "~/composition/state/compositionReducer";
 
 const Type = NodeEditorNodeType;
 
-export type ComputeNodeArg = {
+type ComputeNodeArg = {
 	type: ValueType;
 	value: any;
 };

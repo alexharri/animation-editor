@@ -1,4 +1,4 @@
-export type DirectionVector = { x: number; y: number };
+type DirectionVector = { x: number; y: number };
 
 const isNegative = (n: number) => n < 0;
 

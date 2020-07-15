@@ -1,8 +1,8 @@
-export const isLeftClick = (e: { button: number }) => {
+const isLeftClick = (e: { button: number }) => {
 	return e.button === 0;
 };
 
-export const isRightClick = (e: { button: number }) => {
+const isRightClick = (e: { button: number }) => {
 	return e.button === 2;
 };
 
@@ -15,7 +15,7 @@ export const separateLeftRightMouse = ({
 	left?: ListenerFn;
 	right?: ListenerFn;
 }) => {
-	return (e: React.MouseEvent) => {
+	return (e: React.MouseEvent): void => {
 		if (isLeftClick(e)) {
 			left?.(e);
 		} else if (isRightClick(e)) {
