@@ -30,8 +30,6 @@ export type AreaRowLayout = {
 	areas: Array<{ size: number; id: string }>;
 };
 
-export type AreaLayoutType = AreaLayout["type"] | AreaRowLayout["type"];
-
 export interface AreaComponentProps<T> {
 	width: number;
 	height: number;

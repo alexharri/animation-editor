@@ -1,7 +1,7 @@
 import Bezier from "bezier-easing";
 import uuid from "uuid/v4";
 
-export const calcP2 = (p3: Vec2, p1: Vec2): Vec2 => {
+const calcP2 = (p3: Vec2, p1: Vec2): Vec2 => {
 	return Vec2.new(p1.x + (p3.x - p1.x) * 0.4, p1.y + (p3.y - p1.y) * 0.4);
 };
 
@@ -627,10 +627,7 @@ export function getTimelineSelection(timelineId: string): TimelineSelection {
 	return selection[timelineId] || { timelineId, keyframes: {} };
 }
 
-export const splitTimelinePathAtIndex = <T extends Line | CubicBezier>(
-	path: T,
-	index: number,
-): [T, T] => {
+const splitTimelinePathAtIndex = <T extends Line | CubicBezier>(path: T, index: number): [T, T] => {
 	if (path.length === 2) {
 		const t = (index - path[0].x) / (path[1].x - path[0].x);
 		const mid = path[0].lerp(path[1], t);

@@ -51,6 +51,12 @@ export enum PropertyGroupName {
 	Transform,
 	Dimensions,
 	Content,
+	Structure,
+}
+
+export enum LayerType {
+	Rect,
+	Ellipse,
 }
 
 export enum PropertyName {
@@ -63,17 +69,23 @@ export enum PropertyName {
 	Rotation,
 	Opacity,
 
-	// Other Properties
+	// Rect properties
 	Width,
 	Height,
+
+	// Look properties
 	Fill,
 	StrokeColor,
 	StrokeWidth,
 	BorderRadius,
+
+	// Ellipse properties
+	OuterRadius,
+	InnerRadius,
 }
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
-export interface JsonArray extends Array<Json> {}
+export type JsonArray = Array<Json>;
 export interface JsonObject {
 	[property: string]: Json;
 }

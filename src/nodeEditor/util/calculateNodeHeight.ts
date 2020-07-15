@@ -61,7 +61,7 @@ const aboveOutputs: Partial<
 	},
 };
 
-export const getAboveOutputs = (node: NodeEditorNode<NodeEditorNodeType>): number => {
+const getAboveOutputs = (node: NodeEditorNode<NodeEditorNodeType>): number => {
 	return aboveOutputs[node.type]?.(node) ?? 0;
 };
 
@@ -73,7 +73,7 @@ const aboveInputs: Partial<
 	},
 };
 
-export const getAboveInputs = (node: NodeEditorNode<NodeEditorNodeType>): number => {
+const getAboveInputs = (node: NodeEditorNode<NodeEditorNodeType>): number => {
 	return aboveInputs[node.type]?.(node) ?? 0;
 };
 
@@ -90,28 +90,6 @@ export const calculateNodeHeight = (node: NodeEditorNode<NodeEditorNodeType>): n
 		getCombinedInputsHeight(node) +
 		bottomPadding
 	);
-};
-
-export const calculateNodeInputY = (
-	node: NodeEditorNode<NodeEditorNodeType>,
-	inputIndex: number,
-): number => {
-	const outputs = node.outputs;
-	return (
-		borderWidth +
-		headerHeight +
-		spacing +
-		getAboveOutputs(node) +
-		outputs.length * outputHeight +
-		(outputs.length ? spacing : 0) +
-		getAboveInputs(node) +
-		getCombinedInputsHeight(node, inputIndex) +
-		inputHeight / 2
-	);
-};
-
-export const calculateNodeOutputY = (outputIndex: number): number => {
-	return borderWidth + headerHeight + spacing + outputIndex * outputHeight + outputHeight / 2;
 };
 
 export const calculateNodeOutputPosition = (

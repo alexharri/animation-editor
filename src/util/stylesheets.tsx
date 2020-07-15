@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { css, keyframes } from "emotion";
 
 export interface StyleParams {
@@ -7,11 +6,6 @@ export interface StyleParams {
 }
 
 type StylesheetFn = (params: StyleParams) => any;
-
-export type GetClassnameFunction<T extends StylesheetFn, K = keyof ReturnType<T>> = (
-	name: K,
-	modifiers?: { [key: string]: boolean },
-) => string;
 
 function createGetterFn<K>(
 	compiledStylesheet: any,
@@ -47,18 +41,4 @@ export const compileStylesheetLabelled = <T extends StylesheetFn, K = keyof Retu
 		return newObj;
 	}, {});
 	return createGetterFn<K>(newObj);
-};
-
-export const useStylesheet = <T extends StylesheetFn, K = keyof ReturnType<T>>(
-	stylesheet: T,
-): GetClassnameFunction<T, K> => {
-	const getStylesheet = () => stylesheet({ css, keyframes });
-
-	const [compiledStylesheet, setCompiledStylesheet] = useState(getStylesheet);
-
-	useEffect(() => {
-		setCompiledStylesheet(getStylesheet());
-	}, [stylesheet]);
-
-	return createGetterFn<K>(compiledStylesheet);
 };

@@ -1,4 +1,4 @@
-export interface RenderCircleOptions {
+interface RenderCircleOptions {
 	color: string;
 	radius: number;
 	strokeWidth?: number;
@@ -33,7 +33,7 @@ export function renderCircle(
 	}
 }
 
-export interface RenderRectOptions {
+interface RenderRectOptions {
 	fillColor: string;
 	strokeWidth?: number;
 	strokeColor?: string;
@@ -66,7 +66,7 @@ export function renderRect(
 	}
 }
 
-export interface RenderDiamondOptions {
+interface RenderDiamondOptions {
 	fillColor: string;
 	width: number;
 	height: number;
@@ -108,7 +108,7 @@ export function renderDiamond(
 	}
 }
 
-export interface RenderLineOptions {
+interface RenderLineOptions {
 	color: string;
 	strokeWidth: number;
 	lineDash?: number[];
@@ -136,7 +136,7 @@ export function renderLine(
 	ctx.setLineDash([]);
 }
 
-export interface RenderCubicBezierOptions {
+interface RenderCubicBezierOptions {
 	color: string;
 	strokeWidth: number;
 }
@@ -157,7 +157,7 @@ export function renderCubicBezier(
 	ctx.stroke();
 }
 
-export interface RenderPathOptions {
+interface RenderPathOptions {
 	color: string;
 	strokeWidth: number;
 	lineDash: number[];
@@ -174,7 +174,7 @@ export function renderPath(ctx: Ctx, path: CubicBezier | Line, opts: RenderPathO
 	}
 }
 
-export interface RenderQuadraticBezierOptions {
+interface RenderQuadraticBezierOptions {
 	color: string;
 	strokeWidth: number;
 }

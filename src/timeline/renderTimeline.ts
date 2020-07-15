@@ -73,15 +73,6 @@ export const createToTimelineViewportY = (
 	};
 };
 
-export const createToTimelineViewport = (
-	timelinePaths: (CubicBezier | Line)[][],
-	options: RenderTimelineOptions,
-): ((vec: Vec2) => Vec2) => {
-	const toViewportX = createToTimelineViewportX(options);
-	const toViewportY = createToTimelineViewportY(timelinePaths, options);
-	return (vec: Vec2) => Vec2.new(toViewportX(vec.x), toViewportY(vec.y));
-};
-
 export const renderTimeline = (options: RenderTimelineOptions): void => {
 	const { ctx, timelines, width, height, selection, viewBounds } = options;
 

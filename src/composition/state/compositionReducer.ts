@@ -5,53 +5,14 @@ import {
 	CompositionProperty,
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
-import { getDefaultLayerProperties } from "~/composition/util/compositionPropertyUtils";
 import {
 	removeKeysFromMap,
 	addListToMap,
 	modifyItemInMap,
 	modifyItemInUnionMap,
 } from "~/util/mapUtils";
-import { RGBAColor } from "~/types";
-
-const createLayerId = (layers: CompositionState["layers"]) =>
-	(
-		Math.max(
-			0,
-			...Object.keys(layers)
-				.map((x) => parseInt(x))
-				.filter((x) => !isNaN(x)),
-		) + 1
-	).toString();
-
-const getNonDuplicateLayerName = (name: string, layers: CompositionLayer[]) => {
-	const names = new Set(...layers.map((layer) => layer.name));
-
-	if (!names.has(name)) {
-		return name;
-	}
-
-	let i = 1;
-	while (names.has(`${name} ${i}`)) {
-		i++;
-	}
-	return `${name} ${i}`;
-};
-
-const createPropertyIdFn = (properties: CompositionState["properties"]) => {
-	let n = 0;
-	return () => {
-		n++;
-		return (
-			Math.max(
-				0,
-				...Object.keys(properties)
-					.map((x) => parseInt(x))
-					.filter((x) => !isNaN(x)),
-			) + n
-		).toString();
-	};
-};
+import { RGBAColor, LayerType } from "~/types";
+import { createLayer } from "~/composition/layer/createLayer";
 
 export interface CompositionState {
 	compositions: {
@@ -114,8 +75,8 @@ export const compositionActions = {
 		return (propertyId: string, timelineId: string) => action({ propertyId, timelineId });
 	}),
 
-	createRectLayer: createAction("comp/CREATE_RECT_LAYER", (action) => {
-		return (compositionId: string) => action({ compositionId });
+	createLayer: createAction("comp/CREATE_LAYER", (action) => {
+		return (compositionId: string, type: LayerType) => action({ compositionId, type });
 	}),
 
 	removeLayer: createAction("comp/DELETE_LAYER", (action) => {
@@ -211,34 +172,12 @@ export const compositionReducer = (
 			};
 		}
 
-		case getType(compositionActions.createRectLayer): {
-			const { compositionId } = action.payload;
+		case getType(compositionActions.createLayer): {
+			const { compositionId, type } = action.payload;
 
 			const composition = state.compositions[compositionId];
 
-			const layerId = createLayerId(state.layers);
-
-			const { nestedProperties, topLevelProperties } = getDefaultLayerProperties({
-				compositionId,
-				layerId,
-				createId: createPropertyIdFn(state.properties),
-			});
-
-			const layer: CompositionLayer = {
-				compositionId,
-				graphId: "",
-				id: layerId,
-				index: 0,
-				length: composition.length,
-				name: getNonDuplicateLayerName(
-					"Rect Layer",
-					composition.layers.map((id) => state.layers[id]),
-				),
-				properties: topLevelProperties.map((p) => p.id),
-				type: "rect",
-			};
-
-			const propertiesToAdd = [...topLevelProperties, ...nestedProperties];
+			const { layer, propertiesToAdd } = createLayer(state, type, compositionId);
 
 			return {
 				...state,

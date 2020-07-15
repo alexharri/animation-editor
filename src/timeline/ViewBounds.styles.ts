@@ -2,7 +2,7 @@ import { StyleParams } from "~/util/stylesheets";
 import { cssVariables } from "~/cssVariables";
 import { VIEW_BOUNDS_HANDLE_WIDTH } from "~/constants";
 
-export const VIEWBOUNDS_HEIGHT = 8;
+const VIEWBOUNDS_HEIGHT = 8;
 
 export default ({ css }: StyleParams) => ({
 	viewBounds: css`

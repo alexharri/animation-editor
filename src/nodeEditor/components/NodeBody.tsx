@@ -23,7 +23,7 @@ interface StateProps {
 }
 type Props = OwnProps & StateProps;
 
-export const NodeBodyComponent: React.FC<Props> = (props) => {
+const NodeBodyComponent: React.FC<Props> = (props) => {
 	const { top, left, width, type, nodeId } = props;
 	const { selected } = props;
 
