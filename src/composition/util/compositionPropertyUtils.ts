@@ -7,6 +7,7 @@ const propertyGroupNameToLabel: { [key in keyof typeof PropertyGroupName]: strin
 	Dimensions: "Dimensions",
 	Transform: "Transform",
 	Content: "Content",
+	Structure: "Structure",
 };
 
 const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
@@ -24,6 +25,8 @@ const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
 	StrokeColor: "Stroke Color",
 	StrokeWidth: "Stroke Width",
 	BorderRadius: "Border Radius",
+	InnerRadius: "Inner Radius",
+	OuterRadius: "Outer Radius",
 };
 
 export const getLayerPropertyLabel = (name: PropertyName): string => {

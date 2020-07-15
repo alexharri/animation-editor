@@ -1,4 +1,11 @@
-import { ValueType, PropertyName, PropertyGroupName, ValueFormat, RGBColor } from "~/types";
+import {
+	ValueType,
+	PropertyName,
+	PropertyGroupName,
+	ValueFormat,
+	RGBColor,
+	LayerType,
+} from "~/types";
 
 export interface Composition {
 	id: string;
@@ -13,7 +20,7 @@ export interface CompositionLayer {
 	id: string;
 	compositionId: string;
 	graphId: string;
-	type: "rect";
+	type: LayerType;
 	name: string;
 	index: number; // Index of first frame
 	length: number; // Number of frames
@@ -67,4 +74,15 @@ export interface PropertyToValueMap {
 		rawValue: unknown;
 		computedValue: unknown;
 	};
+}
+
+export interface CreatePropertyOptions {
+	createId: () => string;
+	compositionId: string;
+	layerId: string;
+}
+
+export interface CreateLayerPropertyGroup {
+	group: CompositionPropertyGroup;
+	properties: CompositionProperty[];
 }

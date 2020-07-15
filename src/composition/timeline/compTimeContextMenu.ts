@@ -5,8 +5,9 @@ import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { NodeEditorNodeType } from "~/types";
+import { NodeEditorNodeType, LayerType } from "~/types";
 import { NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
+import { getLayerTypeName } from "~/composition/layer/layerUtils";
 
 interface Options {
 	compositionId: string;
@@ -17,25 +18,23 @@ interface Options {
 export const createCompTimeContextMenu = (
 	position: Vec2,
 	{ compositionId, layerId, propertyId }: Options,
-) => {
+): void => {
 	requestAction({ history: true }, (params) => {
 		const options: ContextMenuOption[] = [];
 
 		if (!layerId && !propertyId) {
-			const addRectLayer = () => {
-				params.dispatch(compositionActions.createRectLayer(compositionId));
+			const createAddLayerFn = (type: LayerType) => () => {
+				params.dispatch(compositionActions.createLayer(compositionId, type));
 				params.dispatch(contextMenuActions.closeContextMenu());
-				params.submitAction("Add Rect Layer");
+				params.submitAction(`Add ${getLayerTypeName(type)}`);
 			};
 
 			options.push({
 				label: "Add new layer",
-				options: [
-					{
-						label: "Rect",
-						onSelect: addRectLayer,
-					},
-				],
+				options: [LayerType.Rect, LayerType.Ellipse].map((type) => ({
+					label: getLayerTypeName(type),
+					onSelect: createAddLayerFn(type),
+				})),
 			});
 		}
 

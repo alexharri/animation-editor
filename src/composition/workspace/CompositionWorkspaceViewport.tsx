@@ -3,6 +3,8 @@ import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
 import { cssVariables } from "~/cssVariables";
 import { CompositionWorkspaceLayer } from "~/composition/workspace/CompositionWorkspaceLayer";
 import { connectActionState } from "~/state/stateUtils";
+import { LayerType } from "~/types";
+import { CompWorkspaceEllipseLayer } from "~/composition/workspace/layers/CompWorkspaceEllipseLayer";
 
 const styles = ({ css }: StyleParams) => ({
 	container: css`
@@ -20,21 +22,34 @@ interface StateProps {
 	width: number;
 	height: number;
 	layerIds: string[];
+	layerTypes: LayerType[];
 }
 type Props = OwnProps & StateProps;
 
 const CompositionWorkspaceViewportComponent: React.FC<Props> = (props) => {
-	const { width, height, layerIds } = props;
+	const { width, height, layerIds, layerTypes } = props;
 
 	return (
 		<svg className={s("container")} width={width} height={height}>
-			{layerIds.map((id) => (
-				<CompositionWorkspaceLayer
-					key={id}
-					compositionId={props.compositionId}
-					layerId={id}
-				/>
-			))}
+			{layerIds.map((id, i) => {
+				if (layerTypes[i] === LayerType.Ellipse) {
+					return (
+						<CompWorkspaceEllipseLayer
+							key={id}
+							compositionId={props.compositionId}
+							layerId={id}
+						/>
+					);
+				}
+
+				return (
+					<CompositionWorkspaceLayer
+						key={id}
+						compositionId={props.compositionId}
+						layerId={id}
+					/>
+				);
+			})}
 		</svg>
 	);
 };
@@ -45,6 +60,7 @@ const mapState: MapActionState<StateProps, OwnProps> = ({ compositions }, { comp
 		width,
 		height,
 		layerIds: layers,
+		layerTypes: layers.map((id) => compositions.layers[id].type),
 	};
 };
 
