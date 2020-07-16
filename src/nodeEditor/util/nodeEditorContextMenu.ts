@@ -82,6 +82,10 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 			],
 			default: true,
 		},
+		createAddNodeOption({
+			type: NodeEditorNodeType.composition,
+			label: "Composition",
+		}),
 		{
 			label: "Number",
 			options: [

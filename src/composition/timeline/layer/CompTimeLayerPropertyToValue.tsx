@@ -30,6 +30,7 @@ export const CompTimeLayerPropertyToValue: React.FC<Props> = (props) => {
 			compositionState: actionState.compositions,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
+			frameIndex: actionState.compositions.compositions[compositionId].frameIndex,
 		};
 
 		return computePropertyValues(context, graph && actionState.nodeEditor.graphs[graph.id]);

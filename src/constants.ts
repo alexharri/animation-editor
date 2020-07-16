@@ -81,6 +81,7 @@ export enum AreaType {
 	CompositionTimeline = "composition_timeline",
 	CompositionWorkspace = "composition_workspace",
 	History = "history",
+	Project = "project",
 }
 
 export enum TimelineColors {

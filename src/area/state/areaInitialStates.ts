@@ -10,4 +10,5 @@ export const areaInitialStates: { [K in AreaType]: AreaState<K> } = {
 	[AreaType.CompositionWorkspace]: initialCompositionWorkspaceAreaState,
 	[AreaType.NodeEditor]: initialNodeEditorAreaState,
 	[AreaType.History]: {},
+	[AreaType.Project]: {},
 };

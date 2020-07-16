@@ -110,15 +110,17 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				})}
 			>
 				<div className={s("header")} />
-				{composition.layers.map((layerId) => {
-					return (
-						<CompTimeLayer
-							compositionId={props.composition.id}
-							id={layerId}
-							key={layerId}
-						/>
-					);
-				})}
+				<div className={s("layerWrapper")} data-ct-composition-id={composition.id}>
+					{composition.layers.map((layerId) => {
+						return (
+							<CompTimeLayer
+								compositionId={props.composition.id}
+								id={layerId}
+								key={layerId}
+							/>
+						);
+					})}
+				</div>
 			</div>
 			<div
 				className={s("separator")}

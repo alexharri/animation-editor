@@ -27,7 +27,7 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 	const { layer } = props;
 
 	return (
-		<>
+		<div data-ct-layer-id={props.id}>
 			<div
 				className={s("container")}
 				onMouseDown={separateLeftRightMouse({
@@ -70,7 +70,7 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 					/>
 				))}
 			</CompTimeLayerPropertyToValue>
-		</>
+		</div>
 	);
 };
 

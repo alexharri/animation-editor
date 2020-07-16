@@ -91,3 +91,24 @@ export const isMapShallowEqual = <M extends { [key: string]: T }, T = M[string]>
 
 	return true;
 };
+
+export const createMapNumberId = <M extends { [key: string]: any }>(map: M): string => {
+	const keys = Object.keys(map)
+		.map((x) => parseInt(x))
+		.filter((x) => !isNaN(x));
+	const max = Math.max(0, ...keys);
+	return (max + 1).toString();
+};
+
+export const createGenMapIdFn = <M extends { [key: string]: any }>(map: M): (() => string) => {
+	const keys = Object.keys(map)
+		.map((x) => parseInt(x))
+		.filter((x) => !isNaN(x));
+
+	return () => {
+		const max = Math.max(0, ...keys);
+		const n = max + 1;
+		keys.push(n);
+		return n.toString();
+	};
+};

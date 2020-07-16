@@ -5,6 +5,7 @@ import { CompositionWorkspaceLayer } from "~/composition/workspace/CompositionWo
 import { connectActionState } from "~/state/stateUtils";
 import { LayerType } from "~/types";
 import { CompWorkspaceEllipseLayer } from "~/composition/workspace/layers/CompWorkspaceEllipseLayer";
+import { CompWorkspaceCompositionLayer } from "~/composition/workspace/layers/CompWorkspaceCompositionLayer";
 
 const styles = ({ css }: StyleParams) => ({
 	container: css`
@@ -17,21 +18,40 @@ const s = compileStylesheetLabelled(styles);
 
 interface OwnProps {
 	compositionId: string;
-}
-interface StateProps {
 	width: number;
 	height: number;
+	top: number;
+	left: number;
+}
+interface StateProps {
 	layerIds: string[];
 	layerTypes: LayerType[];
 }
 type Props = OwnProps & StateProps;
 
 const CompositionWorkspaceViewportComponent: React.FC<Props> = (props) => {
-	const { width, height, layerIds, layerTypes } = props;
+	const { top, left, width, height, layerIds, layerTypes } = props;
 
 	return (
-		<svg className={s("container")} width={width} height={height}>
+		<svg
+			className={s("container")}
+			width={width}
+			height={height}
+			x={left}
+			y={top}
+			style={{ transform: `translate(${left}px, ${top}px)` }}
+		>
 			{layerIds.map((id, i) => {
+				if (layerTypes[i] === LayerType.Composition) {
+					return (
+						<CompWorkspaceCompositionLayer
+							key={id}
+							compositionId={props.compositionId}
+							layerId={id}
+						/>
+					);
+				}
+
 				if (layerTypes[i] === LayerType.Ellipse) {
 					return (
 						<CompWorkspaceEllipseLayer
@@ -55,10 +75,8 @@ const CompositionWorkspaceViewportComponent: React.FC<Props> = (props) => {
 };
 
 const mapState: MapActionState<StateProps, OwnProps> = ({ compositions }, { compositionId }) => {
-	const { width, height, layers } = compositions.compositions[compositionId];
+	const { layers } = compositions.compositions[compositionId];
 	return {
-		width,
-		height,
 		layerIds: layers,
 		layerTypes: layers.map((id) => compositions.layers[id].type),
 	};

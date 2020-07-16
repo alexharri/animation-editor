@@ -18,6 +18,12 @@ export default ({ css }: StyleParams) => ({
 	left: css`
 		background: ${cssVariables.dark600};
 		margin-right: 4px;
+		display: flex;
+		flex-direction: column;
+	`,
+
+	layerWrapper: css`
+		flex-grow: 1;
 	`,
 
 	right: css`

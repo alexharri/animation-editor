@@ -32,6 +32,8 @@ export enum NodeEditorNodeType {
 
 	property_output = "property_output",
 	property_input = "property_input",
+
+	composition = "composition",
 }
 
 export enum ValueType {
@@ -57,6 +59,7 @@ export enum PropertyGroupName {
 export enum LayerType {
 	Rect,
 	Ellipse,
+	Composition,
 }
 
 export enum PropertyName {

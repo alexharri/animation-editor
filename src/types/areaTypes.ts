@@ -9,6 +9,7 @@ interface _AreaStates {
 	[AreaType.CompositionWorkspace]: CompositionWorkspaceAreaState;
 	[AreaType.VectorEditor]: {};
 	[AreaType.History]: {};
+	[AreaType.Project]: {};
 }
 
 export type AreaState<T extends AreaType> = _AreaStates[T];

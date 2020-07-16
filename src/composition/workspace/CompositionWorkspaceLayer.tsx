@@ -1,14 +1,9 @@
 import React from "react";
-import { useActionState } from "~/hook/useActionState";
 import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
-import { useComputeHistory } from "~/hook/useComputeHistory";
-import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
-import { computeLayerGraph } from "~/nodeEditor/graph/computeLayerGraph";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { connectActionState } from "~/state/stateUtils";
 import { CompositionLayer } from "~/composition/compositionTypes";
-import { PropertyName } from "~/types";
-import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
+import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
 
 const styles = ({ css }: StyleParams) => ({
 	element: css`
@@ -31,38 +26,9 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
-	const { layer, graph } = props;
+	const { layer } = props;
 
-	const { computePropertyValues } = useComputeHistory(() => {
-		return { computePropertyValues: computeLayerGraph(graph) };
-	});
-
-	const propertyToValue = useActionState((actionState) => {
-		const context: ComputeNodeContext = {
-			computed: {},
-			compositionId: props.compositionId,
-			layerId: props.layerId,
-			compositionState: actionState.compositions,
-			timelines: actionState.timelines,
-			timelineSelection: actionState.timelineSelection,
-		};
-
-		const mostRecentGraph = actionState.nodeEditor.graphs[layer.graphId];
-		return computePropertyValues(context, mostRecentGraph);
-	});
-
-	const properties = useActionState((state) => {
-		return getLayerCompositionProperties(layer.id, state.compositions);
-	});
-
-	const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
-		(obj, p) => {
-			const value = propertyToValue[p.id] ?? p.value;
-			(obj as any)[PropertyName[p.name]] = value.computedValue;
-			return obj;
-		},
-		{} as any,
-	);
+	const nameToProperty = useLayerNameToProperty(props.compositionId, layer.id);
 
 	const {
 		Width,

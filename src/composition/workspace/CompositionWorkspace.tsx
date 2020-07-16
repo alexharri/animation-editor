@@ -6,11 +6,12 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 import styles from "~/composition/workspace/CompositionWorkspace.styles";
 import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { CompositionWorkspaceViewport } from "~/composition/workspace/CompositionWorkspaceViewport";
 import { NumberInput } from "~/components/common/NumberInput";
 import { RequestActionParams, requestAction } from "~/listener/requestAction";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { useActionState } from "~/hook/useActionState";
+import { CompWorkspaceCompChildren } from "~/composition/workspace/CompWorkspaceCompChildren";
+import { cssVariables } from "~/cssVariables";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -89,9 +90,14 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 					}}
 				>
 					<div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
-						<CompositionWorkspaceViewport
-							compositionId={props.areaState.compositionId}
-						/>
+						<svg
+							className={s("svg")}
+							width={composition.width}
+							height={composition.height}
+							style={{ background: cssVariables.gray800 }}
+						>
+							<CompWorkspaceCompChildren compositionId={composition.id} />
+						</svg>
 					</div>
 				</div>
 				<div className={s("clickCaptureTarget")} ref={clickCaptureTarget} />

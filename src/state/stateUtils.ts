@@ -66,6 +66,7 @@ export const createApplicationStateFromActionState = (
 		compositions: toHistoryBasedState(actionState.compositions),
 		contextMenu: toActionBasedState(actionState.contextMenu),
 		nodeEditor: toHistoryBasedState(actionState.nodeEditor),
+		project: toHistoryBasedState(actionState.project),
 		timelines: toHistoryBasedState(actionState.timelines),
 		timelineSelection: toHistoryBasedState(actionState.timelineSelection, "selection"),
 		tool: toActionBasedState(actionState.tool),

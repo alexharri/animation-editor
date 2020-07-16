@@ -24,6 +24,7 @@ export interface ComputeNodeContext {
 	layerId: string;
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
+	frameIndex: number;
 }
 
 const parseNum = (arg: ComputeNodeArg): number => {
@@ -310,6 +311,21 @@ const compute: {
 		return [resolve(res)];
 	},
 
+	/**
+	 * Width, Height, Frame
+	 */
+	[Type.composition]: (_args, ctx) => {
+		const { compositionState } = ctx;
+
+		const composition = compositionState.compositions[ctx.compositionId];
+
+		return [
+			toArg.number(composition.width),
+			toArg.number(composition.height),
+			toArg.number(ctx.frameIndex),
+		];
+	},
+
 	[Type.property_input]: (
 		_args,
 		ctx,
@@ -317,7 +333,6 @@ const compute: {
 	) => {
 		const { compositionState } = ctx;
 
-		const composition = compositionState.compositions[ctx.compositionId];
 		const selectedProperty = compositionState.properties[state.propertyId];
 
 		if (!selectedProperty) {
@@ -337,7 +352,7 @@ const compute: {
 		return properties.map((property) => {
 			const value = property.timelineId
 				? getTimelineValueAtIndex(
-						composition.frameIndex,
+						ctx.frameIndex,
 						ctx.timelines[property.timelineId],
 						ctx.timelineSelection[property.timelineId],
 				  )

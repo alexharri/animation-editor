@@ -21,6 +21,7 @@ export const useLayerNameToProperty = (compositionId: string, layerId: string) =
 			compositionState: actionState.compositions,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
+			frameIndex: actionState.compositions.compositions[compositionId].frameIndex,
 		};
 
 		const mostRecentGraph = actionState.nodeEditor.graphs[layer.graphId];
