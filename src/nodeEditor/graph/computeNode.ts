@@ -5,10 +5,10 @@ import { CompositionProperty } from "~/composition/compositionTypes";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 import { interpolate, capToRange } from "~/util/math";
-import { getExpressionIO } from "~/util/math/expressions";
 import * as mathjs from "mathjs";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { CompositionState } from "~/composition/state/compositionReducer";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 
 const Type = NodeEditorNodeType;
 
@@ -25,6 +25,10 @@ export interface ComputeNodeContext {
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
 	frameIndex: number;
+	graph?: NodeEditorGraphState;
+	layerIdToFrameIndex: {
+		[layerId: string]: number;
+	};
 }
 
 const parseNum = (arg: ComputeNodeArg): number => {
@@ -145,33 +149,73 @@ const parseRect = (arg: ComputeNodeArg): Rect => {
 	}
 };
 
+const createArgFn = (
+	fn: (value: any) => ComputeNodeArg,
+	valueTest: (value: any) => void,
+): ((value: any) => ComputeNodeArg) => {
+	return (value: any) => {
+		valueTest(value);
+		return fn(value);
+	};
+};
+
 const toArg = {
-	number: (value: number) => ({
-		type: ValueType.Number,
-		value,
-	}),
-	vec2: (value: Vec2) => ({
-		type: ValueType.Vec2,
-		value,
-	}),
-	rect: (value: Rect) => ({
-		type: ValueType.Rect,
-		value,
-	}),
-	color: (value: RGBAColor) => ({
-		type: ValueType.Color,
-		value,
-	}),
-	any: (value: any) => ({
-		type: ValueType.Any,
-		value,
-	}),
+	number: createArgFn(
+		(value: number) => ({
+			type: ValueType.Number,
+			value,
+		}),
+		(value) => {
+			if (typeof value !== "number" || isNaN(value)) {
+				throw new Error(`Value '${value}' is not a number.`);
+			}
+		},
+	),
+	vec2: createArgFn(
+		(value: Vec2) => ({
+			type: ValueType.Vec2,
+			value,
+		}),
+		(value) => {
+			if (!(value instanceof Vec2)) {
+				throw new Error(`Value '${value}' is not a Vec2`);
+			}
+		},
+	),
+	rect: createArgFn(
+		(value: Rect) => ({
+			type: ValueType.Rect,
+			value,
+		}),
+		(_) => {},
+	),
+	color: createArgFn(
+		(value: RGBAColor) => ({
+			type: ValueType.Color,
+			value,
+		}),
+		(_) => {},
+	),
+	any: createArgFn(
+		(value: any) => ({
+			type: ValueType.Any,
+			value,
+		}),
+		(value) => {
+			if (typeof value === "undefined" || typeof value === null) {
+				throw new Error(
+					`Value of type 'any' may not be null or undefined. Got '${typeof value}'`,
+				);
+			}
+		},
+	),
 };
 
 const compute: {
 	[key in NodeEditorNodeType]: (
 		args: ComputeNodeArg[],
 		context: ComputeNodeContext,
+		node: NodeEditorNode<any>,
 		state?: any,
 	) => ComputeNodeArg[];
 } = {
@@ -185,7 +229,12 @@ const compute: {
 		return [toArg.number(deg * RAD_TO_DEG_FAC)];
 	},
 
-	[Type.num_input]: (_args, _ctx, state: NodeEditorNodeState<NodeEditorNodeType.num_input>) => {
+	[Type.num_input]: (
+		_args,
+		_ctx,
+		_node,
+		state: NodeEditorNodeState<NodeEditorNodeType.num_input>,
+	) => {
 		return [toArg.number(state.value)];
 	},
 
@@ -243,6 +292,7 @@ const compute: {
 	[Type.color_input]: (
 		_args,
 		_ctx,
+		_node,
 		state: NodeEditorNodeState<NodeEditorNodeType.color_input>,
 	) => {
 		return [toArg.color(state.color)];
@@ -258,18 +308,21 @@ const compute: {
 		return color.map((x) => toArg.number(x));
 	},
 
-	[Type.expr]: (args, _ctx, state: NodeEditorNodeState<NodeEditorNodeType.expr>) => {
+	[Type.expr]: (args, _ctx, node, state: NodeEditorNodeState<NodeEditorNodeType.expr>) => {
 		const expression = state.expression;
-		const io = getExpressionIO(expression);
 
-		const scope = io.inputs.reduce<{ [key: string]: number }>((obj, input, i) => {
-			obj[input] = parseNum(args[i]);
-			return obj;
-		}, {});
+		const scope = {
+			...node.outputs.reduce<{ [key: string]: any }>((obj, output) => {
+				obj[output.name] = null;
+				return obj;
+			}, {}),
+			...node.inputs.reduce<{ [key: string]: any }>((obj, input, i) => {
+				obj[input.name] = args[i].value;
+				return obj;
+			}, {}),
+		};
 
-		const res = mathjs.evaluate(expression, scope);
-
-		(window as any).mathjs = mathjs;
+		mathjs.evaluate(expression, scope);
 
 		const resolve = (res: any): ComputeNodeArg => {
 			switch (mathjs.typeOf(res)) {
@@ -304,11 +357,11 @@ const compute: {
 			}
 		};
 
-		if (mathjs.typeOf(res) === "ResultSet") {
-			return res.entries.map((item: any) => resolve(item));
-		}
+		const outputs = node.outputs.map((output) => {
+			return resolve(scope[output.name]);
+		});
 
-		return [resolve(res)];
+		return outputs;
 	},
 
 	/**
@@ -319,16 +372,19 @@ const compute: {
 
 		const composition = compositionState.compositions[ctx.compositionId];
 
+		const frameIndex = ctx.layerIdToFrameIndex?.[ctx.layerId] ?? composition.frameIndex;
+
 		return [
 			toArg.number(composition.width),
 			toArg.number(composition.height),
-			toArg.number(ctx.frameIndex),
+			toArg.number(frameIndex),
 		];
 	},
 
 	[Type.property_input]: (
 		_args,
 		ctx,
+		_node,
 		state: NodeEditorNodeState<NodeEditorNodeType.property_input>,
 	) => {
 		const { compositionState } = ctx;
@@ -349,10 +405,12 @@ const compute: {
 						)
 				: [selectedProperty];
 
+		const frameIndex = ctx.layerIdToFrameIndex?.[ctx.layerId];
+
 		return properties.map((property) => {
 			const value = property.timelineId
 				? getTimelineValueAtIndex(
-						ctx.frameIndex,
+						frameIndex,
 						ctx.timelines[property.timelineId],
 						ctx.timelineSelection[property.timelineId],
 				  )
@@ -418,8 +476,44 @@ export const computeNodeOutputArgs = (
 			return defaultValue;
 		}
 
-		return pointer ? ctx.computed[pointer.nodeId][pointer.outputIndex] : defaultValue;
+		if (pointer) {
+			const value = ctx.computed[pointer.nodeId][pointer.outputIndex];
+
+			if (!value) {
+				const msg =
+					`Node '${pointer.nodeId}' did not produce the expected number of outputs.\n` +
+					`\tPointer to index ${pointer.outputIndex} did not resolve to value.\n` +
+					`\tNode produced ${ctx.computed[pointer.nodeId].length} outputs.\n`;
+				console.log({ ctx });
+				throw new Error(msg);
+			}
+
+			return value;
+		}
+
+		return defaultValue;
 	});
 
-	return compute[node.type](inputs, ctx, nodeToUse?.state || node.state);
+	const result = compute[node.type](inputs, ctx, node, nodeToUse?.state || node.state);
+
+	// Validate result
+	if (!Array.isArray(result)) {
+		console.log({ node, context: ctx, mostRecentNode, result });
+		throw new Error(`Did not receive array of results from computing node.`);
+	}
+
+	for (let i = 0; i < result.length; i += 1) {
+		if (!result[i]) {
+			console.log({ node, context: ctx, mostRecentNode, result, i });
+			throw new Error(`Falsy result item from computing node`);
+		}
+
+		const { type, value } = result[i];
+		if (!type || typeof value === "undefined") {
+			console.log({ node, context: ctx, mostRecentNode, result, i });
+			throw new Error(`Invalid result item`);
+		}
+	}
+
+	return result;
 };

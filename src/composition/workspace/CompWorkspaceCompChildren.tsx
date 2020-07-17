@@ -2,7 +2,7 @@ import React from "react";
 import { CompositionWorkspaceLayer } from "~/composition/workspace/CompositionWorkspaceLayer";
 import { LayerType } from "~/types";
 import { CompWorkspaceEllipseLayer } from "~/composition/workspace/layers/CompWorkspaceEllipseLayer";
-import { CompWorkspaceCompositionLayer } from "~/composition/workspace/layers/CompWorkspaceCompositionLayer";
+import { CompWorkspaceCompLayer } from "~/composition/workspace/layers/CompWorkspaceCompLayer";
 import { useComputeHistory } from "~/hook/useComputeHistory";
 
 interface OwnProps {
@@ -26,7 +26,7 @@ export const CompWorkspaceCompChildren: React.FC<Props> = (props) => {
 			{layerIds.map((id, i) => {
 				if (layerTypes[i] === LayerType.Composition) {
 					return (
-						<CompWorkspaceCompositionLayer
+						<CompWorkspaceCompLayer
 							key={id}
 							compositionId={props.compositionId}
 							layerId={id}

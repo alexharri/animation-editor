@@ -9,6 +9,7 @@ import { separateLeftRightMouse } from "~/util/mouse";
 import { NumberInput } from "~/components/common/NumberInput";
 import { RequestActionParams, requestAction } from "~/listener/requestAction";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { useCompositionWorkspacePlayback } from "~/composition/workspace/useWorkspacePlayback";
 import { useActionState } from "~/hook/useActionState";
 import { CompWorkspaceCompChildren } from "~/composition/workspace/CompWorkspaceCompChildren";
 import { cssVariables } from "~/cssVariables";
@@ -78,6 +79,8 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 		onValueChangeEndFn.current = null;
 	};
 
+	const PlaybackContextProvider = useCompositionWorkspacePlayback(props.areaState.compositionId);
+
 	return (
 		<>
 			<div className={s("header")}></div>
@@ -96,7 +99,9 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 							height={composition.height}
 							style={{ background: cssVariables.gray800 }}
 						>
-							<CompWorkspaceCompChildren compositionId={composition.id} />
+							<PlaybackContextProvider>
+								<CompWorkspaceCompChildren compositionId={composition.id} />
+							</PlaybackContextProvider>
 						</svg>
 					</div>
 				</div>

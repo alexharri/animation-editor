@@ -21,7 +21,6 @@ import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
-import { useCompositionTimelinePlayback } from "~/composition/timeline/useCompositionTimelinePlayback";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -57,7 +56,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 		}
 	});
 
-	useCompositionTimelinePlayback(props.composition.id);
+	// useCompositionTimelinePlayback(props.composition.id);
 
 	const onMouseDown: RequestActionCallback = (params) => {
 		const { addListener, submitAction } = params;

@@ -12,7 +12,7 @@ interface StateProps {
 }
 type Props = OwnProps & StateProps;
 
-const CompWorkspaceCompositionLayerComponent: React.FC<Props> = (props) => {
+const CompWorkspaceCompLayerComponent: React.FC<Props> = (props) => {
 	const nameToProperty = useLayerNameToProperty(props.compositionId, props.layerId);
 
 	const { PositionX, PositionY, Scale, Opacity, Rotation, Width, Height } = nameToProperty;
@@ -51,6 +51,4 @@ const mapState: MapActionState<StateProps, OwnProps> = ({ compositions }, { laye
 	};
 };
 
-export const CompWorkspaceCompositionLayer = connectActionState(mapState)(
-	CompWorkspaceCompositionLayerComponent,
-);
+export const CompWorkspaceCompLayer = connectActionState(mapState)(CompWorkspaceCompLayerComponent);

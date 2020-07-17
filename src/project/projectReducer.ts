@@ -7,11 +7,16 @@ export interface ProjectState {
 		compositionId: string;
 		position: Vec2;
 	};
+	playback: null | {
+		compositionId: number;
+		frameIndex: number;
+	};
 }
 
 export const initialProjectState: ProjectState = {
 	compositions: ["0"],
 	dragComp: null,
+	playback: null,
 };
 
 export const projectActions = {

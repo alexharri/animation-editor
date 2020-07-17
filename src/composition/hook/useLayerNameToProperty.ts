@@ -4,6 +4,8 @@ import { useActionState } from "~/hook/useActionState";
 import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { PropertyName } from "~/types";
+import { useContext, useRef } from "react";
+import { CompWorkspacePlaybackContext } from "~/composition/workspace/useWorkspacePlayback";
 
 export const useLayerNameToProperty = (compositionId: string, layerId: string) => {
 	const { computePropertyValues, layer } = useComputeHistory((state) => {
@@ -13,7 +15,15 @@ export const useLayerNameToProperty = (compositionId: string, layerId: string) =
 		return { computePropertyValues: computeLayerGraph(graph), layer };
 	});
 
+	const r = useContext(CompWorkspacePlaybackContext);
+	const ref = useRef<typeof r | null>(null);
+	ref.current = r;
+
 	const propertyToValue = useActionState((actionState) => {
+		const { layerIdToFrameIndex } = ref.current!;
+
+		const graph = layer.graphId ? actionState.nodeEditor.graphs[layer.graphId] : undefined;
+
 		const context: ComputeNodeContext = {
 			computed: {},
 			compositionId,
@@ -21,7 +31,9 @@ export const useLayerNameToProperty = (compositionId: string, layerId: string) =
 			compositionState: actionState.compositions,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
+			graph,
 			frameIndex: actionState.compositions.compositions[compositionId].frameIndex,
+			layerIdToFrameIndex,
 		};
 
 		const mostRecentGraph = actionState.nodeEditor.graphs[layer.graphId];

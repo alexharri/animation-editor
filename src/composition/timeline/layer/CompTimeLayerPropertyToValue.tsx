@@ -30,6 +30,7 @@ export const CompTimeLayerPropertyToValue: React.FC<Props> = (props) => {
 			compositionState: actionState.compositions,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
+			graph,
 			frameIndex: actionState.compositions.compositions[compositionId].frameIndex,
 		};
 

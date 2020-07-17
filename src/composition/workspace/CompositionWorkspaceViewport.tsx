@@ -5,7 +5,7 @@ import { CompositionWorkspaceLayer } from "~/composition/workspace/CompositionWo
 import { connectActionState } from "~/state/stateUtils";
 import { LayerType } from "~/types";
 import { CompWorkspaceEllipseLayer } from "~/composition/workspace/layers/CompWorkspaceEllipseLayer";
-import { CompWorkspaceCompositionLayer } from "~/composition/workspace/layers/CompWorkspaceCompositionLayer";
+import { CompWorkspaceCompLayer } from "~/composition/workspace/layers/CompWorkspaceCompLayer";
 
 const styles = ({ css }: StyleParams) => ({
 	container: css`
@@ -44,7 +44,7 @@ const CompositionWorkspaceViewportComponent: React.FC<Props> = (props) => {
 			{layerIds.map((id, i) => {
 				if (layerTypes[i] === LayerType.Composition) {
 					return (
-						<CompWorkspaceCompositionLayer
+						<CompWorkspaceCompLayer
 							key={id}
 							compositionId={props.compositionId}
 							layerId={id}
