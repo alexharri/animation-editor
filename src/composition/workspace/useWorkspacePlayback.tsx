@@ -71,6 +71,14 @@ export const useCompositionWorkspacePlayback = (compositionId: string): React.FC
 	const spaceDownAtTimeRef = useRef(0);
 	const playbackParamsRef = useRef<RequestActionParams | null>(null);
 
+	useEffect(() => {
+		window.addEventListener("mousedown", () => {
+			if (spaceDownAtTimeRef.current !== 0) {
+				spaceDownAtTimeRef.current = 0;
+			}
+		});
+	}, []);
+
 	useKeyDownEffect("Space", (down) => {
 		if (playbackParamsRef.current) {
 			spaceDownAtTimeRef.current = 0;

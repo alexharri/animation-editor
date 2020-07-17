@@ -4,7 +4,7 @@ import { getDistance } from "~/util/math";
 import { areaActions } from "~/area/state/areaActions";
 import { AreaType } from "~/constants";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
-import { CompositionTimelineAreaState } from "~/composition/timeline/compTimeAreaReducer";
+import { CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
 import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
@@ -21,7 +21,7 @@ export const dragProjectCompTimeToArea = (e: React.MouseEvent, options: Options)
 	requestAction({ history: false }, (params) => {
 		const { dispatch, cancelAction, submitAction, addListener } = params;
 
-		const initialState: CompositionTimelineAreaState = {
+		const initialState: CompTimeAreaState = {
 			...areaInitialStates[AreaType.CompositionTimeline],
 			compositionId,
 		};

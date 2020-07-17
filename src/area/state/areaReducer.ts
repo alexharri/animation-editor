@@ -8,7 +8,7 @@ import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { CardinalDirection } from "~/types";
 import { AreaType } from "~/constants";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
-import { CompositionTimelineAreaState } from "~/composition/timeline/compTimeAreaReducer";
+import { CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
 
 type AreaAction = ActionType<typeof actions>;
 
@@ -60,7 +60,7 @@ export const initialAreaState: AreaReducerState = {
 	areas: {
 		"13": {
 			type: AreaType.CompositionTimeline,
-			state: { compositionId: "0", viewBounds: [0, 1] } as CompositionTimelineAreaState,
+			state: { compositionId: "0", viewBounds: [0, 1] } as CompTimeAreaState,
 		},
 		"14": {
 			type: AreaType.NodeEditor,

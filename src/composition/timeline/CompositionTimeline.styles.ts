@@ -4,6 +4,21 @@ import { cssVariables, cssZIndex } from "~/cssVariables";
 export default ({ css }: StyleParams) => ({
 	header: css`
 		height: 32px;
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		padding: 0 8px;
+	`,
+
+	graphEditorToggle: css`
+		color: ${cssVariables.light500};
+		background: ${cssVariables.gray400};
+		border-radius: 4px;
+		font-size: 11px;
+		padding: 0 8px;
+		height: 24px;
+		border: none;
+		cursor: pointer;
 	`,
 
 	wrapper: css`

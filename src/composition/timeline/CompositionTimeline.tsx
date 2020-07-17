@@ -2,11 +2,7 @@ import React, { useState, useRef } from "react";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { connectActionState } from "~/state/stateUtils";
-import {
-	CompositionTimelineAreaState,
-	compositionTimelineAreaActions,
-} from "~/composition/timeline/compTimeAreaReducer";
-import styles from "~/composition/timeline/CompositionTimeline.styles";
+import { CompTimeAreaState, compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import { Composition, CompositionProperty } from "~/composition/compositionTypes";
 import { splitRect, capToRange } from "~/util/math";
 import { RequestActionCallback, requestAction } from "~/listener/requestAction";
@@ -21,12 +17,15 @@ import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
+import styles from "~/composition/timeline/CompositionTimeline.styles";
+import { CompTimeTrackManager } from "~/composition/timeline/track/CompTimeTrackmanager";
+import { TrackEditor } from "~/composition/timeline/track/TrackEditor";
 
 const s = compileStylesheetLabelled(styles);
 
 const SEPARATOR_WIDTH = 4;
 
-type OwnProps = AreaComponentProps<CompositionTimelineAreaState>;
+type OwnProps = AreaComponentProps<CompTimeAreaState>;
 interface StateProps {
 	composition: Composition;
 	selection: CompositionSelectionState;
@@ -108,7 +107,24 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 					right: (e) => compTimeHandlers.onRightClickOut(e, props.composition.id),
 				})}
 			>
-				<div className={s("header")} />
+				<div className={s("header")}>
+					<button
+						className={s("graphEditorToggle")}
+						onClick={() => {
+							requestAction({ history: false }, (params) => {
+								params.dispatch(
+									areaActions.dispatchToAreaState(
+										props.areaId,
+										compTimeAreaActions.toggleGraphEditorOpen(),
+									),
+								);
+								params.submitAction();
+							});
+						}}
+					>
+						Graph Editor
+					</button>
+				</div>
 				<div className={s("layerWrapper")} data-ct-composition-id={composition.id}>
 					{composition.layers.map((layerId) => {
 						return (
@@ -141,9 +157,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 									params.dispatch(
 										areaActions.dispatchToAreaState(
 											props.areaId,
-											compositionTimelineAreaActions.setViewBounds(
-												viewBounds,
-											),
+											compTimeAreaActions.setViewBounds(viewBounds),
 										),
 									);
 								},
@@ -184,7 +198,21 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 								}),
 						})}
 					/>
-					{timelineIds.length > 0 && (
+					{/* {!props.areaState.graphEditorOpen && (
+						<CompTimeTrackManager
+							viewBounds={props.viewBounds}
+							compositionId={props.composition.id}
+							width={viewportRight.width}
+						/>
+					)} */}
+					{!props.areaState.graphEditorOpen && (
+						<TrackEditor
+							viewBounds={props.viewBounds}
+							compositionId={props.composition.id}
+							viewport={viewportRight}
+						/>
+					)}
+					{props.areaState.graphEditorOpen && timelineIds.length > 0 && (
 						<TimelineEditor
 							compositionTimelineAreaId={props.areaId}
 							ids={timelineIds}

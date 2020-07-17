@@ -3,7 +3,7 @@ import { isKeyDown } from "~/listener/keyboard";
 import { capToRange, interpolate, getDistance } from "~/util/math";
 import { animate } from "~/util/animation/animate";
 import { areaActions } from "~/area/state/areaActions";
-import { compositionTimelineAreaActions } from "~/composition/timeline/compTimeAreaReducer";
+import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import {
 	transformGlobalToTimelineX,
 	getTimelineValueAtIndex,
@@ -101,7 +101,7 @@ export const compTimeHandlers = {
 				dispatch(
 					areaActions.dispatchToAreaState(
 						areaId,
-						compositionTimelineAreaActions.setViewBounds([
+						compTimeAreaActions.setViewBounds([
 							interpolate(viewBounds[0], newBounds[0], t),
 							interpolate(viewBounds[1], newBounds[1], t),
 						]),
@@ -168,7 +168,7 @@ export const compTimeHandlers = {
 				dispatch(
 					areaActions.dispatchToAreaState(
 						areaId,
-						compositionTimelineAreaActions.setViewBounds(newBounds),
+						compTimeAreaActions.setViewBounds(newBounds),
 					),
 				);
 			});
