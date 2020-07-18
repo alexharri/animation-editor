@@ -13,6 +13,7 @@ import {
 } from "~/util/mapUtils";
 import { RGBAColor, LayerType } from "~/types";
 import { createLayer } from "~/composition/layer/createLayer";
+import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 
 export interface CompositionState {
 	compositions: {
@@ -52,6 +53,14 @@ interface CreateLayerOptions {
 }
 
 export const compositionActions = {
+	applyLayerIndexShift: createAction("comp/APPLY_LAYER_INDEX_SHIFT", (action) => {
+		return (
+			compositionId: string,
+			layerIndexShift: number,
+			selection: CompositionSelectionState,
+		) => action({ compositionId, layerIndexShift, selection });
+	}),
+
 	setComposition: createAction("comp/SET_COMPOSITION", (action) => {
 		return (composition: Composition) => action({ composition });
 	}),
@@ -66,6 +75,10 @@ export const compositionActions = {
 
 	toggleLayerSelection: createAction("comp/TOGGLE_LAYER_SELECTED", (action) => {
 		return (compositionId: string, layerId: string) => action({ compositionId, layerId });
+	}),
+
+	removeLayersFromSelection: createAction("comp/REMOVE_LAYER_SELECTED", (action) => {
+		return (compositionId: string, layerIds: string[]) => action({ compositionId, layerIds });
 	}),
 
 	togglePropertySelection: createAction("comp/TOGGLE_PROPERTY_SELECTED", (action) => {
@@ -122,6 +135,33 @@ export const compositionReducer = (
 	action: Action,
 ): CompositionState => {
 	switch (action.type) {
+		case getType(compositionActions.applyLayerIndexShift): {
+			const { compositionId, layerIndexShift, selection } = action.payload;
+
+			const newState = {
+				...state,
+				layers: { ...state.layers },
+			};
+
+			const layerIds = state.compositions[compositionId].layers;
+
+			for (let i = 0; i < layerIds.length; i += 1) {
+				const layerId = layerIds[i];
+
+				if (!selection.layers[layerId]) {
+					continue;
+				}
+
+				const layer = state.layers[layerId];
+				newState.layers[layerId] = {
+					...layer,
+					index: Math.max(0, layer.index + layerIndexShift),
+				};
+			}
+
+			return newState;
+		}
+
 		case getType(compositionActions.setComposition): {
 			const { composition } = action.payload;
 			return {

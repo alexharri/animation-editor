@@ -1,10 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { connectActionState } from "~/state/stateUtils";
 import { CompTimeAreaState, compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import { Composition, CompositionProperty } from "~/composition/compositionTypes";
-import { splitRect, capToRange } from "~/util/math";
+import { splitRect, capToRange, isVecInRect } from "~/util/math";
 import { RequestActionCallback, requestAction } from "~/listener/requestAction";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { CompTimeLayer } from "~/composition/timeline/layer/CompTimeLayer";
@@ -18,8 +18,8 @@ import { CompositionSelectionState } from "~/composition/state/compositionSelect
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
 import styles from "~/composition/timeline/CompositionTimeline.styles";
-import { CompTimeTrackManager } from "~/composition/timeline/track/CompTimeTrackmanager";
 import { TrackEditor } from "~/composition/timeline/track/TrackEditor";
+import { capCompTimePanY } from "~/composition/timeline/compTimeUtils";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -96,8 +96,83 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 
 	const outRef = useRef<HTMLDivElement>(null);
 
+	const panY = capCompTimePanY(
+		props.areaState.panY,
+		composition.id,
+		props.height - 32,
+		props.compositionState,
+	);
+
+	const wrapperRef = useRef<HTMLDivElement>(null);
+
+	const propsRef = useRef<Props>(props);
+	propsRef.current = props;
+
+	useEffect(() => {
+		if (!wrapperRef.current) {
+			return;
+		}
+
+		const listener = (e: WheelEvent) => {
+			const props = propsRef.current;
+
+			e.preventDefault();
+
+			const panY = capCompTimePanY(
+				props.areaState.panY,
+				composition.id,
+				props.height,
+				props.compositionState,
+			);
+
+			let [viewportLeft, viewportRight] = splitRect("horizontal", props, t, SEPARATOR_WIDTH);
+			const lockY = props.areaState.graphEditorOpen
+				? !isVecInRect(Vec2.fromEvent(e), viewportLeft)
+				: false;
+
+			compTimeHandlers.onWheelPan(e as any, props.areaId, {
+				compositionId: props.composition.id,
+				left: viewportRight.left,
+				viewportWidth: viewportRight.width,
+				viewportHeight: viewportRight.height,
+				compositionLength: props.composition.length,
+				viewBounds: props.viewBounds,
+				lockY,
+				panY,
+			});
+		};
+
+		const el = wrapperRef.current;
+		el.addEventListener("wheel", listener, { passive: false });
+
+		return () => {
+			el.removeEventListener("wheel", listener);
+		};
+	}, [wrapperRef.current]);
+
 	return (
-		<div className={s("wrapper")}>
+		<div className={s("wrapper")} ref={wrapperRef}>
+			<div
+				className={s("panTarget")}
+				ref={panTarget}
+				onMouseDown={separateLeftRightMouse({
+					left: (e) => {
+						const lockY = props.areaState.graphEditorOpen
+							? !isVecInRect(Vec2.fromEvent(e), viewportLeft)
+							: false;
+						compTimeHandlers.onPan(e, props.areaId, {
+							compositionId: props.composition.id,
+							left: viewportRight.left,
+							viewportWidth: viewportRight.width,
+							viewportHeight: viewportRight.height,
+							compositionLength: props.composition.length,
+							viewBounds: props.viewBounds,
+							lockY,
+							panY,
+						});
+					},
+				})}
+			/>
 			<div
 				className={s("left")}
 				style={viewportLeft}
@@ -126,15 +201,17 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 					</button>
 				</div>
 				<div className={s("layerWrapper")} data-ct-composition-id={composition.id}>
-					{composition.layers.map((layerId) => {
-						return (
-							<CompTimeLayer
-								compositionId={props.composition.id}
-								id={layerId}
-								key={layerId}
-							/>
-						);
-					})}
+					<div style={{ transform: `translateY(${-panY}px)` }}>
+						{composition.layers.map((layerId) => {
+							return (
+								<CompTimeLayer
+									compositionId={props.composition.id}
+									id={layerId}
+									key={layerId}
+								/>
+							);
+						})}
+					</div>
 				</div>
 			</div>
 			<div
@@ -185,31 +262,20 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 								}),
 						})}
 					/>
-					<div
-						className={s("panTarget")}
-						ref={panTarget}
-						onMouseDown={separateLeftRightMouse({
-							left: (e) =>
-								compTimeHandlers.onPanViewBounds(e, props.areaId, {
-									left: viewportRight.left,
-									width: viewportRight.width,
-									length: props.composition.length,
-									viewBounds: props.viewBounds,
-								}),
-						})}
-					/>
-					{/* {!props.areaState.graphEditorOpen && (
-						<CompTimeTrackManager
-							viewBounds={props.viewBounds}
-							compositionId={props.composition.id}
-							width={viewportRight.width}
-						/>
-					)} */}
 					{!props.areaState.graphEditorOpen && (
 						<TrackEditor
+							panY={props.areaState.panY}
 							viewBounds={props.viewBounds}
 							compositionId={props.composition.id}
-							viewport={viewportRight}
+							viewport={{
+								width: viewportRight.width,
+								height: viewportRight.height - 32,
+								left: viewportRight.left,
+								top: viewportRight.top + 32,
+							}}
+							compositionTimelineAreaId={props.areaId}
+							trackDragSelectRect={props.areaState.trackDragSelectRect}
+							layerIndexShift={props.areaState.layerIndexShift}
 						/>
 					)}
 					{props.areaState.graphEditorOpen && timelineIds.length > 0 && (

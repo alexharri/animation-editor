@@ -3,7 +3,8 @@ import { cssVariables, cssZIndex } from "~/cssVariables";
 
 export default ({ css }: StyleParams) => ({
 	header: css`
-		height: 32px;
+		min-height: 32px;
+		max-height: 32px;
 		display: flex;
 		justify-content: flex-end;
 		align-items: center;
@@ -39,6 +40,7 @@ export default ({ css }: StyleParams) => ({
 
 	layerWrapper: css`
 		flex-grow: 1;
+		overflow: hidden;
 	`,
 
 	right: css`

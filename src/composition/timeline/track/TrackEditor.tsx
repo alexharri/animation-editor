@@ -7,11 +7,21 @@ import { CompositionSelectionState } from "~/composition/state/compositionSelect
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { renderTracks } from "~/composition/timeline/track/renderTracks";
+import { trackHandlers } from "~/composition/timeline/track/trackHandlers";
+import {
+	getTimelineIdsReferencedByComposition,
+	capCompTimePanY,
+} from "~/composition/timeline/compTimeUtils";
+import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
 
 interface OwnProps {
 	compositionId: string;
 	viewport: Rect;
 	viewBounds: [number, number];
+	panY: number;
+	compositionTimelineAreaId: string;
+	trackDragSelectRect: Rect | null;
+	layerIndexShift: number;
 }
 interface StateProps {
 	composition: Composition;
@@ -19,12 +29,18 @@ interface StateProps {
 	compositionState: CompositionState;
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
-	dragSelectRect: Rect | null;
 }
 type Props = OwnProps & StateProps;
 
 const TrackEditorComponent: React.FC<Props> = (props) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+
+	const panY = capCompTimePanY(
+		props.panY,
+		props.compositionId,
+		props.viewport.height,
+		props.compositionState,
+	);
 
 	useLayoutEffect(() => {
 		const ctx = canvasRef.current?.getContext("2d");
@@ -34,28 +50,39 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 		}
 
 		const {
-			timelines,
-			dragSelectRect,
+			trackDragSelectRect,
 			compositionState,
 			compositionSelection,
 			viewBounds,
 			composition,
 			timelineSelection,
 			viewport,
+			layerIndexShift,
 		} = props;
+
+		const timelineIds = getTimelineIdsReferencedByComposition(composition.id, compositionState);
+		const timelines = timelineIds
+			.map((id) =>
+				applyTimelineIndexAndValueShifts(props.timelines[id], timelineSelection[id]),
+			)
+			.reduce<TimelineState>((obj, timeline) => {
+				obj[timeline.id] = timeline;
+				return obj;
+			}, {});
 
 		renderTracks({
 			ctx,
 			composition,
 			compositionSelection,
 			compositionState,
-			dragSelectRect,
+			trackDragSelectRect,
 			timelines,
-			pan: Vec2.new(0, 0),
+			panY,
 			timelineSelection,
 			viewBounds,
 			viewportHeight: viewport.height,
 			viewportWidth: viewport.width,
+			layerIndexShift,
 		});
 	}, [props]);
 
@@ -63,7 +90,21 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 
 	return (
 		<div style={{ background: cssVariables.gray400 }}>
-			<canvas ref={canvasRef} height={height} width={width} />
+			<canvas
+				ref={canvasRef}
+				height={height}
+				width={width}
+				onMouseDown={(e) => {
+					trackHandlers.onMouseDown(e, {
+						compositionId: props.compositionId,
+						compositionTimelineAreaId: props.compositionTimelineAreaId,
+						length: props.composition.length,
+						panY,
+						viewBounds: props.viewBounds,
+						viewport: props.viewport,
+					});
+				}}
+			/>
 		</div>
 	);
 };
@@ -77,7 +118,6 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 		composition,
 		compositionSelection,
 		compositionState: compositions,
-		dragSelectRect: null,
 		timelines,
 		timelineSelection: timelineSelection,
 	};

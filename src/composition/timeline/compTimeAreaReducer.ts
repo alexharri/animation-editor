@@ -4,19 +4,29 @@ export interface CompTimeAreaState {
 	compositionId: string;
 	graphEditorOpen: boolean;
 	viewBounds: [number, number];
+	panY: number;
 	dragSelectRect: Rect | null;
+	trackDragSelectRect: Rect | null;
+	layerIndexShift: number;
 }
 
 export const initialCompTimeAreaState: CompTimeAreaState = {
 	compositionId: "0",
 	graphEditorOpen: false,
 	viewBounds: [0, 1],
+	panY: 0,
 	dragSelectRect: null,
+	trackDragSelectRect: null,
+	layerIndexShift: 0,
 };
 
 export const compTimeAreaActions = {
 	setViewBounds: createAction("compTime/SET_VIEW_BOUNDS", (action) => {
 		return (viewBounds: [number, number]) => action({ viewBounds });
+	}),
+
+	setPanY: createAction("compTime/SET_PAN_Y", (action) => {
+		return (panY: number) => action({ panY });
 	}),
 
 	setFields: createAction("compTime/SET_FIELDS", (action) => {
@@ -38,6 +48,11 @@ export const compTimeAreaReducer = (
 		case getType(compTimeAreaActions.setViewBounds): {
 			const { viewBounds } = action.payload;
 			return { ...state, viewBounds };
+		}
+
+		case getType(compTimeAreaActions.setPanY): {
+			const { panY } = action.payload;
+			return { ...state, panY };
 		}
 
 		case getType(compTimeAreaActions.setFields): {

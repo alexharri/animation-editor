@@ -10,6 +10,7 @@ export default ({ css }: StyleParams) => ({
 		background: ${cssVariables.dark600};
 
 		&:last-of-type {
+			height: 16px;
 			border-bottom: none;
 		}
 	`,

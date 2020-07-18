@@ -6,20 +6,25 @@ import { CompositionState } from "~/composition/state/compositionReducer";
 import { renderRect, renderDiamond } from "~/util/canvas/renderPrimitives";
 import { cssVariables } from "~/cssVariables";
 import { TimelineState } from "~/timeline/timelineReducer";
-import { TRACK_KEYFRAME_HEIGHT } from "~/constants";
+import {
+	COMP_TIME_TRACK_KEYFRAME_HEIGHT,
+	COMP_TIME_LAYER_HEIGHT,
+	COMP_TIME_BETWEEN_LAYERS,
+} from "~/constants";
 
 interface RenderTimelineOptions {
 	ctx: Ctx;
 	viewportWidth: number;
 	viewportHeight: number;
-	pan: Vec2;
+	panY: number;
 	viewBounds: [number, number];
 	composition: Composition;
 	compositionSelection: CompositionSelectionState;
 	compositionState: CompositionState;
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
-	dragSelectRect: Rect | null;
+	trackDragSelectRect: Rect | null;
+	layerIndexShift: number;
 }
 
 export const renderTracks = (options: RenderTimelineOptions) => {
@@ -27,11 +32,22 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		ctx,
 		compositionState,
 		composition,
+		compositionSelection,
 		viewBounds,
 		viewportWidth,
 		viewportHeight,
 		timelines,
+		panY,
+		layerIndexShift,
 	} = options;
+
+	const getLayerIndex = (layerId: string) => {
+		const layer = compositionState.layers[layerId];
+		return Math.max(
+			0,
+			layer.index + (compositionSelection.layers[layer.id] ? layerIndexShift : 0),
+		);
+	};
 
 	ctx.clearRect(0, 0, viewportWidth, viewportHeight);
 	renderRect(
@@ -46,26 +62,26 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		width: viewportWidth,
 	});
 
-	const HEIGHT = 16;
-	const BETWEEN_LAYERS = 1;
 	let yIndex = 0;
 
-	const getY = (): number => yIndex * (HEIGHT + BETWEEN_LAYERS) + 1;
+	const getY = (): number =>
+		yIndex * (COMP_TIME_LAYER_HEIGHT + COMP_TIME_BETWEEN_LAYERS) + 1 - panY;
 
 	for (let i = 0; i < composition.layers.length; i += 1) {
 		const layerId = composition.layers[i];
 		const layer = compositionState.layers[layerId];
+		const layerIndex = getLayerIndex(layerId);
 
 		// Render layer bar
-		const x0 = toTimelineX(layer.index);
-		const x1 = toTimelineX(layer.index + layer.length);
+		const x0 = toTimelineX(layerIndex);
+		const x1 = toTimelineX(layerIndex + layer.length);
 
 		const left = x0;
 		const width = x1 - x0;
 
 		renderRect(
 			ctx,
-			{ left, width, top: getY(), height: HEIGHT },
+			{ left, width, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
 			{ fillColor: cssVariables.gray600 },
 		);
 
@@ -77,13 +93,15 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 			renderRect(
 				ctx,
-				{ left: 0, width: viewportWidth, top: getY(), height: HEIGHT },
+				{ left: 0, width: viewportWidth, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
 				{ fillColor: cssVariables.dark600 },
 			);
 
 			if (property.type === "group") {
-				for (let j = 0; j < property.properties.length; j += 1) {
-					renderProperty(property.properties[j]);
+				if (!property.collapsed) {
+					for (let j = 0; j < property.properties.length; j += 1) {
+						renderProperty(property.properties[j]);
+					}
 				}
 				return;
 			}
@@ -97,13 +115,15 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			for (let j = 0; j < timeline.keyframes.length; j += 1) {
 				const k = timeline.keyframes[j];
 
-				const left = toTimelineX(layer.index + k.index);
-				const top = getY() + HEIGHT / 2;
+				const left = toTimelineX(layerIndex + k.index);
+				const top = getY() + COMP_TIME_LAYER_HEIGHT / 2;
+
+				const selected = options.timelineSelection[timeline.id]?.keyframes[k.id];
 
 				renderDiamond(ctx, Vec2.new(left, top), {
-					width: TRACK_KEYFRAME_HEIGHT,
-					height: TRACK_KEYFRAME_HEIGHT,
-					fillColor: cssVariables.light500,
+					width: COMP_TIME_TRACK_KEYFRAME_HEIGHT,
+					height: COMP_TIME_TRACK_KEYFRAME_HEIGHT,
+					fillColor: selected ? cssVariables.primary500 : cssVariables.light500,
 				});
 			}
 		};
@@ -113,5 +133,28 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		}
 
 		yIndex++;
+	}
+
+	if (options.trackDragSelectRect) {
+		const x0 = toTimelineX(options.trackDragSelectRect.left);
+		const x1 = toTimelineX(
+			options.trackDragSelectRect.left + options.trackDragSelectRect.width,
+		);
+
+		const left = x0;
+		const width = x1 - x0;
+
+		const top = options.trackDragSelectRect.top;
+		const height = options.trackDragSelectRect.height;
+
+		renderRect(
+			ctx,
+			{ top, left, width, height },
+			{
+				strokeColor: "red",
+				strokeWidth: 1,
+				fillColor: "rgba(255, 0, 0, .1)",
+			},
+		);
 	}
 };

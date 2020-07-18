@@ -1,6 +1,7 @@
 import { ActionType, getType } from "typesafe-actions";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { KeySelectionMap } from "~/types";
+import { removeKeysFromMap } from "~/util/mapUtils";
 
 // Only one composition may be selected at any time.
 export interface CompositionSelectionState {
@@ -55,6 +56,20 @@ export const compositionSelectionReducer = (
 					...newState.layers,
 					[layerId]: true,
 				},
+			};
+		}
+
+		case getType(compositionActions.removeLayersFromSelection): {
+			const { compositionId, layerIds } = action.payload;
+
+			const newState =
+				state.compositionId === compositionId
+					? { ...state }
+					: createNewState(compositionId);
+
+			return {
+				...newState,
+				layers: removeKeysFromMap(newState.layers, layerIds),
 			};
 		}
 

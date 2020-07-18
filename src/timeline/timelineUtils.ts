@@ -314,6 +314,31 @@ export const transformGlobalToTimelinePosition = (
 	return pos;
 };
 
+export const transformGlobalToTrackPosition = (
+	vec: Vec2,
+	options: {
+		length: number;
+		viewBounds: [number, number];
+		viewport: Rect;
+	},
+): Vec2 => {
+	const { viewBounds, viewport } = options;
+
+	const canvasWidth = viewport.width - TIMELINE_CANVAS_END_START_BUFFER * 2;
+	const canvasLeft = viewport.left + TIMELINE_CANVAS_END_START_BUFFER;
+
+	const pos = vec.subY(viewport.top).subX(canvasLeft);
+
+	const xt = pos.x / canvasWidth;
+
+	const [xMin, xMax] = viewBounds;
+
+	const x = (xMin + (xMax - xMin) * xt) * options.length;
+	pos.x = x;
+
+	return pos;
+};
+
 const _applyNewControlPointShift = (_timeline: Timeline): Timeline => {
 	const timeline = _timeline;
 

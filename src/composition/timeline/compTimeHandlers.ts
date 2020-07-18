@@ -22,6 +22,7 @@ import { areaInitialStates } from "~/area/state/areaInitialStates";
 import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
 import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
 import { didCompSelectionChange } from "~/composition/util/compSelectionUtils";
+import { getCompTimeLayerListHeight } from "~/composition/timeline/compTimeUtils";
 
 const ZOOM_FAC = 0.25;
 
@@ -111,42 +112,134 @@ export const compTimeHandlers = {
 		});
 	},
 
+	onWheelPan: (
+		e: WheelEvent,
+		areaId: string,
+		options: {
+			compositionId: string;
+			compositionLength: number;
+			viewBounds: [number, number];
+			viewportWidth: number;
+			viewportHeight: number;
+			left: number;
+			panY: number;
+			lockY: boolean;
+		},
+	): void => {
+		const {
+			viewBounds,
+			compositionLength,
+			viewportWidth,
+			viewportHeight,
+			left,
+			compositionId,
+		} = options;
+
+		requestAction({ history: false }, ({ submitAction, dispatch }) => {
+			const compositionState = getActionState().compositions;
+
+			const [x0, x1] = [0, e.deltaX].map((x) =>
+				transformGlobalToTimelineX(x, viewBounds, left, viewportWidth, compositionLength),
+			);
+
+			const xt0 = x0 / compositionLength;
+			const xt1 = x1 / compositionLength;
+
+			const tChange = (xt0 - xt1) * -1;
+
+			const rightShiftMax = 1 - viewBounds[1];
+			const leftShiftMax = -viewBounds[0];
+
+			let newBounds = [viewBounds[0], viewBounds[1]] as [number, number];
+			if (tChange > rightShiftMax) {
+				newBounds[1] = 1;
+				newBounds[0] += rightShiftMax;
+			} else if (tChange < leftShiftMax) {
+				newBounds[0] = 0;
+				newBounds[1] += leftShiftMax;
+			} else {
+				newBounds[0] += tChange;
+				newBounds[1] += tChange;
+			}
+
+			const toDispatch: any[] = [
+				areaActions.dispatchToAreaState(
+					areaId,
+					compTimeAreaActions.setViewBounds(newBounds),
+				),
+			];
+
+			if (!options.lockY) {
+				const yChange = e.deltaY;
+				let yPan = options.panY + yChange;
+
+				yPan = Math.min(
+					yPan,
+					getCompTimeLayerListHeight(compositionId, compositionState) - viewportHeight,
+				);
+				yPan = Math.max(0, yPan);
+
+				toDispatch.push(
+					areaActions.dispatchToAreaState(areaId, compTimeAreaActions.setPanY(yPan)),
+				);
+			}
+
+			dispatch(toDispatch);
+			submitAction();
+		});
+	},
+
 	/**
 	 * When the user Space + Mouse drags the timeline around
 	 */
-	onPanViewBounds: (
+	onPan: (
 		e: React.MouseEvent,
 		areaId: string,
 		options: {
-			length: number;
+			compositionId: string;
+			compositionLength: number;
 			viewBounds: [number, number];
-			width: number;
+			viewportWidth: number;
+			viewportHeight: number;
 			left: number;
+			panY: number;
+			lockY: boolean;
 		},
 	): void => {
-		const { viewBounds, length, width, left } = options;
+		const {
+			viewBounds,
+			compositionLength,
+			viewportWidth,
+			viewportHeight,
+			left,
+			compositionId,
+		} = options;
 
+		const initialMousePosition = Vec2.fromEvent(e);
 		const initialPos = transformGlobalToTimelineX(
-			Vec2.fromEvent(e).x,
+			initialMousePosition.x,
 			viewBounds,
 			left,
-			width,
-			length,
+			viewportWidth,
+			compositionLength,
 		);
 
 		const fn: RequestActionCallback = ({ addListener, submitAction, dispatch }) => {
-			let initialT = initialPos / length;
+			const compositionState = getActionState().compositions;
+
+			let initialT = initialPos / compositionLength;
 
 			addListener.repeated("mousemove", (e) => {
+				const mousePosition = Vec2.fromEvent(e);
 				const pos = transformGlobalToTimelineX(
-					Vec2.fromEvent(e).x,
+					mousePosition.x,
 					viewBounds,
 					left,
-					width,
-					length,
+					viewportWidth,
+					compositionLength,
 				);
 
-				const t = pos / length;
+				const t = pos / compositionLength;
 
 				const tChange = (t - initialT) * -1;
 
@@ -165,12 +258,30 @@ export const compTimeHandlers = {
 					newBounds[1] += tChange;
 				}
 
-				dispatch(
+				const toDispatch: any[] = [
 					areaActions.dispatchToAreaState(
 						areaId,
 						compTimeAreaActions.setViewBounds(newBounds),
 					),
-				);
+				];
+
+				if (!options.lockY) {
+					const yChange = initialMousePosition.y - mousePosition.y;
+					let yPan = options.panY + yChange;
+
+					yPan = Math.min(
+						yPan,
+						getCompTimeLayerListHeight(compositionId, compositionState) -
+							viewportHeight,
+					);
+					yPan = Math.max(0, yPan);
+
+					toDispatch.push(
+						areaActions.dispatchToAreaState(areaId, compTimeAreaActions.setPanY(yPan)),
+					);
+				}
+
+				dispatch(toDispatch);
 			});
 
 			addListener.once("mouseup", () => submitAction());
