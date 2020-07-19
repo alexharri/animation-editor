@@ -340,7 +340,7 @@ export const transformGlobalToTimelinePosition = (
 export const transformGlobalToTrackPosition = (
 	vec: Vec2,
 	options: {
-		length: number;
+		compositionLength: number;
 		viewBounds: [number, number];
 		viewport: Rect;
 	},
@@ -356,7 +356,7 @@ export const transformGlobalToTrackPosition = (
 
 	const [xMin, xMax] = viewBounds;
 
-	const x = (xMin + (xMax - xMin) * xt) * options.length;
+	const x = (xMin + (xMax - xMin) * xt) * options.compositionLength;
 	pos.x = x;
 
 	return pos;

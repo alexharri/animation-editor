@@ -155,7 +155,7 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 					trackHandlers.onMouseDown(e, {
 						compositionId: props.compositionId,
 						compositionTimelineAreaId: props.compositionTimelineAreaId,
-						length: props.composition.length,
+						compositionLength: props.composition.length,
 						panY,
 						viewBounds: props.viewBounds,
 						viewport: props.viewport,
