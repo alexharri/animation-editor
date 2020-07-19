@@ -1,6 +1,8 @@
 import React from "react";
-import { connectActionState } from "~/state/stateUtils";
+import { CompositionLayer } from "~/composition/compositionTypes";
 import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
+import { useWorkspaceLayerShouldRender } from "~/composition/workspace/useWorkspaceLayerShouldRender";
+import { connectActionState } from "~/state/stateUtils";
 
 interface OwnProps {
 	compositionId: string;
@@ -8,11 +10,17 @@ interface OwnProps {
 }
 interface StateProps {
 	isSelected: boolean;
+	layer: CompositionLayer;
 }
 type Props = OwnProps & StateProps;
 
 const CompWorkspaceEllipseLayerComponent: React.FC<Props> = (props) => {
 	const nameToProperty = useLayerNameToProperty(props.compositionId, props.layerId);
+	const shouldRender = useWorkspaceLayerShouldRender(props.layer);
+
+	if (!shouldRender) {
+		return null;
+	}
 
 	const {
 		PositionX,
@@ -38,6 +46,7 @@ const CompWorkspaceEllipseLayerComponent: React.FC<Props> = (props) => {
 
 	return (
 		<g
+			data-layer-id={props.layerId}
 			width={OuterRadius * 2}
 			height={OuterRadius * 2}
 			style={{
@@ -102,9 +111,13 @@ const CompWorkspaceEllipseLayerComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapState: MapActionState<StateProps, OwnProps> = ({ compositionSelection }, { layerId }) => {
+const mapState: MapActionState<StateProps, OwnProps> = (
+	{ compositions, compositionSelection },
+	{ layerId },
+) => {
 	return {
 		isSelected: !!compositionSelection.layers[layerId],
+		layer: compositions.layers[layerId],
 	};
 };
 

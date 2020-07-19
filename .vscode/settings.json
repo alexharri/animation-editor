@@ -4,6 +4,7 @@
   "editor.insertSpaces": true,
   "editor.tabSize": 4,
   "editor.formatOnSave": true,
+  "typescript.preferences.importModuleSpecifierEnding": "minimal",
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -21,5 +22,8 @@
     "javascriptreact",
     "typescript",
     "typescriptreact",
-  ]
+  ],
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
+  }
 }

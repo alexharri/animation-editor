@@ -1,10 +1,10 @@
-import React, { useRef, useEffect, useState } from "react";
-import { RequestActionParams, requestAction } from "~/listener/requestAction";
-import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { getActionState } from "~/state/stateUtils";
-import { useComputeHistory } from "~/hook/useComputeHistory";
-import { LayerType } from "~/types";
+import React, { useEffect, useRef, useState } from "react";
 import { useActionState } from "~/hook/useActionState";
+import { useComputeHistory } from "~/hook/useComputeHistory";
+import { useKeyDownEffect } from "~/hook/useKeyDown";
+import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { getActionState } from "~/state/stateUtils";
+import { LayerType } from "~/types";
 
 interface PlaybackContext {
 	layerIdToFrameIndex: {
@@ -46,20 +46,20 @@ export const useCompositionWorkspacePlayback = (compositionId: string): React.FC
 			layerIdToFrameIndex: {},
 		};
 
-		(function crawl(compositionId: string) {
+		(function crawl(compositionId: string, index) {
 			const composition = compositionState.compositions[compositionId];
 
 			for (let i = 0; i < composition.layers.length; i += 1) {
 				const layer = compositionState.layers[composition.layers[i]];
 
-				ctx.layerIdToFrameIndex[layer.id] = frameIndex;
+				ctx.layerIdToFrameIndex[layer.id] = frameIndex - index;
 
 				if (layer.type === LayerType.Composition) {
 					const id = compositionState.compositionLayerIdToComposition[layer.id];
-					crawl(id);
+					crawl(id, layer.index);
 				}
 			}
-		})(compositionId);
+		})(compositionId, 0);
 
 		return (
 			<CompWorkspacePlaybackContext.Provider value={ctx}>

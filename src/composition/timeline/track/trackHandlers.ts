@@ -275,9 +275,7 @@ const actions = {
 					);
 				}
 			} else if (!compositionSelection.layers[layerId]) {
-				params.dispatch(
-					timelineIds.map((id) => params.dispatch(timelineActions.clearSelection(id))),
-				);
+				params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
 				params.dispatch(compositionActions.toggleLayerSelection(composition.id, layerId));
 				params.dispatch(
 					compositionActions.removeLayersFromSelection(
@@ -402,7 +400,7 @@ export const trackHandlers = {
 
 		const mousePos = transformGlobalToTrackPosition(initialPos, options);
 
-		let getXDistance: (a: Vec2, b: Vec2) => number;
+		let getXDistance: (a: number, b: number) => number;
 		{
 			const [x0, x1] = [0, 1].map((n) =>
 				transformGlobalToTimelineX(
@@ -417,9 +415,9 @@ export const trackHandlers = {
 			const xt = x1 - x0;
 
 			getXDistance = (a, b) => {
-				const aScaled = a.scaleX(1 / xt);
-				const bScaled = b.scaleX(1 / xt);
-				return Math.abs(aScaled.x - bScaled.x);
+				const aScaled = a * (1 / xt);
+				const bScaled = b * (1 / xt);
+				return Math.abs(aScaled - bScaled);
 			};
 		}
 
@@ -460,9 +458,9 @@ export const trackHandlers = {
 
 						for (let j = 0; j < timeline.keyframes.length; j += 1) {
 							const k = timeline.keyframes[j];
-							const kPos = Vec2.new(k.index + layer.index, k.value);
+							const kIndex = k.index + layer.index;
 
-							if (getXDistance(kPos, mousePos) < 5) {
+							if (getXDistance(kIndex, mousePos.x) < 5) {
 								actions.keyframeMouseDown(
 									initialPos,
 									mousePos.x,
@@ -489,11 +487,7 @@ export const trackHandlers = {
 					const layer = compositionState.layers[layerId];
 
 					if (
-						valueWithinMargin(
-							mousePos.x,
-							layer.index,
-							COMP_TIME_TRACK_START_END_X_MARGIN,
-						)
+						getXDistance(mousePos.x, layer.index) < COMP_TIME_TRACK_START_END_X_MARGIN
 					) {
 						actions.layerStartOrEndMouseDown(
 							"start",
@@ -506,11 +500,8 @@ export const trackHandlers = {
 					}
 
 					if (
-						valueWithinMargin(
-							mousePos.x,
-							layer.index + layer.length,
-							COMP_TIME_TRACK_START_END_X_MARGIN,
-						)
+						getXDistance(mousePos.x, layer.index + layer.length) <
+						COMP_TIME_TRACK_START_END_X_MARGIN
 					) {
 						actions.layerStartOrEndMouseDown(
 							"end",
@@ -575,9 +566,8 @@ export const trackHandlers = {
 
 			params.addListener.once("mouseup", () => {
 				if (!hasMoved) {
+					params.dispatch(compositionActions.clearCompositionSelection(composition.id));
 					params.dispatch(
-						compositionActions.clearCompositionSelection(composition.id),
-
 						timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
 					);
 					params.submitAction("Clear timeline selection");

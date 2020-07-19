@@ -1,14 +1,14 @@
-import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorNodeType, ValueType, RGBAColor } from "~/types";
-import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
-import { CompositionProperty } from "~/composition/compositionTypes";
-import { TimelineState } from "~/timeline/timelineReducer";
-import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
-import { interpolate, capToRange } from "~/util/math";
 import * as mathjs from "mathjs";
-import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
+import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
+import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
+import { TimelineState } from "~/timeline/timelineReducer";
+import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
+import { NodeEditorNodeType, RGBAColor, ValueType } from "~/types";
+import { capToRange, interpolate } from "~/util/math";
 
 const Type = NodeEditorNodeType;
 
@@ -26,7 +26,7 @@ export interface ComputeNodeContext {
 	timelineSelection: TimelineSelectionState;
 	frameIndex: number;
 	graph?: NodeEditorGraphState;
-	layerIdToFrameIndex: {
+	layerIdToFrameIndex?: {
 		[layerId: string]: number;
 	};
 }
@@ -405,16 +405,11 @@ const compute: {
 						)
 				: [selectedProperty];
 
-		const frameIndex = ctx.layerIdToFrameIndex?.[ctx.layerId];
+		const frameIndex = ctx.layerIdToFrameIndex?.[ctx.layerId] ?? 0;
 
 		return properties.map((property) => {
 			const value = property.timelineId
-				? // ? getTimelineValueAtIndex(
-				  // 		frameIndex,
-				  // 		ctx.timelines[property.timelineId],
-				  // 		ctx.timelineSelection[property.timelineId],
-				  //   )
-				  getTimelineValueAtIndex({
+				? getTimelineValueAtIndex({
 						timeline: ctx.timelines[property.timelineId],
 						layerIndex: ctx.compositionState.layers[ctx.layerId].index,
 						frameIndex,

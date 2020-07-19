@@ -56,10 +56,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			compositionLength - layer.index,
 			Math.max(0, layer.length - layerLengthShift[0] + layerLengthShift[1]),
 		);
-		const index = Math.min(
-			compositionLength - length,
-			Math.max(0, layer.index + layerIndexShift + layerLengthShift[0]),
-		);
+		const index = Math.max(0, layer.index + layerIndexShift + layerLengthShift[0]);
 
 		return [index, length];
 	};

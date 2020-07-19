@@ -1,9 +1,10 @@
 import React from "react";
-import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { connectActionState } from "~/state/stateUtils";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
+import { useWorkspaceLayerShouldRender } from "~/composition/workspace/useWorkspaceLayerShouldRender";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
+import { connectActionState } from "~/state/stateUtils";
+import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
 
 const styles = ({ css }: StyleParams) => ({
 	element: css`
@@ -29,6 +30,11 @@ const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 	const { layer } = props;
 
 	const nameToProperty = useLayerNameToProperty(props.compositionId, layer.id);
+	const shouldRender = useWorkspaceLayerShouldRender(layer);
+
+	if (!shouldRender) {
+		return null;
+	}
 
 	const {
 		Width,
@@ -49,6 +55,7 @@ const CompositionWorkspaceLayerComponent: React.FC<Props> = (props) => {
 
 	return (
 		<rect
+			data-layer-id={layer.id}
 			width={Width}
 			height={Height}
 			rx={BorderRadius}

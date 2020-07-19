@@ -11,14 +11,9 @@ import { trackHandlers } from "~/composition/timeline/track/trackHandlers";
 import {
 	getTimelineIdsReferencedByComposition,
 	capCompTimePanY,
-	getCompTimeTrackYPositions,
 } from "~/composition/timeline/compTimeUtils";
-import {
-	applyTimelineIndexAndValueShifts,
-	transformTimelineXToGlobalX,
-} from "~/timeline/timelineUtils";
-import { valueWithinRange, valueWithinMargin } from "~/util/math";
-import { COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
+import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
+import { useTrackEditorCanvasCursor } from "~/composition/timeline/track/useTrackEditorCanvasCursor";
 
 interface OwnProps {
 	compositionId: string;
@@ -95,55 +90,15 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 		});
 	}, [props]);
 
-	const onMouseMove = (e: React.MouseEvent) => {
-		const canvasEl = canvasRef.current;
+	const { compositionId, composition, viewBounds, viewport } = props;
+	const { width, height } = viewport;
 
-		if (!canvasEl) {
-			return;
-		}
-
-		const { composition, compositionState, viewBounds, viewport } = props;
-
-		const mousePos = Vec2.fromEvent(e);
-		const yPosMap = getCompTimeTrackYPositions(composition.id, compositionState, panY);
-
-		for (let i = 0; i < composition.layers.length; i += 1) {
-			const layerId = composition.layers[i];
-			const yPos = yPosMap.layer[layerId];
-
-			if (!valueWithinRange(mousePos.y - viewport.top, yPos, yPos + 16)) {
-				continue;
-			}
-
-			const layer = compositionState.layers[layerId];
-
-			const startX = transformTimelineXToGlobalX(
-				layer.index,
-				viewBounds,
-				viewport,
-				composition.length,
-			);
-			if (valueWithinMargin(mousePos.x, startX, COMP_TIME_TRACK_START_END_X_MARGIN)) {
-				canvasEl.style.cursor = "ew-resize";
-				return;
-			}
-
-			const endX = transformTimelineXToGlobalX(
-				layer.index + layer.length,
-				viewBounds,
-				viewport,
-				composition.length,
-			);
-			if (valueWithinMargin(mousePos.x, endX, COMP_TIME_TRACK_START_END_X_MARGIN)) {
-				canvasEl.style.cursor = "ew-resize";
-				return;
-			}
-		}
-
-		canvasEl.style.cursor = "";
-	};
-
-	const { width, height } = props.viewport;
+	const onMouseMove = useTrackEditorCanvasCursor(canvasRef, {
+		compositionId,
+		viewBounds,
+		viewport,
+		panY,
+	});
 
 	return (
 		<div style={{ background: cssVariables.gray400 }}>
@@ -153,12 +108,12 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 				width={width}
 				onMouseDown={(e) => {
 					trackHandlers.onMouseDown(e, {
-						compositionId: props.compositionId,
+						compositionId,
 						compositionTimelineAreaId: props.compositionTimelineAreaId,
-						compositionLength: props.composition.length,
+						compositionLength: composition.length,
 						panY,
-						viewBounds: props.viewBounds,
-						viewport: props.viewport,
+						viewBounds,
+						viewport,
 					});
 				}}
 				onMouseMove={onMouseMove}

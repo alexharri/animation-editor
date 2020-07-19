@@ -1,22 +1,22 @@
 import { ActionType, getType } from "typesafe-actions";
-import { nodeEditorActions as actions } from "~/nodeEditor/nodeEditorActions";
-import { NodeEditorNodeType, KeySelectionMap } from "~/types";
 import { DEFAULT_NODE_EDITOR_NODE_WIDTH } from "~/constants";
+import { nodeEditorActions as actions } from "~/nodeEditor/nodeEditorActions";
 import {
 	getNodeEditorNodeDefaultInputs,
 	getNodeEditorNodeDefaultOutputs,
-	NodeEditorNodeInput,
-	NodeEditorNode,
 	getNodeEditorNodeDefaultState,
+	NodeEditorNode,
+	NodeEditorNodeInput,
 	NodeEditorNodeIO,
 } from "~/nodeEditor/nodeEditorIO";
-import { rectsIntersect } from "~/util/math";
-import { calculateNodeHeight } from "~/nodeEditor/util/calculateNodeHeight";
-import { removeKeysFromMap } from "~/util/mapUtils";
 import {
 	removeNodeAndReferencesToItInGraph,
 	removeReferencesToNodeInGraph,
 } from "~/nodeEditor/nodeEditorUtils";
+import { calculateNodeHeight } from "~/nodeEditor/util/calculateNodeHeight";
+import { KeySelectionMap, NodeEditorNodeType } from "~/types";
+import { removeKeysFromMap } from "~/util/mapUtils";
+import { rectsIntersect } from "~/util/math";
 
 type NodeEditorAction = ActionType<typeof actions>;
 
@@ -109,6 +109,11 @@ export function nodeEditorReducer(
 				graphs: removeKeysFromMap(state.graphs, [graphId]),
 			};
 		}
+	}
+
+	if (!action.payload) {
+		console.trace();
+		console.log(action);
 	}
 
 	const graphId = action.payload.graphId;
