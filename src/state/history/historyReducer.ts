@@ -116,6 +116,7 @@ export function createReducerWithHistory<S>(
 				}
 
 				if (!state.action) {
+					console.log(actionToDispatch);
 					console.warn("Attempted to dispatch to an action that does not exist.");
 					return state;
 				}

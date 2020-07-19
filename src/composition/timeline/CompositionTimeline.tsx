@@ -276,6 +276,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 							compositionTimelineAreaId={props.areaId}
 							trackDragSelectRect={props.areaState.trackDragSelectRect}
 							layerIndexShift={props.areaState.layerIndexShift}
+							layerLengthShift={props.areaState.layerLengthShift}
 						/>
 					)}
 					{props.areaState.graphEditorOpen && timelineIds.length > 0 && (

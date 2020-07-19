@@ -11,8 +11,14 @@ import { trackHandlers } from "~/composition/timeline/track/trackHandlers";
 import {
 	getTimelineIdsReferencedByComposition,
 	capCompTimePanY,
+	getCompTimeTrackYPositions,
 } from "~/composition/timeline/compTimeUtils";
-import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
+import {
+	applyTimelineIndexAndValueShifts,
+	transformTimelineXToGlobalX,
+} from "~/timeline/timelineUtils";
+import { valueWithinRange, valueWithinMargin } from "~/util/math";
+import { COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
 
 interface OwnProps {
 	compositionId: string;
@@ -22,6 +28,7 @@ interface OwnProps {
 	compositionTimelineAreaId: string;
 	trackDragSelectRect: Rect | null;
 	layerIndexShift: number;
+	layerLengthShift: [number, number];
 }
 interface StateProps {
 	composition: Composition;
@@ -58,6 +65,7 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 			timelineSelection,
 			viewport,
 			layerIndexShift,
+			layerLengthShift,
 		} = props;
 
 		const timelineIds = getTimelineIdsReferencedByComposition(composition.id, compositionState);
@@ -83,8 +91,57 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 			viewportHeight: viewport.height,
 			viewportWidth: viewport.width,
 			layerIndexShift,
+			layerLengthShift,
 		});
 	}, [props]);
+
+	const onMouseMove = (e: React.MouseEvent) => {
+		const canvasEl = canvasRef.current;
+
+		if (!canvasEl) {
+			return;
+		}
+
+		const { composition, compositionState, viewBounds, viewport } = props;
+
+		const mousePos = Vec2.fromEvent(e);
+		const yPosMap = getCompTimeTrackYPositions(composition.id, compositionState, panY);
+
+		for (let i = 0; i < composition.layers.length; i += 1) {
+			const layerId = composition.layers[i];
+			const yPos = yPosMap.layer[layerId];
+
+			if (!valueWithinRange(mousePos.y - viewport.top, yPos, yPos + 16)) {
+				continue;
+			}
+
+			const layer = compositionState.layers[layerId];
+
+			const startX = transformTimelineXToGlobalX(
+				layer.index,
+				viewBounds,
+				viewport,
+				composition.length,
+			);
+			if (valueWithinMargin(mousePos.x, startX, COMP_TIME_TRACK_START_END_X_MARGIN)) {
+				canvasEl.style.cursor = "ew-resize";
+				return;
+			}
+
+			const endX = transformTimelineXToGlobalX(
+				layer.index + layer.length,
+				viewBounds,
+				viewport,
+				composition.length,
+			);
+			if (valueWithinMargin(mousePos.x, endX, COMP_TIME_TRACK_START_END_X_MARGIN)) {
+				canvasEl.style.cursor = "ew-resize";
+				return;
+			}
+		}
+
+		canvasEl.style.cursor = "";
+	};
 
 	const { width, height } = props.viewport;
 
@@ -104,6 +161,7 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 						viewport: props.viewport,
 					});
 				}}
+				onMouseMove={onMouseMove}
 			/>
 		</div>
 	);

@@ -409,11 +409,17 @@ const compute: {
 
 		return properties.map((property) => {
 			const value = property.timelineId
-				? getTimelineValueAtIndex(
+				? // ? getTimelineValueAtIndex(
+				  // 		frameIndex,
+				  // 		ctx.timelines[property.timelineId],
+				  // 		ctx.timelineSelection[property.timelineId],
+				  //   )
+				  getTimelineValueAtIndex({
+						timeline: ctx.timelines[property.timelineId],
+						layerIndex: ctx.compositionState.layers[ctx.layerId].index,
 						frameIndex,
-						ctx.timelines[property.timelineId],
-						ctx.timelineSelection[property.timelineId],
-				  )
+						selection: ctx.timelineSelection[property.timelineId],
+				  })
 				: property.value;
 			return toArg.number(value);
 		});

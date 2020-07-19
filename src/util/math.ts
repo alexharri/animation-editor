@@ -220,3 +220,11 @@ export const splitRect = (
 		},
 	];
 };
+
+export const valueWithinMargin = (value: number, at: number, margin: number): boolean => {
+	return value >= at - margin && value <= at + margin;
+};
+
+export const valueWithinRange = (value: number, min: number, max: number): boolean => {
+	return value >= min && value <= max;
+};

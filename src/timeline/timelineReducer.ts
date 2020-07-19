@@ -204,6 +204,21 @@ export function timelineReducer(state: TimelineState, action: Action): TimelineS
 			};
 		}
 
+		case getType(timelineActions.shiftTimelineIndex): {
+			const { timelineId, shiftBy } = action.payload;
+			const timeline = state[timelineId];
+			return {
+				...state,
+				[timelineId]: {
+					...timeline,
+					keyframes: timeline.keyframes.map((k) => ({
+						...k,
+						index: k.index + shiftBy,
+					})),
+				},
+			};
+		}
+
 		case getType(timelineActions.setKeyframeReflectControlPoints): {
 			const { timelineId, keyframeIndex, reflectControlPoints } = action.payload;
 

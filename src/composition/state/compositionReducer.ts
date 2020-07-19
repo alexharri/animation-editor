@@ -61,6 +61,14 @@ export const compositionActions = {
 		) => action({ compositionId, layerIndexShift, selection });
 	}),
 
+	applyLayerLengthShift: createAction("comp/APPLY_LAYER_LENGTH_SHIFT", (action) => {
+		return (
+			compositionId: string,
+			layerLengthShift: [number, number],
+			selection: CompositionSelectionState,
+		) => action({ compositionId, layerLengthShift, selection });
+	}),
+
 	setComposition: createAction("comp/SET_COMPOSITION", (action) => {
 		return (composition: Composition) => action({ composition });
 	}),
@@ -156,6 +164,44 @@ export const compositionReducer = (
 				newState.layers[layerId] = {
 					...layer,
 					index: Math.max(0, layer.index + layerIndexShift),
+				};
+			}
+
+			return newState;
+		}
+
+		case getType(compositionActions.applyLayerLengthShift): {
+			const { compositionId, layerLengthShift, selection } = action.payload;
+
+			const newState = {
+				...state,
+				layers: { ...state.layers },
+			};
+
+			const layerIds = state.compositions[compositionId].layers;
+
+			for (let i = 0; i < layerIds.length; i += 1) {
+				const layerId = layerIds[i];
+
+				if (!selection.layers[layerId]) {
+					continue;
+				}
+
+				const layer = state.layers[layerId];
+				const compositionLength = state.compositions[layer.compositionId].length;
+
+				const length = Math.min(
+					compositionLength - layer.index,
+					Math.max(0, layer.length - layerLengthShift[0] + layerLengthShift[1]),
+				);
+				const index = Math.min(
+					compositionLength - length,
+					Math.max(0, layer.index + layerLengthShift[0]),
+				);
+				newState.layers[layerId] = {
+					...layer,
+					index,
+					length,
 				};
 			}
 

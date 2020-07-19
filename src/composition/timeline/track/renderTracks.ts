@@ -25,6 +25,7 @@ interface RenderTimelineOptions {
 	timelineSelection: TimelineSelectionState;
 	trackDragSelectRect: Rect | null;
 	layerIndexShift: number;
+	layerLengthShift: [number, number];
 }
 
 export const renderTracks = (options: RenderTimelineOptions) => {
@@ -39,14 +40,28 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		timelines,
 		panY,
 		layerIndexShift,
+		layerLengthShift,
 	} = options;
 
-	const getLayerIndex = (layerId: string) => {
+	const getLayerIndexAndLength = (layerId: string): [number, number] => {
 		const layer = compositionState.layers[layerId];
-		return Math.max(
-			0,
-			layer.index + (compositionSelection.layers[layer.id] ? layerIndexShift : 0),
+
+		if (!compositionSelection.layers[layer.id]) {
+			return [layer.index, layer.length];
+		}
+
+		const compositionLength = compositionState.compositions[layer.compositionId].length;
+
+		const length = Math.min(
+			compositionLength - layer.index,
+			Math.max(0, layer.length - layerLengthShift[0] + layerLengthShift[1]),
 		);
+		const index = Math.min(
+			compositionLength - length,
+			Math.max(0, layer.index + layerIndexShift + layerLengthShift[0]),
+		);
+
+		return [index, length];
 	};
 
 	ctx.clearRect(0, 0, viewportWidth, viewportHeight);
@@ -70,11 +85,14 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 	for (let i = 0; i < composition.layers.length; i += 1) {
 		const layerId = composition.layers[i];
 		const layer = compositionState.layers[layerId];
-		const layerIndex = getLayerIndex(layerId);
+		const selected = compositionSelection.layers[layerId];
+
+		const [layerIndex, layerLength] = getLayerIndexAndLength(layerId);
+		const keyframeIndexShift = selected ? -layerLengthShift[0] : 0;
 
 		// Render layer bar
 		const x0 = toTimelineX(layerIndex);
-		const x1 = toTimelineX(layerIndex + layer.length);
+		const x1 = toTimelineX(layerIndex + layerLength);
 
 		const left = x0;
 		const width = x1 - x0;
@@ -82,7 +100,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		renderRect(
 			ctx,
 			{ left, width, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
-			{ fillColor: cssVariables.gray600 },
+			{ fillColor: selected ? cssVariables.gray800 : cssVariables.gray600 },
 		);
 
 		// Render layer properties
@@ -115,7 +133,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			for (let j = 0; j < timeline.keyframes.length; j += 1) {
 				const k = timeline.keyframes[j];
 
-				const left = toTimelineX(layerIndex + k.index);
+				const left = toTimelineX(layerIndex + k.index + keyframeIndexShift);
 				const top = getY() + COMP_TIME_LAYER_HEIGHT / 2;
 
 				const selected = options.timelineSelection[timeline.id]?.keyframes[k.id];

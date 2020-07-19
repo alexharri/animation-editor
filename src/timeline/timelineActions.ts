@@ -50,6 +50,10 @@ export const timelineActions = {
 			resolve({ timelineId, selection });
 	}),
 
+	shiftTimelineIndex: createAction("timeline/SHIFT_TIMELINE_INDEX", (resolve) => {
+		return (timelineId: string, shiftBy: number) => resolve({ timelineId, shiftBy });
+	}),
+
 	setYBounds: createAction("timeline/SET_Y_BOUNDS", (resolve) => {
 		return (timelineId: string, yBounds: [number, number] | null) =>
 			resolve({ timelineId, yBounds });

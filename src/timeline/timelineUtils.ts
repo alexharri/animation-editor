@@ -32,7 +32,7 @@ export const getControlPointAsVector = (
 	return Vec2.new(interpolate(k0.index, k1.index, cp.tx), k.value + cp.value * t);
 };
 import { TimelineKeyframe, Timeline, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
-import { interpolate, capToRange, getDistance } from "~/util/math";
+import { interpolate, capToRange, getDistance, translateToRange } from "~/util/math";
 import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
 import { getActionState } from "~/state/stateUtils";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
@@ -79,15 +79,19 @@ export const timelineKeyframesToPathList = (
 	return paths;
 };
 
-export function getTimelineValueAtIndex(
-	index: number,
-	_timeline: Timeline,
-	selection?: TimelineSelection,
-): number {
-	let timeline = _timeline;
+interface GetTimelineValueAtIndexOptions {
+	timeline: Timeline;
+	frameIndex: number;
+	layerIndex: number;
+	selection?: TimelineSelection;
+}
+
+export function getTimelineValueAtIndex(options: GetTimelineValueAtIndexOptions): number {
+	const index = options.frameIndex - options.layerIndex;
+	let timeline = options.timeline;
 
 	if (typeof timeline._indexShift) {
-		timeline = applyTimelineIndexAndValueShifts(timeline, selection);
+		timeline = applyTimelineIndexAndValueShifts(timeline, options.selection);
 	}
 
 	const keyframes = timeline.keyframes;
@@ -256,8 +260,27 @@ export const getTimelineYBoundsFromPaths = (
 	return [yUpper + diff * 0.1, yLower - diff * 0.1];
 };
 
+export const transformTimelineXToGlobalX = (
+	timelineX: number,
+	viewBounds: [number, number],
+	viewport: Rect,
+	compositionLength: number,
+): number => {
+	const renderWidth = viewport.width;
+	const canvasWidth = viewport.width - TIMELINE_CANVAS_END_START_BUFFER * 2;
+
+	const [tMin, tMax] = viewBounds;
+
+	const t = timelineX / compositionLength;
+	return (
+		translateToRange(t * renderWidth, tMin * renderWidth, tMax * renderWidth, canvasWidth) +
+		TIMELINE_CANVAS_END_START_BUFFER +
+		viewport.left
+	);
+};
+
 export const transformGlobalToTimelineX = (
-	vecX: number,
+	value: number,
 	viewBounds: [number, number],
 	left: number,
 	width: number,
@@ -266,7 +289,7 @@ export const transformGlobalToTimelineX = (
 	const canvasWidth = width - TIMELINE_CANVAS_END_START_BUFFER * 2;
 	const canvasLeft = left + TIMELINE_CANVAS_END_START_BUFFER;
 
-	const xt = (vecX - canvasLeft) / canvasWidth;
+	const xt = (value - canvasLeft) / canvasWidth;
 
 	const [xMin, xMax] = viewBounds;
 	const x = (xMin + (xMax - xMin) * xt) * length;

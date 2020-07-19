@@ -294,19 +294,21 @@ export const compTimeHandlers = {
 		propertyId: string,
 		timelineId: string,
 	): void => {
-		const { compositions, timelines, timelineSelection } = getActionState();
-		const composition = compositions.compositions[compositionId];
-		const property = compositions.properties[propertyId] as CompositionProperty;
+		const { compositions: compositionState, timelines, timelineSelection } = getActionState();
+		const composition = compositionState.compositions[compositionId];
+		const property = compositionState.properties[propertyId] as CompositionProperty;
+		const layer = compositionState.layers[property.layerId];
 
 		if (timelineId) {
 			// Delete timeline and make the value of the timeline at the current time
 			// the value of the property
 			const timeline = timelines[timelineId];
-			const value = getTimelineValueAtIndex(
-				composition.frameIndex,
+			const value = getTimelineValueAtIndex({
 				timeline,
-				timelineSelection[timeline.id],
-			);
+				frameIndex: composition.frameIndex,
+				layerIndex: layer.index,
+				selection: timelineSelection[timeline.id],
+			});
 
 			requestAction({ history: true }, ({ dispatch, submitAction }) => {
 				dispatch(
