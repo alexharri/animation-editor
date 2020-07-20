@@ -29,6 +29,7 @@ import {
 	initialTimelineSelectionState,
 	timelineSelectionReducer,
 } from "~/timeline/timelineSelectionReducer";
+import { ProjectState, initialProjectState, projectReducer } from "~/project/projectReducer";
 
 declare global {
 	interface ApplicationState {
@@ -37,6 +38,7 @@ declare global {
 		compositionSelection: HistoryState<CompositionSelectionState>;
 		nodeEditor: HistoryState<NodeEditorState>;
 		contextMenu: ActionBasedState<ContextMenuState>;
+		project: HistoryState<ProjectState>;
 		timelines: HistoryState<TimelineState>;
 		timelineSelection: HistoryState<TimelineSelectionState>;
 		tool: ActionBasedState<ToolState>;
@@ -48,6 +50,7 @@ declare global {
 		compositionSelection: CompositionSelectionState;
 		nodeEditor: NodeEditorState;
 		contextMenu: ContextMenuState;
+		project: ProjectState;
 		timelines: TimelineState;
 		timelineSelection: TimelineSelectionState;
 		tool: ToolState;
@@ -76,6 +79,8 @@ const reducers = {
 
 	nodeEditor: createReducerWithHistory(initialNodeEditorState, nodeEditorReducer),
 	contextMenu: createActionBasedReducer(initialContextMenuState, contextMenuReducer),
+
+	project: createReducerWithHistory(initialProjectState, projectReducer),
 
 	timelines: createReducerWithHistory(initialTimelineState, timelineReducer),
 	timelineSelection: createReducerWithHistory(

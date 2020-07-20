@@ -13,6 +13,7 @@ import {
 } from "~/util/mapUtils";
 import { RGBAColor, LayerType } from "~/types";
 import { createLayer } from "~/composition/layer/createLayer";
+import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 
 export interface CompositionState {
 	compositions: {
@@ -24,12 +25,16 @@ export interface CompositionState {
 	properties: {
 		[propertyId: string]: CompositionProperty | CompositionPropertyGroup;
 	};
+	compositionLayerIdToComposition: {
+		[layerId: string]: string;
+	};
 }
 
 export const initialCompositionState: CompositionState = {
 	compositions: {
 		"0": {
 			id: "0",
+			name: "Composition",
 			layers: ["0"],
 			frameIndex: 0,
 			length: 500,
@@ -39,15 +44,49 @@ export const initialCompositionState: CompositionState = {
 	},
 	layers: {},
 	properties: {},
+	compositionLayerIdToComposition: {},
 };
 
+interface CreateLayerOptions {
+	compositionLayerReferenceId: string;
+	insertLayerIndex: number;
+}
+
 export const compositionActions = {
+	applyLayerIndexShift: createAction("comp/APPLY_LAYER_INDEX_SHIFT", (action) => {
+		return (
+			compositionId: string,
+			layerIndexShift: number,
+			selection: CompositionSelectionState,
+		) => action({ compositionId, layerIndexShift, selection });
+	}),
+
+	applyLayerLengthShift: createAction("comp/APPLY_LAYER_LENGTH_SHIFT", (action) => {
+		return (
+			compositionId: string,
+			layerLengthShift: [number, number],
+			selection: CompositionSelectionState,
+		) => action({ compositionId, layerLengthShift, selection });
+	}),
+
+	setComposition: createAction("comp/SET_COMPOSITION", (action) => {
+		return (composition: Composition) => action({ composition });
+	}),
+
+	setCompositionName: createAction("comp/SET_COMP_NAME", (action) => {
+		return (compositionId: string, name: string) => action({ compositionId, name });
+	}),
+
 	clearCompositionSelection: createAction("comp/CLEAR_COMP_SELECTION", (action) => {
 		return (compositionId: string) => action({ compositionId });
 	}),
 
 	toggleLayerSelection: createAction("comp/TOGGLE_LAYER_SELECTED", (action) => {
 		return (compositionId: string, layerId: string) => action({ compositionId, layerId });
+	}),
+
+	removeLayersFromSelection: createAction("comp/REMOVE_LAYER_SELECTED", (action) => {
+		return (compositionId: string, layerIds: string[]) => action({ compositionId, layerIds });
 	}),
 
 	togglePropertySelection: createAction("comp/TOGGLE_PROPERTY_SELECTED", (action) => {
@@ -76,7 +115,12 @@ export const compositionActions = {
 	}),
 
 	createLayer: createAction("comp/CREATE_LAYER", (action) => {
-		return (compositionId: string, type: LayerType) => action({ compositionId, type });
+		return (compositionId: string, type: LayerType, options?: Partial<CreateLayerOptions>) =>
+			action({ compositionId, type, options });
+	}),
+
+	createCompositionLayerReference: createAction("comp/CREATE_COMP_LAYER_REF", (action) => {
+		return (layerId: string, compositionId: string) => action({ compositionId, layerId });
 	}),
 
 	removeLayer: createAction("comp/DELETE_LAYER", (action) => {
@@ -99,6 +143,90 @@ export const compositionReducer = (
 	action: Action,
 ): CompositionState => {
 	switch (action.type) {
+		case getType(compositionActions.applyLayerIndexShift): {
+			const { compositionId, layerIndexShift, selection } = action.payload;
+
+			const newState = {
+				...state,
+				layers: { ...state.layers },
+			};
+
+			const layerIds = state.compositions[compositionId].layers;
+
+			for (let i = 0; i < layerIds.length; i += 1) {
+				const layerId = layerIds[i];
+
+				if (!selection.layers[layerId]) {
+					continue;
+				}
+
+				const layer = state.layers[layerId];
+				newState.layers[layerId] = {
+					...layer,
+					index: Math.max(0, layer.index + layerIndexShift),
+				};
+			}
+
+			return newState;
+		}
+
+		case getType(compositionActions.applyLayerLengthShift): {
+			const { compositionId, layerLengthShift, selection } = action.payload;
+
+			const newState = {
+				...state,
+				layers: { ...state.layers },
+			};
+
+			const layerIds = state.compositions[compositionId].layers;
+
+			for (let i = 0; i < layerIds.length; i += 1) {
+				const layerId = layerIds[i];
+
+				if (!selection.layers[layerId]) {
+					continue;
+				}
+
+				const layer = state.layers[layerId];
+				const compositionLength = state.compositions[layer.compositionId].length;
+
+				const length = Math.min(
+					compositionLength - layer.index,
+					Math.max(0, layer.length - layerLengthShift[0] + layerLengthShift[1]),
+				);
+				const index = Math.min(
+					compositionLength - length,
+					Math.max(0, layer.index + layerLengthShift[0]),
+				);
+				newState.layers[layerId] = {
+					...layer,
+					index,
+					length,
+				};
+			}
+
+			return newState;
+		}
+
+		case getType(compositionActions.setComposition): {
+			const { composition } = action.payload;
+			return {
+				...state,
+				compositions: addListToMap(state.compositions, [composition], "id"),
+			};
+		}
+
+		case getType(compositionActions.setCompositionName): {
+			const { compositionId, name } = action.payload;
+			return {
+				...state,
+				compositions: modifyItemInMap(state.compositions, compositionId, (composition) => ({
+					...composition,
+					name,
+				})),
+			};
+		}
+
 		case getType(compositionActions.setFrameIndex): {
 			const { compositionId, frameIndex } = action.payload;
 			return {
@@ -173,26 +301,45 @@ export const compositionReducer = (
 		}
 
 		case getType(compositionActions.createLayer): {
-			const { compositionId, type } = action.payload;
+			const { compositionId, type, options } = action.payload;
 
 			const composition = state.compositions[compositionId];
 
-			const { layer, propertiesToAdd } = createLayer(state, type, compositionId);
+			const compositionLayerReferenceId = options?.compositionLayerReferenceId;
+
+			if (type === LayerType.Composition && !compositionLayerReferenceId) {
+				throw new Error(
+					"A 'compositionLayerReferenceId' must be provided when creating a composition layer",
+				);
+			}
+
+			const { layer, propertiesToAdd } = createLayer(
+				state,
+				type,
+				compositionId,
+				type === LayerType.Composition
+					? { defaultName: state.compositions[compositionLayerReferenceId!].name }
+					: undefined,
+			);
+
+			const layers = [...composition.layers];
+			layers.splice(options?.insertLayerIndex ?? 0, 0, layer.id);
 
 			return {
 				...state,
 				compositions: {
 					...state.compositions,
-					[composition.id]: {
-						...composition,
-						layers: [...composition.layers, layer.id],
-					},
+					[composition.id]: { ...composition, layers },
 				},
-				layers: {
-					...state.layers,
-					[layer.id]: layer,
-				},
+				layers: addListToMap(state.layers, [layer], "id"),
 				properties: addListToMap(state.properties, propertiesToAdd, "id"),
+				compositionLayerIdToComposition:
+					type === LayerType.Composition
+						? {
+								...state.compositionLayerIdToComposition,
+								[layer.id]: compositionLayerReferenceId!,
+						  }
+						: state.compositionLayerIdToComposition,
 			};
 		}
 

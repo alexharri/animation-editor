@@ -9,6 +9,7 @@ import { ContextMenu } from "~/contextMenu/ContextMenu";
 import { addListener, removeListener } from "~/listener/addListener";
 import { isKeyCodeOf } from "~/listener/keyboard";
 import { CustomContextMenu } from "~/contextMenu/CustomContextMenu";
+import { ProjectDragCompPreview } from "~/project/dragComp/ProjectDragCompPreview";
 
 export const AppComponent: React.FC = () => {
 	useEffect(() => {
@@ -31,6 +32,7 @@ export const AppComponent: React.FC = () => {
 				<CustomContextMenu />
 				<Toolbar />
 				<AreaRoot />
+				<ProjectDragCompPreview />
 			</Provider>
 		</>
 	);

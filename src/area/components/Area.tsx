@@ -29,6 +29,11 @@ type Props = StateProps & OwnProps;
 const areaTypeOptions: Array<{ icon: React.ComponentType; type: AreaType; label: string }> = [
 	{
 		icon: PenIcon,
+		type: AreaType.Project,
+		label: "Project",
+	},
+	{
+		icon: PenIcon,
 		type: AreaType.VectorEditor,
 		label: "Vector Editor",
 	},
@@ -71,6 +76,10 @@ export const AreaComponent: React.FC<Props> = (props) => {
 				contextMenuActions.openContextMenu(
 					"Area type",
 					[
+						{
+							label: "Project",
+							type: AreaType.Project,
+						},
 						{
 							label: "Composition Timeline",
 							type: AreaType.CompositionTimeline,

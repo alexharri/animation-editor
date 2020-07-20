@@ -195,6 +195,9 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 				},
 			];
 
+		case NodeEditorNodeType.composition:
+			return [];
+
 		case NodeEditorNodeType.property_input:
 			return [];
 
@@ -332,6 +335,22 @@ export const getNodeEditorNodeDefaultOutputs = (
 				},
 			];
 
+		case NodeEditorNodeType.composition:
+			return [
+				{
+					name: "Width",
+					type: ValueType.Number,
+				},
+				{
+					name: "Height",
+					type: ValueType.Number,
+				},
+				{
+					name: "Frame",
+					type: ValueType.Number,
+				},
+			];
+
 		case NodeEditorNodeType.property_input:
 			return [];
 
@@ -397,6 +416,7 @@ type NodeEditorNodeStateMap = {
 	[NodeEditorNodeType.color_input]: { color: RGBAColor };
 	[NodeEditorNodeType.color_from_rgba_factors]: {};
 	[NodeEditorNodeType.color_to_rgba_factors]: {};
+	[NodeEditorNodeType.composition]: {};
 	[NodeEditorNodeType.property_input]: { layerId: string; propertyId: string };
 	[NodeEditorNodeType.property_output]: { propertyId: string };
 	[NodeEditorNodeType.expr]: {

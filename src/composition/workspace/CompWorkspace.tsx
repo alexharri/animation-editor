@@ -1,16 +1,18 @@
 import React, { useRef } from "react";
-import { AreaComponentProps } from "~/types/areaTypes";
-import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
-import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import styles from "~/composition/workspace/CompositionWorkspace.styles";
-import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
-import { separateLeftRightMouse } from "~/util/mouse";
-import { CompositionWorkspaceViewport } from "~/composition/workspace/CompositionWorkspaceViewport";
 import { NumberInput } from "~/components/common/NumberInput";
-import { RequestActionParams, requestAction } from "~/listener/requestAction";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
+import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
+import styles from "~/composition/workspace/CompWorkspace.styles";
+import { CompWorkspaceCompChildren } from "~/composition/workspace/layers/CompWorkspaceCompChildren";
+import { useCompositionWorkspacePlayback } from "~/composition/workspace/useWorkspacePlayback";
+import { cssVariables } from "~/cssVariables";
 import { useActionState } from "~/hook/useActionState";
+import { useKeyDownEffect } from "~/hook/useKeyDown";
+import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { AreaComponentProps } from "~/types/areaTypes";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -77,6 +79,8 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 		onValueChangeEndFn.current = null;
 	};
 
+	const PlaybackContextProvider = useCompositionWorkspacePlayback(props.areaState.compositionId);
+
 	return (
 		<>
 			<div className={s("header")}></div>
@@ -89,9 +93,16 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 					}}
 				>
 					<div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
-						<CompositionWorkspaceViewport
-							compositionId={props.areaState.compositionId}
-						/>
+						<svg
+							className={s("svg")}
+							width={composition.width}
+							height={composition.height}
+							style={{ background: cssVariables.gray800 }}
+						>
+							<PlaybackContextProvider>
+								<CompWorkspaceCompChildren compositionId={composition.id} />
+							</PlaybackContextProvider>
+						</svg>
 					</div>
 				</div>
 				<div className={s("clickCaptureTarget")} ref={clickCaptureTarget} />

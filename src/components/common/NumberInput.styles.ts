@@ -71,9 +71,8 @@ export default ({ css }: StyleParams) => ({
 		background-color: ${cssVariables.dark300};
 		border: 1px solid ${cssVariables.primary400};
 		font-size: 11px;
-		padding: 0 3px;
-		padding-top: 1px;
-		padding-bottom: 1px;
+		line-height: 12px;
+		padding: 1px 3px 3px;
 		border-radius: 3px;
 		font-weight: 400;
 		transform: translateY(-1px);

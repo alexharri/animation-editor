@@ -1,8 +1,9 @@
-import { store } from "~/state/store";
-import { removeListener, addListener as _addListener } from "~/listener/addListener";
+import { areaActions } from "~/area/state/areaActions";
+import { addListener as _addListener, removeListener } from "~/listener/addListener";
 import { historyActions } from "~/state/history/historyActions";
-import { getActionId, getActionState, getCurrentState } from "~/state/stateUtils";
 import { HistoryState } from "~/state/history/historyReducer";
+import { getActionId, getActionState, getCurrentState } from "~/state/stateUtils";
+import { store } from "~/state/store";
 
 let _n = 0;
 let _activeRequestToken: null | string = null;
@@ -16,6 +17,7 @@ interface Options {
 
 export interface RequestActionParams {
 	dispatch: (action: any | any[], ...otherActions: any[]) => void;
+	dispatchToAreaState: (areaId: string, action: any) => void;
 	cancelAction: () => void;
 	submitAction: (name?: string) => void;
 	addListener: typeof _addListener;
@@ -62,23 +64,29 @@ const performRequestedAction = (
 
 	store.dispatch(historyActions.startAction(actionId));
 
+	const dispatch: RequestActionParams["dispatch"] = (action, ...args) => {
+		if (Array.isArray(action)) {
+			store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
+			return;
+		}
+
+		if (args.length) {
+			store.dispatch(
+				historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
+			);
+			return;
+		}
+
+		store.dispatch(historyActions.dispatchToAction(actionId, action, history));
+	};
+
 	callback({
 		cancelled: () => actionId !== getActionId(),
 
-		dispatch: (action, ...args) => {
-			if (Array.isArray(action)) {
-				store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
-				return;
-			}
+		dispatch,
 
-			if (args.length) {
-				store.dispatch(
-					historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
-				);
-				return;
-			}
-
-			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
+		dispatchToAreaState: (areaId, action) => {
+			dispatch(areaActions.dispatchToAreaState(areaId, action));
 		},
 
 		submitAction: (name = "Unknown action") => {

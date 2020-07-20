@@ -29,12 +29,16 @@ export const computeLayerGraph = (graph?: NodeEditorGraphState): Fn => {
 				rawValue: any;
 			};
 		}>((obj, p) => {
+			const frameIndex =
+				context.layerIdToFrameIndex?.[context.layerId] ?? composition.frameIndex;
+
 			const rawValue = p.timelineId
-				? getTimelineValueAtIndex(
-						composition.frameIndex,
-						context.timelines[p.timelineId],
-						context.timelineSelection[p.timelineId],
-				  )
+				? getTimelineValueAtIndex({
+						timeline: context.timelines[p.timelineId],
+						layerIndex: compositionState.layers[p.layerId].index,
+						frameIndex,
+						selection: context.timelineSelection[p.timelineId],
+				  })
 				: p.value;
 			obj[p.id] = {
 				rawValue,

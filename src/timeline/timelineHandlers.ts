@@ -13,7 +13,7 @@ import { isKeyDown } from "~/listener/keyboard";
 import { createToTimelineViewportY, createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { areaActions } from "~/area/state/areaActions";
-import { compositionTimelineAreaActions } from "~/composition/timeline/compTimeAreaReducer";
+import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import { AreaType } from "~/constants";
 
 const PAN_FAC = 0.0004;
@@ -756,7 +756,7 @@ export const timelineHandlers = {
 				dispatch(
 					areaActions.dispatchToAreaState(
 						options.compositionTimelineAreaId,
-						compositionTimelineAreaActions.setFields({ dragSelectRect }),
+						compTimeAreaActions.setFields({ dragSelectRect }),
 					),
 				);
 			});
@@ -787,7 +787,7 @@ export const timelineHandlers = {
 				dispatch(
 					areaActions.dispatchToAreaState(
 						options.compositionTimelineAreaId,
-						compositionTimelineAreaActions.setFields({ dragSelectRect: null }),
+						compTimeAreaActions.setFields({ dragSelectRect: null }),
 					),
 				);
 				submitAction("Select keyframes");

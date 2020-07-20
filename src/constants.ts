@@ -81,6 +81,7 @@ export enum AreaType {
 	CompositionTimeline = "composition_timeline",
 	CompositionWorkspace = "composition_workspace",
 	History = "history",
+	Project = "project",
 }
 
 export enum TimelineColors {
@@ -109,3 +110,9 @@ export const TIMELINE_CP_TX_MAX = 1 - TIMELINE_CP_TX_MIN;
 export const TIMELINE_CANVAS_END_START_BUFFER = VIEW_BOUNDS_HANDLE_WIDTH;
 
 export const COMP_TIME_SCRUBBER_HEIGHT = 24;
+
+export const COMP_TIME_TRACK_KEYFRAME_HEIGHT = 11;
+export const COMP_TIME_TRACK_START_END_X_MARGIN = 4;
+
+export const COMP_TIME_LAYER_HEIGHT = 16;
+export const COMP_TIME_BETWEEN_LAYERS = 1;

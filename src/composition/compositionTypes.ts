@@ -9,6 +9,7 @@ import {
 
 export interface Composition {
 	id: string;
+	name: string;
 	layers: string[];
 	width: number;
 	height: number;

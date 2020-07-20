@@ -1,5 +1,16 @@
 import Bezier from "bezier-easing";
 import uuid from "uuid/v4";
+import {
+	TIMELINE_CANVAS_END_START_BUFFER,
+	TIMELINE_CP_TX_MAX,
+	TIMELINE_CP_TX_MIN,
+} from "~/constants";
+import { getActionState } from "~/state/stateUtils";
+import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
+import { Timeline, TimelineKeyframe, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
+import { capToRange, getDistance, interpolate, translateToRange } from "~/util/math";
+import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
+import { splitCubicBezier } from "~/util/math/splitCubicBezier";
 
 const calcP2 = (p3: Vec2, p1: Vec2): Vec2 => {
 	return Vec2.new(p1.x + (p3.x - p1.x) * 0.4, p1.y + (p3.y - p1.y) * 0.4);
@@ -31,17 +42,6 @@ export const getControlPointAsVector = (
 	const t = (k1.index - k0.index) / cp.relativeToDistance;
 	return Vec2.new(interpolate(k0.index, k1.index, cp.tx), k.value + cp.value * t);
 };
-import { TimelineKeyframe, Timeline, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
-import { interpolate, capToRange, getDistance } from "~/util/math";
-import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
-import { getActionState } from "~/state/stateUtils";
-import { splitCubicBezier } from "~/util/math/splitCubicBezier";
-import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
-import {
-	TIMELINE_CP_TX_MIN,
-	TIMELINE_CP_TX_MAX,
-	TIMELINE_CANVAS_END_START_BUFFER,
-} from "~/constants";
 
 const getPathFromKeyframes = (k0: TimelineKeyframe, k1: TimelineKeyframe): CubicBezier | Line => {
 	if (k0.controlPointRight && k1.controlPointLeft) {
@@ -79,15 +79,19 @@ export const timelineKeyframesToPathList = (
 	return paths;
 };
 
-export function getTimelineValueAtIndex(
-	index: number,
-	_timeline: Timeline,
-	selection?: TimelineSelection,
-): number {
-	let timeline = _timeline;
+interface GetTimelineValueAtIndexOptions {
+	timeline: Timeline;
+	frameIndex: number;
+	layerIndex: number;
+	selection?: TimelineSelection;
+}
+
+export function getTimelineValueAtIndex(options: GetTimelineValueAtIndexOptions): number {
+	const index = options.frameIndex - options.layerIndex;
+	let timeline = options.timeline;
 
 	if (typeof timeline._indexShift) {
-		timeline = applyTimelineIndexAndValueShifts(timeline, selection);
+		timeline = applyTimelineIndexAndValueShifts(timeline, options.selection);
 	}
 
 	const keyframes = timeline.keyframes;
@@ -256,20 +260,40 @@ export const getTimelineYBoundsFromPaths = (
 	return [yUpper + diff * 0.1, yLower - diff * 0.1];
 };
 
-export const transformGlobalToTimelineX = (
-	vecX: number,
+export const transformTimelineXToGlobalX = (
+	timelineX: number,
 	viewBounds: [number, number],
-	left: number,
-	width: number,
-	length: number,
+	viewport: Rect,
+	compositionLength: number,
 ): number => {
-	const canvasWidth = width - TIMELINE_CANVAS_END_START_BUFFER * 2;
-	const canvasLeft = left + TIMELINE_CANVAS_END_START_BUFFER;
+	const renderWidth = viewport.width;
+	const canvasWidth = viewport.width - TIMELINE_CANVAS_END_START_BUFFER * 2;
 
-	const xt = (vecX - canvasLeft) / canvasWidth;
+	const [tMin, tMax] = viewBounds;
 
-	const [xMin, xMax] = viewBounds;
-	const x = (xMin + (xMax - xMin) * xt) * length;
+	const t = timelineX / compositionLength;
+	return (
+		translateToRange(t * renderWidth, tMin * renderWidth, tMax * renderWidth, canvasWidth) +
+		TIMELINE_CANVAS_END_START_BUFFER +
+		viewport.left
+	);
+};
+
+export const transformGlobalToTimelineX = (
+	value: number,
+	options: {
+		viewBounds: [number, number];
+		viewport: Rect;
+		compositionLength: number;
+	},
+): number => {
+	const canvasWidth = options.viewport.width - TIMELINE_CANVAS_END_START_BUFFER * 2;
+	const canvasLeft = options.viewport.left + TIMELINE_CANVAS_END_START_BUFFER;
+
+	const xt = (value - canvasLeft) / canvasWidth;
+
+	const [xMin, xMax] = options.viewBounds;
+	const x = (xMin + (xMax - xMin) * xt) * options.compositionLength;
 
 	return x;
 };
@@ -310,6 +334,27 @@ export const transformGlobalToTimelinePosition = (
 
 	const y = interpolate(yUp, yLow, yt);
 	pos.y = y;
+
+	return pos;
+};
+
+export const transformGlobalToTrackPosition = (
+	vec: Vec2,
+	options: {
+		compositionLength: number;
+		viewBounds: [number, number];
+		viewport: Rect;
+	},
+): Vec2 => {
+	const { viewBounds, viewport } = options;
+
+	const canvasWidth = viewport.width - TIMELINE_CANVAS_END_START_BUFFER * 2;
+	const canvasLeft = viewport.left + TIMELINE_CANVAS_END_START_BUFFER;
+
+	const pos = vec.subY(viewport.top).subX(canvasLeft);
+	const xt = pos.x / canvasWidth;
+	const [xMin, xMax] = viewBounds;
+	pos.x = (xMin + (xMax - xMin) * xt) * options.compositionLength;
 
 	return pos;
 };

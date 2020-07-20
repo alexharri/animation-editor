@@ -1,42 +1,69 @@
 import { ActionType, createAction, getType } from "typesafe-actions";
 
-export interface CompositionTimelineAreaState {
+export interface CompTimeAreaState {
 	compositionId: string;
+	graphEditorOpen: boolean;
 	viewBounds: [number, number];
+	panY: number;
 	dragSelectRect: Rect | null;
+	trackDragSelectRect: Rect | null;
+	layerIndexShift: number;
+	layerLengthShift: [number, number];
 }
 
-export const initialCompositionTimelineAreaState: CompositionTimelineAreaState = {
+export const initialCompTimeAreaState: CompTimeAreaState = {
 	compositionId: "0",
+	graphEditorOpen: false,
 	viewBounds: [0, 1],
+	panY: 0,
 	dragSelectRect: null,
+	trackDragSelectRect: null,
+	layerIndexShift: 0,
+	layerLengthShift: [0, 0],
 };
 
-export const compositionTimelineAreaActions = {
-	setViewBounds: createAction("compTimeline/SET_VIEW_BOUNDS", (action) => {
+export const compTimeAreaActions = {
+	setViewBounds: createAction("compTime/SET_VIEW_BOUNDS", (action) => {
 		return (viewBounds: [number, number]) => action({ viewBounds });
 	}),
 
-	setFields: createAction("compTimeline/SET_FIELDS", (action) => {
-		return (fields: Partial<CompositionTimelineAreaState>) => action({ fields });
+	setPanY: createAction("compTime/SET_PAN_Y", (action) => {
+		return (panY: number) => action({ panY });
+	}),
+
+	setFields: createAction("compTime/SET_FIELDS", (action) => {
+		return (fields: Partial<CompTimeAreaState>) => action({ fields });
+	}),
+
+	toggleGraphEditorOpen: createAction("compTime/SET_GRAPH_OPEN", (action) => {
+		return () => action({});
 	}),
 };
 
-type Action = ActionType<typeof compositionTimelineAreaActions>;
+type Action = ActionType<typeof compTimeAreaActions>;
 
 export const compTimeAreaReducer = (
-	state = initialCompositionTimelineAreaState,
+	state = initialCompTimeAreaState,
 	action: Action,
-): CompositionTimelineAreaState => {
+): CompTimeAreaState => {
 	switch (action.type) {
-		case getType(compositionTimelineAreaActions.setViewBounds): {
+		case getType(compTimeAreaActions.setViewBounds): {
 			const { viewBounds } = action.payload;
 			return { ...state, viewBounds };
 		}
 
-		case getType(compositionTimelineAreaActions.setFields): {
+		case getType(compTimeAreaActions.setPanY): {
+			const { panY } = action.payload;
+			return { ...state, panY };
+		}
+
+		case getType(compTimeAreaActions.setFields): {
 			const { fields } = action.payload;
 			return { ...state, ...fields };
+		}
+
+		case getType(compTimeAreaActions.toggleGraphEditorOpen): {
+			return { ...state, graphEditorOpen: !state.graphEditorOpen };
 		}
 
 		default:

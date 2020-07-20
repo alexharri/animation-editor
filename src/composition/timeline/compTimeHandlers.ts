@@ -1,27 +1,28 @@
-import { requestAction, RequestActionCallback } from "~/listener/requestAction";
-import { isKeyDown } from "~/listener/keyboard";
-import { capToRange, interpolate, getDistance } from "~/util/math";
-import { animate } from "~/util/animation/animate";
 import { areaActions } from "~/area/state/areaActions";
-import { compositionTimelineAreaActions } from "~/composition/timeline/compTimeAreaReducer";
-import {
-	transformGlobalToTimelineX,
-	getTimelineValueAtIndex,
-	createTimelineForLayerProperty,
-} from "~/timeline/timelineUtils";
-import { CompositionProperty, CompositionLayer } from "~/composition/compositionTypes";
+import { areaInitialStates } from "~/area/state/areaInitialStates";
+import { computeAreaToViewport } from "~/area/util/areaToViewport";
+import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
+import { getAreaRootViewport } from "~/area/util/getAreaViewport";
+import { CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
-import { getActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
+import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
+import { getCompTimeLayerListHeight } from "~/composition/timeline/compTimeUtils";
+import { didCompSelectionChange } from "~/composition/util/compSelectionUtils";
+import { AreaType } from "~/constants";
+import { isKeyDown } from "~/listener/keyboard";
+import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { getAreaRootViewport } from "~/area/util/getAreaViewport";
-import { computeAreaToViewport } from "~/area/util/areaToViewport";
-import { AreaType } from "~/constants";
-import { areaInitialStates } from "~/area/state/areaInitialStates";
-import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
-import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
-import { didCompSelectionChange } from "~/composition/util/compSelectionUtils";
+import { getActionState } from "~/state/stateUtils";
+import { timelineActions } from "~/timeline/timelineActions";
+import {
+	createTimelineForLayerProperty,
+	getTimelineValueAtIndex,
+	transformGlobalToTimelineX,
+} from "~/timeline/timelineUtils";
+import { animate } from "~/util/animation/animate";
+import { capToRange, getDistance, interpolate } from "~/util/math";
 
 const ZOOM_FAC = 0.25;
 
@@ -32,9 +33,10 @@ export const compTimeHandlers = {
 			compositionId: string;
 			viewBounds: [number, number];
 			viewport: Rect;
+			compositionLength: number;
 		},
 	): void => {
-		const { compositionId, viewport, viewBounds } = options;
+		const { compositionId } = options;
 
 		const composition = getActionState().compositions.compositions[compositionId];
 
@@ -45,13 +47,7 @@ export const compTimeHandlers = {
 
 			const onMove = (e?: MouseEvent) => {
 				const pos = e ? Vec2.fromEvent(e) : initialPosition;
-				const x = transformGlobalToTimelineX(
-					pos.x,
-					viewBounds,
-					viewport.left,
-					viewport.width,
-					composition.length,
-				);
+				const x = transformGlobalToTimelineX(pos.x, options);
 				dispatch(
 					compositionActions.setFrameIndex(
 						composition.id,
@@ -101,7 +97,7 @@ export const compTimeHandlers = {
 				dispatch(
 					areaActions.dispatchToAreaState(
 						areaId,
-						compositionTimelineAreaActions.setViewBounds([
+						compTimeAreaActions.setViewBounds([
 							interpolate(viewBounds[0], newBounds[0], t),
 							interpolate(viewBounds[1], newBounds[1], t),
 						]),
@@ -111,42 +107,103 @@ export const compTimeHandlers = {
 		});
 	},
 
+	onWheelPan: (
+		e: WheelEvent,
+		areaId: string,
+		options: {
+			compositionId: string;
+			compositionLength: number;
+			viewBounds: [number, number];
+			viewport: Rect;
+			panY: number;
+			lockY: boolean;
+		},
+	): void => {
+		const { viewBounds, compositionLength, compositionId } = options;
+
+		requestAction({ history: false }, ({ submitAction, dispatch }) => {
+			const compositionState = getActionState().compositions;
+
+			const [x0, x1] = [0, e.deltaX].map((x) => transformGlobalToTimelineX(x, options));
+
+			const xt0 = x0 / compositionLength;
+			const xt1 = x1 / compositionLength;
+
+			const tChange = (xt0 - xt1) * -1;
+
+			const rightShiftMax = 1 - viewBounds[1];
+			const leftShiftMax = -viewBounds[0];
+
+			let newBounds = [viewBounds[0], viewBounds[1]] as [number, number];
+			if (tChange > rightShiftMax) {
+				newBounds[1] = 1;
+				newBounds[0] += rightShiftMax;
+			} else if (tChange < leftShiftMax) {
+				newBounds[0] = 0;
+				newBounds[1] += leftShiftMax;
+			} else {
+				newBounds[0] += tChange;
+				newBounds[1] += tChange;
+			}
+
+			const toDispatch: any[] = [
+				areaActions.dispatchToAreaState(
+					areaId,
+					compTimeAreaActions.setViewBounds(newBounds),
+				),
+			];
+
+			if (!options.lockY) {
+				const yChange = e.deltaY;
+				let yPan = options.panY + yChange;
+
+				yPan = Math.min(
+					yPan,
+					getCompTimeLayerListHeight(compositionId, compositionState) -
+						options.viewport.height,
+				);
+				yPan = Math.max(0, yPan);
+
+				toDispatch.push(
+					areaActions.dispatchToAreaState(areaId, compTimeAreaActions.setPanY(yPan)),
+				);
+			}
+
+			dispatch(toDispatch);
+			submitAction();
+		});
+	},
+
 	/**
 	 * When the user Space + Mouse drags the timeline around
 	 */
-	onPanViewBounds: (
+	onPan: (
 		e: React.MouseEvent,
 		areaId: string,
 		options: {
-			length: number;
+			compositionId: string;
+			compositionLength: number;
 			viewBounds: [number, number];
-			width: number;
-			left: number;
+			viewport: Rect;
+			panY: number;
+			lockY: boolean;
 		},
 	): void => {
-		const { viewBounds, length, width, left } = options;
+		const { viewBounds, compositionLength, viewport, compositionId } = options;
 
-		const initialPos = transformGlobalToTimelineX(
-			Vec2.fromEvent(e).x,
-			viewBounds,
-			left,
-			width,
-			length,
-		);
+		const initialMousePosition = Vec2.fromEvent(e);
+		const initialPos = transformGlobalToTimelineX(initialMousePosition.x, options);
 
 		const fn: RequestActionCallback = ({ addListener, submitAction, dispatch }) => {
-			let initialT = initialPos / length;
+			const compositionState = getActionState().compositions;
+
+			let initialT = initialPos / compositionLength;
 
 			addListener.repeated("mousemove", (e) => {
-				const pos = transformGlobalToTimelineX(
-					Vec2.fromEvent(e).x,
-					viewBounds,
-					left,
-					width,
-					length,
-				);
+				const mousePosition = Vec2.fromEvent(e);
+				const pos = transformGlobalToTimelineX(mousePosition.x, options);
 
-				const t = pos / length;
+				const t = pos / compositionLength;
 
 				const tChange = (t - initialT) * -1;
 
@@ -165,12 +222,30 @@ export const compTimeHandlers = {
 					newBounds[1] += tChange;
 				}
 
-				dispatch(
+				const toDispatch: any[] = [
 					areaActions.dispatchToAreaState(
 						areaId,
-						compositionTimelineAreaActions.setViewBounds(newBounds),
+						compTimeAreaActions.setViewBounds(newBounds),
 					),
-				);
+				];
+
+				if (!options.lockY) {
+					const yChange = initialMousePosition.y - mousePosition.y;
+					let yPan = options.panY + yChange;
+
+					yPan = Math.min(
+						yPan,
+						getCompTimeLayerListHeight(compositionId, compositionState) -
+							viewport.height,
+					);
+					yPan = Math.max(0, yPan);
+
+					toDispatch.push(
+						areaActions.dispatchToAreaState(areaId, compTimeAreaActions.setPanY(yPan)),
+					);
+				}
+
+				dispatch(toDispatch);
 			});
 
 			addListener.once("mouseup", () => submitAction());
@@ -183,19 +258,21 @@ export const compTimeHandlers = {
 		propertyId: string,
 		timelineId: string,
 	): void => {
-		const { compositions, timelines, timelineSelection } = getActionState();
-		const composition = compositions.compositions[compositionId];
-		const property = compositions.properties[propertyId] as CompositionProperty;
+		const { compositions: compositionState, timelines, timelineSelection } = getActionState();
+		const composition = compositionState.compositions[compositionId];
+		const property = compositionState.properties[propertyId] as CompositionProperty;
+		const layer = compositionState.layers[property.layerId];
 
 		if (timelineId) {
 			// Delete timeline and make the value of the timeline at the current time
 			// the value of the property
 			const timeline = timelines[timelineId];
-			const value = getTimelineValueAtIndex(
-				composition.frameIndex,
+			const value = getTimelineValueAtIndex({
 				timeline,
-				timelineSelection[timeline.id],
-			);
+				frameIndex: composition.frameIndex,
+				layerIndex: layer.index,
+				selection: timelineSelection[timeline.id],
+			});
 
 			requestAction({ history: true }, ({ dispatch, submitAction }) => {
 				dispatch(

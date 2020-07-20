@@ -158,6 +158,9 @@ export const getExpressionIO = (expression: string) => {
 			}
 
 			case "FunctionNode": {
+				for (let i = 0; i < node.args.length; i += 1) {
+					crawl(node.args[i], ctx);
+				}
 				break;
 			}
 

@@ -65,6 +65,7 @@ export const cssZIndex = {
 		},
 	},
 	toolbar: 100,
+	dragComp: 200,
 	contextMenuBackground: 500,
 	contextMenu: 501,
 };

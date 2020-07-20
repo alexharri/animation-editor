@@ -82,4 +82,8 @@ export default ({ css }: StyleParams) => ({
 		cursor: none;
 		z-index: ${cssZIndex.nodeEditor.clickCaptureTarget};
 	`,
+
+	svg: css`
+		transform: translate(-50%, -50%);
+	`,
 });
