@@ -2,7 +2,7 @@ import { addListener } from "~/listener/addListener";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { getDistance } from "~/util/math";
 
-interface MPos {
+interface MousePosition {
 	global: Vec2;
 	translated: Vec2;
 }
@@ -11,7 +11,11 @@ interface Options {
 	beforeMove: (params: RequestActionParams) => void;
 	mouseMove: (
 		params: RequestActionParams,
-		options: { initialMousePosition: MPos; mousePosition: MPos; moveVector: MPos },
+		options: {
+			initialMousePosition: MousePosition;
+			mousePosition: MousePosition;
+			moveVector: MousePosition;
+		},
 	) => void;
 	mouseUp: (params: RequestActionParams, hasMoved: boolean) => void;
 	translate?: (vec: Vec2) => Vec2;
@@ -40,7 +44,7 @@ export const mouseDownMoveAction = (
 
 	const initialGlobalMousePosition =
 		eOrInitialPos instanceof Vec2 ? eOrInitialPos : Vec2.fromEvent(eOrInitialPos);
-	const initialMousePosition: MPos = {
+	const initialMousePosition: MousePosition = {
 		global: initialGlobalMousePosition,
 		translated: translate(initialGlobalMousePosition),
 	};
@@ -52,7 +56,7 @@ export const mouseDownMoveAction = (
 
 		params.addListener.repeated("mousemove", (e) => {
 			const globalMousePosition = Vec2.fromEvent(e);
-			const mousePosition: MPos = {
+			const mousePosition: MousePosition = {
 				global: globalMousePosition,
 				translated: translate(globalMousePosition),
 			};
@@ -67,7 +71,7 @@ export const mouseDownMoveAction = (
 				hasMoved = true;
 			}
 
-			const moveVector: MPos = {
+			const moveVector: MousePosition = {
 				global: mousePosition.global.sub(initialMousePosition.global),
 				translated: mousePosition.translated.sub(initialMousePosition.translated),
 			};
