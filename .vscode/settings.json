@@ -25,5 +25,11 @@
   ],
   "editor.codeActionsOnSave": {
     "source.organizeImports": true
-  }
+  },
+  "typescriptHero.imports.grouping": [
+    "Plains",
+    "Modules",
+    "Workspace",
+  ],
+  "typescriptHero.imports.organizeSortsByFirstSpecifier": false
 }
