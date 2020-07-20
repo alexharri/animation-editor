@@ -1,12 +1,12 @@
-import React, { useRef, useEffect } from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import CompTimeScrubberStyles from "~/composition/timeline/scrubber/CompTimeScrubber.styles";
-import { COMP_TIME_SCRUBBER_HEIGHT } from "~/constants";
-import { separateLeftRightMouse } from "~/util/mouse";
+import React, { useEffect, useRef } from "react";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
+import CompTimeScrubberStyles from "~/composition/timeline/scrubber/CompTimeScrubber.styles";
+import { renderCompTimeScrubber } from "~/composition/timeline/scrubber/renderCompTimeScrubber";
+import { COMP_TIME_SCRUBBER_HEIGHT } from "~/constants";
 import { connectActionState } from "~/state/stateUtils";
 import { createToTimelineViewportX } from "~/timeline/renderTimeline";
-import { renderCompTimeScrubber } from "~/composition/timeline/scrubber/renderCompTimeScrubber";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(CompTimeScrubberStyles);
 
@@ -60,6 +60,7 @@ const CompTimeScrubberComponent: React.FC<Props> = (props) => {
 							compositionId: props.compositionId,
 							viewBounds: props.viewBounds,
 							viewport: props.viewportRight,
+							compositionLength: props.length,
 						});
 					},
 				})}

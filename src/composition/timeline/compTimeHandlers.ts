@@ -1,28 +1,28 @@
-import { requestAction, RequestActionCallback } from "~/listener/requestAction";
-import { isKeyDown } from "~/listener/keyboard";
-import { capToRange, interpolate, getDistance } from "~/util/math";
-import { animate } from "~/util/animation/animate";
 import { areaActions } from "~/area/state/areaActions";
-import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
-import {
-	transformGlobalToTimelineX,
-	getTimelineValueAtIndex,
-	createTimelineForLayerProperty,
-} from "~/timeline/timelineUtils";
-import { CompositionProperty, CompositionLayer } from "~/composition/compositionTypes";
+import { areaInitialStates } from "~/area/state/areaInitialStates";
+import { computeAreaToViewport } from "~/area/util/areaToViewport";
+import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
+import { getAreaRootViewport } from "~/area/util/getAreaViewport";
+import { CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
-import { getActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
+import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
+import { getCompTimeLayerListHeight } from "~/composition/timeline/compTimeUtils";
+import { didCompSelectionChange } from "~/composition/util/compSelectionUtils";
+import { AreaType } from "~/constants";
+import { isKeyDown } from "~/listener/keyboard";
+import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { getAreaRootViewport } from "~/area/util/getAreaViewport";
-import { computeAreaToViewport } from "~/area/util/areaToViewport";
-import { AreaType } from "~/constants";
-import { areaInitialStates } from "~/area/state/areaInitialStates";
-import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
-import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
-import { didCompSelectionChange } from "~/composition/util/compSelectionUtils";
-import { getCompTimeLayerListHeight } from "~/composition/timeline/compTimeUtils";
+import { getActionState } from "~/state/stateUtils";
+import { timelineActions } from "~/timeline/timelineActions";
+import {
+	createTimelineForLayerProperty,
+	getTimelineValueAtIndex,
+	transformGlobalToTimelineX,
+} from "~/timeline/timelineUtils";
+import { animate } from "~/util/animation/animate";
+import { capToRange, getDistance, interpolate } from "~/util/math";
 
 const ZOOM_FAC = 0.25;
 
@@ -33,9 +33,10 @@ export const compTimeHandlers = {
 			compositionId: string;
 			viewBounds: [number, number];
 			viewport: Rect;
+			compositionLength: number;
 		},
 	): void => {
-		const { compositionId, viewport, viewBounds } = options;
+		const { compositionId } = options;
 
 		const composition = getActionState().compositions.compositions[compositionId];
 
@@ -46,13 +47,7 @@ export const compTimeHandlers = {
 
 			const onMove = (e?: MouseEvent) => {
 				const pos = e ? Vec2.fromEvent(e) : initialPosition;
-				const x = transformGlobalToTimelineX(
-					pos.x,
-					viewBounds,
-					viewport.left,
-					viewport.width,
-					composition.length,
-				);
+				const x = transformGlobalToTimelineX(pos.x, options);
 				dispatch(
 					compositionActions.setFrameIndex(
 						composition.id,
@@ -119,28 +114,17 @@ export const compTimeHandlers = {
 			compositionId: string;
 			compositionLength: number;
 			viewBounds: [number, number];
-			viewportWidth: number;
-			viewportHeight: number;
-			left: number;
+			viewport: Rect;
 			panY: number;
 			lockY: boolean;
 		},
 	): void => {
-		const {
-			viewBounds,
-			compositionLength,
-			viewportWidth,
-			viewportHeight,
-			left,
-			compositionId,
-		} = options;
+		const { viewBounds, compositionLength, compositionId } = options;
 
 		requestAction({ history: false }, ({ submitAction, dispatch }) => {
 			const compositionState = getActionState().compositions;
 
-			const [x0, x1] = [0, e.deltaX].map((x) =>
-				transformGlobalToTimelineX(x, viewBounds, left, viewportWidth, compositionLength),
-			);
+			const [x0, x1] = [0, e.deltaX].map((x) => transformGlobalToTimelineX(x, options));
 
 			const xt0 = x0 / compositionLength;
 			const xt1 = x1 / compositionLength;
@@ -175,7 +159,8 @@ export const compTimeHandlers = {
 
 				yPan = Math.min(
 					yPan,
-					getCompTimeLayerListHeight(compositionId, compositionState) - viewportHeight,
+					getCompTimeLayerListHeight(compositionId, compositionState) -
+						options.viewport.height,
 				);
 				yPan = Math.max(0, yPan);
 
@@ -199,30 +184,15 @@ export const compTimeHandlers = {
 			compositionId: string;
 			compositionLength: number;
 			viewBounds: [number, number];
-			viewportWidth: number;
-			viewportHeight: number;
-			left: number;
+			viewport: Rect;
 			panY: number;
 			lockY: boolean;
 		},
 	): void => {
-		const {
-			viewBounds,
-			compositionLength,
-			viewportWidth,
-			viewportHeight,
-			left,
-			compositionId,
-		} = options;
+		const { viewBounds, compositionLength, viewport, compositionId } = options;
 
 		const initialMousePosition = Vec2.fromEvent(e);
-		const initialPos = transformGlobalToTimelineX(
-			initialMousePosition.x,
-			viewBounds,
-			left,
-			viewportWidth,
-			compositionLength,
-		);
+		const initialPos = transformGlobalToTimelineX(initialMousePosition.x, options);
 
 		const fn: RequestActionCallback = ({ addListener, submitAction, dispatch }) => {
 			const compositionState = getActionState().compositions;
@@ -231,13 +201,7 @@ export const compTimeHandlers = {
 
 			addListener.repeated("mousemove", (e) => {
 				const mousePosition = Vec2.fromEvent(e);
-				const pos = transformGlobalToTimelineX(
-					mousePosition.x,
-					viewBounds,
-					left,
-					viewportWidth,
-					compositionLength,
-				);
+				const pos = transformGlobalToTimelineX(mousePosition.x, options);
 
 				const t = pos / compositionLength;
 
@@ -272,7 +236,7 @@ export const compTimeHandlers = {
 					yPan = Math.min(
 						yPan,
 						getCompTimeLayerListHeight(compositionId, compositionState) -
-							viewportHeight,
+							viewport.height,
 					);
 					yPan = Math.max(0, yPan);
 

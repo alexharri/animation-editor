@@ -1,25 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
-import { AreaComponentProps } from "~/types/areaTypes";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { connectActionState } from "~/state/stateUtils";
-import { CompTimeAreaState, compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
-import { Composition, CompositionProperty } from "~/composition/compositionTypes";
-import { splitRect, capToRange, isVecInRect } from "~/util/math";
-import { RequestActionCallback, requestAction } from "~/listener/requestAction";
-import { separateLeftRightMouse } from "~/util/mouse";
-import { CompTimeLayer } from "~/composition/timeline/layer/CompTimeLayer";
-import { ViewBounds } from "~/timeline/ViewBounds";
+import React, { useEffect, useRef, useState } from "react";
 import { areaActions } from "~/area/state/areaActions";
-import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
-import { TimelineEditor } from "~/timeline/TimelineEditor";
+import { Composition, CompositionProperty } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
-import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
 import styles from "~/composition/timeline/CompositionTimeline.styles";
-import { TrackEditor } from "~/composition/timeline/track/TrackEditor";
+import { compTimeAreaActions, CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
+import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { capCompTimePanY } from "~/composition/timeline/compTimeUtils";
+import { CompTimeLayer } from "~/composition/timeline/layer/CompTimeLayer";
+import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
+import { TrackEditor } from "~/composition/timeline/track/TrackEditor";
+import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
+import { useKeyDownEffect } from "~/hook/useKeyDown";
+import { requestAction, RequestActionCallback } from "~/listener/requestAction";
+import { connectActionState } from "~/state/stateUtils";
+import { TimelineEditor } from "~/timeline/TimelineEditor";
+import { ViewBounds } from "~/timeline/ViewBounds";
+import { AreaComponentProps } from "~/types/areaTypes";
+import { capToRange, isVecInRect, splitRect } from "~/util/math";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -132,9 +132,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 
 			compTimeHandlers.onWheelPan(e as any, props.areaId, {
 				compositionId: props.composition.id,
-				left: viewportRight.left,
-				viewportWidth: viewportRight.width,
-				viewportHeight: viewportRight.height,
+				viewport: viewportRight,
 				compositionLength: props.composition.length,
 				viewBounds: props.viewBounds,
 				lockY,
@@ -162,9 +160,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 							: false;
 						compTimeHandlers.onPan(e, props.areaId, {
 							compositionId: props.composition.id,
-							left: viewportRight.left,
-							viewportWidth: viewportRight.width,
-							viewportHeight: viewportRight.height,
+							viewport: viewportRight,
 							compositionLength: props.composition.length,
 							viewBounds: props.viewBounds,
 							lockY,

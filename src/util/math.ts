@@ -228,3 +228,17 @@ export const valueWithinMargin = (value: number, at: number, margin: number): bo
 export const valueWithinRange = (value: number, min: number, max: number): boolean => {
 	return value >= min && value <= max;
 };
+
+export const distanceFromTranslatedX = (
+	a: number,
+	b: number,
+	translate: (value: number) => number,
+): number => {
+	const [x0, x1] = [0, 1].map((value) => translate(value));
+
+	const xt = x1 - x0;
+
+	const aScaled = a * (1 / xt);
+	const bScaled = b * (1 / xt);
+	return Math.abs(aScaled - bScaled);
+};
