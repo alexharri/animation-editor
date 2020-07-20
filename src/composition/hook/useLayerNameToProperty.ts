@@ -1,11 +1,11 @@
+import { useContext, useRef } from "react";
+import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
+import { CompWorkspacePlaybackContext } from "~/composition/workspace/useWorkspacePlayback";
+import { useActionState } from "~/hook/useActionState";
 import { useComputeHistory } from "~/hook/useComputeHistory";
 import { computeLayerGraph } from "~/nodeEditor/graph/computeLayerGraph";
-import { useActionState } from "~/hook/useActionState";
 import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
-import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { PropertyName } from "~/types";
-import { useContext, useRef } from "react";
-import { CompWorkspacePlaybackContext } from "~/composition/workspace/useWorkspacePlayback";
 
 export const useLayerNameToProperty = (compositionId: string, layerId: string) => {
 	const { computePropertyValues, layer } = useComputeHistory((state) => {
@@ -15,12 +15,12 @@ export const useLayerNameToProperty = (compositionId: string, layerId: string) =
 		return { computePropertyValues: computeLayerGraph(graph), layer };
 	});
 
-	const r = useContext(CompWorkspacePlaybackContext);
-	const ref = useRef<typeof r | null>(null);
-	ref.current = r;
+	const playbackContext = useContext(CompWorkspacePlaybackContext);
+	const playbackContextRef = useRef<typeof playbackContext | null>(null);
+	playbackContextRef.current = playbackContext;
 
 	const propertyToValue = useActionState((actionState) => {
-		const { layerIdToFrameIndex } = ref.current!;
+		const { layerIdToFrameIndex } = playbackContextRef.current!;
 
 		const graph = layer.graphId ? actionState.nodeEditor.graphs[layer.graphId] : undefined;
 

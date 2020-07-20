@@ -1,18 +1,18 @@
 import React, { useRef } from "react";
-import { AreaComponentProps } from "~/types/areaTypes";
-import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
-import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import styles from "~/composition/workspace/CompositionWorkspace.styles";
-import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
-import { separateLeftRightMouse } from "~/util/mouse";
 import { NumberInput } from "~/components/common/NumberInput";
-import { RequestActionParams, requestAction } from "~/listener/requestAction";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
+import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
+import styles from "~/composition/workspace/CompWorkspace.styles";
+import { CompWorkspaceCompChildren } from "~/composition/workspace/layers/CompWorkspaceCompChildren";
 import { useCompositionWorkspacePlayback } from "~/composition/workspace/useWorkspacePlayback";
-import { useActionState } from "~/hook/useActionState";
-import { CompWorkspaceCompChildren } from "~/composition/workspace/CompWorkspaceCompChildren";
 import { cssVariables } from "~/cssVariables";
+import { useActionState } from "~/hook/useActionState";
+import { useKeyDownEffect } from "~/hook/useKeyDown";
+import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { AreaComponentProps } from "~/types/areaTypes";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 

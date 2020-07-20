@@ -1,9 +1,9 @@
 import React from "react";
-import { CompositionWorkspaceLayer } from "~/composition/workspace/CompositionWorkspaceLayer";
-import { LayerType } from "~/types";
-import { CompWorkspaceEllipseLayer } from "~/composition/workspace/layers/CompWorkspaceEllipseLayer";
 import { CompWorkspaceCompLayer } from "~/composition/workspace/layers/CompWorkspaceCompLayer";
+import { CompWorkspaceEllipseLayer } from "~/composition/workspace/layers/CompWorkspaceEllipseLayer";
+import { CompWorkspaceRectLayer } from "~/composition/workspace/layers/CompWorkspaceRectLayer";
 import { useComputeHistory } from "~/hook/useComputeHistory";
+import { LayerType } from "~/types";
 
 interface OwnProps {
 	compositionId: string;
@@ -45,7 +45,7 @@ export const CompWorkspaceCompChildren: React.FC<Props> = (props) => {
 				}
 
 				return (
-					<CompositionWorkspaceLayer
+					<CompWorkspaceRectLayer
 						key={id}
 						compositionId={props.compositionId}
 						layerId={id}

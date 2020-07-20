@@ -1,14 +1,14 @@
-import { VectorEditor } from "~/vectorEditor/VectorEditor";
+import { CompositionTimeline } from "~/composition/timeline/CompositionTimeline";
+import { compTimeAreaReducer } from "~/composition/timeline/compTimeAreaReducer";
+import { compositionWorkspaceAreaReducer } from "~/composition/workspace/compositionWorkspaceAreaReducer";
+import { CompositionWorkspace } from "~/composition/workspace/CompWorkspace";
 import { AreaType } from "~/constants";
+import HistoryEditor from "~/historyEditor/HistoryEditor";
 import { NodeEditor } from "~/nodeEditor/NodeEditor";
 import { nodeEditorAreaReducer } from "~/nodeEditor/nodeEditorAreaReducer";
-import HistoryEditor from "~/historyEditor/HistoryEditor";
-import { compTimeAreaReducer } from "~/composition/timeline/compTimeAreaReducer";
-import { CompositionTimeline } from "~/composition/timeline/CompositionTimeline";
-import { CompositionWorkspace } from "~/composition/workspace/CompositionWorkspace";
-import { compositionWorkspaceAreaReducer } from "~/composition/workspace/compositionWorkspaceAreaReducer";
-import { AreaState, AreaComponentProps } from "~/types/areaTypes";
 import { Project } from "~/project/Project";
+import { AreaComponentProps, AreaState } from "~/types/areaTypes";
+import { VectorEditor } from "~/vectorEditor/VectorEditor";
 
 export const areaComponentRegistry: {
 	[T in AreaType]: React.ComponentType<AreaComponentProps<AreaState<T>>>;

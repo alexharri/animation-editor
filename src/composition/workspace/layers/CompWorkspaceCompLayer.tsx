@@ -1,7 +1,7 @@
 import React from "react";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
-import { CompWorkspaceCompChildren } from "~/composition/workspace/CompWorkspaceCompChildren";
+import { CompWorkspaceCompChildren } from "~/composition/workspace/layers/CompWorkspaceCompChildren";
 import { useWorkspaceLayerShouldRender } from "~/composition/workspace/useWorkspaceLayerShouldRender";
 import { connectActionState } from "~/state/stateUtils";
 
