@@ -1,10 +1,10 @@
 import React from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { ProjectComp } from "~/project/composition/ProjectComp";
-import { createProjectContextMenu } from "~/project/projectContextMenu";
-import { separateLeftRightMouse } from "~/util/mouse";
 import ProjectStyles from "~/project/Project.styles";
+import { createProjectContextMenu } from "~/project/projectContextMenu";
+import { connectActionState } from "~/state/stateUtils";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(ProjectStyles);
 
@@ -24,6 +24,7 @@ const ProjectComponent: React.FC<Props> = (props) => {
 			className={s("container")}
 			onMouseDown={separateLeftRightMouse({ right: onRightClick })}
 		>
+			<div className={s("header")} />
 			<div className={s("compWrapper")}>
 				{props.compositionIds.map((compositionId) => (
 					<ProjectComp key={compositionId} compositionId={compositionId} />

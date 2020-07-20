@@ -1,5 +1,5 @@
-import { StyleParams } from "~/util/stylesheets";
 import { cssVariables } from "~/cssVariables";
+import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
@@ -11,7 +11,7 @@ export default ({ css }: StyleParams) => ({
 		display: flex;
 	`,
 
-	openGraphInArea: css`
+	openInArea: css`
 		margin-left: 2px;
 		height: 16px;
 		width: 16px;

@@ -1,13 +1,13 @@
 import React from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import ProjectCompStyles from "~/project/composition/ProjectComp.styles";
-import { ProjectCompLayerName } from "~/project/composition/ProjectCompName";
-import { separateLeftRightMouse } from "~/util/mouse";
-import { dragProjectCompTimeToArea } from "~/project/composition/handlers/dragProjectCompTimeToArea";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
 import { dragProjectComp } from "~/project/composition/handlers/dragProjectComp";
+import { dragProjectCompTimeToArea } from "~/project/composition/handlers/dragProjectCompTimeToArea";
 import { dragProjectCompWorkspaceToArea } from "~/project/composition/handlers/dragProjectCompWorkspaceToArea";
+import ProjectCompStyles from "~/project/composition/ProjectComp.styles";
+import { ProjectCompLayerName } from "~/project/composition/ProjectCompName";
+import { connectActionState } from "~/state/stateUtils";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(ProjectCompStyles);
 
@@ -28,19 +28,19 @@ const ProjectCompComponent: React.FC<Props> = (props) => {
 		<div className={s("container")} onMouseDown={separateLeftRightMouse({ left: onMouseDown })}>
 			<ProjectCompLayerName compositionId={compositionId} key={compositionId} />
 			<div
-				title="Open Timeline in area"
-				className={s("openGraphInArea", { active: true })}
+				title="Open Workspace in area"
+				className={s("openInArea", { active: true })}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) => dragProjectCompTimeToArea(e, { compositionId }),
+					left: (e) => dragProjectCompWorkspaceToArea(e, { compositionId }),
 				})}
 			>
 				<OpenInAreaIcon />
 			</div>
 			<div
-				title="Open Workspace in area"
-				className={s("openGraphInArea", { active: true })}
+				title="Open Timeline in area"
+				className={s("openInArea", { active: true })}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) => dragProjectCompWorkspaceToArea(e, { compositionId }),
+					left: (e) => dragProjectCompTimeToArea(e, { compositionId }),
 				})}
 			>
 				<OpenInAreaIcon />
