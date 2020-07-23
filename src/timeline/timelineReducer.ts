@@ -1,8 +1,8 @@
 import { ActionType, getType } from "typesafe-actions";
 import { timelineActions } from "~/timeline/timelineActions";
-import { TimelineKeyframe, Timeline } from "~/timeline/timelineTypes";
-import { getInsertIndex } from "~/util/alg/getInsertIndex";
+import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
 import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
+import { getInsertIndex } from "~/util/alg/getInsertIndex";
 
 type Action = ActionType<typeof timelineActions>;
 

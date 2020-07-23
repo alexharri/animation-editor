@@ -66,6 +66,12 @@ const performRequestedAction = (
 
 	const dispatch: RequestActionParams["dispatch"] = (action, ...args) => {
 		if (Array.isArray(action)) {
+			if (args.length) {
+				console.warn(
+					"Dispatch received an array as the first argument AND received additional arguments.",
+				);
+			}
+
 			store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
 			return;
 		}

@@ -1,6 +1,7 @@
 import { ActionType, getType } from "typesafe-actions";
 import { timelineActions } from "~/timeline/timelineActions";
 import { KeySelectionMap } from "~/types";
+import { removeKeysFromMap } from "~/util/mapUtils";
 
 type Action = ActionType<typeof timelineActions>;
 
@@ -22,13 +23,7 @@ export function timelineSelectionReducer(
 	switch (action.type) {
 		case getType(timelineActions.clearSelection): {
 			const { timelineId } = action.payload;
-
-			return Object.keys(state).reduce<TimelineSelectionState>((obj, key) => {
-				if (key !== timelineId) {
-					obj[key] = state[key];
-				}
-				return obj;
-			}, {});
+			return removeKeysFromMap(state, [timelineId]);
 		}
 
 		case getType(timelineActions.toggleKeyframeSelection): {

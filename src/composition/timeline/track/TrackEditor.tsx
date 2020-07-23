@@ -132,7 +132,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 		compositionSelectionState,
 		compositionState,
 		timelines,
-		timelineSelection: timelineSelection,
+		timelineSelection,
 	};
 };
 

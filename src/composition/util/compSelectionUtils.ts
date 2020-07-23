@@ -1,5 +1,6 @@
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import { isMapShallowEqual } from "~/util/mapUtils";
+import { getTimelineIdsReferencedByComposition } from "~/composition/timeline/compTimeUtils";
+import { isMapShallowEqual, mapKeysEqual } from "~/util/mapUtils";
 
 const _emptySelection = {
 	layers: {},
@@ -30,6 +31,30 @@ export const didCompSelectionChange: (
 
 	if (!isMapShallowEqual(a.properties, b.properties)) {
 		return true;
+	}
+
+	// Check whether any timeline selections referenced by the composition changed
+	if (!mapKeysEqual(prevState.timelineSelection, nextState.timelineSelection)) {
+		return true;
+	}
+
+	const timelineIds = getTimelineIdsReferencedByComposition(
+		compositionId,
+		prevState.compositionState,
+	);
+	for (let i = 0; i < timelineIds.length; i += 1) {
+		const a = prevState.timelineSelection[timelineIds[i]];
+		const b = nextState.timelineSelection[timelineIds[i]];
+
+		// We checked for map key equality earlier, so if one does not exist
+		// the other shouldn't exist either
+		if (!a && !b) {
+			continue;
+		}
+
+		if (!isMapShallowEqual(a!.keyframes, b!.keyframes)) {
+			return true;
+		}
 	}
 
 	return false;

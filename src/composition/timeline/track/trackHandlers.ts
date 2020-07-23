@@ -1,4 +1,5 @@
 import { areaActions } from "~/area/state/areaActions";
+import { CompositionProperty } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { compositionSelectionActions } from "~/composition/state/compositionSelectionReducer";
 import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
@@ -6,9 +7,12 @@ import {
 	getCompTimeTrackYPositions,
 	getTimelineIdsReferencedByComposition,
 	getTimelineIdsReferencedByLayer,
-	reduceCompProperties,
+	reduceVisibleCompProperties,
 } from "~/composition/timeline/compTimeUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import {
+	didCompSelectionChange,
+	getCompSelectionFromState,
+} from "~/composition/util/compSelectionUtils";
 import { AreaType, COMP_TIME_LAYER_HEIGHT, COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
@@ -355,7 +359,7 @@ export const trackHandlers = {
 
 		const yPosMap = getCompTimeTrackYPositions(composition.id, compositionState, options.panY);
 
-		const timelineIdToLayerId = reduceCompProperties<{ [timelineId: string]: string }>(
+		const timelineIdToLayerId = reduceVisibleCompProperties<{ [timelineId: string]: string }>(
 			composition.id,
 			compositionState,
 			(obj, property) => {
@@ -438,8 +442,10 @@ export const trackHandlers = {
 		//
 		// If the user drags and moves, create a selection rect. Otherwise
 		// clear the selectionþ
-		const wasShiftDown = isKeyDown("Command");
+		const additiveSelection = isKeyDown("Command") || isKeyDown("Shift");
+
 		mouseDownMoveAction(e, {
+			shouldAddToStack: didCompSelectionChange(options.compositionId),
 			translate: (vec) => transformGlobalToTrackPosition(vec, options),
 			beforeMove: () => {},
 			mouseMove: (params, { mousePosition, initialMousePosition }) => {
@@ -470,18 +476,27 @@ export const trackHandlers = {
 					return;
 				}
 
-				if (!wasShiftDown) {
-					params.dispatch(
-						timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
-					);
-				}
-
 				const { trackDragSelectRect } = getAreaActionState<AreaType.CompositionTimeline>(
 					options.compositionTimelineAreaId,
 				);
 
-				params.dispatch(
-					timelines.map((timeline) => {
+				const timelineToPropertyId = reduceVisibleCompProperties<{
+					[timelineId: string]: string;
+				}>(
+					options.compositionId,
+					compositionState,
+					(obj, property) => {
+						if (property.timelineId) {
+							obj[property.timelineId] = property.id;
+						}
+
+						return obj;
+					},
+					{},
+				);
+
+				const affectedTimelines = timelines
+					.map<{ timelineId: string; keyframeIds: string[] }>((timeline) => {
 						const layerId = timelineIdToLayerId[timeline.id];
 						const layer = compositionState.layers[layerId];
 
@@ -494,9 +509,64 @@ export const trackHandlers = {
 								return isVecInRect(Vec2.new(x, y), trackDragSelectRect!);
 							})
 							.map((k) => k.id);
-						return timelineActions.addKeyframesToSelection(timeline.id, keyframes);
+
+						return {
+							timelineId: timeline.id,
+							keyframeIds: keyframes,
+						};
+					})
+					.filter((item) => item.keyframeIds.length > 0);
+
+				// Clear first if selection is not additive
+				if (!additiveSelection) {
+					params.dispatch(
+						timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
+					);
+					params.dispatch(
+						compositionSelectionActions.clearCompositionSelection(composition.id),
+					);
+				}
+
+				// Add keyframes to selection
+				params.dispatch(
+					affectedTimelines.map(({ timelineId, keyframeIds }) => {
+						return timelineActions.addKeyframesToSelection(timelineId, keyframeIds);
 					}),
 				);
+
+				// Select all affected properties
+				const affectedPropertyIds = affectedTimelines.map(
+					({ timelineId }) => timelineToPropertyId[timelineId],
+				);
+				params.dispatch(
+					affectedPropertyIds.map((propertyId) => {
+						return compositionSelectionActions.addPropertyToSelection(
+							options.compositionId,
+							propertyId,
+						);
+					}),
+				);
+
+				// Select all affected layers
+				const affectedLayerIds = [
+					...new Set<string>(
+						affectedPropertyIds.map((propertyId) => {
+							const property = compositionState.properties[
+								propertyId
+							] as CompositionProperty;
+							return property.layerId;
+						}),
+					),
+				];
+				params.dispatch(
+					affectedLayerIds.map((layerId) => {
+						return compositionSelectionActions.addLayerToSelection(
+							options.compositionId,
+							layerId,
+						);
+					}),
+				);
+
 				params.dispatchToAreaState(
 					options.compositionTimelineAreaId,
 					compTimeAreaActions.setFields({ trackDragSelectRect: null }),

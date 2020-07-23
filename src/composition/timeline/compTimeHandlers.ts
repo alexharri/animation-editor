@@ -8,8 +8,15 @@ import { compositionActions } from "~/composition/state/compositionReducer";
 import { compositionSelectionActions } from "~/composition/state/compositionSelectionReducer";
 import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
-import { getCompTimeLayerListHeight } from "~/composition/timeline/compTimeUtils";
-import { didCompSelectionChange } from "~/composition/util/compSelectionUtils";
+import {
+	getCompTimeLayerListHeight,
+	getTimelineIdsReferencedByComposition,
+	reduceLayerPropertiesAndGroups,
+} from "~/composition/timeline/compTimeUtils";
+import {
+	didCompSelectionChange,
+	getCompSelectionFromState,
+} from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
@@ -457,29 +464,92 @@ export const compTimeHandlers = {
 		compositionId: string,
 		propertyId: string,
 	): void => {
+		const { compositionState, compositionSelectionState, timelines } = getActionState();
+		const compositionSelection = getCompSelectionFromState(
+			compositionId,
+			compositionSelectionState,
+		);
+		const property = compositionState.properties[propertyId];
+
+		const additiveSelection = isKeyDown("Command") || isKeyDown("Shift");
+
 		requestAction(
 			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
 			(params) => {
-				const { dispatch, submitAction } = params;
+				if (!additiveSelection) {
+					// Clear other properties and timeline keyframes
+					params.dispatch(
+						compositionSelectionActions.clearCompositionSelection(compositionId),
+					);
 
-				if (isKeyDown("Command")) {
-					dispatch(
-						compositionSelectionActions.togglePropertySelection(
-							compositionId,
-							propertyId,
-						),
+					const timelineIds = getTimelineIdsReferencedByComposition(
+						compositionId,
+						compositionState,
 					);
-					submitAction("Toggle selection");
-				} else {
-					dispatch(compositionSelectionActions.clearCompositionSelection(compositionId));
-					dispatch(
-						compositionSelectionActions.togglePropertySelection(
-							compositionId,
-							propertyId,
-						),
-					);
-					submitAction("Select property");
+					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
 				}
+
+				const willBeSelected = !compositionSelection.properties[propertyId];
+
+				if (additiveSelection && !willBeSelected) {
+					// Check whether this property is the only selected property
+					// of the layer
+					const selectedPropertyIds = reduceLayerPropertiesAndGroups<string[]>(
+						property.layerId,
+						compositionState,
+						(acc, property) => {
+							acc.push(property.id);
+							return acc;
+						},
+						[],
+					).filter((propertyId) => compositionSelection.properties[propertyId]);
+
+					if (selectedPropertyIds.length === 1 && selectedPropertyIds[0] === propertyId) {
+						// Only selected property of layer is being deselected.
+						//
+						// Deselect the layer
+						params.dispatch(
+							compositionSelectionActions.removeLayersFromSelection(compositionId, [
+								property.layerId,
+							]),
+						);
+					}
+
+					// Remove property and timeline keyframes from selection
+					params.dispatch(
+						compositionSelectionActions.removePropertiesFromSelection(compositionId, [
+							propertyId,
+						]),
+					);
+
+					if (property.type === "property" && property.timelineId) {
+						params.dispatch(timelineActions.clearSelection(property.timelineId));
+					}
+				} else {
+					// Add property and timeline keyframes to selection
+					params.dispatch(
+						compositionSelectionActions.addPropertyToSelection(
+							compositionId,
+							propertyId,
+						),
+					);
+					params.dispatch(
+						compositionSelectionActions.addLayerToSelection(
+							compositionId,
+							property.layerId,
+						),
+					);
+
+					if (property.type === "property" && property.timelineId) {
+						const timeline = timelines[property.timelineId];
+						const keyframeIds = timeline.keyframes.map((k) => k.id);
+						params.dispatch(
+							timelineActions.addKeyframesToSelection(timeline.id, keyframeIds),
+						);
+					}
+				}
+
+				params.submitAction("Select property");
 			},
 		);
 	},

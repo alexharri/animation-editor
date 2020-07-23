@@ -33,6 +33,7 @@ export interface CompositionPropertyGroup {
 	type: "group";
 	name: PropertyGroupName;
 	id: string;
+	layerId: string;
 	properties: string[];
 	collapsed: boolean;
 }
