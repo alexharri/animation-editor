@@ -9,7 +9,8 @@ export const getCompSelectionFromState = (
 	compositionId: string,
 	compositionSelectionState: CompositionSelectionState,
 ) => {
-	// We reuse the same empty selection
+	// We reuse the same empty selection instead of creating a new one each time so
+	// that different object references do not cause unnecessary rerenders.
 	const selection = compositionSelectionState[compositionId] ?? _emptySelection;
 	return selection;
 };
