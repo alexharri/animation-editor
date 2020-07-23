@@ -333,28 +333,71 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onLayerNameMouseDown: (
-		_e: React.MouseEvent,
-		compositionId: string,
-		propertyId: string,
-	): void => {
+	onLayerNameMouseDown: (_e: React.MouseEvent, compositionId: string, layerId: string): void => {
 		requestAction(
 			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
 			(params) => {
-				const { dispatch, submitAction } = params;
+				const { compositionState, compositionSelectionState } = getActionState();
 
-				if (isKeyDown("Command")) {
-					dispatch(
-						compositionSelectionActions.toggleLayerSelection(compositionId, propertyId),
+				const compositionSelection = getCompSelectionFromState(
+					compositionId,
+					compositionSelectionState,
+				);
+				const willBeSelected = !compositionSelection.layers[layerId];
+
+				const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
+
+				if (!additiveSelection) {
+					params.dispatch(
+						compositionSelectionActions.clearCompositionSelection(compositionId),
 					);
-					submitAction("Toggle selection");
-				} else {
-					dispatch(compositionSelectionActions.clearCompositionSelection(compositionId));
-					dispatch(
-						compositionSelectionActions.toggleLayerSelection(compositionId, propertyId),
+				} else if (!willBeSelected) {
+					// Deselect all properties and timeline keyframes
+					const propertyIds = reduceLayerPropertiesAndGroups<string[]>(
+						layerId,
+						compositionState,
+						(acc, property) => {
+							acc.push(property.id);
+							return acc;
+						},
+						[],
+					).filter((propertyId) => compositionSelection.properties[propertyId]);
+
+					const timelineIds = propertyIds.reduce<string[]>((acc, propertyId) => {
+						const property = compositionState.properties[propertyId];
+
+						if (property.type === "property" && property.timelineId) {
+							acc.push(property.timelineId);
+						}
+
+						return acc;
+					}, []);
+
+					params.dispatch(
+						compositionSelectionActions.removePropertiesFromSelection(
+							compositionId,
+							propertyIds,
+						),
 					);
-					submitAction("Select property");
+					params.dispatch(
+						timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+					);
 				}
+
+				if (additiveSelection && !willBeSelected) {
+					params.dispatch(
+						compositionSelectionActions.removeLayersFromSelection(compositionId, [
+							layerId,
+						]),
+					);
+					params.submitAction("Remove layer from selection");
+					return;
+				}
+
+				params.dispatch(
+					compositionSelectionActions.addLayerToSelection(compositionId, layerId),
+				);
+				params.submitAction("Select layer");
 			},
 		);
 	},

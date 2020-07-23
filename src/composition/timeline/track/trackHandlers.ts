@@ -441,7 +441,7 @@ export const trackHandlers = {
 		// User did not click any entity.
 		//
 		// If the user drags and moves, create a selection rect. Otherwise
-		// clear the selectionþ
+		// clear the selection
 		const additiveSelection = isKeyDown("Command") || isKeyDown("Shift");
 
 		mouseDownMoveAction(e, {
