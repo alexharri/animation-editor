@@ -1,9 +1,9 @@
 import React from "react";
+import { CompTimePropertyValueContext } from "~/composition/timeline/compTimeContext";
+import { useActionState } from "~/hook/useActionState";
 import { useComputeHistory } from "~/hook/useComputeHistory";
 import { computeLayerGraph } from "~/nodeEditor/graph/computeLayerGraph";
-import { useActionState } from "~/hook/useActionState";
 import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
-import { CompTimePropertyValueContext } from "~/composition/timeline/compTimeContext";
 
 interface OwnProps {
 	compositionId: string;
@@ -27,11 +27,11 @@ export const CompTimeLayerPropertyToValue: React.FC<Props> = (props) => {
 			computed: {},
 			compositionId,
 			layerId,
-			compositionState: actionState.compositions,
+			compositionState: actionState.compositionState,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
 			graph,
-			frameIndex: actionState.compositions.compositions[compositionId].frameIndex,
+			frameIndex: actionState.compositionState.compositions[compositionId].frameIndex,
 		};
 
 		return computePropertyValues(context, graph && actionState.nodeEditor.graphs[graph.id]);

@@ -31,11 +31,11 @@ export const useCompositionWorkspacePlayback = (compositionId: string): React.FC
 		}, []);
 
 		const compositionState = useComputeHistory((state) => {
-			return state.compositions;
+			return state.compositionState;
 		});
 
 		const compFrameIndex = useActionState((state) => {
-			return state.compositions.compositions[compositionId].frameIndex;
+			return state.compositionState.compositions[compositionId].frameIndex;
 		});
 
 		useEffect(() => {
@@ -96,7 +96,7 @@ export const useCompositionWorkspacePlayback = (compositionId: string): React.FC
 				const {
 					frameIndex: initialFrameIndex,
 					length,
-				} = getActionState().compositions.compositions[compositionId];
+				} = getActionState().compositionState.compositions[compositionId];
 
 				let f = initialFrameIndex;
 

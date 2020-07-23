@@ -5,6 +5,7 @@ import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
 import { CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { compositionSelectionActions } from "~/composition/state/compositionSelectionReducer";
 import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
 import { getCompTimeLayerListHeight } from "~/composition/timeline/compTimeUtils";
@@ -38,7 +39,7 @@ export const compTimeHandlers = {
 	): void => {
 		const { compositionId } = options;
 
-		const composition = getActionState().compositions.compositions[compositionId];
+		const composition = getActionState().compositionState.compositions[compositionId];
 
 		const initialPosition = Vec2.fromEvent(e);
 
@@ -122,7 +123,7 @@ export const compTimeHandlers = {
 		const { viewBounds, compositionLength, compositionId } = options;
 
 		requestAction({ history: false }, ({ submitAction, dispatch }) => {
-			const compositionState = getActionState().compositions;
+			const compositionState = getActionState().compositionState;
 
 			const [x0, x1] = [0, e.deltaX].map((x) => transformGlobalToTimelineX(x, options));
 
@@ -195,7 +196,7 @@ export const compTimeHandlers = {
 		const initialPos = transformGlobalToTimelineX(initialMousePosition.x, options);
 
 		const fn: RequestActionCallback = ({ addListener, submitAction, dispatch }) => {
-			const compositionState = getActionState().compositions;
+			const compositionState = getActionState().compositionState;
 
 			let initialT = initialPos / compositionLength;
 
@@ -258,7 +259,7 @@ export const compTimeHandlers = {
 		propertyId: string,
 		timelineId: string,
 	): void => {
-		const { compositions: compositionState, timelines, timelineSelection } = getActionState();
+		const { compositionState, timelines, timelineSelection } = getActionState();
 		const composition = compositionState.compositions[compositionId];
 		const property = compositionState.properties[propertyId] as CompositionProperty;
 		const layer = compositionState.layers[property.layerId];
@@ -307,7 +308,7 @@ export const compTimeHandlers = {
 
 		requestAction({ history: true }, (params) => {
 			const { dispatch, submitAction } = params;
-			dispatch(compositionActions.clearCompositionSelection(compositionId));
+			dispatch(compositionSelectionActions.clearCompositionSelection(compositionId));
 			submitAction("Clear selection");
 		});
 	},
@@ -330,22 +331,29 @@ export const compTimeHandlers = {
 		compositionId: string,
 		propertyId: string,
 	): void => {
-		requestAction({ history: true, shouldAddToStack: didCompSelectionChange }, (params) => {
-			const { dispatch, submitAction } = params;
+		requestAction(
+			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
+			(params) => {
+				const { dispatch, submitAction } = params;
 
-			if (isKeyDown("Command")) {
-				dispatch(compositionActions.toggleLayerSelection(compositionId, propertyId));
-				submitAction("Toggle selection");
-			} else {
-				dispatch(compositionActions.clearCompositionSelection(compositionId));
-				dispatch(compositionActions.toggleLayerSelection(compositionId, propertyId));
-				submitAction("Select property");
-			}
-		});
+				if (isKeyDown("Command")) {
+					dispatch(
+						compositionSelectionActions.toggleLayerSelection(compositionId, propertyId),
+					);
+					submitAction("Toggle selection");
+				} else {
+					dispatch(compositionSelectionActions.clearCompositionSelection(compositionId));
+					dispatch(
+						compositionSelectionActions.toggleLayerSelection(compositionId, propertyId),
+					);
+					submitAction("Select property");
+				}
+			},
+		);
 	},
 
 	onLayerGraphMouseDown: (_e: React.MouseEvent, layerId: string): void => {
-		const compositionState = getActionState().compositions;
+		const compositionState = getActionState().compositionState;
 		const layer = compositionState.layers[layerId];
 
 		requestAction({ history: true }, (params) => {
@@ -370,7 +378,7 @@ export const compTimeHandlers = {
 	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, layerId: string): void => {
 		const initialMousePos = Vec2.fromEvent(e);
 
-		const compositionState = getActionState().compositions;
+		const compositionState = getActionState().compositionState;
 		const layer = compositionState.layers[layerId];
 
 		requestAction({ history: true }, (params) => {
@@ -449,17 +457,30 @@ export const compTimeHandlers = {
 		compositionId: string,
 		propertyId: string,
 	): void => {
-		requestAction({ history: true, shouldAddToStack: didCompSelectionChange }, (params) => {
-			const { dispatch, submitAction } = params;
+		requestAction(
+			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
+			(params) => {
+				const { dispatch, submitAction } = params;
 
-			if (isKeyDown("Command")) {
-				dispatch(compositionActions.togglePropertySelection(compositionId, propertyId));
-				submitAction("Toggle selection");
-			} else {
-				dispatch(compositionActions.clearCompositionSelection(compositionId));
-				dispatch(compositionActions.togglePropertySelection(compositionId, propertyId));
-				submitAction("Select property");
-			}
-		});
+				if (isKeyDown("Command")) {
+					dispatch(
+						compositionSelectionActions.togglePropertySelection(
+							compositionId,
+							propertyId,
+						),
+					);
+					submitAction("Toggle selection");
+				} else {
+					dispatch(compositionSelectionActions.clearCompositionSelection(compositionId));
+					dispatch(
+						compositionSelectionActions.togglePropertySelection(
+							compositionId,
+							propertyId,
+						),
+					);
+					submitAction("Select property");
+				}
+			},
+		);
 	},
 };

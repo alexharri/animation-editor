@@ -1,21 +1,21 @@
 import React from "react";
-import { connectActionState, getActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import NodeStyles from "~/nodeEditor/nodes/Node.styles";
-import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
-import {
-	NodeEditorNodeState,
-	NodeEditorNodeInput,
-	NodeEditorNodeOutput,
-} from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorNodeType } from "~/types";
-import { NodeBody } from "~/nodeEditor/components/NodeBody";
-import { PropertyNodeSelectProperty } from "~/nodeEditor/nodes/property/PropertyNodeSelectProperty";
-import { requestAction } from "~/listener/requestAction";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
+import { requestAction } from "~/listener/requestAction";
+import { NodeBody } from "~/nodeEditor/components/NodeBody";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
+import {
+	NodeEditorNodeInput,
+	NodeEditorNodeOutput,
+	NodeEditorNodeState,
+} from "~/nodeEditor/nodeEditorIO";
+import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
+import { PropertyNodeSelectProperty } from "~/nodeEditor/nodes/property/PropertyNodeSelectProperty";
+import { connectActionState, getActionState } from "~/state/stateUtils";
+import { NodeEditorNodeType } from "~/types";
 import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -46,7 +46,7 @@ function PropertyOutputNodeComponent(props: Props) {
 				),
 			);
 
-			const properties = getActionState().compositions.properties;
+			const properties = getActionState().compositionState.properties;
 			let propertyIds: string[];
 
 			const property = properties[propertyId];

@@ -1,13 +1,13 @@
-import React, { useRef } from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { separateLeftRightMouse } from "~/util/mouse";
-import { useState } from "react";
+import React, { useRef, useState } from "react";
+import { compositionActions } from "~/composition/state/compositionReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { cssVariables } from "~/cssVariables";
 import { isKeyCodeOf } from "~/listener/keyboard";
-import { RequestActionParams, requestAction } from "~/listener/requestAction";
-import { compositionActions } from "~/composition/state/compositionReducer";
+import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { connectActionState } from "~/state/stateUtils";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	wrapper: css`
@@ -151,10 +151,14 @@ const CompTimeLayerNameComponent: React.FC<Props> = (props) => {
 };
 
 const mapState: MapActionState<StateProps, OwnProps> = (
-	{ compositions: { layers }, compositionSelection },
+	{ compositionState: { layers }, compositionSelectionState },
 	{ layerId },
 ) => {
 	const layer = layers[layerId];
+	const compositionSelection = getCompSelectionFromState(
+		layer.compositionId,
+		compositionSelectionState,
+	);
 
 	return {
 		name: layer.name,

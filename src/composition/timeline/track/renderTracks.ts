@@ -1,16 +1,17 @@
 import { Composition } from "~/composition/compositionTypes";
-import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
-import { createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { CompositionState } from "~/composition/state/compositionReducer";
-import { renderRect, renderDiamond } from "~/util/canvas/renderPrimitives";
-import { cssVariables } from "~/cssVariables";
-import { TimelineState } from "~/timeline/timelineReducer";
+import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
-	COMP_TIME_TRACK_KEYFRAME_HEIGHT,
-	COMP_TIME_LAYER_HEIGHT,
 	COMP_TIME_BETWEEN_LAYERS,
+	COMP_TIME_LAYER_HEIGHT,
+	COMP_TIME_TRACK_KEYFRAME_HEIGHT,
 } from "~/constants";
+import { cssVariables } from "~/cssVariables";
+import { createToTimelineViewportX } from "~/timeline/renderTimeline";
+import { TimelineState } from "~/timeline/timelineReducer";
+import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { renderDiamond, renderRect } from "~/util/canvas/renderPrimitives";
 
 interface RenderTimelineOptions {
 	ctx: Ctx;
@@ -19,7 +20,7 @@ interface RenderTimelineOptions {
 	panY: number;
 	viewBounds: [number, number];
 	composition: Composition;
-	compositionSelection: CompositionSelectionState;
+	compositionSelectionState: CompositionSelectionState;
 	compositionState: CompositionState;
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
@@ -33,7 +34,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		ctx,
 		compositionState,
 		composition,
-		compositionSelection,
+		compositionSelectionState,
 		viewBounds,
 		viewportWidth,
 		viewportHeight,
@@ -42,6 +43,11 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		layerIndexShift,
 		layerLengthShift,
 	} = options;
+
+	const compositionSelection = getCompSelectionFromState(
+		composition.id,
+		compositionSelectionState,
+	);
 
 	const getLayerIndexAndLength = (layerId: string): [number, number] => {
 		const layer = compositionState.layers[layerId];

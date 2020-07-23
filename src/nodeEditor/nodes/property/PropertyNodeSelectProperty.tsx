@@ -1,23 +1,23 @@
-import React, { useRef, useEffect } from "react";
-import { StyleParams, compileStylesheetLabelled } from "~/util/stylesheets";
-import { cssVariables } from "~/cssVariables";
+import React, { useEffect, useRef } from "react";
 import { CompositionState } from "~/composition/state/compositionReducer";
-import { connectActionState, getActionState } from "~/state/stateUtils";
 import {
-	getLayerPropertyLabel,
 	getLayerPropertyGroupLabel,
+	getLayerPropertyLabel,
 } from "~/composition/util/compositionPropertyUtils";
-import { requestAction } from "~/listener/requestAction";
-import { contextMenuActions } from "~/contextMenu/contextMenuActions";
-import { OpenCustomContextMenuOptions, ContextMenuBaseProps } from "~/contextMenu/contextMenuTypes";
-import { useRefRect, useGetRefRectFn } from "~/hook/useRefRect";
 import {
-	NODE_EDITOR_NODE_H_PADDING,
-	DEFAULT_CONTEXT_MENU_WIDTH,
 	CONTEXT_MENU_OPTION_HEIGHT,
 	CONTEXT_MENU_OPTION_PADDING_LEFT,
+	DEFAULT_CONTEXT_MENU_WIDTH,
+	NODE_EDITOR_NODE_H_PADDING,
 } from "~/constants";
+import { contextMenuActions } from "~/contextMenu/contextMenuActions";
+import { ContextMenuBaseProps, OpenCustomContextMenuOptions } from "~/contextMenu/contextMenuTypes";
+import { cssVariables } from "~/cssVariables";
+import { useGetRefRectFn, useRefRect } from "~/hook/useRefRect";
+import { requestAction } from "~/listener/requestAction";
 import { NODE_HEIGHT_CONSTANTS } from "~/nodeEditor/util/calculateNodeHeight";
+import { connectActionState, getActionState } from "~/state/stateUtils";
+import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
 
 const styles = ({ css }: StyleParams) => ({
 	wrapper: css`
@@ -217,7 +217,7 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 				props.onSelectLayer!(layerId);
 			};
 
-			const compositionState = getActionState().compositions;
+			const compositionState = getActionState().compositionState;
 			const layer = compositionState.layers[props.layerId];
 			const composition = compositionState.compositions[layer.compositionId];
 			const layerIds = composition.layers;
@@ -339,7 +339,7 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 };
 
 const mapState: MapActionState<StateProps, OwnProps> = (
-	{ compositions },
+	{ compositionState: compositions },
 	{ selectedLayerId, layerId },
 ) => ({
 	layers: compositions.layers,

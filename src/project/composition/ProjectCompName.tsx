@@ -1,11 +1,10 @@
-import React, { useRef } from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { useState } from "react";
+import React, { useRef, useState } from "react";
+import { compositionActions } from "~/composition/state/compositionReducer";
 import { cssVariables } from "~/cssVariables";
 import { isKeyCodeOf } from "~/listener/keyboard";
-import { RequestActionParams, requestAction } from "~/listener/requestAction";
-import { compositionActions } from "~/composition/state/compositionReducer";
+import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { connectActionState } from "~/state/stateUtils";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	wrapper: css`
@@ -145,7 +144,7 @@ const ProjectCompLayerNameComponent: React.FC<Props> = (props) => {
 };
 
 const mapState: MapActionState<StateProps, OwnProps> = (
-	{ compositions: { compositions } },
+	{ compositionState: { compositions } },
 	{ compositionId },
 ) => {
 	const { name = "Composition" } = compositions[compositionId];

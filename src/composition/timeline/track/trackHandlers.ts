@@ -1,5 +1,6 @@
 import { areaActions } from "~/area/state/areaActions";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { compositionSelectionActions } from "~/composition/state/compositionSelectionReducer";
 import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import {
 	getCompTimeTrackYPositions,
@@ -7,6 +8,7 @@ import {
 	getTimelineIdsReferencedByLayer,
 	reduceCompProperties,
 } from "~/composition/timeline/compTimeUtils";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType, COMP_TIME_LAYER_HEIGHT, COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
@@ -33,7 +35,7 @@ const actions = {
 			viewport: Rect;
 		},
 	) => {
-		const { compositions: compositionState, timelines: timelineState } = getActionState();
+		const { compositionState, timelines: timelineState } = getActionState();
 
 		const timelineIds = getTimelineIdsReferencedByComposition(
 			options.compositionId,
@@ -109,8 +111,12 @@ const actions = {
 		mouseDownMoveAction(e, {
 			translateX: (value) => transformGlobalToTimelineX(value, options),
 			beforeMove: (params) => {
-				const { compositions: compositionState, compositionSelection } = getActionState();
+				const { compositionState, compositionSelectionState } = getActionState();
 				const composition = compositionState.compositions[options.compositionId];
+				const compositionSelection = getCompSelectionFromState(
+					composition.id,
+					compositionSelectionState,
+				);
 
 				const timelineIds = getTimelineIdsReferencedByComposition(
 					options.compositionId,
@@ -124,7 +130,7 @@ const actions = {
 
 				if (additiveSelection) {
 					params.dispatch(
-						compositionActions.toggleLayerSelection(composition.id, layerId),
+						compositionSelectionActions.toggleLayerSelection(composition.id, layerId),
 					);
 
 					// If the layer is being deselected, we clear the selection of all timelines
@@ -143,10 +149,10 @@ const actions = {
 					// in the composition
 					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
 					params.dispatch(
-						compositionActions.toggleLayerSelection(composition.id, layerId),
+						compositionSelectionActions.toggleLayerSelection(composition.id, layerId),
 					);
 					params.dispatch(
-						compositionActions.removeLayersFromSelection(
+						compositionSelectionActions.removeLayersFromSelection(
 							composition.id,
 							composition.layers.filter((id) => id !== layerId),
 						),
@@ -175,7 +181,7 @@ const actions = {
 					compTimeAreaActions.setFields({ layerIndexShift: 0 }),
 				);
 
-				const { compositionSelection } = getActionState();
+				const { compositionSelectionState: compositionSelection } = getActionState();
 				params.dispatch(
 					compositionActions.applyLayerIndexShift(
 						options.compositionId,
@@ -202,8 +208,12 @@ const actions = {
 			viewport: Rect;
 		},
 	) => {
-		const { compositions: compositionState, compositionSelection } = getActionState();
+		const { compositionState, compositionSelectionState } = getActionState();
 		const composition = compositionState.compositions[options.compositionId];
+		const compositionSelection = getCompSelectionFromState(
+			composition.id,
+			compositionSelectionState,
+		);
 
 		mouseDownMoveAction(e, {
 			translateX: (value) => transformGlobalToTimelineX(value, options),
@@ -225,16 +235,19 @@ const actions = {
 					// natural to deselect and resize other layers in the same action.
 					if (!compositionSelection.layers[layerId]) {
 						params.dispatch(
-							compositionActions.toggleLayerSelection(composition.id, layerId),
+							compositionSelectionActions.toggleLayerSelection(
+								composition.id,
+								layerId,
+							),
 						);
 					}
 				} else if (!compositionSelection.layers[layerId]) {
 					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
 					params.dispatch(
-						compositionActions.toggleLayerSelection(composition.id, layerId),
+						compositionSelectionActions.toggleLayerSelection(composition.id, layerId),
 					);
 					params.dispatch(
-						compositionActions.removeLayersFromSelection(
+						compositionSelectionActions.removeLayersFromSelection(
 							composition.id,
 							composition.layers.filter((id) => id !== layerId),
 						),
@@ -268,7 +281,7 @@ const actions = {
 					),
 				);
 
-				const compositionSelection = getActionState().compositionSelection;
+				const compositionSelection = getActionState().compositionSelectionState;
 				params.dispatch(
 					compositionActions.applyLayerLengthShift(
 						options.compositionId,
@@ -282,9 +295,14 @@ const actions = {
 
 					// Update affected timelines
 					const {
-						compositions: newCompositionState,
-						compositionSelection,
+						compositionState: newCompositionState,
+						compositionSelectionState,
 					} = getActionState();
+
+					const compositionSelection = getCompSelectionFromState(
+						composition.id,
+						compositionSelectionState,
+					);
 
 					for (let i = 0; i < composition.layers.length; i += 1) {
 						const layerId = composition.layers[i];
@@ -332,7 +350,7 @@ export const trackHandlers = {
 	): void => {
 		const posTranslated = transformGlobalToTrackPosition(Vec2.fromEvent(e), options);
 
-		const { compositions: compositionState, timelines: timelineState } = getActionState();
+		const { compositionState, timelines: timelineState } = getActionState();
 		const composition = compositionState.compositions[options.compositionId];
 
 		const yPosMap = getCompTimeTrackYPositions(composition.id, compositionState, options.panY);
@@ -442,7 +460,9 @@ export const trackHandlers = {
 				).map((timelineId) => timelineState[timelineId]);
 
 				if (!hasMoved) {
-					params.dispatch(compositionActions.clearCompositionSelection(composition.id));
+					params.dispatch(
+						compositionSelectionActions.clearCompositionSelection(composition.id),
+					);
 					params.dispatch(
 						timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
 					);

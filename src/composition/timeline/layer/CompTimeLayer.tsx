@@ -1,15 +1,16 @@
 import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { CompositionLayer } from "~/composition/compositionTypes";
-import styles from "~/composition/timeline/layer/CompTimeLayer.style";
-import { CompTimeLayerProperty } from "~/composition/timeline/property/CompTimeProperty";
-import { CompTimeLayerName } from "~/composition/timeline/layer/CompTimeLayerName";
-import { connectActionState } from "~/state/stateUtils";
-import { separateLeftRightMouse } from "~/util/mouse";
-import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { GraphIcon } from "~/components/icons/GraphIcon";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
+import { CompositionLayer } from "~/composition/compositionTypes";
+import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
+import styles from "~/composition/timeline/layer/CompTimeLayer.style";
+import { CompTimeLayerName } from "~/composition/timeline/layer/CompTimeLayerName";
 import { CompTimeLayerPropertyToValue } from "~/composition/timeline/layer/CompTimeLayerPropertyToValue";
+import { CompTimeLayerProperty } from "~/composition/timeline/property/CompTimeProperty";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { connectActionState } from "~/state/stateUtils";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -75,10 +76,14 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ compositions, compositionSelection },
+	{ compositionState, compositionSelectionState },
 	{ id },
 ) => {
-	const layer = compositions.layers[id];
+	const layer = compositionState.layers[id];
+	const compositionSelection = getCompSelectionFromState(
+		layer.compositionId,
+		compositionSelectionState,
+	);
 	return {
 		layer,
 		isSelected: !!compositionSelection.layers[id],

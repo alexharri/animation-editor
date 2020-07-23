@@ -1,10 +1,11 @@
 import {
-	ValueType,
-	PropertyName,
-	PropertyGroupName,
-	ValueFormat,
-	RGBColor,
+	KeySelectionMap,
 	LayerType,
+	PropertyGroupName,
+	PropertyName,
+	RGBColor,
+	ValueFormat,
+	ValueType,
 } from "~/types";
 
 export interface Composition {
@@ -86,4 +87,9 @@ export interface CreatePropertyOptions {
 export interface CreateLayerPropertyGroup {
 	group: CompositionPropertyGroup;
 	properties: CompositionProperty[];
+}
+
+export interface CompositionSelection {
+	layers: KeySelectionMap;
+	properties: KeySelectionMap;
 }

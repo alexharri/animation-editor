@@ -1,8 +1,8 @@
-import { getActionState } from "~/state/stateUtils";
 import { getCompTimeTrackYPositions } from "~/composition/timeline/compTimeUtils";
-import { valueWithinRange, valueWithinMargin } from "~/util/math";
 import { COMP_TIME_LAYER_HEIGHT, COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
+import { getActionState } from "~/state/stateUtils";
 import { transformTimelineXToGlobalX } from "~/timeline/timelineUtils";
+import { valueWithinMargin, valueWithinRange } from "~/util/math";
 
 interface Options {
 	compositionId: string;
@@ -24,7 +24,7 @@ export const useTrackEditorCanvasCursor = (
 
 		const { compositionId, viewport, viewBounds, panY } = options;
 
-		const { compositions: compositionState } = getActionState();
+		const { compositionState } = getActionState();
 		const composition = compositionState.compositions[compositionId];
 
 		const mousePos = Vec2.fromEvent(e);

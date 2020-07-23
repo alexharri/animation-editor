@@ -1,11 +1,10 @@
 import React, { useContext } from "react";
-
-import { RGBAColor, ValueType } from "~/types";
-import { connectActionState } from "~/state/stateUtils";
-import { CompTimePropertyValueContext } from "~/composition/timeline/compTimeContext";
 import { CompositionProperty } from "~/composition/compositionTypes";
-import { CompTimePropertyNumberValue } from "~/composition/timeline/property/value/CompTimePropertyNumberValue";
+import { CompTimePropertyValueContext } from "~/composition/timeline/compTimeContext";
 import { CompTimePropertyColorValue } from "~/composition/timeline/property/value/CompTimePropertyColorValue";
+import { CompTimePropertyNumberValue } from "~/composition/timeline/property/value/CompTimePropertyNumberValue";
+import { connectActionState } from "~/state/stateUtils";
+import { RGBAColor, ValueType } from "~/types";
 
 interface OwnProps {
 	propertyId: string;
@@ -42,7 +41,10 @@ const CompTimePropertyValueComponent: React.FC<Props> = (props) => {
 	return null;
 };
 
-const mapState: MapActionState<StateProps, OwnProps> = ({ compositions }, { propertyId }) => ({
+const mapState: MapActionState<StateProps, OwnProps> = (
+	{ compositionState: compositions },
+	{ propertyId },
+) => ({
 	valueType: (compositions.properties[propertyId] as CompositionProperty).valueType,
 });
 

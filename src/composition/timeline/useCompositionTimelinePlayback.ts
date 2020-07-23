@@ -1,8 +1,8 @@
-import { RequestActionParams, requestAction } from "~/listener/requestAction";
 import { useRef } from "react";
-import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { getActionState } from "~/state/stateUtils";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { useKeyDownEffect } from "~/hook/useKeyDown";
+import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { getActionState } from "~/state/stateUtils";
 
 export const useCompositionTimelinePlayback = (compositionId: string): void => {
 	const spaceDownAtTimeRef = useRef(0);
@@ -25,7 +25,7 @@ export const useCompositionTimelinePlayback = (compositionId: string): void => {
 				const {
 					frameIndex: initialFrameIndex,
 					length,
-				} = getActionState().compositions.compositions[compositionId];
+				} = getActionState().compositionState.compositions[compositionId];
 
 				let f = initialFrameIndex;
 
