@@ -13,7 +13,7 @@ type Props = OwnProps;
 
 export const CompWorkspaceCompChildren: React.FC<Props> = (props) => {
 	const { layerIds, layerTypes } = useComputeHistory((state) => {
-		const compositionState = state.compositions;
+		const { compositionState } = state;
 		const { layers } = compositionState.compositions[props.compositionId];
 		return {
 			layerIds: layers,

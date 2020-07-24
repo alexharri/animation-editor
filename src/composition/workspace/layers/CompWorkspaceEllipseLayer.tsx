@@ -1,6 +1,7 @@
 import React from "react";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { useWorkspaceLayerShouldRender } from "~/composition/workspace/useWorkspaceLayerShouldRender";
 import { connectActionState } from "~/state/stateUtils";
 
@@ -112,12 +113,15 @@ const CompWorkspaceEllipseLayerComponent: React.FC<Props> = (props) => {
 };
 
 const mapState: MapActionState<StateProps, OwnProps> = (
-	{ compositions, compositionSelection },
+	{ nodeEditor, compositionState, compositionSelectionState },
 	{ layerId },
 ) => {
+	const layer = compositionState.layers[layerId];
+	const selection = getCompSelectionFromState(layer.compositionId, compositionSelectionState);
 	return {
-		isSelected: !!compositionSelection.layers[layerId],
-		layer: compositions.layers[layerId],
+		layer,
+		graph: layer.graphId ? nodeEditor.graphs[layer.graphId] : undefined,
+		isSelected: !!selection.layers[layerId],
 	};
 };
 

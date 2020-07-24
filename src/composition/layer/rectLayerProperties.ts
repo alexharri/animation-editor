@@ -1,11 +1,11 @@
-import { PropertyName, ValueType, PropertyGroupName } from "~/types";
 import {
 	CompositionProperty,
-	CreatePropertyOptions,
-	CreateLayerPropertyGroup,
 	CompositionPropertyGroup,
+	CreateLayerPropertyGroup,
+	CreatePropertyOptions,
 } from "~/composition/compositionTypes";
 import { TimelineColors } from "~/constants";
+import { PropertyGroupName, PropertyName, ValueType } from "~/types";
 
 const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
@@ -41,6 +41,7 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 		type: "group",
 		name: PropertyGroupName.Dimensions,
 		id: opts.createId(),
+		layerId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 	};
@@ -106,6 +107,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 		type: "group",
 		name: PropertyGroupName.Content,
 		id: opts.createId(),
+		layerId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 	};

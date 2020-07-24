@@ -9,7 +9,7 @@ import { PropertyName } from "~/types";
 
 export const useLayerNameToProperty = (compositionId: string, layerId: string) => {
 	const { computePropertyValues, layer } = useComputeHistory((state) => {
-		const layer = state.compositions.layers[layerId];
+		const layer = state.compositionState.layers[layerId];
 		const graph = layer.graphId ? state.nodeEditor.graphs[layer.graphId] : undefined;
 
 		return { computePropertyValues: computeLayerGraph(graph), layer };
@@ -28,11 +28,11 @@ export const useLayerNameToProperty = (compositionId: string, layerId: string) =
 			computed: {},
 			compositionId,
 			layerId,
-			compositionState: actionState.compositions,
+			compositionState: actionState.compositionState,
 			timelines: actionState.timelines,
 			timelineSelection: actionState.timelineSelection,
 			graph,
-			frameIndex: actionState.compositions.compositions[compositionId].frameIndex,
+			frameIndex: actionState.compositionState.compositions[compositionId].frameIndex,
 			layerIdToFrameIndex,
 		};
 
@@ -41,7 +41,7 @@ export const useLayerNameToProperty = (compositionId: string, layerId: string) =
 	});
 
 	const properties = useActionState((state) => {
-		return getLayerCompositionProperties(layer.id, state.compositions);
+		return getLayerCompositionProperties(layer.id, state.compositionState);
 	});
 
 	const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(

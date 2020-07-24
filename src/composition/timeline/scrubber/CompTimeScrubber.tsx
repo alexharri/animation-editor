@@ -72,7 +72,10 @@ const CompTimeScrubberComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ compositions }, ownProps) => {
+const mapStateToProps: MapActionState<StateProps, OwnProps> = (
+	{ compositionState: compositions },
+	ownProps,
+) => {
 	const composition = compositions.compositions[ownProps.compositionId];
 	return {
 		frameIndex: composition.frameIndex,

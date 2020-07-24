@@ -1,4 +1,4 @@
-import { CompositionTimeline } from "~/composition/timeline/CompositionTimeline";
+import { CompTime } from "~/composition/timeline/CompTime";
 import { compTimeAreaReducer } from "~/composition/timeline/compTimeAreaReducer";
 import { compositionWorkspaceAreaReducer } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { CompositionWorkspace } from "~/composition/workspace/CompWorkspace";
@@ -14,7 +14,7 @@ export const areaComponentRegistry: {
 	[T in AreaType]: React.ComponentType<AreaComponentProps<AreaState<T>>>;
 } = {
 	[AreaType.VectorEditor]: VectorEditor,
-	[AreaType.CompositionTimeline]: CompositionTimeline,
+	[AreaType.CompositionTimeline]: CompTime,
 	[AreaType.CompositionWorkspace]: CompositionWorkspace,
 	[AreaType.NodeEditor]: NodeEditor,
 	[AreaType.History]: HistoryEditor,

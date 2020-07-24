@@ -1,12 +1,12 @@
-import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
-import { requestAction } from "~/listener/requestAction";
+import { Composition } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
-import { getActionState } from "~/state/stateUtils";
+import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
+import { requestAction } from "~/listener/requestAction";
 import { projectActions } from "~/project/projectReducer";
-import { Composition } from "~/composition/compositionTypes";
-import { getNonDuplicateName } from "~/util/names";
+import { getActionState } from "~/state/stateUtils";
 import { createMapNumberId } from "~/util/mapUtils";
+import { getNonDuplicateName } from "~/util/names";
 
 interface Options {
 	compositionId?: string;
@@ -20,7 +20,7 @@ export const createProjectContextMenu = (position: Vec2, { compositionId }: Opti
 			options.push({
 				label: "Add new composition",
 				onSelect: () => {
-					const compositions = getActionState().compositions.compositions;
+					const compositions = getActionState().compositionState.compositions;
 
 					const existingNames = Object.values(compositions).map((comp) => comp.name);
 

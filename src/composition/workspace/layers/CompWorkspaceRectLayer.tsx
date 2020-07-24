@@ -1,6 +1,7 @@
 import React from "react";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { useWorkspaceLayerShouldRender } from "~/composition/workspace/useWorkspaceLayerShouldRender";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { connectActionState } from "~/state/stateUtils";
@@ -75,14 +76,15 @@ const CompWorkspaceRectLayerComponent: React.FC<Props> = (props) => {
 };
 
 const mapState: MapActionState<StateProps, OwnProps> = (
-	{ nodeEditor, compositions, compositionSelection },
+	{ nodeEditor, compositionState, compositionSelectionState },
 	{ layerId },
 ) => {
-	const layer = compositions.layers[layerId];
+	const layer = compositionState.layers[layerId];
+	const selection = getCompSelectionFromState(layer.compositionId, compositionSelectionState);
 	return {
 		layer,
 		graph: layer.graphId ? nodeEditor.graphs[layer.graphId] : undefined,
-		isSelected: !!compositionSelection.layers[layerId],
+		isSelected: !!selection.layers[layerId],
 	};
 };
 

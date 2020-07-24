@@ -47,7 +47,9 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 	const onValueChangeEndFn = useRef<(() => void) | null>(null);
 
 	const { compositionId } = props.areaState;
-	const composition = useActionState((state) => state.compositions.compositions[compositionId]);
+	const composition = useActionState(
+		(state) => state.compositionState.compositions[compositionId],
+	);
 
 	const onValueChange = (which: "width" | "height", value: number) => {
 		if (onValueChangeFn.current) {

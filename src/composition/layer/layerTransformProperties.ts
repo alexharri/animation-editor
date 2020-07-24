@@ -1,11 +1,11 @@
-import { PropertyName, ValueType, PropertyGroupName } from "~/types";
 import {
 	CompositionProperty,
-	CreatePropertyOptions,
-	CreateLayerPropertyGroup,
 	CompositionPropertyGroup,
+	CreateLayerPropertyGroup,
+	CreatePropertyOptions,
 } from "~/composition/compositionTypes";
 import { TimelineColors } from "~/constants";
+import { PropertyGroupName, PropertyName, ValueType } from "~/types";
 
 export const createLayerTransformProperties = (
 	opts: CreatePropertyOptions,
@@ -98,6 +98,7 @@ export const createLayerTransformProperties = (
 		type: "group",
 		name: PropertyGroupName.Transform,
 		id: opts.createId(),
+		layerId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 	};

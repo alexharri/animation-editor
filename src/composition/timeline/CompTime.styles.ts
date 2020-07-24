@@ -1,5 +1,6 @@
-import { StyleParams } from "~/util/stylesheets";
+import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
 import { cssVariables, cssZIndex } from "~/cssVariables";
+import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	header: css`
@@ -33,7 +34,7 @@ export default ({ css }: StyleParams) => ({
 
 	left: css`
 		background: ${cssVariables.dark600};
-		margin-right: 4px;
+		margin-right: ${COMP_TIME_SEPARATOR_WIDTH}px;
 		display: flex;
 		flex-direction: column;
 	`,
@@ -52,8 +53,19 @@ export default ({ css }: StyleParams) => ({
 		position: absolute;
 		top: 0;
 		bottom: 0;
-		background: ${cssVariables.dark600};
+		width: ${COMP_TIME_SEPARATOR_WIDTH}px;
+		background: ${cssVariables.dark300};
 		cursor: ew-resize;
+
+		&:before {
+			content: "";
+			position: absolute;
+			top: 0;
+			left: -2px;
+			right: -2px;
+			bottom: 0;
+			z-index: 1;
+		}
 	`,
 
 	zoomTarget: css`

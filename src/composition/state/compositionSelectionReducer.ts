@@ -1,120 +1,142 @@
-import { ActionType, getType } from "typesafe-actions";
-import { compositionActions } from "~/composition/state/compositionReducer";
-import { KeySelectionMap } from "~/types";
+import { ActionType, createAction, getType } from "typesafe-actions";
+import { CompositionSelection } from "~/composition/compositionTypes";
 import { removeKeysFromMap } from "~/util/mapUtils";
 
-// Only one composition may be selected at any time.
-export interface CompositionSelectionState {
-	compositionId: string;
-	layers: KeySelectionMap;
-	properties: KeySelectionMap;
-}
+export const compositionSelectionActions = {
+	toggleLayerSelection: createAction("comp/TOGGLE_LAYER_SELECTED", (action) => {
+		return (compositionId: string, layerId: string) => action({ compositionId, layerId });
+	}),
 
-export const initialCompositionSelectionState: CompositionSelectionState = {
-	compositionId: "",
-	layers: {},
-	properties: {},
+	removeLayersFromSelection: createAction("comp/REMOVE_LAYERS", (action) => {
+		return (compositionId: string, layerIds: string[]) => action({ compositionId, layerIds });
+	}),
+
+	removePropertiesFromSelection: createAction("comp/REMOVE_PROPERTIES", (action) => {
+		return (compositionId: string, propertyIds: string[]) =>
+			action({ compositionId, propertyIds });
+	}),
+
+	togglePropertySelection: createAction("comp/TOGGLE_PROPERTY_SELECTED", (action) => {
+		return (compositionId: string, propertyId: string) => action({ compositionId, propertyId });
+	}),
+
+	clearCompositionSelection: createAction("comp/CLEAR_COMP_SELECTION", (action) => {
+		return (compositionId: string) => action({ compositionId });
+	}),
+
+	addPropertyToSelection: createAction("comp/ADD_PROP_TO_SELECTION", (action) => {
+		return (compositionId: string, propertyId: string) => action({ compositionId, propertyId });
+	}),
+
+	addLayerToSelection: createAction("comp/ADD_LAYER_TO_SELECTION", (action) => {
+		return (compositionId: string, layerId: string) => action({ compositionId, layerId });
+	}),
 };
 
-const createNewState = (compositionId: string): CompositionSelectionState => ({
-	compositionId,
+export interface CompositionSelectionState {
+	[compositionId: string]: CompositionSelection;
+}
+
+export const initialCompositionSelectionState: CompositionSelectionState = {};
+
+const createNewCompSelection = (): CompositionSelection => ({
 	layers: {},
 	properties: {},
 });
 
-type Action = ActionType<typeof compositionActions>;
+type Action = ActionType<typeof compositionSelectionActions>;
 
-export const compositionSelectionReducer = (
-	state = initialCompositionSelectionState,
+const singleCompositionSelectionReducer = (
+	state: CompositionSelection,
 	action: Action,
-): CompositionSelectionState => {
+): CompositionSelection => {
 	switch (action.type) {
-		case getType(compositionActions.toggleLayerSelection): {
-			const { compositionId, layerId } = action.payload;
-
-			const newState =
-				state.compositionId === compositionId
-					? { ...state }
-					: createNewState(compositionId);
-
-			if (newState.layers[layerId]) {
-				newState.layers = Object.keys(newState.layers).reduce<KeySelectionMap>(
-					(obj, key) => {
-						if (layerId !== key) {
-							obj[key] = true;
-						}
-						return obj;
-					},
-					{},
-				);
-				return newState;
-			}
+		case getType(compositionSelectionActions.toggleLayerSelection): {
+			const { layerId } = action.payload;
 
 			return {
-				...newState,
-				layers: {
-					...newState.layers,
-					[layerId]: true,
-				},
+				...state,
+				layers: state.layers[layerId]
+					? removeKeysFromMap(state.layers, [layerId])
+					: {
+							...state.layers,
+							[layerId]: true,
+					  },
 			};
 		}
 
-		case getType(compositionActions.removeLayersFromSelection): {
-			const { compositionId, layerIds } = action.payload;
-
-			const newState =
-				state.compositionId === compositionId
-					? { ...state }
-					: createNewState(compositionId);
+		case getType(compositionSelectionActions.removeLayersFromSelection): {
+			const { layerIds } = action.payload;
 
 			return {
-				...newState,
-				layers: removeKeysFromMap(newState.layers, layerIds),
+				...state,
+				layers: removeKeysFromMap(state.layers, layerIds),
 			};
 		}
 
-		case getType(compositionActions.togglePropertySelection): {
-			const { compositionId, propertyId } = action.payload;
-
-			const newState =
-				state.compositionId === compositionId
-					? { ...state }
-					: createNewState(compositionId);
-
-			if (newState.properties[propertyId]) {
-				newState.properties = Object.keys(newState.properties).reduce<KeySelectionMap>(
-					(obj, key) => {
-						if (propertyId !== key) {
-							obj[key] = true;
-						}
-						return obj;
-					},
-					{},
-				);
-				return newState;
-			}
+		case getType(compositionSelectionActions.removePropertiesFromSelection): {
+			const { propertyIds } = action.payload;
 
 			return {
-				...newState,
+				...state,
+				properties: removeKeysFromMap(state.properties, propertyIds),
+			};
+		}
+
+		case getType(compositionSelectionActions.togglePropertySelection): {
+			const { propertyId } = action.payload;
+
+			return {
+				...state,
+				properties: state.properties[propertyId]
+					? removeKeysFromMap(state.properties, [propertyId])
+					: {
+							...state.properties,
+							[propertyId]: true,
+					  },
+			};
+		}
+
+		case getType(compositionSelectionActions.clearCompositionSelection): {
+			return { ...state, properties: {}, layers: {} };
+		}
+
+		case getType(compositionSelectionActions.addPropertyToSelection): {
+			const { propertyId } = action.payload;
+			return {
+				...state,
 				properties: {
-					...newState.properties,
+					...state.properties,
 					[propertyId]: true,
 				},
 			};
 		}
 
-		case getType(compositionActions.clearCompositionSelection): {
-			const { compositionId } = action.payload;
-
-			const newState =
-				state.compositionId === compositionId
-					? { ...state }
-					: createNewState(compositionId);
-
-			return { ...newState, properties: {}, layers: {} };
+		case getType(compositionSelectionActions.addLayerToSelection): {
+			const { layerId } = action.payload;
+			return {
+				...state,
+				layers: {
+					...state.layers,
+					[layerId]: true,
+				},
+			};
 		}
 
 		default:
 			return state;
 	}
+};
+
+export const compositionSelectionReducer = (
+	state = initialCompositionSelectionState,
+	action: Action,
+): CompositionSelectionState => {
+	const compositionId = action.payload.compositionId;
+	const selection = state[compositionId] || createNewCompSelection();
+
+	return {
+		...state,
+		[compositionId]: singleCompositionSelectionReducer(selection, action),
+	};
 };

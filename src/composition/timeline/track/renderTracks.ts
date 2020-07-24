@@ -1,16 +1,17 @@
 import { Composition } from "~/composition/compositionTypes";
-import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
-import { createToTimelineViewportX } from "~/timeline/renderTimeline";
 import { CompositionState } from "~/composition/state/compositionReducer";
-import { renderRect, renderDiamond } from "~/util/canvas/renderPrimitives";
-import { cssVariables } from "~/cssVariables";
-import { TimelineState } from "~/timeline/timelineReducer";
+import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
-	COMP_TIME_TRACK_KEYFRAME_HEIGHT,
-	COMP_TIME_LAYER_HEIGHT,
 	COMP_TIME_BETWEEN_LAYERS,
+	COMP_TIME_LAYER_HEIGHT,
+	COMP_TIME_TRACK_KEYFRAME_HEIGHT,
 } from "~/constants";
+import { cssVariables } from "~/cssVariables";
+import { createToTimelineViewportX } from "~/timeline/renderTimeline";
+import { TimelineState } from "~/timeline/timelineReducer";
+import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { renderDiamond, renderRect } from "~/util/canvas/renderPrimitives";
 
 interface RenderTimelineOptions {
 	ctx: Ctx;
@@ -19,7 +20,7 @@ interface RenderTimelineOptions {
 	panY: number;
 	viewBounds: [number, number];
 	composition: Composition;
-	compositionSelection: CompositionSelectionState;
+	compositionSelectionState: CompositionSelectionState;
 	compositionState: CompositionState;
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
@@ -33,7 +34,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		ctx,
 		compositionState,
 		composition,
-		compositionSelection,
+		compositionSelectionState,
 		viewBounds,
 		viewportWidth,
 		viewportHeight,
@@ -42,6 +43,11 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		layerIndexShift,
 		layerLengthShift,
 	} = options;
+
+	const compositionSelection = getCompSelectionFromState(
+		composition.id,
+		compositionSelectionState,
+	);
 
 	const getLayerIndexAndLength = (layerId: string): [number, number] => {
 		const layer = compositionState.layers[layerId];
@@ -65,7 +71,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 	renderRect(
 		ctx,
 		{ left: 0, top: 0, width: viewportWidth, height: viewportHeight },
-		{ fillColor: cssVariables.dark300 },
+		{ fillColor: cssVariables.dark500 },
 	);
 
 	const toTimelineX = createToTimelineViewportX({
@@ -78,6 +84,31 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 	const getY = (): number =>
 		yIndex * (COMP_TIME_LAYER_HEIGHT + COMP_TIME_BETWEEN_LAYERS) + 1 - panY;
+
+	const renderEdge = (fillColor: string) => {
+		const x0 = toTimelineX(0);
+		const x1 = toTimelineX(composition.length);
+
+		if (x0 > 0) {
+			renderRect(
+				ctx,
+				{ left: 0, width: x0, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
+				{ fillColor },
+			);
+		}
+		if (x1 < viewportWidth) {
+			renderRect(
+				ctx,
+				{
+					left: x1,
+					width: viewportWidth - x1,
+					top: getY(),
+					height: COMP_TIME_LAYER_HEIGHT,
+				},
+				{ fillColor },
+			);
+		}
+	};
 
 	for (let i = 0; i < composition.layers.length; i += 1) {
 		const layerId = composition.layers[i];
@@ -96,8 +127,15 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 		renderRect(
 			ctx,
+			{ left: 0, width: viewportWidth, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
+			{ fillColor: cssVariables.gray500 },
+		);
+		renderEdge(selected ? cssVariables.dark700 : cssVariables.dark600);
+
+		renderRect(
+			ctx,
 			{ left, width, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
-			{ fillColor: selected ? cssVariables.gray800 : cssVariables.gray600 },
+			{ fillColor: selected ? cssVariables.light300 : cssVariables.gray700 },
 		);
 
 		// Render layer properties
@@ -105,12 +143,14 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			yIndex++;
 
 			const property = compositionState.properties[propertyId];
+			const selected = compositionSelection.properties[propertyId];
 
 			renderRect(
 				ctx,
 				{ left: 0, width: viewportWidth, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
-				{ fillColor: cssVariables.dark600 },
+				{ fillColor: cssVariables.dark800 },
 			);
+			renderEdge(selected ? cssVariables.dark700 : cssVariables.dark600);
 
 			if (property.type === "group") {
 				if (!property.collapsed) {
@@ -143,8 +183,10 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			}
 		};
 
-		for (let j = 0; j < layer.properties.length; j += 1) {
-			renderProperty(layer.properties[j]);
+		if (!layer.collapsed) {
+			for (let j = 0; j < layer.properties.length; j += 1) {
+				renderProperty(layer.properties[j]);
+			}
 		}
 
 		yIndex++;

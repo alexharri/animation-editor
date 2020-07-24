@@ -1,12 +1,12 @@
-import { NodeEditorNodeType, PropertyGroupName } from "~/types";
+import { CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { AreaType } from "~/constants";
+import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { RequestActionParams } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { contextMenuActions } from "~/contextMenu/contextMenuActions";
-import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
+import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { AreaType } from "~/constants";
-import { CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { NodeEditorNodeType, PropertyGroupName } from "~/types";
 
 interface Options {
 	graphId: string;
@@ -21,7 +21,7 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 	const { dispatch, submitAction } = params;
 
 	const actionState = getActionState();
-	const compositionState = actionState.compositions;
+	const compositionState = actionState.compositionState;
 	const graph = actionState.nodeEditor.graphs[graphId];
 	const layer = compositionState.layers[graph.layerId];
 

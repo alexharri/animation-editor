@@ -1,10 +1,11 @@
 import {
-	ValueType,
-	PropertyName,
-	PropertyGroupName,
-	ValueFormat,
-	RGBColor,
+	KeySelectionMap,
 	LayerType,
+	PropertyGroupName,
+	PropertyName,
+	RGBColor,
+	ValueFormat,
+	ValueType,
 } from "~/types";
 
 export interface Composition {
@@ -26,12 +27,14 @@ export interface CompositionLayer {
 	index: number; // Index of first frame
 	length: number; // Number of frames
 	properties: string[];
+	collapsed: boolean;
 }
 
 export interface CompositionPropertyGroup {
 	type: "group";
 	name: PropertyGroupName;
 	id: string;
+	layerId: string;
 	properties: string[];
 	collapsed: boolean;
 }
@@ -86,4 +89,9 @@ export interface CreatePropertyOptions {
 export interface CreateLayerPropertyGroup {
 	group: CompositionPropertyGroup;
 	properties: CompositionProperty[];
+}
+
+export interface CompositionSelection {
+	layers: KeySelectionMap;
+	properties: KeySelectionMap;
 }

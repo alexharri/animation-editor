@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { areaActions } from "~/area/state/areaActions";
-import { Composition, CompositionProperty } from "~/composition/compositionTypes";
+import {
+	Composition,
+	CompositionProperty,
+	CompositionSelection,
+} from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
-import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import styles from "~/composition/timeline/CompositionTimeline.styles";
+import styles from "~/composition/timeline/CompTime.styles";
 import { compTimeAreaActions, CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { capCompTimePanY } from "~/composition/timeline/compTimeUtils";
@@ -11,6 +14,8 @@ import { CompTimeLayer } from "~/composition/timeline/layer/CompTimeLayer";
 import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
 import { TrackEditor } from "~/composition/timeline/track/TrackEditor";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
@@ -23,23 +28,26 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
-const SEPARATOR_WIDTH = 4;
-
 type OwnProps = AreaComponentProps<CompTimeAreaState>;
 interface StateProps {
 	composition: Composition;
-	selection: CompositionSelectionState;
+	compositionSelection: CompositionSelection;
 	compositionState: CompositionState;
 	viewBounds: [number, number];
 }
 type Props = OwnProps & StateProps;
 
-const CompositionTimelineComponent: React.FC<Props> = (props) => {
+const CompTimeComponent: React.FC<Props> = (props) => {
 	const { composition } = props;
 
 	const [t, setT] = useState(0.3);
 
-	let [viewportLeft, viewportRight] = splitRect("horizontal", props, t, SEPARATOR_WIDTH);
+	let [viewportLeft, viewportRight] = splitRect(
+		"horizontal",
+		props,
+		t,
+		COMP_TIME_SEPARATOR_WIDTH,
+	);
 
 	const zoomTarget = useRef<HTMLDivElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
@@ -54,8 +62,6 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 			panTarget.current.style.display = down ? "block" : "";
 		}
 	});
-
-	// useCompositionTimelinePlayback(props.composition.id);
 
 	const onMouseDown: RequestActionCallback = (params) => {
 		const { addListener, submitAction } = params;
@@ -73,24 +79,21 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 	const timelineIds: string[] = [];
 	const colors: Partial<{ [timelineId: string]: string }> = {};
 
-	if (props.selection.compositionId === props.composition.id) {
-		const layers = props.composition.layers.map((id) => props.compositionState.layers[id]);
+	const layers = props.composition.layers.map((id) => props.compositionState.layers[id]);
+	const properties: CompositionProperty[] = [];
 
-		const properties: CompositionProperty[] = [];
+	for (let i = 0; i < layers.length; i += 1) {
+		properties.push(...getLayerCompositionProperties(layers[i].id, props.compositionState));
+	}
 
-		for (let i = 0; i < layers.length; i += 1) {
-			properties.push(...getLayerCompositionProperties(layers[i].id, props.compositionState));
+	for (let i = 0; i < properties.length; i += 1) {
+		if (!props.compositionSelection.properties[properties[i].id]) {
+			continue;
 		}
 
-		for (let i = 0; i < properties.length; i += 1) {
-			if (!props.selection.properties[properties[i].id]) {
-				continue;
-			}
-
-			if (properties[i].timelineId) {
-				timelineIds.push(properties[i].timelineId);
-				colors[properties[i].timelineId] = properties[i].color;
-			}
+		if (properties[i].timelineId) {
+			timelineIds.push(properties[i].timelineId);
+			colors[properties[i].timelineId] = properties[i].color;
 		}
 	}
 
@@ -125,7 +128,12 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				props.compositionState,
 			);
 
-			let [viewportLeft, viewportRight] = splitRect("horizontal", props, t, SEPARATOR_WIDTH);
+			let [viewportLeft, viewportRight] = splitRect(
+				"horizontal",
+				props,
+				t,
+				COMP_TIME_SEPARATOR_WIDTH,
+			);
 			const lockY = props.areaState.graphEditorOpen
 				? !isVecInRect(Vec2.fromEvent(e), viewportLeft)
 				: false;
@@ -174,13 +182,14 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				style={viewportLeft}
 				ref={outRef}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) => compTimeHandlers.onMouseDownOut(e, outRef, props.composition.id),
+					left: () => compTimeHandlers.onMouseDownOut(props.composition.id),
 					right: (e) => compTimeHandlers.onRightClickOut(e, props.composition.id),
 				})}
 			>
 				<div className={s("header")}>
 					<button
 						className={s("graphEditorToggle")}
+						onMouseDown={(e) => e.stopPropagation()}
 						onClick={() => {
 							requestAction({ history: false }, (params) => {
 								params.dispatch(
@@ -212,7 +221,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 			</div>
 			<div
 				className={s("separator")}
-				style={{ width: SEPARATOR_WIDTH, left: viewportLeft.width }}
+				style={{ left: viewportLeft.width }}
 				onMouseDown={separateLeftRightMouse({
 					left: () => requestAction({ history: false }, onMouseDown),
 				})}
@@ -297,15 +306,19 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ compositions, compositionSelection },
+	{ compositionState, compositionSelectionState },
 	ownProps,
-) => ({
-	compositionState: compositions,
-	selection: compositionSelection,
-	composition: compositions.compositions[ownProps.areaState.compositionId],
-	viewBounds: ownProps.areaState.viewBounds,
-});
+) => {
+	const compositionSelection = getCompSelectionFromState(
+		ownProps.areaState.compositionId,
+		compositionSelectionState,
+	);
+	return {
+		compositionState,
+		compositionSelection,
+		composition: compositionState.compositions[ownProps.areaState.compositionId],
+		viewBounds: ownProps.areaState.viewBounds,
+	};
+};
 
-export const CompositionTimeline = connectActionState(mapStateToProps)(
-	CompositionTimelineComponent,
-);
+export const CompTime = connectActionState(mapStateToProps)(CompTimeComponent);

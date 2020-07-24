@@ -11,6 +11,7 @@ export const cssVariables = {
 	light500: "#adadad",
 	light400: "#989898",
 	light300: "#777",
+	light200: "#676767",
 
 	gray800: "#666",
 	gray700: "#555",

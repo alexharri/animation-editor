@@ -1,41 +1,41 @@
 import { combineReducers } from "redux";
-import { AreaReducerState, areaReducer, initialAreaState } from "~/area/state/areaReducer";
-import { ActionBasedState, createActionBasedReducer } from "~/state/history/actionBasedReducer";
-import { ToolState, toolReducer, initialToolState } from "~/toolbar/toolReducer";
+import { areaReducer, AreaReducerState, initialAreaState } from "~/area/state/areaReducer";
 import {
-	contextMenuReducer,
-	initialContextMenuState,
-	ContextMenuState,
-} from "~/contextMenu/contextMenuReducer";
-import {
-	NodeEditorState,
-	initialNodeEditorState,
-	nodeEditorReducer,
-} from "~/nodeEditor/nodeEditorReducers";
-import { HistoryState, createReducerWithHistory } from "~/state/history/historyReducer";
-import { initialTimelineState, timelineReducer, TimelineState } from "~/timeline/timelineReducer";
-import {
+	compositionReducer,
 	CompositionState,
 	initialCompositionState,
-	compositionReducer,
 } from "~/composition/state/compositionReducer";
 import {
-	initialCompositionSelectionState,
 	compositionSelectionReducer,
 	CompositionSelectionState,
+	initialCompositionSelectionState,
 } from "~/composition/state/compositionSelectionReducer";
 import {
-	TimelineSelectionState,
+	contextMenuReducer,
+	ContextMenuState,
+	initialContextMenuState,
+} from "~/contextMenu/contextMenuReducer";
+import {
+	initialNodeEditorState,
+	nodeEditorReducer,
+	NodeEditorState,
+} from "~/nodeEditor/nodeEditorReducers";
+import { initialProjectState, projectReducer, ProjectState } from "~/project/projectReducer";
+import { ActionBasedState, createActionBasedReducer } from "~/state/history/actionBasedReducer";
+import { createReducerWithHistory, HistoryState } from "~/state/history/historyReducer";
+import { initialTimelineState, timelineReducer, TimelineState } from "~/timeline/timelineReducer";
+import {
 	initialTimelineSelectionState,
 	timelineSelectionReducer,
+	TimelineSelectionState,
 } from "~/timeline/timelineSelectionReducer";
-import { ProjectState, initialProjectState, projectReducer } from "~/project/projectReducer";
+import { initialToolState, toolReducer, ToolState } from "~/toolbar/toolReducer";
 
 declare global {
 	interface ApplicationState {
 		area: ActionBasedState<AreaReducerState>;
-		compositions: HistoryState<CompositionState>;
-		compositionSelection: HistoryState<CompositionSelectionState>;
+		compositionState: HistoryState<CompositionState>;
+		compositionSelectionState: HistoryState<CompositionSelectionState>;
 		nodeEditor: HistoryState<NodeEditorState>;
 		contextMenu: ActionBasedState<ContextMenuState>;
 		project: HistoryState<ProjectState>;
@@ -46,8 +46,8 @@ declare global {
 
 	interface ActionState {
 		area: AreaReducerState;
-		compositions: CompositionState;
-		compositionSelection: CompositionSelectionState;
+		compositionState: CompositionState;
+		compositionSelectionState: CompositionSelectionState;
 		nodeEditor: NodeEditorState;
 		contextMenu: ContextMenuState;
 		project: ProjectState;
@@ -70,8 +70,8 @@ declare global {
 const reducers = {
 	area: createActionBasedReducer(initialAreaState, areaReducer),
 
-	compositions: createReducerWithHistory(initialCompositionState, compositionReducer),
-	compositionSelection: createReducerWithHistory(
+	compositionState: createReducerWithHistory(initialCompositionState, compositionReducer),
+	compositionSelectionState: createReducerWithHistory(
 		initialCompositionSelectionState,
 		compositionSelectionReducer,
 		{ selectionForKey: "compositions" },

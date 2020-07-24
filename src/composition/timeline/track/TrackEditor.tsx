@@ -1,19 +1,19 @@
-import React, { useRef, useLayoutEffect } from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
-import { cssVariables } from "~/cssVariables";
+import React, { useLayoutEffect, useRef } from "react";
 import { Composition } from "~/composition/compositionTypes";
-import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import { CompositionState } from "~/composition/state/compositionReducer";
-import { TimelineState } from "~/timeline/timelineReducer";
+import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
+import {
+	capCompTimePanY,
+	getTimelineIdsReferencedByComposition,
+} from "~/composition/timeline/compTimeUtils";
 import { renderTracks } from "~/composition/timeline/track/renderTracks";
 import { trackHandlers } from "~/composition/timeline/track/trackHandlers";
-import {
-	getTimelineIdsReferencedByComposition,
-	capCompTimePanY,
-} from "~/composition/timeline/compTimeUtils";
-import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
 import { useTrackEditorCanvasCursor } from "~/composition/timeline/track/useTrackEditorCanvasCursor";
+import { cssVariables } from "~/cssVariables";
+import { connectActionState } from "~/state/stateUtils";
+import { TimelineState } from "~/timeline/timelineReducer";
+import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
 
 interface OwnProps {
 	compositionId: string;
@@ -27,7 +27,7 @@ interface OwnProps {
 }
 interface StateProps {
 	composition: Composition;
-	compositionSelection: CompositionSelectionState;
+	compositionSelectionState: CompositionSelectionState;
 	compositionState: CompositionState;
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
@@ -54,7 +54,7 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 		const {
 			trackDragSelectRect,
 			compositionState,
-			compositionSelection,
+			compositionSelectionState,
 			viewBounds,
 			composition,
 			timelineSelection,
@@ -76,7 +76,7 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 		renderTracks({
 			ctx,
 			composition,
-			compositionSelection,
+			compositionSelectionState,
 			compositionState,
 			trackDragSelectRect,
 			timelines,
@@ -123,16 +123,16 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ compositions, compositionSelection, timelines, timelineSelection },
+	{ compositionState, compositionSelectionState, timelines, timelineSelection },
 	{ compositionId },
 ) => {
-	const composition = compositions.compositions[compositionId];
+	const composition = compositionState.compositions[compositionId];
 	return {
 		composition,
-		compositionSelection,
-		compositionState: compositions,
+		compositionSelectionState,
+		compositionState,
 		timelines,
-		timelineSelection: timelineSelection,
+		timelineSelection,
 	};
 };
 

@@ -22,6 +22,7 @@ interface Options {
 	translateX?: (value: number) => number;
 	translateY?: (value: number) => number;
 	moveTreshold?: number;
+	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
 }
 
 export const mouseDownMoveAction = (

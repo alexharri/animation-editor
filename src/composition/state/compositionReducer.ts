@@ -5,15 +5,16 @@ import {
 	CompositionProperty,
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
+import { createLayer } from "~/composition/layer/createLayer";
+import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { LayerType, RGBAColor } from "~/types";
 import {
-	removeKeysFromMap,
 	addListToMap,
 	modifyItemInMap,
 	modifyItemInUnionMap,
+	removeKeysFromMap,
 } from "~/util/mapUtils";
-import { RGBAColor, LayerType } from "~/types";
-import { createLayer } from "~/composition/layer/createLayer";
-import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 
 export interface CompositionState {
 	compositions: {
@@ -31,17 +32,7 @@ export interface CompositionState {
 }
 
 export const initialCompositionState: CompositionState = {
-	compositions: {
-		"0": {
-			id: "0",
-			name: "Composition",
-			layers: ["0"],
-			frameIndex: 0,
-			length: 500,
-			width: 400,
-			height: 400,
-		},
-	},
+	compositions: {},
 	layers: {},
 	properties: {},
 	compositionLayerIdToComposition: {},
@@ -57,16 +48,16 @@ export const compositionActions = {
 		return (
 			compositionId: string,
 			layerIndexShift: number,
-			selection: CompositionSelectionState,
-		) => action({ compositionId, layerIndexShift, selection });
+			selectionState: CompositionSelectionState,
+		) => action({ compositionId, layerIndexShift, selectionState });
 	}),
 
 	applyLayerLengthShift: createAction("comp/APPLY_LAYER_LENGTH_SHIFT", (action) => {
 		return (
 			compositionId: string,
 			layerLengthShift: [number, number],
-			selection: CompositionSelectionState,
-		) => action({ compositionId, layerLengthShift, selection });
+			selectionState: CompositionSelectionState,
+		) => action({ compositionId, layerLengthShift, selectionState });
 	}),
 
 	setComposition: createAction("comp/SET_COMPOSITION", (action) => {
@@ -75,22 +66,6 @@ export const compositionActions = {
 
 	setCompositionName: createAction("comp/SET_COMP_NAME", (action) => {
 		return (compositionId: string, name: string) => action({ compositionId, name });
-	}),
-
-	clearCompositionSelection: createAction("comp/CLEAR_COMP_SELECTION", (action) => {
-		return (compositionId: string) => action({ compositionId });
-	}),
-
-	toggleLayerSelection: createAction("comp/TOGGLE_LAYER_SELECTED", (action) => {
-		return (compositionId: string, layerId: string) => action({ compositionId, layerId });
-	}),
-
-	removeLayersFromSelection: createAction("comp/REMOVE_LAYER_SELECTED", (action) => {
-		return (compositionId: string, layerIds: string[]) => action({ compositionId, layerIds });
-	}),
-
-	togglePropertySelection: createAction("comp/TOGGLE_PROPERTY_SELECTED", (action) => {
-		return (compositionId: string, propertyId: string) => action({ compositionId, propertyId });
 	}),
 
 	setCompositionDimension: createAction("comp/SET_COMPOSITION_DIMENSIONS", (action) => {
@@ -131,6 +106,10 @@ export const compositionActions = {
 		return (layerId: string, name: string) => action({ layerId, name });
 	}),
 
+	setLayerCollapsed: createAction("comp/SET_LAYER_COLLAPSED", (action) => {
+		return (layerId: string, collapsed: boolean) => action({ layerId, collapsed });
+	}),
+
 	setLayerGraphId: createAction("comp/SET_LAYER_GRAPH_ID", (action) => {
 		return (layerId: string, graphId: string) => action({ layerId, graphId });
 	}),
@@ -144,7 +123,9 @@ export const compositionReducer = (
 ): CompositionState => {
 	switch (action.type) {
 		case getType(compositionActions.applyLayerIndexShift): {
-			const { compositionId, layerIndexShift, selection } = action.payload;
+			const { compositionId, layerIndexShift, selectionState } = action.payload;
+
+			const selection = getCompSelectionFromState(compositionId, selectionState);
 
 			const newState = {
 				...state,
@@ -171,7 +152,9 @@ export const compositionReducer = (
 		}
 
 		case getType(compositionActions.applyLayerLengthShift): {
-			const { compositionId, layerLengthShift, selection } = action.payload;
+			const { compositionId, layerLengthShift, selectionState } = action.payload;
+
+			const selection = getCompSelectionFromState(compositionId, selectionState);
 
 			const newState = {
 				...state,
@@ -380,6 +363,17 @@ export const compositionReducer = (
 				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					name,
+				})),
+			};
+		}
+
+		case getType(compositionActions.setLayerCollapsed): {
+			const { layerId, collapsed } = action.payload;
+			return {
+				...state,
+				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+					...layer,
+					collapsed,
 				})),
 			};
 		}

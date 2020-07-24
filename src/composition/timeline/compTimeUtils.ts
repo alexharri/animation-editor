@@ -1,6 +1,6 @@
+import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
-import { COMP_TIME_LAYER_HEIGHT, COMP_TIME_BETWEEN_LAYERS } from "~/constants";
-import { CompositionProperty } from "~/composition/compositionTypes";
+import { COMP_TIME_BETWEEN_LAYERS, COMP_TIME_LAYER_HEIGHT } from "~/constants";
 
 type TrackYPositions = {
 	timeline: { [timelineId: string]: number };
@@ -49,8 +49,10 @@ export const getCompTimeTrackYPositions = (
 			}
 		};
 
-		for (let j = 0; j < layer.properties.length; j += 1) {
-			crawlProperty(layer.properties[j]);
+		if (!layer.collapsed) {
+			for (let j = 0; j < layer.properties.length; j += 1) {
+				crawlProperty(layer.properties[j]);
+			}
 		}
 
 		yIndex++;
@@ -84,8 +86,10 @@ export const getCompTimeLayerListHeight = (
 			}
 		};
 
-		for (let j = 0; j < layer.properties.length; j += 1) {
-			renderProperty(layer.properties[j]);
+		if (!layer.collapsed) {
+			for (let j = 0; j < layer.properties.length; j += 1) {
+				renderProperty(layer.properties[j]);
+			}
 		}
 
 		yIndex++;
@@ -109,7 +113,7 @@ export const capCompTimePanY = (
 	return y;
 };
 
-export const reduceLayerProperties = <T>(
+export const reduceVisibleLayerProperties = <T>(
 	layerId: string,
 	compositionState: CompositionState,
 	fn: (acc: T, property: CompositionProperty) => T,
@@ -140,6 +144,55 @@ export const reduceLayerProperties = <T>(
 	return acc;
 };
 
+export const reduceLayerPropertiesAndGroups = <T>(
+	layerId: string,
+	compositionState: CompositionState,
+	fn: (acc: T, property: CompositionProperty | CompositionPropertyGroup) => T,
+	initialState: T,
+): T => {
+	let acc = initialState;
+	const layer = compositionState.layers[layerId];
+
+	const crawlProperty = (propertyId: string) => {
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "group") {
+			acc = fn(acc, property);
+			for (let j = 0; j < property.properties.length; j += 1) {
+				crawlProperty(property.properties[j]);
+			}
+			return;
+		}
+
+		acc = fn(acc, property);
+	};
+
+	for (let j = 0; j < layer.properties.length; j += 1) {
+		crawlProperty(layer.properties[j]);
+	}
+
+	return acc;
+};
+
+export const reduceLayerProperties = <T>(
+	layerId: string,
+	compositionState: CompositionState,
+	fn: (acc: T, property: CompositionProperty) => T,
+	initialState: T,
+): T => {
+	return reduceLayerPropertiesAndGroups(
+		layerId,
+		compositionState,
+		(acc, property) => {
+			if (property.type === "property") {
+				return fn(acc, property);
+			}
+			return acc;
+		},
+		initialState,
+	);
+};
+
 export const reduceCompProperties = <T>(
 	compositionId: string,
 	compositionState: CompositionState,
@@ -157,11 +210,28 @@ export const reduceCompProperties = <T>(
 	return acc;
 };
 
+export const reduceVisibleCompProperties = <T>(
+	compositionId: string,
+	compositionState: CompositionState,
+	fn: (acc: T, property: CompositionProperty) => T,
+	initialState: T,
+): T => {
+	const composition = compositionState.compositions[compositionId];
+
+	let acc = initialState;
+
+	for (let i = 0; i < composition.layers.length; i += 1) {
+		acc = reduceVisibleLayerProperties(composition.layers[i], compositionState, fn, acc);
+	}
+
+	return acc;
+};
+
 export const getTimelineIdsReferencedByLayer = (
 	layerId: string,
 	compositionState: CompositionState,
 ): string[] => {
-	return reduceLayerProperties<string[]>(
+	return reduceVisibleLayerProperties<string[]>(
 		layerId,
 		compositionState,
 		(acc, property) => {

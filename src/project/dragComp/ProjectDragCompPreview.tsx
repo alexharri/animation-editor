@@ -1,11 +1,10 @@
-import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { isVecInRect } from "~/util/math";
-import { cssZIndex, cssVariables } from "~/cssVariables";
+import React, { useRef } from "react";
+import { cssVariables, cssZIndex } from "~/cssVariables";
 import { useActionState } from "~/hook/useActionState";
-import { useRef } from "react";
 import { getCompEligibleTargets } from "~/project/compEligibleTargets";
 import { hexToRGBAString } from "~/util/color/convertColor";
+import { isVecInRect } from "~/util/math";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(({ css, keyframes }) => {
 	const fadeIn = keyframes`
@@ -51,7 +50,7 @@ const s = compileStylesheetLabelled(({ css, keyframes }) => {
 export const ProjectDragCompPreview: React.FC = () => {
 	const dragComp = useActionState(({ project }) => project.dragComp);
 	const composition = useActionState((actionState) => {
-		return dragComp && actionState.compositions.compositions[dragComp.compositionId];
+		return dragComp && actionState.compositionState.compositions[dragComp.compositionId];
 	});
 
 	const targetGroupsRef = useRef<ReturnType<typeof getCompEligibleTargets> | null>(null);

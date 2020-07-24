@@ -1,8 +1,8 @@
 import { connect, DispatchProp, InferableComponentEnhancerWithProps } from "react-redux";
-import { store } from "~/state/store";
-import { HistoryState } from "~/state/history/historyReducer";
-import { ActionBasedState } from "~/state/history/actionBasedReducer";
 import { AreaType } from "~/constants";
+import { ActionBasedState } from "~/state/history/actionBasedReducer";
+import { HistoryState } from "~/state/history/historyReducer";
+import { store } from "~/state/store";
 import { AreaState } from "~/types/areaTypes";
 
 const getCurrentStateFromApplicationState = (_state: ApplicationState): ActionState => {
@@ -62,8 +62,11 @@ export const createApplicationStateFromActionState = (
 
 	const state: ApplicationState = {
 		area: toActionBasedState(actionState.area),
-		compositionSelection: toHistoryBasedState(actionState.compositionSelection, "selection"),
-		compositions: toHistoryBasedState(actionState.compositions),
+		compositionSelectionState: toHistoryBasedState(
+			actionState.compositionSelectionState,
+			"selection",
+		),
+		compositionState: toHistoryBasedState(actionState.compositionState),
 		contextMenu: toActionBasedState(actionState.contextMenu),
 		nodeEditor: toHistoryBasedState(actionState.nodeEditor),
 		project: toHistoryBasedState(actionState.project),

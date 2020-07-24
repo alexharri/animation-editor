@@ -1,13 +1,13 @@
-import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
-import { requestAction } from "~/listener/requestAction";
+import { getLayerTypeName } from "~/composition/layer/layerUtils";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
+import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
+import { requestAction } from "~/listener/requestAction";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
+import { NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { NodeEditorNodeType, LayerType } from "~/types";
-import { NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
-import { getLayerTypeName } from "~/composition/layer/layerUtils";
+import { LayerType, NodeEditorNodeType } from "~/types";
 
 interface Options {
 	compositionId: string;
@@ -40,10 +40,7 @@ export const createCompTimeContextMenu = (
 
 		if (layerId) {
 			const removeLayer = () => {
-				const {
-					compositions: compositionState,
-					nodeEditor: nodeEditorState,
-				} = getActionState();
+				const { compositionState, nodeEditor: nodeEditorState } = getActionState();
 				const layer = compositionState.layers[layerId];
 
 				const toDispatch: any[] = [

@@ -16,7 +16,7 @@ export const getCompEligibleTargets = () => {
 
 	const groups: TargetGroup[] = [];
 
-	const compositionState = getActionState().compositions;
+	const compositionState = getActionState().compositionState;
 
 	for (let i = 0; i < compEls.length; i += 1) {
 		const compEl = compEls[i];

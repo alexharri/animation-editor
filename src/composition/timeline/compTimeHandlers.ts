@@ -5,10 +5,18 @@ import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
 import { CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { compositionSelectionActions } from "~/composition/state/compositionSelectionReducer";
 import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import { createCompTimeContextMenu } from "~/composition/timeline/compTimeContextMenu";
-import { getCompTimeLayerListHeight } from "~/composition/timeline/compTimeUtils";
-import { didCompSelectionChange } from "~/composition/util/compSelectionUtils";
+import {
+	getCompTimeLayerListHeight,
+	getTimelineIdsReferencedByComposition,
+	reduceLayerPropertiesAndGroups,
+} from "~/composition/timeline/compTimeUtils";
+import {
+	didCompSelectionChange,
+	getCompSelectionFromState,
+} from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
@@ -38,7 +46,7 @@ export const compTimeHandlers = {
 	): void => {
 		const { compositionId } = options;
 
-		const composition = getActionState().compositions.compositions[compositionId];
+		const composition = getActionState().compositionState.compositions[compositionId];
 
 		const initialPosition = Vec2.fromEvent(e);
 
@@ -122,7 +130,7 @@ export const compTimeHandlers = {
 		const { viewBounds, compositionLength, compositionId } = options;
 
 		requestAction({ history: false }, ({ submitAction, dispatch }) => {
-			const compositionState = getActionState().compositions;
+			const compositionState = getActionState().compositionState;
 
 			const [x0, x1] = [0, e.deltaX].map((x) => transformGlobalToTimelineX(x, options));
 
@@ -195,7 +203,7 @@ export const compTimeHandlers = {
 		const initialPos = transformGlobalToTimelineX(initialMousePosition.x, options);
 
 		const fn: RequestActionCallback = ({ addListener, submitAction, dispatch }) => {
-			const compositionState = getActionState().compositions;
+			const compositionState = getActionState().compositionState;
 
 			let initialT = initialPos / compositionLength;
 
@@ -258,7 +266,7 @@ export const compTimeHandlers = {
 		propertyId: string,
 		timelineId: string,
 	): void => {
-		const { compositions: compositionState, timelines, timelineSelection } = getActionState();
+		const { compositionState, timelines, timelineSelection } = getActionState();
 		const composition = compositionState.compositions[compositionId];
 		const property = compositionState.properties[propertyId] as CompositionProperty;
 		const layer = compositionState.layers[property.layerId];
@@ -296,20 +304,27 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onMouseDownOut: (
-		e: React.MouseEvent,
-		ref: React.RefObject<HTMLDivElement>,
-		compositionId: string,
-	): void => {
-		if (e.target !== ref.current) {
-			return;
-		}
+	onMouseDownOut: (compositionId: string): void => {
+		requestAction(
+			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
+			(params) => {
+				const { compositionState } = getActionState();
 
-		requestAction({ history: true }, (params) => {
-			const { dispatch, submitAction } = params;
-			dispatch(compositionActions.clearCompositionSelection(compositionId));
-			submitAction("Clear selection");
-		});
+				params.dispatch(
+					compositionSelectionActions.clearCompositionSelection(compositionId),
+				);
+
+				const timelineIds = getTimelineIdsReferencedByComposition(
+					compositionId,
+					compositionState,
+				);
+				params.dispatch(
+					timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+				);
+
+				params.submitAction("Clear composition timeline selection");
+			},
+		);
 	},
 
 	onRightClickOut: (e: React.MouseEvent, compositionId: string): void => {
@@ -325,27 +340,91 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onLayerNameMouseDown: (
-		_e: React.MouseEvent,
-		compositionId: string,
-		propertyId: string,
-	): void => {
-		requestAction({ history: true, shouldAddToStack: didCompSelectionChange }, (params) => {
-			const { dispatch, submitAction } = params;
+	onLayerNameMouseDown: (e: React.MouseEvent, compositionId: string, layerId: string): void => {
+		e.stopPropagation();
 
-			if (isKeyDown("Command")) {
-				dispatch(compositionActions.toggleLayerSelection(compositionId, propertyId));
-				submitAction("Toggle selection");
-			} else {
-				dispatch(compositionActions.clearCompositionSelection(compositionId));
-				dispatch(compositionActions.toggleLayerSelection(compositionId, propertyId));
-				submitAction("Select property");
-			}
-		});
+		requestAction(
+			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
+			(params) => {
+				const { compositionState, compositionSelectionState } = getActionState();
+
+				const compositionSelection = getCompSelectionFromState(
+					compositionId,
+					compositionSelectionState,
+				);
+				const willBeSelected = !compositionSelection.layers[layerId];
+
+				const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
+
+				if (!additiveSelection) {
+					// Clear composition selection
+					params.dispatch(
+						compositionSelectionActions.clearCompositionSelection(compositionId),
+					);
+
+					// Clear timeline selection of selected properties
+					const timelineIds = getTimelineIdsReferencedByComposition(
+						compositionId,
+						compositionState,
+					);
+					params.dispatch(
+						timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+					);
+				} else if (!willBeSelected) {
+					// Deselect all properties and timeline keyframes
+					const propertyIds = reduceLayerPropertiesAndGroups<string[]>(
+						layerId,
+						compositionState,
+						(acc, property) => {
+							acc.push(property.id);
+							return acc;
+						},
+						[],
+					).filter((propertyId) => compositionSelection.properties[propertyId]);
+
+					const timelineIds = propertyIds.reduce<string[]>((acc, propertyId) => {
+						const property = compositionState.properties[propertyId];
+
+						if (property.type === "property" && property.timelineId) {
+							acc.push(property.timelineId);
+						}
+
+						return acc;
+					}, []);
+
+					params.dispatch(
+						compositionSelectionActions.removePropertiesFromSelection(
+							compositionId,
+							propertyIds,
+						),
+					);
+					params.dispatch(
+						timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+					);
+				}
+
+				if (additiveSelection && !willBeSelected) {
+					params.dispatch(
+						compositionSelectionActions.removeLayersFromSelection(compositionId, [
+							layerId,
+						]),
+					);
+					params.submitAction("Remove layer from selection");
+					return;
+				}
+
+				params.dispatch(
+					compositionSelectionActions.addLayerToSelection(compositionId, layerId),
+				);
+				params.submitAction("Select layer");
+			},
+		);
 	},
 
-	onLayerGraphMouseDown: (_e: React.MouseEvent, layerId: string): void => {
-		const compositionState = getActionState().compositions;
+	onLayerGraphMouseDown: (e: React.MouseEvent, layerId: string): void => {
+		e.stopPropagation();
+
+		const compositionState = getActionState().compositionState;
 		const layer = compositionState.layers[layerId];
 
 		requestAction({ history: true }, (params) => {
@@ -370,7 +449,7 @@ export const compTimeHandlers = {
 	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, layerId: string): void => {
 		const initialMousePos = Vec2.fromEvent(e);
 
-		const compositionState = getActionState().compositions;
+		const compositionState = getActionState().compositionState;
 		const layer = compositionState.layers[layerId];
 
 		requestAction({ history: true }, (params) => {
@@ -445,21 +524,99 @@ export const compTimeHandlers = {
 	},
 
 	onPropertyNameMouseDown: (
-		_e: React.MouseEvent,
+		e: React.MouseEvent,
 		compositionId: string,
 		propertyId: string,
 	): void => {
-		requestAction({ history: true, shouldAddToStack: didCompSelectionChange }, (params) => {
-			const { dispatch, submitAction } = params;
+		e.stopPropagation();
 
-			if (isKeyDown("Command")) {
-				dispatch(compositionActions.togglePropertySelection(compositionId, propertyId));
-				submitAction("Toggle selection");
-			} else {
-				dispatch(compositionActions.clearCompositionSelection(compositionId));
-				dispatch(compositionActions.togglePropertySelection(compositionId, propertyId));
-				submitAction("Select property");
-			}
-		});
+		const { compositionState, compositionSelectionState, timelines } = getActionState();
+		const compositionSelection = getCompSelectionFromState(
+			compositionId,
+			compositionSelectionState,
+		);
+		const property = compositionState.properties[propertyId];
+
+		const additiveSelection = isKeyDown("Command") || isKeyDown("Shift");
+
+		requestAction(
+			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
+			(params) => {
+				if (!additiveSelection) {
+					// Clear other properties and timeline keyframes
+					params.dispatch(
+						compositionSelectionActions.clearCompositionSelection(compositionId),
+					);
+
+					const timelineIds = getTimelineIdsReferencedByComposition(
+						compositionId,
+						compositionState,
+					);
+					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
+				}
+
+				const willBeSelected = !compositionSelection.properties[propertyId];
+
+				if (additiveSelection && !willBeSelected) {
+					// Check whether this property is the only selected property
+					// of the layer
+					const selectedPropertyIds = reduceLayerPropertiesAndGroups<string[]>(
+						property.layerId,
+						compositionState,
+						(acc, property) => {
+							acc.push(property.id);
+							return acc;
+						},
+						[],
+					).filter((propertyId) => compositionSelection.properties[propertyId]);
+
+					if (selectedPropertyIds.length === 1 && selectedPropertyIds[0] === propertyId) {
+						// Only selected property of layer is being deselected.
+						//
+						// Deselect the layer
+						params.dispatch(
+							compositionSelectionActions.removeLayersFromSelection(compositionId, [
+								property.layerId,
+							]),
+						);
+					}
+
+					// Remove property and timeline keyframes from selection
+					params.dispatch(
+						compositionSelectionActions.removePropertiesFromSelection(compositionId, [
+							propertyId,
+						]),
+					);
+
+					if (property.type === "property" && property.timelineId) {
+						params.dispatch(timelineActions.clearSelection(property.timelineId));
+					}
+				} else {
+					// Add property and timeline keyframes to selection
+					params.dispatch(
+						compositionSelectionActions.addPropertyToSelection(
+							compositionId,
+							propertyId,
+						),
+					);
+					params.dispatch(
+						compositionSelectionActions.addLayerToSelection(
+							compositionId,
+							property.layerId,
+						),
+					);
+
+					if (property.type === "property" && property.timelineId) {
+						const timeline = timelines[property.timelineId];
+						const keyframeIds = timeline.keyframes.map((k) => k.id);
+						params.dispatch(
+							timelineActions.addKeyframesToSelection(timeline.id, keyframeIds),
+						);
+					}
+				}
+
+				params.submitAction("Select property");
+			},
+		);
 	},
 };

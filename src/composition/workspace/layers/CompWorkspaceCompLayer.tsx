@@ -54,10 +54,10 @@ const CompWorkspaceCompLayerComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapState: MapActionState<StateProps, OwnProps> = ({ compositions }, { layerId }) => {
+const mapState: MapActionState<StateProps, OwnProps> = ({ compositionState }, { layerId }) => {
 	return {
-		compositionReferenceId: compositions.compositionLayerIdToComposition[layerId],
-		layer: compositions.layers[layerId],
+		compositionReferenceId: compositionState.compositionLayerIdToComposition[layerId],
+		layer: compositionState.layers[layerId],
 	};
 };
 
