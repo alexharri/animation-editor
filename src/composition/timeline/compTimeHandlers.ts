@@ -308,9 +308,21 @@ export const compTimeHandlers = {
 		requestAction(
 			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
 			(params) => {
-				const { dispatch, submitAction } = params;
-				dispatch(compositionSelectionActions.clearCompositionSelection(compositionId));
-				submitAction("Clear selection");
+				const { compositionState } = getActionState();
+
+				params.dispatch(
+					compositionSelectionActions.clearCompositionSelection(compositionId),
+				);
+
+				const timelineIds = getTimelineIdsReferencedByComposition(
+					compositionId,
+					compositionState,
+				);
+				params.dispatch(
+					timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+				);
+
+				params.submitAction("Clear composition timeline selection");
 			},
 		);
 	},
@@ -345,8 +357,18 @@ export const compTimeHandlers = {
 				const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
 
 				if (!additiveSelection) {
+					// Clear composition selection
 					params.dispatch(
 						compositionSelectionActions.clearCompositionSelection(compositionId),
+					);
+
+					// Clear timeline selection of selected properties
+					const timelineIds = getTimelineIdsReferencedByComposition(
+						compositionId,
+						compositionState,
+					);
+					params.dispatch(
+						timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
 					);
 				} else if (!willBeSelected) {
 					// Deselect all properties and timeline keyframes

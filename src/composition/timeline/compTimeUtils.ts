@@ -174,6 +174,42 @@ export const reduceLayerPropertiesAndGroups = <T>(
 	return acc;
 };
 
+export const reduceLayerProperties = <T>(
+	layerId: string,
+	compositionState: CompositionState,
+	fn: (acc: T, property: CompositionProperty) => T,
+	initialState: T,
+): T => {
+	return reduceLayerPropertiesAndGroups(
+		layerId,
+		compositionState,
+		(acc, property) => {
+			if (property.type === "property") {
+				return fn(acc, property);
+			}
+			return acc;
+		},
+		initialState,
+	);
+};
+
+export const reduceCompProperties = <T>(
+	compositionId: string,
+	compositionState: CompositionState,
+	fn: (acc: T, property: CompositionProperty) => T,
+	initialState: T,
+): T => {
+	const composition = compositionState.compositions[compositionId];
+
+	let acc = initialState;
+
+	for (let i = 0; i < composition.layers.length; i += 1) {
+		acc = reduceLayerProperties(composition.layers[i], compositionState, fn, acc);
+	}
+
+	return acc;
+};
+
 export const reduceVisibleCompProperties = <T>(
 	compositionId: string,
 	compositionState: CompositionState,
@@ -210,7 +246,7 @@ export const getTimelineIdsReferencedByComposition = (
 	compositionId: string,
 	compositionState: CompositionState,
 ): string[] => {
-	return reduceVisibleCompProperties<string[]>(
+	return reduceCompProperties<string[]>(
 		compositionId,
 		compositionState,
 		(acc, property) => {
