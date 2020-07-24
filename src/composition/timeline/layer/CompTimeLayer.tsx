@@ -2,12 +2,14 @@ import React from "react";
 import { GraphIcon } from "~/components/icons/GraphIcon";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
 import { CompositionLayer } from "~/composition/compositionTypes";
+import { compositionActions } from "~/composition/state/compositionReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import styles from "~/composition/timeline/layer/CompTimeLayer.style";
 import { CompTimeLayerName } from "~/composition/timeline/layer/CompTimeLayerName";
 import { CompTimeLayerPropertyToValue } from "~/composition/timeline/layer/CompTimeLayerPropertyToValue";
 import { CompTimeLayerProperty } from "~/composition/timeline/property/CompTimeProperty";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { requestAction } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -25,7 +27,10 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompTimeLayerComponent: React.FC<Props> = (props) => {
-	const { layer } = props;
+	const {
+		layer,
+		layer: { collapsed },
+	} = props;
 
 	return (
 		<div data-ct-layer-id={props.id}>
@@ -35,6 +40,17 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 					right: (e) => compTimeHandlers.onLayerRightClick(e, layer),
 				})}
 			>
+				<div
+					className={s("collapsedArrow", { open: !collapsed })}
+					onClick={() => {
+						requestAction({ history: true }, (params) => {
+							params.dispatch(
+								compositionActions.setLayerCollapsed(layer.id, !collapsed),
+							);
+							params.submitAction("Toggle layer collapsed");
+						});
+					}}
+				/>
 				<CompTimeLayerName layerId={props.id} />
 				<div
 					title={layer.graphId ? "Delete Layer Graph" : "Create Layer Graph"}
@@ -57,20 +73,22 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 					</div>
 				)}
 			</div>
-			<CompTimeLayerPropertyToValue
-				compositionId={layer.compositionId}
-				layerId={layer.id}
-				graphId={layer.graphId}
-			>
-				{layer.properties.map((id) => (
-					<CompTimeLayerProperty
-						compositionId={props.compositionId}
-						id={id}
-						key={id}
-						depth={0}
-					/>
-				))}
-			</CompTimeLayerPropertyToValue>
+			{!layer.collapsed && (
+				<CompTimeLayerPropertyToValue
+					compositionId={layer.compositionId}
+					layerId={layer.id}
+					graphId={layer.graphId}
+				>
+					{layer.properties.map((id) => (
+						<CompTimeLayerProperty
+							compositionId={props.compositionId}
+							id={id}
+							key={id}
+							depth={0}
+						/>
+					))}
+				</CompTimeLayerPropertyToValue>
+			)}
 		</div>
 	);
 };
@@ -84,6 +102,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 		layer.compositionId,
 		compositionSelectionState,
 	);
+
 	return {
 		layer,
 		isSelected: !!compositionSelection.layers[id],

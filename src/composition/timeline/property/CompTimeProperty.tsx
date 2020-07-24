@@ -39,6 +39,8 @@ type Props = OwnProps & StateProps;
 const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 	const { property } = props;
 
+	const marginLeft = 24 + props.depth * 20;
+
 	if (property.type === "group") {
 		const { properties } = property;
 
@@ -54,10 +56,7 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 		return (
 			<>
 				<div className={s("container")}>
-					<div
-						className={s("contentContainer")}
-						style={{ marginLeft: 16 + props.depth * 16 }}
-					>
+					<div className={s("contentContainer")} style={{ marginLeft }}>
 						<div
 							className={s("collapsedArrow", { open: !property.collapsed })}
 							onClick={toggleGroupOpen}
@@ -94,7 +93,7 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 
 	return (
 		<div className={s("container")}>
-			<div className={s("contentContainer")} style={{ marginLeft: 16 + props.depth * 16 }}>
+			<div className={s("contentContainer")} style={{ marginLeft }}>
 				<div
 					className={s("timelineIcon", { active: !!property.timelineId })}
 					onMouseDown={separateLeftRightMouse({

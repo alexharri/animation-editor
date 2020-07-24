@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
+import { reduceLayerPropertiesAndGroups } from "~/composition/timeline/compTimeUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { cssVariables } from "~/cssVariables";
 import { isKeyCodeOf } from "~/listener/keyboard";
@@ -27,9 +28,17 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		overflow-x: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		overflow-y: hidden;
 
 		&--active {
 			background-color: ${cssVariables.gray700};
+		}
+
+		&--propertySelected {
+			padding: 0 1px;
+			background-color: ${cssVariables.gray400};
+			border: 2px solid ${cssVariables.gray700};
+			line-height: 12px;
 		}
 	`,
 
@@ -64,6 +73,7 @@ interface StateProps {
 	name: string;
 	selected: boolean;
 	compositionId: string;
+	isAnyPropertySelected: boolean;
 }
 type Props = OwnProps & StateProps;
 
@@ -133,7 +143,10 @@ const CompTimeLayerNameComponent: React.FC<Props> = (props) => {
 	return (
 		<div className={s("wrapper")}>
 			<div
-				className={s("name", { active: props.selected })}
+				className={s("name", {
+					active: props.selected,
+					propertySelected: props.isAnyPropertySelected,
+				})}
 				onMouseDown={separateLeftRightMouse({
 					left: (e) =>
 						compTimeHandlers.onLayerNameMouseDown(
@@ -151,19 +164,29 @@ const CompTimeLayerNameComponent: React.FC<Props> = (props) => {
 };
 
 const mapState: MapActionState<StateProps, OwnProps> = (
-	{ compositionState: { layers }, compositionSelectionState },
+	{ compositionState, compositionSelectionState },
 	{ layerId },
 ) => {
-	const layer = layers[layerId];
+	const layer = compositionState.layers[layerId];
 	const compositionSelection = getCompSelectionFromState(
 		layer.compositionId,
 		compositionSelectionState,
+	);
+
+	const isAnyPropertySelected = reduceLayerPropertiesAndGroups<boolean>(
+		layerId,
+		compositionState,
+		(acc, property) => {
+			return acc || !!compositionSelection.properties[property.id];
+		},
+		false,
 	);
 
 	return {
 		name: layer.name,
 		selected: !!compositionSelection.layers[layerId],
 		compositionId: layer.compositionId,
+		isAnyPropertySelected,
 	};
 };
 

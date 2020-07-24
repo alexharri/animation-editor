@@ -1,10 +1,10 @@
-import { StyleParams } from "~/util/stylesheets";
-import { cssZIndex, cssVariables } from "~/cssVariables";
 import {
-	DEFAULT_CONTEXT_MENU_WIDTH,
 	CONTEXT_MENU_OPTION_HEIGHT,
 	CONTEXT_MENU_OPTION_PADDING_LEFT,
+	DEFAULT_CONTEXT_MENU_WIDTH,
 } from "~/constants";
+import { cssVariables, cssZIndex } from "~/cssVariables";
+import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	background: css`
@@ -39,7 +39,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	separator: css`
-		background: ${cssVariables.gray500};
+		background: ${cssVariables.dark500};
 		height: 1px;
 		display: block;
 		margin: 2px 0;

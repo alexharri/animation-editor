@@ -27,6 +27,7 @@ export interface CompositionLayer {
 	index: number; // Index of first frame
 	length: number; // Number of frames
 	properties: string[];
+	collapsed: boolean;
 }
 
 export interface CompositionPropertyGroup {

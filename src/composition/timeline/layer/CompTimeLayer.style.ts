@@ -1,10 +1,10 @@
-import { StyleParams } from "~/util/stylesheets";
 import { cssVariables } from "~/cssVariables";
+import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
 		display: flex;
-		padding-left: 9px;
+		padding-left: 8px;
 		background: ${cssVariables.dark700};
 		border-radius: 2px;
 		margin-bottom: 1px;
@@ -68,6 +68,36 @@ export default ({ css }: StyleParams) => ({
 			svg {
 				fill: ${cssVariables.primary500};
 			}
+		}
+	`,
+
+	collapsedArrow: css`
+		width: 16px;
+		height: 16px;
+		position: relative;
+
+		&--open {
+			transform: translate(0, 0px) rotate(90deg);
+		}
+
+		&:before,
+		&:after {
+			content: "";
+			position: absolute;
+			top: 7px;
+			left: 4px;
+			right: 6px;
+			height: 1px;
+			transform-origin: 100% 50%;
+			background: ${cssVariables.light300};
+		}
+
+		&:before {
+			transform: rotate(45deg);
+		}
+
+		&:after {
+			transform: rotate(-45deg);
 		}
 	`,
 });

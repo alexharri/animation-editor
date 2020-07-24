@@ -15,6 +15,7 @@ import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubb
 import { TrackEditor } from "~/composition/timeline/track/TrackEditor";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
@@ -26,8 +27,6 @@ import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
-
-const SEPARATOR_WIDTH = 4;
 
 type OwnProps = AreaComponentProps<CompTimeAreaState>;
 interface StateProps {
@@ -43,7 +42,12 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 
 	const [t, setT] = useState(0.3);
 
-	let [viewportLeft, viewportRight] = splitRect("horizontal", props, t, SEPARATOR_WIDTH);
+	let [viewportLeft, viewportRight] = splitRect(
+		"horizontal",
+		props,
+		t,
+		COMP_TIME_SEPARATOR_WIDTH,
+	);
 
 	const zoomTarget = useRef<HTMLDivElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
@@ -126,7 +130,12 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				props.compositionState,
 			);
 
-			let [viewportLeft, viewportRight] = splitRect("horizontal", props, t, SEPARATOR_WIDTH);
+			let [viewportLeft, viewportRight] = splitRect(
+				"horizontal",
+				props,
+				t,
+				COMP_TIME_SEPARATOR_WIDTH,
+			);
 			const lockY = props.areaState.graphEditorOpen
 				? !isVecInRect(Vec2.fromEvent(e), viewportLeft)
 				: false;
@@ -213,7 +222,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 			</div>
 			<div
 				className={s("separator")}
-				style={{ width: SEPARATOR_WIDTH, left: viewportLeft.width }}
+				style={{ left: viewportLeft.width }}
 				onMouseDown={separateLeftRightMouse({
 					left: () => requestAction({ history: false }, onMouseDown),
 				})}

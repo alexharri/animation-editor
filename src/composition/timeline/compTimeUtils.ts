@@ -49,8 +49,10 @@ export const getCompTimeTrackYPositions = (
 			}
 		};
 
-		for (let j = 0; j < layer.properties.length; j += 1) {
-			crawlProperty(layer.properties[j]);
+		if (!layer.collapsed) {
+			for (let j = 0; j < layer.properties.length; j += 1) {
+				crawlProperty(layer.properties[j]);
+			}
 		}
 
 		yIndex++;
@@ -84,8 +86,10 @@ export const getCompTimeLayerListHeight = (
 			}
 		};
 
-		for (let j = 0; j < layer.properties.length; j += 1) {
-			renderProperty(layer.properties[j]);
+		if (!layer.collapsed) {
+			for (let j = 0; j < layer.properties.length; j += 1) {
+				renderProperty(layer.properties[j]);
+			}
 		}
 
 		yIndex++;

@@ -32,17 +32,7 @@ export interface CompositionState {
 }
 
 export const initialCompositionState: CompositionState = {
-	compositions: {
-		"0": {
-			id: "0",
-			name: "Composition",
-			layers: ["0"],
-			frameIndex: 0,
-			length: 500,
-			width: 400,
-			height: 400,
-		},
-	},
+	compositions: {},
 	layers: {},
 	properties: {},
 	compositionLayerIdToComposition: {},
@@ -114,6 +104,10 @@ export const compositionActions = {
 
 	setLayerName: createAction("comp/SET_LAYER_NAME", (action) => {
 		return (layerId: string, name: string) => action({ layerId, name });
+	}),
+
+	setLayerCollapsed: createAction("comp/SET_LAYER_COLLAPSED", (action) => {
+		return (layerId: string, collapsed: boolean) => action({ layerId, collapsed });
 	}),
 
 	setLayerGraphId: createAction("comp/SET_LAYER_GRAPH_ID", (action) => {
@@ -369,6 +363,17 @@ export const compositionReducer = (
 				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					name,
+				})),
+			};
+		}
+
+		case getType(compositionActions.setLayerCollapsed): {
+			const { layerId, collapsed } = action.payload;
+			return {
+				...state,
+				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+					...layer,
+					collapsed,
 				})),
 			};
 		}
