@@ -304,20 +304,15 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onMouseDownOut: (
-		e: React.MouseEvent,
-		ref: React.RefObject<HTMLDivElement>,
-		compositionId: string,
-	): void => {
-		if (e.target !== ref.current) {
-			return;
-		}
-
-		requestAction({ history: true }, (params) => {
-			const { dispatch, submitAction } = params;
-			dispatch(compositionSelectionActions.clearCompositionSelection(compositionId));
-			submitAction("Clear selection");
-		});
+	onMouseDownOut: (compositionId: string): void => {
+		requestAction(
+			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
+			(params) => {
+				const { dispatch, submitAction } = params;
+				dispatch(compositionSelectionActions.clearCompositionSelection(compositionId));
+				submitAction("Clear selection");
+			},
+		);
 	},
 
 	onRightClickOut: (e: React.MouseEvent, compositionId: string): void => {
@@ -333,7 +328,9 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onLayerNameMouseDown: (_e: React.MouseEvent, compositionId: string, layerId: string): void => {
+	onLayerNameMouseDown: (e: React.MouseEvent, compositionId: string, layerId: string): void => {
+		e.stopPropagation();
+
 		requestAction(
 			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
 			(params) => {
@@ -402,7 +399,9 @@ export const compTimeHandlers = {
 		);
 	},
 
-	onLayerGraphMouseDown: (_e: React.MouseEvent, layerId: string): void => {
+	onLayerGraphMouseDown: (e: React.MouseEvent, layerId: string): void => {
+		e.stopPropagation();
+
 		const compositionState = getActionState().compositionState;
 		const layer = compositionState.layers[layerId];
 
@@ -503,10 +502,12 @@ export const compTimeHandlers = {
 	},
 
 	onPropertyNameMouseDown: (
-		_e: React.MouseEvent,
+		e: React.MouseEvent,
 		compositionId: string,
 		propertyId: string,
 	): void => {
+		e.stopPropagation();
+
 		const { compositionState, compositionSelectionState, timelines } = getActionState();
 		const compositionSelection = getCompSelectionFromState(
 			compositionId,

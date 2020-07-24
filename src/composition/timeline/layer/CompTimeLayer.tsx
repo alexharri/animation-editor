@@ -42,6 +42,7 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 			>
 				<div
 					className={s("collapsedArrow", { open: !collapsed })}
+					onMouseDown={(e) => e.stopPropagation()}
 					onClick={() => {
 						requestAction({ history: true }, (params) => {
 							params.dispatch(

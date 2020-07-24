@@ -6,13 +6,13 @@ import {
 	CreatePropertyOptions,
 } from "~/composition/compositionTypes";
 import { createCompLayerProperties } from "~/composition/layer/compLayerProperties";
-import { createRectLayerProperties } from "~/composition/layer/rectLayerProperties";
 import { createEllipseLayerProperties } from "~/composition/layer/ellipseLayerProperties";
-import { LayerType } from "~/types";
-import { getLayerTypeName } from "~/composition/layer/layerUtils";
-import { CompositionState } from "~/composition/state/compositionReducer";
 import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
-import { createMapNumberId, createGenMapIdFn } from "~/util/mapUtils";
+import { getLayerTypeName } from "~/composition/layer/layerUtils";
+import { createRectLayerProperties } from "~/composition/layer/rectLayerProperties";
+import { CompositionState } from "~/composition/state/compositionReducer";
+import { LayerType } from "~/types";
+import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
 import { getNonDuplicateName } from "~/util/names";
 
 const getLayerTypeSpecificProperties = (
@@ -77,6 +77,7 @@ export const createLayer = (
 		name: getNonDuplicateName(defaultName, existingLayerNames),
 		properties: topLevelProperties.map((p) => p.id),
 		type,
+		collapsed: true,
 	};
 
 	return {

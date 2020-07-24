@@ -59,6 +59,7 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 					<div className={s("contentContainer")} style={{ marginLeft }}>
 						<div
 							className={s("collapsedArrow", { open: !property.collapsed })}
+							onMouseDown={(e) => e.stopPropagation()}
 							onClick={toggleGroupOpen}
 						/>
 						<div

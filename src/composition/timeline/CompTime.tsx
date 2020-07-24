@@ -6,7 +6,7 @@ import {
 	CompositionSelection,
 } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
-import styles from "~/composition/timeline/CompositionTimeline.styles";
+import styles from "~/composition/timeline/CompTime.styles";
 import { compTimeAreaActions, CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { capCompTimePanY } from "~/composition/timeline/compTimeUtils";
@@ -37,7 +37,7 @@ interface StateProps {
 }
 type Props = OwnProps & StateProps;
 
-const CompositionTimelineComponent: React.FC<Props> = (props) => {
+const CompTimeComponent: React.FC<Props> = (props) => {
 	const { composition } = props;
 
 	const [t, setT] = useState(0.3);
@@ -62,8 +62,6 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 			panTarget.current.style.display = down ? "block" : "";
 		}
 	});
-
-	// useCompositionTimelinePlayback(props.composition.id);
 
 	const onMouseDown: RequestActionCallback = (params) => {
 		const { addListener, submitAction } = params;
@@ -184,7 +182,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 				style={viewportLeft}
 				ref={outRef}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) => compTimeHandlers.onMouseDownOut(e, outRef, props.composition.id),
+					left: () => compTimeHandlers.onMouseDownOut(props.composition.id),
 					right: (e) => compTimeHandlers.onRightClickOut(e, props.composition.id),
 				})}
 			>
@@ -307,7 +305,7 @@ const CompositionTimelineComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ compositionState: compositions, compositionSelectionState },
+	{ compositionState, compositionSelectionState },
 	ownProps,
 ) => {
 	const compositionSelection = getCompSelectionFromState(
@@ -315,13 +313,11 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 		compositionSelectionState,
 	);
 	return {
-		compositionState: compositions,
-		compositionSelection: compositionSelection,
-		composition: compositions.compositions[ownProps.areaState.compositionId],
+		compositionState,
+		compositionSelection,
+		composition: compositionState.compositions[ownProps.areaState.compositionId],
 		viewBounds: ownProps.areaState.viewBounds,
 	};
 };
 
-export const CompositionTimeline = connectActionState(mapStateToProps)(
-	CompositionTimelineComponent,
-);
+export const CompTime = connectActionState(mapStateToProps)(CompTimeComponent);
