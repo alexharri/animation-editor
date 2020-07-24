@@ -189,6 +189,7 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 				<div className={s("header")}>
 					<button
 						className={s("graphEditorToggle")}
+						onMouseDown={(e) => e.stopPropagation()}
 						onClick={() => {
 							requestAction({ history: false }, (params) => {
 								params.dispatch(
