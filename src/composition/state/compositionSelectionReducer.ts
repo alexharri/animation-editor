@@ -33,7 +33,6 @@ export const compositionSelectionActions = {
 	}),
 };
 
-// Only one composition may be selected at any time.
 export interface CompositionSelectionState {
 	[compositionId: string]: CompositionSelection;
 }
