@@ -1,18 +1,13 @@
 import * as mathjs from "mathjs";
-import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
 import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { TimelineState } from "~/timeline/timelineReducer";
-import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
-import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 import { NodeEditorNodeType, RGBAColor, ValueType } from "~/types";
 import { capToRange, interpolate } from "~/util/math";
 
 const Type = NodeEditorNodeType;
 
-type ComputeNodeArg = {
+export type ComputeNodeArg = {
 	type: ValueType;
 	value: any;
 };
@@ -22,11 +17,13 @@ export interface ComputeNodeContext {
 	compositionState: CompositionState;
 	compositionId: string;
 	layerId: string;
-	timelines: TimelineState;
-	timelineSelection: TimelineSelectionState;
-	frameIndex: number;
-	graph?: NodeEditorGraphState;
-	layerIdToFrameIndex?: {
+	propertyToValue: {
+		[propertyId: string]: {
+			rawValue: any;
+			computedValue: any;
+		};
+	};
+	layerIdToFrameIndex: {
 		[layerId: string]: number;
 	};
 }
@@ -395,29 +392,14 @@ const compute: {
 			return [];
 		}
 
-		const properties =
-			selectedProperty.type === "group"
-				? selectedProperty.properties
-						.map((id) => compositionState.properties[id])
-						.filter(
-							(property): property is CompositionProperty =>
-								property.type === "property",
-						)
-				: [selectedProperty];
-
-		const frameIndex = ctx.layerIdToFrameIndex?.[ctx.layerId] ?? 0;
-
-		return properties.map((property) => {
-			const value = property.timelineId
-				? getTimelineValueAtIndex({
-						timeline: ctx.timelines[property.timelineId],
-						layerIndex: ctx.compositionState.layers[ctx.layerId].index,
-						frameIndex,
-						selection: ctx.timelineSelection[property.timelineId],
-				  })
-				: property.value;
-			return toArg.number(value);
-		});
+		return (selectedProperty.type === "group"
+			? selectedProperty.properties
+					.filter(
+						(propertyId) => compositionState.properties[propertyId].type === "property",
+					)
+					.map((propertyId) => ctx.propertyToValue[propertyId].rawValue)
+			: [ctx.propertyToValue[selectedProperty.id]]
+		).map((value) => toArg.number(value));
 	},
 
 	[Type.property_output]: (args) => {

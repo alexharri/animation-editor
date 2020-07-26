@@ -18,6 +18,7 @@ import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils
 import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
+import { CompositionPropertyValuesProvider } from "~/shared/property/computeCompositionPropertyValues";
 import { connectActionState } from "~/state/stateUtils";
 import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { ViewBounds } from "~/timeline/ViewBounds";
@@ -205,19 +206,21 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 						Graph Editor
 					</button>
 				</div>
-				<div className={s("layerWrapper")} data-ct-composition-id={composition.id}>
-					<div style={{ transform: `translateY(${-panY}px)` }}>
-						{composition.layers.map((layerId) => {
-							return (
-								<CompTimeLayer
-									compositionId={props.composition.id}
-									id={layerId}
-									key={layerId}
-								/>
-							);
-						})}
+				<CompositionPropertyValuesProvider compositionId={composition.id}>
+					<div className={s("layerWrapper")} data-ct-composition-id={composition.id}>
+						<div style={{ transform: `translateY(${-panY}px)` }}>
+							{composition.layers.map((layerId) => {
+								return (
+									<CompTimeLayer
+										compositionId={props.composition.id}
+										id={layerId}
+										key={layerId}
+									/>
+								);
+							})}
+						</div>
 					</div>
-				</div>
+				</CompositionPropertyValuesProvider>
 			</div>
 			<div
 				className={s("separator")}

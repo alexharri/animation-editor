@@ -113,6 +113,10 @@ export const compositionActions = {
 	setLayerGraphId: createAction("comp/SET_LAYER_GRAPH_ID", (action) => {
 		return (layerId: string, graphId: string) => action({ layerId, graphId });
 	}),
+
+	setLayerParentLayerId: createAction("comp/SET_LAYER_PARENT_LAYER_ID", (action) => {
+		return (layerId: string, parentLayerId: string) => action({ layerId, parentLayerId });
+	}),
 };
 
 type Action = ActionType<typeof compositionActions>;
@@ -374,6 +378,17 @@ export const compositionReducer = (
 				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					collapsed,
+				})),
+			};
+		}
+
+		case getType(compositionActions.setLayerParentLayerId): {
+			const { layerId, parentLayerId } = action.payload;
+			return {
+				...state,
+				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+					...layer,
+					parentLayerId,
 				})),
 			};
 		}

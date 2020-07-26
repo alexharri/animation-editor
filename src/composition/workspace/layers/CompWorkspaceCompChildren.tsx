@@ -8,6 +8,8 @@ import { LayerType } from "~/types";
 interface OwnProps {
 	compositionId: string;
 	frameIndex?: number;
+	compWidth: number;
+	compHeight: number;
 }
 type Props = OwnProps;
 
@@ -49,6 +51,8 @@ export const CompWorkspaceCompChildren: React.FC<Props> = (props) => {
 						key={id}
 						compositionId={props.compositionId}
 						layerId={id}
+						compWidth={props.compWidth}
+						compHeight={props.compHeight}
 					/>
 				);
 			})}

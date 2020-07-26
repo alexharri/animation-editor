@@ -25,15 +25,15 @@ export const CompositionWorkspaceViewport: React.FC<Props> = (props) => {
 	const { top, left, width, height } = props;
 
 	return (
-		<svg
+		<div
 			className={s("container")}
-			width={width}
-			height={height}
-			x={left}
-			y={top}
-			style={{ transform: `translate(${left}px, ${top}px)` }}
+			style={{ left, top, transform: `translate(${left}px, ${top}px)` }}
 		>
-			<CompWorkspaceCompChildren compositionId={props.compositionId} />
-		</svg>
+			<CompWorkspaceCompChildren
+				compositionId={props.compositionId}
+				compWidth={width}
+				compHeight={height}
+			/>
+		</div>
 	);
 };

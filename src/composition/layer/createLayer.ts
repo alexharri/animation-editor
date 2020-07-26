@@ -78,6 +78,7 @@ export const createLayer = (
 		properties: topLevelProperties.map((p) => p.id),
 		type,
 		collapsed: true,
+		parentLayerId: "",
 	};
 
 	return {

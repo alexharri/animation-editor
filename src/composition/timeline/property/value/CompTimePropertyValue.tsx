@@ -1,8 +1,8 @@
 import React, { useContext } from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
-import { CompTimePropertyValueContext } from "~/composition/timeline/compTimeContext";
 import { CompTimePropertyColorValue } from "~/composition/timeline/property/value/CompTimePropertyColorValue";
 import { CompTimePropertyNumberValue } from "~/composition/timeline/property/value/CompTimePropertyNumberValue";
+import { CompositionPropertyValuesContext } from "~/shared/property/computeCompositionPropertyValues";
 import { connectActionState } from "~/state/stateUtils";
 import { RGBAColor, ValueType } from "~/types";
 
@@ -15,7 +15,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompTimePropertyValueComponent: React.FC<Props> = (props) => {
-	const propertyToValue = useContext(CompTimePropertyValueContext);
+	const propertyToValue = useContext(CompositionPropertyValuesContext);
 
 	const value = propertyToValue[props.propertyId];
 
