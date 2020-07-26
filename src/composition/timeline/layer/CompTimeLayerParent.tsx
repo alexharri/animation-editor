@@ -1,16 +1,9 @@
 import React from "react";
 import { CompositionLayer } from "~/composition/compositionTypes";
-import { compositionActions } from "~/composition/state/compositionReducer";
-import {
-	computeLayerTransformMap,
-	getLayerTransformProperties,
-} from "~/composition/workspace/transform/transformUtils";
-import { RAD_TO_DEG_FAC } from "~/constants";
+import { compTimeLayerParentHandlers } from "~/composition/timeline/layer/compTimeLayerParentHandlers";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
-import { computeCompPropertyValues } from "~/shared/property/computeCompositionPropertyValues";
 import { connectActionState, getActionState } from "~/state/stateUtils";
-import { rotateVec2CCW } from "~/util/math";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
@@ -47,75 +40,13 @@ type Props = OwnProps & StateProps;
 
 const CompTimeLayerParentComponent: React.FC<Props> = (props) => {
 	const onRemoveParent = (params: RequestActionParams) => {
-		const actionState = getActionState();
-		const { compositionState } = actionState;
-		const layer = compositionState.layers[props.layerId];
-
-		const propertyToValue = computeCompPropertyValues(actionState, layer.compositionId);
-		const transformMap = computeLayerTransformMap(
-			layer.compositionId,
-			propertyToValue,
-			compositionState,
-		);
-
-		const transform = transformMap[layer.id];
-
-		params.dispatch(compositionActions.setLayerParentLayerId(props.layerId, ""));
-
-		const properties = getLayerTransformProperties(props.layerId, compositionState);
-		params.dispatch(
-			compositionActions.setPropertyValue(properties.anchorX.id, transform.anchor.x),
-			compositionActions.setPropertyValue(properties.anchorY.id, transform.anchor.y),
-			compositionActions.setPropertyValue(properties.positionX.id, transform.translate.x),
-			compositionActions.setPropertyValue(properties.positionY.id, transform.translate.y),
-			compositionActions.setPropertyValue(
-				properties.rotation.id,
-				transform.rotation * RAD_TO_DEG_FAC,
-			),
-			compositionActions.setPropertyValue(properties.scale.id, transform.scale),
-		);
-
-		params.dispatch(contextMenuActions.closeContextMenu());
-		params.submitAction("Set layer parent layer");
+		params.cancelAction(); // Close modal and open requestAction for the handler.
+		compTimeLayerParentHandlers.onRemoveParent(props.layerId);
 	};
 
 	const onSelectParent = (params: RequestActionParams, parentId: string) => {
-		const actionState = getActionState();
-		const { compositionState } = actionState;
-		const layer = compositionState.layers[props.layerId];
-
-		const propertyToValue = computeCompPropertyValues(actionState, layer.compositionId);
-		const transformMap = computeLayerTransformMap(
-			layer.compositionId,
-			propertyToValue,
-			compositionState,
-		);
-
-		const transform = transformMap[layer.id];
-		const parentTransform = transformMap[parentId];
-
-		const rotation = transform.rotation - parentTransform.rotation;
-		const scale = transform.scale / parentTransform.scale;
-		const translate = rotateVec2CCW(
-			transform.translate.sub(parentTransform.translate),
-			-parentTransform.rotation,
-			parentTransform.anchor,
-		).scale(1 / parentTransform.scale, parentTransform.anchor);
-		const anchor = transform.anchor;
-
-		const properties = getLayerTransformProperties(props.layerId, compositionState);
-		params.dispatch(
-			compositionActions.setPropertyValue(properties.anchorX.id, anchor.x),
-			compositionActions.setPropertyValue(properties.anchorY.id, anchor.y),
-			compositionActions.setPropertyValue(properties.positionX.id, translate.x),
-			compositionActions.setPropertyValue(properties.positionY.id, translate.y),
-			compositionActions.setPropertyValue(properties.rotation.id, rotation * RAD_TO_DEG_FAC),
-			compositionActions.setPropertyValue(properties.scale.id, scale),
-		);
-
-		params.dispatch(compositionActions.setLayerParentLayerId(props.layerId, parentId));
-		params.dispatch(contextMenuActions.closeContextMenu());
-		params.submitAction("Set layer parent layer");
+		params.cancelAction(); // Close modal and open requestAction for the handler.
+		compTimeLayerParentHandlers.onSelectParent(props.layerId, parentId);
 	};
 
 	return (

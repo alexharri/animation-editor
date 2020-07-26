@@ -1,6 +1,6 @@
 import { useContext } from "react";
+import { computeLayerTransformMap } from "~/composition/transformUtils";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
-import { computeLayerTransformMap } from "~/composition/workspace/transform/transformUtils";
 import { useActionState } from "~/hook/useActionState";
 import { CompositionPropertyValuesContext } from "~/shared/property/computeCompositionPropertyValues";
 import { PropertyName } from "~/types";
