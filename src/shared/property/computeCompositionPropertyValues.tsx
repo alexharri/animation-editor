@@ -24,14 +24,7 @@ interface Context {
 	frameIndex: number;
 }
 
-export const computeCompositionPropertyValues = (
-	context: Context,
-): {
-	[propertyId: string]: {
-		computedValue: any;
-		rawValue: any;
-	};
-} => {
+export const _compute = (context: Context): PropertyValueMap => {
 	const {
 		compositionId,
 		compositionState,
@@ -191,7 +184,10 @@ export const computeCompositionPropertyValues = (
 	return propertyToValue;
 };
 
-export const computeCompPropertyValues = (state: ActionState, compositionId: string) => {
+export const computeCompositionPropertyValues = (
+	state: ActionState,
+	compositionId: string,
+): PropertyValueMap => {
 	const context: Context = {
 		compositionId,
 		compositionState: state.compositionState,
@@ -201,7 +197,7 @@ export const computeCompPropertyValues = (state: ActionState, compositionId: str
 		frameIndex: state.compositionState.compositions[compositionId].frameIndex,
 	};
 
-	return computeCompositionPropertyValues(context);
+	return _compute(context);
 };
 
 export const CompositionPropertyValuesContext = React.createContext<PropertyValueMap>({});
@@ -211,7 +207,7 @@ export const CompositionPropertyValuesProvider: React.FC<{ compositionId: string
 	compositionId,
 }) => {
 	const propertyToValue = useActionState((state) => {
-		return computeCompPropertyValues(state, compositionId);
+		return computeCompositionPropertyValues(state, compositionId);
 	});
 
 	return (

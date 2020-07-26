@@ -1,41 +1,41 @@
 import { compositionActions } from "~/composition/state/compositionReducer";
 import {
+	adjustTransformToParent,
 	computeLayerTransformMap,
 	getLayerTransformProperties,
 } from "~/composition/transformUtils";
 import { RAD_TO_DEG_FAC } from "~/constants";
 import { requestAction } from "~/listener/requestAction";
-import { computeCompPropertyValues } from "~/shared/property/computeCompositionPropertyValues";
+import { computeCompositionPropertyValues } from "~/shared/property/computeCompositionPropertyValues";
 import { getActionState } from "~/state/stateUtils";
-import { rotateVec2CCW } from "~/util/math";
+
+const getTransformMap = (compositionId: string) => {
+	const actionState = getActionState();
+	const { compositionState } = actionState;
+
+	const propertyToValue = computeCompositionPropertyValues(actionState, compositionId);
+	const transformMap = computeLayerTransformMap(compositionId, propertyToValue, compositionState);
+	return transformMap;
+};
 
 export const compTimeLayerParentHandlers = {
 	onSelectParent: (layerId: string, parentId: string) => {
 		requestAction({ history: true }, (params) => {
-			const actionState = getActionState();
-			const { compositionState } = actionState;
+			const { compositionState } = getActionState();
 			const layer = compositionState.layers[layerId];
 
-			const propertyToValue = computeCompPropertyValues(actionState, layer.compositionId);
-			const transformMap = computeLayerTransformMap(
-				layer.compositionId,
-				propertyToValue,
-				compositionState,
-			);
+			const transformMap = getTransformMap(layer.compositionId);
 
 			const transform = transformMap[layer.id];
 			const parentTransform = transformMap[parentId];
 
-			const rotation = transform.rotation - parentTransform.rotation;
-			const scale = transform.scale / parentTransform.scale;
-			const translate = rotateVec2CCW(
-				transform.translate.sub(parentTransform.translate),
-				-parentTransform.rotation,
-				parentTransform.anchor,
-			).scale(1 / parentTransform.scale, parentTransform.anchor);
-			const anchor = transform.anchor;
+			const { anchor, scale, rotation, translate } = adjustTransformToParent(
+				transform,
+				parentTransform,
+			);
 
 			const properties = getLayerTransformProperties(layerId, compositionState);
+
 			params.dispatch(
 				compositionActions.setPropertyValue(properties.anchorX.id, anchor.x),
 				compositionActions.setPropertyValue(properties.anchorY.id, anchor.y),
@@ -46,9 +46,8 @@ export const compTimeLayerParentHandlers = {
 					rotation * RAD_TO_DEG_FAC,
 				),
 				compositionActions.setPropertyValue(properties.scale.id, scale),
+				compositionActions.setLayerParentLayerId(layerId, parentId),
 			);
-
-			params.dispatch(compositionActions.setLayerParentLayerId(layerId, parentId));
 
 			params.submitAction("Set layer parent layer");
 		});
@@ -56,32 +55,25 @@ export const compTimeLayerParentHandlers = {
 
 	onRemoveParent: (layerId: string) => {
 		requestAction({ history: true }, (params) => {
-			const actionState = getActionState();
-			const { compositionState } = actionState;
+			const { compositionState } = getActionState();
 			const layer = compositionState.layers[layerId];
 
-			const propertyToValue = computeCompPropertyValues(actionState, layer.compositionId);
-			const transformMap = computeLayerTransformMap(
-				layer.compositionId,
-				propertyToValue,
-				compositionState,
-			);
-
-			const transform = transformMap[layer.id];
-
-			params.dispatch(compositionActions.setLayerParentLayerId(layerId, ""));
+			const transformMap = getTransformMap(layer.compositionId);
+			const { anchor, translate, rotation, scale } = transformMap[layer.id];
 
 			const properties = getLayerTransformProperties(layerId, compositionState);
+
 			params.dispatch(
-				compositionActions.setPropertyValue(properties.anchorX.id, transform.anchor.x),
-				compositionActions.setPropertyValue(properties.anchorY.id, transform.anchor.y),
-				compositionActions.setPropertyValue(properties.positionX.id, transform.translate.x),
-				compositionActions.setPropertyValue(properties.positionY.id, transform.translate.y),
+				compositionActions.setPropertyValue(properties.anchorX.id, anchor.x),
+				compositionActions.setPropertyValue(properties.anchorY.id, anchor.y),
+				compositionActions.setPropertyValue(properties.positionX.id, translate.x),
+				compositionActions.setPropertyValue(properties.positionY.id, translate.y),
 				compositionActions.setPropertyValue(
 					properties.rotation.id,
-					transform.rotation * RAD_TO_DEG_FAC,
+					rotation * RAD_TO_DEG_FAC,
 				),
-				compositionActions.setPropertyValue(properties.scale.id, transform.scale),
+				compositionActions.setPropertyValue(properties.scale.id, scale),
+				compositionActions.setLayerParentLayerId(layerId, ""),
 			);
 
 			params.submitAction("Set layer parent layer");

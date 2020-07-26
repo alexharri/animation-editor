@@ -103,3 +103,26 @@ export const computeLayerTransformMap = (
 
 	return map;
 };
+
+export const adjustTransformToParent = (
+	transform: AffineTransform,
+	parentTransform: AffineTransform,
+): AffineTransform => {
+	const translateDiff = transform.translate.sub(parentTransform.translate);
+
+	const anchor = transform.anchor;
+	const translate = rotateVec2CCW(
+		translateDiff,
+		-parentTransform.rotation,
+		parentTransform.anchor,
+	).scale(1 / parentTransform.scale, parentTransform.anchor);
+	const rotation = transform.rotation - parentTransform.rotation;
+	const scale = transform.scale / parentTransform.scale;
+
+	return {
+		anchor,
+		translate,
+		rotation,
+		scale,
+	};
+};
