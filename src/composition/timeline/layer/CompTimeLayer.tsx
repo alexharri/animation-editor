@@ -6,7 +6,7 @@ import { compositionActions } from "~/composition/state/compositionReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import styles from "~/composition/timeline/layer/CompTimeLayer.style";
 import { CompTimeLayerName } from "~/composition/timeline/layer/CompTimeLayerName";
-import { CompTimeLayerPropertyToValue } from "~/composition/timeline/layer/CompTimeLayerPropertyToValue";
+import { CompTimeLayerParent } from "~/composition/timeline/layer/CompTimeLayerParent";
 import { CompTimeLayerProperty } from "~/composition/timeline/property/CompTimeProperty";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction } from "~/listener/requestAction";
@@ -73,13 +73,10 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 						<OpenInAreaIcon />
 					</div>
 				)}
+				<CompTimeLayerParent layerId={props.id} />
 			</div>
 			{!layer.collapsed && (
-				<CompTimeLayerPropertyToValue
-					compositionId={layer.compositionId}
-					layerId={layer.id}
-					graphId={layer.graphId}
-				>
+				<>
 					{layer.properties.map((id) => (
 						<CompTimeLayerProperty
 							compositionId={props.compositionId}
@@ -88,7 +85,7 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 							depth={0}
 						/>
 					))}
-				</CompTimeLayerPropertyToValue>
+				</>
 			)}
 		</div>
 	);

@@ -1,11 +1,11 @@
 import React, { useRef } from "react";
 import { NumberInput } from "~/components/common/NumberInput";
+import { CompositionPlaybackProvider } from "~/composition/hook/useCompositionPlayback";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
 import styles from "~/composition/workspace/CompWorkspace.styles";
 import { CompWorkspaceCompChildren } from "~/composition/workspace/layers/CompWorkspaceCompChildren";
-import { useCompositionWorkspacePlayback } from "~/composition/workspace/useWorkspacePlayback";
 import { cssVariables } from "~/cssVariables";
 import { useActionState } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
@@ -81,7 +81,14 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 		onValueChangeEndFn.current = null;
 	};
 
-	const PlaybackContextProvider = useCompositionWorkspacePlayback(props.areaState.compositionId);
+	const propsRef = useRef(props);
+	propsRef.current = props;
+
+	const frameIndex = useActionState((state) => {
+		const compositionId = props.areaState.compositionId;
+		const frameIndex = state.compositionState.compositions[compositionId].frameIndex;
+		return frameIndex;
+	});
 
 	return (
 		<>
@@ -99,11 +106,21 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 							className={s("svg")}
 							width={composition.width}
 							height={composition.height}
-							style={{ background: cssVariables.gray800 }}
+							style={{
+								background: cssVariables.gray800,
+							}}
+							key={props.areaState.compositionId}
 						>
-							<PlaybackContextProvider>
-								<CompWorkspaceCompChildren compositionId={composition.id} />
-							</PlaybackContextProvider>
+							<CompositionPlaybackProvider
+								compositionId={props.areaState.compositionId}
+							>
+								<CompWorkspaceCompChildren
+									compositionId={composition.id}
+									frameIndex={frameIndex}
+									containerHeight={composition.height}
+									containerWidth={composition.width}
+								/>
+							</CompositionPlaybackProvider>
 						</svg>
 					</div>
 				</div>

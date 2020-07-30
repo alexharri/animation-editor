@@ -1,57 +1,44 @@
-import { useContext, useRef } from "react";
+import { useContext } from "react";
+import { computeLayerTransformMap } from "~/composition/transformUtils";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
-import { CompWorkspacePlaybackContext } from "~/composition/workspace/useWorkspacePlayback";
 import { useActionState } from "~/hook/useActionState";
-import { useComputeHistory } from "~/hook/useComputeHistory";
-import { computeLayerGraph } from "~/nodeEditor/graph/computeLayerGraph";
-import { ComputeNodeContext } from "~/nodeEditor/graph/computeNode";
+import { CompositionPropertyValuesContext } from "~/shared/property/computeCompositionPropertyValues";
 import { PropertyName } from "~/types";
 
 export const useLayerNameToProperty = (compositionId: string, layerId: string) => {
-	const { computePropertyValues, layer } = useComputeHistory((state) => {
-		const layer = state.compositionState.layers[layerId];
-		const graph = layer.graphId ? state.nodeEditor.graphs[layer.graphId] : undefined;
+	const propertyToValue = useContext(CompositionPropertyValuesContext);
 
-		return { computePropertyValues: computeLayerGraph(graph), layer };
-	});
+	return useActionState((state) => {
+		const properties = getLayerCompositionProperties(layerId, state.compositionState);
+		const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
+			(obj, p) => {
+				const value = propertyToValue[p.id];
+				(obj as any)[PropertyName[p.name]] = value.computedValue;
+				return obj;
+			},
+			{} as any,
+		);
 
-	const playbackContext = useContext(CompWorkspacePlaybackContext);
-	const playbackContextRef = useRef<typeof playbackContext | null>(null);
-	playbackContextRef.current = playbackContext;
-
-	const propertyToValue = useActionState((actionState) => {
-		const { layerIdToFrameIndex } = playbackContextRef.current!;
-
-		const graph = layer.graphId ? actionState.nodeEditor.graphs[layer.graphId] : undefined;
-
-		const context: ComputeNodeContext = {
-			computed: {},
+		const transformMap = computeLayerTransformMap(
 			compositionId,
-			layerId,
-			compositionState: actionState.compositionState,
-			timelines: actionState.timelines,
-			timelineSelection: actionState.timelineSelection,
-			graph,
-			frameIndex: actionState.compositionState.compositions[compositionId].frameIndex,
-			layerIdToFrameIndex,
+			propertyToValue,
+			state.compositionState,
+		);
+
+		if (!transformMap[layerId]) {
+			return nameToProperty;
+		}
+
+		const { scale, rotation, translate, anchor } = transformMap[layerId];
+
+		return {
+			...nameToProperty,
+			Scale: scale,
+			Rotation: rotation,
+			PositionX: translate.x,
+			PositionY: translate.y,
+			AnchorX: anchor.x,
+			AnchorY: anchor.y,
 		};
-
-		const mostRecentGraph = actionState.nodeEditor.graphs[layer.graphId];
-		return computePropertyValues(context, mostRecentGraph);
 	});
-
-	const properties = useActionState((state) => {
-		return getLayerCompositionProperties(layer.id, state.compositionState);
-	});
-
-	const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
-		(obj, p) => {
-			const value = propertyToValue[p.id] ?? p.value;
-			(obj as any)[PropertyName[p.name]] = value.computedValue;
-			return obj;
-		},
-		{} as any,
-	);
-
-	return nameToProperty;
 };

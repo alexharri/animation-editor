@@ -94,3 +94,17 @@ export interface JsonObject {
 }
 
 export type KeySelectionMap = Partial<{ [key: string]: true }>;
+
+export interface PropertyValueMap {
+	[propertyId: string]: {
+		computedValue: any;
+		rawValue: any;
+	};
+}
+
+export interface AffineTransform {
+	translate: Vec2;
+	anchor: Vec2;
+	rotation: number; // Radians
+	scale: number;
+}

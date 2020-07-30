@@ -28,6 +28,7 @@ export interface CompositionLayer {
 	length: number; // Number of frames
 	properties: string[];
 	collapsed: boolean;
+	parentLayerId: string;
 }
 
 export interface CompositionPropertyGroup {

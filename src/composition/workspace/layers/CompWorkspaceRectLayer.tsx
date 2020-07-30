@@ -2,6 +2,7 @@ import React from "react";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { getLayerTransformStyle } from "~/composition/workspace/layers/layerTransformStyle";
 import { useWorkspaceLayerShouldRender } from "~/composition/workspace/useWorkspaceLayerShouldRender";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { connectActionState } from "~/state/stateUtils";
@@ -19,6 +20,7 @@ const s = compileStylesheetLabelled(styles);
 interface OwnProps {
 	compositionId: string;
 	layerId: string;
+	frameIndex: number;
 }
 interface StateProps {
 	layer: CompositionLayer;
@@ -31,13 +33,15 @@ const CompWorkspaceRectLayerComponent: React.FC<Props> = (props) => {
 	const { layer } = props;
 
 	const nameToProperty = useLayerNameToProperty(props.compositionId, layer.id);
-	const shouldRender = useWorkspaceLayerShouldRender(layer);
+	const shouldRender = useWorkspaceLayerShouldRender(layer, props.frameIndex);
 
 	if (!shouldRender) {
 		return null;
 	}
 
 	const {
+		AnchorX,
+		AnchorY,
 		Width,
 		Height,
 		PositionX,
@@ -54,24 +58,35 @@ const CompWorkspaceRectLayerComponent: React.FC<Props> = (props) => {
 	const fillColor = `rgba(${Fill.join(",")})`;
 	const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
+	const transformStyle = getLayerTransformStyle(
+		PositionX,
+		PositionY,
+		AnchorX,
+		AnchorY,
+		Rotation,
+		Scale,
+	);
+
 	return (
-		<rect
-			data-layer-id={layer.id}
-			width={Width}
-			height={Height}
-			rx={BorderRadius}
-			className={s("element")}
-			style={{
-				left: 0,
-				top: 0,
-				opacity: Opacity,
-				fill: fillColor,
-				strokeWidth: StrokeWidth,
-				stroke: strokeColor,
-				transform: `translateX(${PositionX}px) translateY(${PositionY}px) scale(${Scale}) rotate(${Rotation}deg)`,
-				transformOrigin: `${Width / 2}px ${Height / 2}px`,
-			}}
-		/>
+		<>
+			<rect
+				data-layer-id={layer.id}
+				width={Width}
+				height={Height}
+				rx={BorderRadius}
+				className={s("element")}
+				style={{
+					left: 0,
+					top: 0,
+					opacity: Opacity,
+					fill: fillColor,
+					strokeWidth: StrokeWidth,
+					stroke: strokeColor,
+					...transformStyle,
+				}}
+			/>
+			<ellipse cx={PositionX} cy={PositionY} rx={5} ry={5} style={{ fill: "cyan" }} />
+		</>
 	);
 };
 
