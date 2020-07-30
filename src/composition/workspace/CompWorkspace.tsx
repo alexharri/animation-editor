@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { NumberInput } from "~/components/common/NumberInput";
+import { CompositionPlaybackProvider } from "~/composition/hook/useCompositionPlayback";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
@@ -9,7 +10,6 @@ import { cssVariables } from "~/cssVariables";
 import { useActionState } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
-import { CompositionPropertyValuesProvider } from "~/shared/property/computeCompositionPropertyValues";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -81,6 +81,15 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 		onValueChangeEndFn.current = null;
 	};
 
+	const propsRef = useRef(props);
+	propsRef.current = props;
+
+	const frameIndex = useActionState((state) => {
+		const compositionId = props.areaState.compositionId;
+		const frameIndex = state.compositionState.compositions[compositionId].frameIndex;
+		return frameIndex;
+	});
+
 	return (
 		<>
 			<div className={s("header")}></div>
@@ -93,24 +102,26 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 					}}
 				>
 					<div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
-						<div
+						<svg
 							className={s("svg")}
+							width={composition.width}
+							height={composition.height}
 							style={{
 								background: cssVariables.gray800,
-								width: composition.width,
-								height: composition.height,
 							}}
+							key={props.areaState.compositionId}
 						>
-							<CompositionPropertyValuesProvider
+							<CompositionPlaybackProvider
 								compositionId={props.areaState.compositionId}
 							>
 								<CompWorkspaceCompChildren
 									compositionId={composition.id}
-									compWidth={composition.width}
-									compHeight={composition.height}
+									frameIndex={frameIndex}
+									containerHeight={composition.height}
+									containerWidth={composition.width}
 								/>
-							</CompositionPropertyValuesProvider>
-						</div>
+							</CompositionPlaybackProvider>
+						</svg>
 					</div>
 				</div>
 				<div className={s("clickCaptureTarget")} ref={clickCaptureTarget} />

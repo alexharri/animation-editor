@@ -206,7 +206,12 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 						Graph Editor
 					</button>
 				</div>
-				<CompositionPropertyValuesProvider compositionId={composition.id}>
+				<CompositionPropertyValuesProvider
+					compositionId={composition.id}
+					frameIndex={composition.frameIndex}
+					containerWidth={composition.width}
+					containerHeight={composition.height}
+				>
 					<div className={s("layerWrapper")} data-ct-composition-id={composition.id}>
 						<div style={{ transform: `translateY(${-panY}px)` }}>
 							{composition.layers.map((layerId) => {

@@ -17,6 +17,10 @@ export interface ComputeNodeContext {
 	compositionState: CompositionState;
 	compositionId: string;
 	layerId: string;
+	container: {
+		width: number;
+		height: number;
+	};
 	propertyToValue: {
 		[propertyId: string]: {
 			rawValue: any;
@@ -365,15 +369,13 @@ const compute: {
 	 * Width, Height, Frame
 	 */
 	[Type.composition]: (_args, ctx) => {
-		const { compositionState } = ctx;
+		const { container } = ctx;
 
-		const composition = compositionState.compositions[ctx.compositionId];
-
-		const frameIndex = ctx.layerIdToFrameIndex?.[ctx.layerId] ?? composition.frameIndex;
+		const frameIndex = ctx.layerIdToFrameIndex[ctx.layerId];
 
 		return [
-			toArg.number(composition.width),
-			toArg.number(composition.height),
+			toArg.number(container?.width ?? 150),
+			toArg.number(container?.height ?? 150),
 			toArg.number(frameIndex),
 		];
 	},
@@ -398,7 +400,7 @@ const compute: {
 						(propertyId) => compositionState.properties[propertyId].type === "property",
 					)
 					.map((propertyId) => ctx.propertyToValue[propertyId].rawValue)
-			: [ctx.propertyToValue[selectedProperty.id]]
+			: [ctx.propertyToValue[selectedProperty.id].rawValue]
 		).map((value) => toArg.number(value));
 	},
 

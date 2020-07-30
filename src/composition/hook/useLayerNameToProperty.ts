@@ -12,8 +12,8 @@ export const useLayerNameToProperty = (compositionId: string, layerId: string) =
 		const properties = getLayerCompositionProperties(layerId, state.compositionState);
 		const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
 			(obj, p) => {
-				const value = propertyToValue[p.id] ?? p.value;
-				(obj as any)[PropertyName[p.name]] = value.computedValue ?? p.value;
+				const value = propertyToValue[p.id];
+				(obj as any)[PropertyName[p.name]] = value.computedValue;
 				return obj;
 			},
 			{} as any,
@@ -24,6 +24,11 @@ export const useLayerNameToProperty = (compositionId: string, layerId: string) =
 			propertyToValue,
 			state.compositionState,
 		);
+
+		if (!transformMap[layerId]) {
+			return nameToProperty;
+		}
+
 		const { scale, rotation, translate, anchor } = transformMap[layerId];
 
 		return {

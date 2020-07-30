@@ -18,11 +18,12 @@ interface OwnProps {
 	height: number;
 	top: number;
 	left: number;
+	frameIndex: number;
 }
 type Props = OwnProps;
 
 export const CompositionWorkspaceViewport: React.FC<Props> = (props) => {
-	const { top, left, width, height } = props;
+	const { top, left } = props;
 
 	return (
 		<div
@@ -31,8 +32,7 @@ export const CompositionWorkspaceViewport: React.FC<Props> = (props) => {
 		>
 			<CompWorkspaceCompChildren
 				compositionId={props.compositionId}
-				compWidth={width}
-				compHeight={height}
+				frameIndex={props.frameIndex}
 			/>
 		</div>
 	);
