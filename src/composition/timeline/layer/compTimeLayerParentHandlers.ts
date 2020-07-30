@@ -13,7 +13,14 @@ const getTransformMap = (compositionId: string) => {
 	const actionState = getActionState();
 	const { compositionState } = actionState;
 
-	const propertyToValue = computeCompositionPropertyValues(actionState, compositionId);
+	const { frameIndex, width, height } = compositionState.compositions[compositionId];
+
+	const propertyToValue = computeCompositionPropertyValues(
+		actionState,
+		compositionId,
+		frameIndex,
+		{ width, height },
+	);
 	const transformMap = computeLayerTransformMap(compositionId, propertyToValue, compositionState);
 	return transformMap;
 };
