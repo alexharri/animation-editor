@@ -84,10 +84,6 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 	const properties: CompositionProperty[] = [];
 
 	for (let i = 0; i < layers.length; i += 1) {
-		if (!layers[i]) {
-			console.log(props.composition.layers, i);
-			continue;
-		}
 		properties.push(...getLayerCompositionProperties(layers[i].id, props.compositionState));
 	}
 
