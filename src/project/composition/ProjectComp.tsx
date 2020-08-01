@@ -5,6 +5,7 @@ import { dragProjectCompTimeToArea } from "~/project/composition/handlers/dragPr
 import { dragProjectCompWorkspaceToArea } from "~/project/composition/handlers/dragProjectCompWorkspaceToArea";
 import ProjectCompStyles from "~/project/composition/ProjectComp.styles";
 import { ProjectCompLayerName } from "~/project/composition/ProjectCompName";
+import { createProjectContextMenu } from "~/project/projectContextMenu";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -25,7 +26,13 @@ const ProjectCompComponent: React.FC<Props> = (props) => {
 	};
 
 	return (
-		<div className={s("container")} onMouseDown={separateLeftRightMouse({ left: onMouseDown })}>
+		<div
+			className={s("container")}
+			onMouseDown={separateLeftRightMouse({
+				left: onMouseDown,
+				right: (e) => createProjectContextMenu(Vec2.fromEvent(e), { compositionId }),
+			})}
+		>
 			<ProjectCompLayerName compositionId={compositionId} key={compositionId} />
 			<div
 				title="Open Workspace in area"

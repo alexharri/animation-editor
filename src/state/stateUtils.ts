@@ -82,8 +82,13 @@ export function connectActionState<TStateProps = {}, TOwnProps = {}>(
 	mapStateToProps: MapActionState<TStateProps, TOwnProps>,
 ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps> {
 	return connect((state: ApplicationState, ownProps: TOwnProps) => {
-		const actionState = getActionStateFromApplicationState(state);
-		return mapStateToProps!(actionState, ownProps);
+		try {
+			const actionState = getActionStateFromApplicationState(state);
+			return mapStateToProps!(actionState, ownProps);
+		} catch (e) {
+			console.error(e);
+			return {};
+		}
 	});
 }
 

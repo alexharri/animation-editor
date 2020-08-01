@@ -7,7 +7,7 @@ export interface CompositionWorkspaceAreaState {
 }
 
 export const initialCompositionWorkspaceAreaState: CompositionWorkspaceAreaState = {
-	compositionId: "0",
+	compositionId: "",
 	pan: Vec2.new(0, 0),
 	scale: 1,
 };

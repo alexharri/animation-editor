@@ -12,7 +12,7 @@ export interface CompTimeAreaState {
 }
 
 export const initialCompTimeAreaState: CompTimeAreaState = {
-	compositionId: "0",
+	compositionId: "",
 	graphEditorOpen: false,
 	viewBounds: [0, 1],
 	panY: 0,

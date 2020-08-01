@@ -10,15 +10,20 @@ import { cssVariables } from "~/cssVariables";
 import { useActionState } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { connectActionState } from "~/state/stateUtils";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
-type Props = AreaComponentProps<CompositionWorkspaceAreaState>;
+type OwnProps = AreaComponentProps<CompositionWorkspaceAreaState>;
+interface StateProps {
+	frameIndex: number;
+}
+type Props = OwnProps & StateProps;
 
-export const CompositionWorkspace: React.FC<Props> = (props) => {
+const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 	const clickCaptureTarget = useRef<HTMLDivElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
 	const zoomTarget = useRef<HTMLDivElement>(null);
@@ -84,12 +89,6 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 	const propsRef = useRef(props);
 	propsRef.current = props;
 
-	const frameIndex = useActionState((state) => {
-		const compositionId = props.areaState.compositionId;
-		const frameIndex = state.compositionState.compositions[compositionId].frameIndex;
-		return frameIndex;
-	});
-
 	return (
 		<>
 			<div className={s("header")}></div>
@@ -116,7 +115,7 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 							>
 								<CompWorkspaceCompChildren
 									compositionId={composition.id}
-									frameIndex={frameIndex}
+									frameIndex={props.frameIndex}
 									containerHeight={composition.height}
 									containerWidth={composition.width}
 								/>
@@ -159,3 +158,13 @@ export const CompositionWorkspace: React.FC<Props> = (props) => {
 		</>
 	);
 };
+
+const mapState: MapActionState<StateProps, OwnProps> = ({ compositionState }, { areaState }) => {
+	const composition = compositionState.compositions[areaState.compositionId];
+
+	return {
+		frameIndex: composition.frameIndex,
+	};
+};
+
+export const CompositionWorkspace = connectActionState(mapState)(CompositionWorkspaceComponent);

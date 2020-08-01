@@ -10,75 +10,7 @@ export interface TimelineState {
 	[timelineId: string]: Timeline;
 }
 
-export const initialTimelineState: TimelineState = {
-	0: {
-		id: "0",
-		keyframes: [
-			{
-				id: "0",
-				index: 40,
-				value: 40,
-				reflectControlPoints: false,
-				controlPointLeft: null,
-				controlPointRight: null,
-			},
-			{
-				id: "1",
-				index: 50,
-				value: 50,
-				reflectControlPoints: false,
-				controlPointLeft: null,
-				controlPointRight: null,
-			},
-			{
-				id: "2",
-				index: 75,
-				value: 75,
-				reflectControlPoints: false,
-				controlPointLeft: null,
-				controlPointRight: { tx: 0.2, value: 10 },
-			},
-			{
-				id: "3",
-				index: 150,
-				value: 200,
-				reflectControlPoints: false,
-				controlPointLeft: { tx: 0.5, value: -20 },
-				controlPointRight: { value: 10, tx: 0.5 },
-			}, // tslint:disable-line
-			{
-				id: "4",
-				index: 200,
-				value: 100,
-				reflectControlPoints: false,
-				controlPointLeft: { tx: 0.75, value: 50 },
-				controlPointRight: null,
-			},
-		].map<TimelineKeyframe>((keyframe, i, keyframes) => {
-			const k: TimelineKeyframe = { ...keyframe } as any;
-			if (k.controlPointLeft && keyframes[i - 1]) {
-				k.controlPointLeft = {
-					...k.controlPointLeft,
-					relativeToDistance: k.index - keyframes[i - 1].index,
-				};
-			}
-			if (k.controlPointRight && keyframes[i + 1]) {
-				k.controlPointRight = {
-					...k.controlPointRight,
-					relativeToDistance: keyframes[i + 1].index - k.index,
-				};
-			}
-			return k;
-		}),
-		_yBounds: null,
-		_yPan: 0,
-		_indexShift: null,
-		_valueShift: null,
-		_dragSelectRect: null,
-		_controlPointShift: null,
-		_newControlPointShift: null,
-	},
-};
+export const initialTimelineState: TimelineState = {};
 
 export function timelineReducer(state: TimelineState, action: Action): TimelineState {
 	switch (action.type) {

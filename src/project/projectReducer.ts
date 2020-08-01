@@ -14,7 +14,7 @@ export interface ProjectState {
 }
 
 export const initialProjectState: ProjectState = {
-	compositions: ["0"],
+	compositions: [],
 	dragComp: null,
 	playback: null,
 };
@@ -22,6 +22,10 @@ export const initialProjectState: ProjectState = {
 export const projectActions = {
 	addComposition: createAction("project/SET_COMP", (action) => {
 		return (composition: Composition) => action({ composition });
+	}),
+
+	removeComposition: createAction("project/REMOVE_COMP", (action) => {
+		return (compositionId: string) => action({ compositionId });
 	}),
 
 	setDragComposition: createAction("project/SET_DRAG_COMP", (action) => {
@@ -50,6 +54,15 @@ export const projectReducer = (state = initialProjectState, action: Action): Pro
 			return {
 				...state,
 				dragComp: { compositionId, position },
+			};
+		}
+
+		case getType(projectActions.removeComposition): {
+			const { compositionId } = action.payload;
+
+			return {
+				...state,
+				compositions: state.compositions.filter((c) => c !== compositionId),
 			};
 		}
 

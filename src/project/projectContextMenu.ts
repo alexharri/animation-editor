@@ -1,10 +1,12 @@
 import { Composition } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
+import { getTimelineIdsReferencedByComposition } from "~/composition/timeline/compTimeUtils";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
 import { requestAction } from "~/listener/requestAction";
 import { projectActions } from "~/project/projectReducer";
 import { getActionState } from "~/state/stateUtils";
+import { timelineActions } from "~/timeline/timelineActions";
 import { createMapNumberId } from "~/util/mapUtils";
 import { getNonDuplicateName } from "~/util/names";
 
@@ -38,6 +40,31 @@ export const createProjectContextMenu = (position: Vec2, { compositionId }: Opti
 					params.dispatch(compositionActions.setComposition(composition));
 					params.dispatch(contextMenuActions.closeContextMenu());
 					params.submitAction("Add new composition");
+				},
+			});
+		}
+
+		if (compositionId) {
+			const composition = getActionState().compositionState.compositions[compositionId];
+
+			options.push({
+				label: `Delete composition '${composition.name}'`,
+				onSelect: () => {
+					const { compositionState } = getActionState();
+
+					const timelineIds = getTimelineIdsReferencedByComposition(
+						compositionId,
+						compositionState,
+					);
+
+					params.dispatch(
+						projectActions.removeComposition(compositionId),
+						compositionActions.removeComposition(compositionId),
+						...timelineIds.map((id) => timelineActions.removeTimeline(id)),
+					);
+
+					params.dispatch(contextMenuActions.closeContextMenu());
+					params.submitAction("Remove composition");
 				},
 			});
 		}

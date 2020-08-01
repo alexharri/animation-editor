@@ -1,5 +1,4 @@
 import { ActionType, getType } from "typesafe-actions";
-
 import { nodeEditorAreaActions } from "~/nodeEditor/nodeEditorAreaActions";
 
 type ToolAction = ActionType<typeof nodeEditorAreaActions>;

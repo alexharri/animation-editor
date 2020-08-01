@@ -24,7 +24,13 @@ export const useActionStateEffect = (
 
 		const unsub = store.subscribe(() => {
 			const state = getActionStateFromApplicationState(store.getState());
-			callback(state, prevState);
+
+			try {
+				callback(state, prevState);
+			} catch (e) {
+				console.error(e);
+			}
+
 			prevState = state;
 		});
 

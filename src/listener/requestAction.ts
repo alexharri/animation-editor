@@ -10,6 +10,12 @@ let _activeRequestToken: null | string = null;
 
 export const getActiveRequestToken = (): null | string => _activeRequestToken;
 
+let _cancelAction: (() => void) | null = null;
+
+export const requestActionCancellation = (): void => {
+	_cancelAction?.();
+};
+
 interface Options {
 	history?: boolean;
 	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
@@ -56,34 +62,43 @@ const performRequestedAction = (
 		}
 	};
 
-	const escToken = addListener.keyboardOnce("Esc", "keydown", () => {
+	const cancelAction = () => {
 		store.dispatch(historyActions.cancelAction(actionId));
 		onComplete();
-	});
+		_cancelAction = null;
+	};
+	_cancelAction = cancelAction;
+
+	const escToken = addListener.keyboardOnce("Esc", "keydown", cancelAction);
 	cancelTokens.push(escToken);
 
 	store.dispatch(historyActions.startAction(actionId));
 
 	const dispatch: RequestActionParams["dispatch"] = (action, ...args) => {
-		if (Array.isArray(action)) {
-			if (args.length) {
-				console.warn(
-					"Dispatch received an array as the first argument AND received additional arguments.",
-				);
+		try {
+			if (Array.isArray(action)) {
+				if (args.length) {
+					console.warn(
+						"Dispatch received an array as the first argument AND received additional arguments.",
+					);
+				}
+
+				store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
+				return;
 			}
 
-			store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
-			return;
-		}
+			if (args.length) {
+				store.dispatch(
+					historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
+				);
+				return;
+			}
 
-		if (args.length) {
-			store.dispatch(
-				historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
-			);
-			return;
+			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
+		} catch (e) {
+			// We don't want thrown errors to interfere with the rest of the handler.
+			console.dir(e);
 		}
-
-		store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 	};
 
 	callback({
@@ -137,10 +152,7 @@ const performRequestedAction = (
 			onComplete();
 		},
 
-		cancelAction: () => {
-			store.dispatch(historyActions.cancelAction(actionId));
-			onComplete();
-		},
+		cancelAction,
 
 		addListener,
 
