@@ -69,21 +69,7 @@ const createNodeId = (nodes: { [key: string]: any }) =>
 	).toString();
 
 export const initialNodeEditorState: NodeEditorState = {
-	graphs: {
-		0: {
-			id: "0",
-			layerId: "0",
-			moveVector: Vec2.new(0, 0),
-			nodes: {},
-			selection: {
-				nodes: {},
-			},
-			_addNodeOfTypeOnClick: null,
-			_dragSelectRect: null,
-			_dragOutputTo: null,
-			_dragInputTo: null,
-		},
-	},
+	graphs: {},
 };
 
 export function nodeEditorReducer(

@@ -7,12 +7,16 @@ import {
 } from "~/composition/compositionTypes";
 import { createLayer } from "~/composition/layer/createLayer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
+import {
+	reduceCompPropertiesAndGroups,
+	reduceLayerPropertiesAndGroups,
+} from "~/composition/timeline/compTimeUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { LayerType, RGBAColor } from "~/types";
 import {
 	addListToMap,
-	modifyItemInMap,
 	modifyItemInUnionMap,
+	modifyItemsInMap,
 	removeKeysFromMap,
 } from "~/util/mapUtils";
 
@@ -71,6 +75,19 @@ export const compositionActions = {
 	setCompositionDimension: createAction("comp/SET_COMPOSITION_DIMENSIONS", (action) => {
 		return (compositionId: string, which: "width" | "height", value: number) =>
 			action({ compositionId, which, value });
+	}),
+
+	/**
+	 * Removes a composition, all of its layers and all of its properties.
+	 *
+	 * Note that this does not remove the timelines referenced by properties
+	 * of the composition.
+	 *
+	 * This also removes all layers in other compositions who reference this
+	 * composition.
+	 */
+	removeComposition: createAction("comp/REMOVE_COMPOSITION", (action) => {
+		return (compositionId: string) => action({ compositionId });
 	}),
 
 	setFrameIndex: createAction("comp/SET_FRAME_INDEX", (action) => {
@@ -207,10 +224,14 @@ export const compositionReducer = (
 			const { compositionId, name } = action.payload;
 			return {
 				...state,
-				compositions: modifyItemInMap(state.compositions, compositionId, (composition) => ({
-					...composition,
-					name,
-				})),
+				compositions: modifyItemsInMap(
+					state.compositions,
+					compositionId,
+					(composition) => ({
+						...composition,
+						name,
+					}),
+				),
 			};
 		}
 
@@ -225,6 +246,85 @@ export const compositionReducer = (
 						frameIndex,
 					},
 				},
+			};
+		}
+
+		case getType(compositionActions.removeComposition): {
+			const { compositionId } = action.payload;
+
+			const composition = state.compositions[compositionId];
+
+			// Find all CompositionLayers that reference the composition being removed
+			const compLayerLayerIds = Object.keys(state.compositionLayerIdToComposition).filter(
+				(layerId) => {
+					return state.compositionLayerIdToComposition[layerId] === compositionId;
+				},
+			);
+
+			// All layers in composition being removed, and all composition layers who
+			// reference the composition being removed.
+			const layerIds = [...composition.layers, ...compLayerLayerIds];
+
+			// All properties and property groups in this composition
+			const propertyIds = reduceCompPropertiesAndGroups<string[]>(
+				compositionId,
+				state,
+				(arr, property) => {
+					arr.push(property.id);
+					return arr;
+				},
+				[],
+			);
+
+			// Add the properties of composition layers to `propertyIds`
+			for (const layerId of compLayerLayerIds) {
+				const compLayerPropertyIds = reduceLayerPropertiesAndGroups<string[]>(
+					layerId,
+					state,
+					(arr, property) => {
+						arr.push(property.id);
+						return arr;
+					},
+					[],
+				);
+				propertyIds.push(...compLayerPropertyIds);
+			}
+
+			// Sorry for the extreme name, but it's hard to find a concise name for this.
+			const compositionIdsThatReferenceCompositionLayersBeingRemoved = [
+				...new Set(
+					compLayerLayerIds.map((layerId) => {
+						return state.layers[layerId].compositionId;
+					}),
+				),
+			];
+
+			let compositions = state.compositions;
+
+			// Remove composition
+			compositions = removeKeysFromMap(state.compositions, [compositionId]);
+
+			// Remove the composition layers that reference the composition being removed
+			compositions = modifyItemsInMap(
+				compositions,
+				compositionIdsThatReferenceCompositionLayersBeingRemoved,
+				(composition) => ({
+					...composition,
+					layers: composition.layers.filter(
+						(id) => state.compositionLayerIdToComposition[id] !== compositionId,
+					),
+				}),
+			);
+
+			return {
+				...state,
+				compositions,
+				layers: removeKeysFromMap(state.layers, layerIds),
+				properties: removeKeysFromMap(state.properties, propertyIds),
+				compositionLayerIdToComposition: removeKeysFromMap(
+					state.compositionLayerIdToComposition,
+					compLayerLayerIds,
+				),
 			};
 		}
 
@@ -353,7 +453,7 @@ export const compositionReducer = (
 			const { layerId, graphId } = action.payload;
 			return {
 				...state,
-				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+				layers: modifyItemsInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					graphId,
 				})),
@@ -364,7 +464,7 @@ export const compositionReducer = (
 			const { layerId, name } = action.payload;
 			return {
 				...state,
-				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+				layers: modifyItemsInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					name,
 				})),
@@ -375,7 +475,7 @@ export const compositionReducer = (
 			const { layerId, collapsed } = action.payload;
 			return {
 				...state,
-				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+				layers: modifyItemsInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					collapsed,
 				})),
@@ -386,7 +486,7 @@ export const compositionReducer = (
 			const { layerId, parentLayerId } = action.payload;
 			return {
 				...state,
-				layers: modifyItemInMap(state.layers, layerId, (layer) => ({
+				layers: modifyItemsInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					parentLayerId,
 				})),

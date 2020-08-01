@@ -1,14 +1,13 @@
 import { ActionType, getType } from "typesafe-actions";
-import { areaActions as actions, areaActions } from "~/area/state/areaActions";
-import { AreaRowLayout, AreaLayout, Area } from "~/types/areaTypes";
 import { areaStateReducerRegistry } from "~/area/areaRegistry";
-import { joinAreas } from "~/area/util/joinArea";
-import { areaToRow } from "~/area/util/areaToRow";
-import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
-import { CardinalDirection } from "~/types";
-import { AreaType } from "~/constants";
+import { areaActions as actions, areaActions } from "~/area/state/areaActions";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
-import { CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
+import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
+import { areaToRow } from "~/area/util/areaToRow";
+import { joinAreas } from "~/area/util/joinArea";
+import { AreaType } from "~/constants";
+import { CardinalDirection } from "~/types";
+import { Area, AreaLayout, AreaRowLayout } from "~/types/areaTypes";
 
 type AreaAction = ActionType<typeof actions>;
 
@@ -33,46 +32,21 @@ export interface AreaReducerState {
 }
 
 export const initialAreaState: AreaReducerState = {
-	_id: 15,
+	_id: 0,
 	layout: {
-		"2": {
-			type: "area_row",
-			id: "2",
-			areas: [
-				{ size: 0.6997578692493946, id: "12" },
-				{ size: 0.30024213075060535, id: "13" },
-			],
-			orientation: "vertical",
+		"0": {
+			type: "area",
+			id: "0",
 		},
-		"12": {
-			type: "area_row",
-			id: "12",
-			areas: [
-				{ size: 0.5820198482194979, id: "14" },
-				{ size: 0.4179801517805021, id: "15" },
-			],
-			orientation: "horizontal",
-		},
-		"13": { type: "area", id: "13" },
-		"14": { type: "area", id: "14" },
-		"15": { type: "area", id: "15" },
 	},
 	areas: {
-		"13": {
-			type: AreaType.CompositionTimeline,
-			state: { compositionId: "0", viewBounds: [0, 1] } as CompTimeAreaState,
-		},
-		"14": {
-			type: AreaType.NodeEditor,
-			state: { pan: Vec2.new(-92, -63), scale: 1, graphId: "0" },
-		},
-		"15": {
-			type: AreaType.History,
+		"0": {
+			type: AreaType.Project,
 			state: {},
 		},
 	},
 	joinPreview: null,
-	rootId: "2",
+	rootId: "0",
 	areaToOpen: null,
 };
 

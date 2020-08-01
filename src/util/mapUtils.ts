@@ -22,19 +22,23 @@ export const addListToMap = <M extends { [key: string]: T }, T, U extends T = T>
 	};
 };
 
-export const modifyItemInMap = <M extends { [key: string]: T }, T = M[string]>(
+export const modifyItemsInMap = <M extends { [key: string]: T }, T = M[string]>(
 	map: M,
-	key: string,
+	keys: string | string[],
 	fn: (item: T) => T,
 ): M => {
-	if (!map.hasOwnProperty(key)) {
-		throw new Error(`Key '${key}' does not exist in map.`);
+	let obj: M = { ...map };
+
+	const keyList = typeof keys === "string" ? [keys] : keys;
+
+	for (const key of keyList) {
+		if (!obj.hasOwnProperty(key)) {
+			throw new Error(`Key '${key}' does not exist in map.`);
+		}
+		(obj as any)[key] = fn(obj[key]);
 	}
 
-	return {
-		...map,
-		[key]: fn(map[key]),
-	};
+	return obj;
 };
 
 export const modifyItemInUnionMap = <

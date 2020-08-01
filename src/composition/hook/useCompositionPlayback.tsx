@@ -19,6 +19,11 @@ export const getLayerIndexShiftMap = (
 		for (let i = 0; i < composition.layers.length; i += 1) {
 			const layer = compositionState.layers[composition.layers[i]];
 
+			if (!layer) {
+				console.log(composition.layers, i);
+				continue;
+			}
+
 			layerIndexShiftMap[layer.id] = -index;
 
 			if (layer.type === LayerType.Composition) {

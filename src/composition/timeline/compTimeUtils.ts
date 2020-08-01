@@ -221,6 +221,23 @@ export function reduceCompProperties<T>(
 	return acc;
 }
 
+export function reduceCompPropertiesAndGroups<T>(
+	compositionId: string,
+	compositionState: CompositionState,
+	fn: (acc: T, property: CompositionProperty) => T,
+	initialState: T,
+): T {
+	const composition = compositionState.compositions[compositionId];
+
+	let acc = initialState;
+
+	for (let i = 0; i < composition.layers.length; i += 1) {
+		acc = reduceLayerPropertiesAndGroups(composition.layers[i], compositionState, fn, acc);
+	}
+
+	return acc;
+}
+
 /**
  * Recursive means that we also use Composition layer layers.
  */

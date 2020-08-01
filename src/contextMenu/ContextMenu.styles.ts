@@ -1,6 +1,7 @@
 import {
 	CONTEXT_MENU_OPTION_HEIGHT,
 	CONTEXT_MENU_OPTION_PADDING_LEFT,
+	CONTEXT_MENU_OPTION_PADDING_RIGHT,
 	DEFAULT_CONTEXT_MENU_WIDTH,
 } from "~/constants";
 import { cssVariables, cssZIndex } from "~/cssVariables";
@@ -23,7 +24,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		background: ${cssVariables.dark300};
 		border: 1px solid ${cssVariables.gray800};
-		width: ${DEFAULT_CONTEXT_MENU_WIDTH}px;
+		min-width: ${DEFAULT_CONTEXT_MENU_WIDTH}px;
 		padding: 2px;
 		border-radius: 4px;
 		z-index: ${cssZIndex.contextMenu};
@@ -48,6 +49,7 @@ export default ({ css }: StyleParams) => ({
 	option: css`
 		padding: 0;
 		padding-left: ${CONTEXT_MENU_OPTION_PADDING_LEFT}px;
+		padding-right: ${CONTEXT_MENU_OPTION_PADDING_RIGHT}px;
 		border: none;
 		background: transparent;
 		display: block;

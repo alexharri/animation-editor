@@ -1,9 +1,9 @@
 import {
-	removeKeysFromMap,
 	addListToMap,
-	modifyItemInMap,
-	reduceMap,
 	isMapShallowEqual,
+	modifyItemsInMap,
+	reduceMap,
+	removeKeysFromMap,
 } from "~/util/mapUtils";
 
 describe("removeKeysFromMap", () => {
@@ -101,7 +101,7 @@ describe("modifyItemInMap", () => {
 				a: 1,
 				b: 4,
 			};
-			expect(modifyItemInMap(input, "b", (value) => value * 2)).toEqual(output);
+			expect(modifyItemsInMap(input, "b", (value) => value * 2)).toEqual(output);
 		}
 
 		{
@@ -114,7 +114,7 @@ describe("modifyItemInMap", () => {
 				b: { id: "b", value: 4 },
 			};
 			expect(
-				modifyItemInMap(input, "b", (item) => ({
+				modifyItemsInMap(input, "b", (item) => ({
 					...item,
 					value: item.value * 2,
 				})),
@@ -126,7 +126,7 @@ describe("modifyItemInMap", () => {
 		const input: { [key: string]: number } = {
 			a: 5,
 		};
-		expect(() => modifyItemInMap(input, "b", (value) => value * 2)).toThrow();
+		expect(() => modifyItemsInMap(input, "b", (value) => value * 2)).toThrow();
 	});
 });
 
