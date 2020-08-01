@@ -1,16 +1,17 @@
 import React from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { handleAreaDragFromCorner } from "~/area/handlers/areaDragFromCorner";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import styles from "~/area/components/Area.styles";
-import { AreaComponentProps } from "~/types/areaTypes";
 import { areaComponentRegistry } from "~/area/areaRegistry";
-import { AreaType, AREA_BORDER_WIDTH } from "~/constants";
+import styles from "~/area/components/Area.styles";
+import { AreaErrorBoundary } from "~/area/components/AreaErrorBoundary";
+import { handleAreaDragFromCorner } from "~/area/handlers/areaDragFromCorner";
+import { areaActions } from "~/area/state/areaActions";
 import { EditIcon } from "~/components/icons/EditIcon";
 import { PenIcon } from "~/components/icons/PenIcon";
-import { requestAction } from "~/listener/requestAction";
+import { AreaType, AREA_BORDER_WIDTH } from "~/constants";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
-import { areaActions } from "~/area/state/areaActions";
+import { requestAction } from "~/listener/requestAction";
+import { connectActionState } from "~/state/stateUtils";
+import { AreaComponentProps } from "~/types/areaTypes";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -125,7 +126,8 @@ export const AreaComponent: React.FC<Props> = (props) => {
 				<Icon />
 			</button>
 			<div className={s("area__content")}>
-				<Component
+				<AreaErrorBoundary
+					component={Component}
 					areaId={props.id}
 					areaState={props.state}
 					left={viewport.left + AREA_BORDER_WIDTH}
