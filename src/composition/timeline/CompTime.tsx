@@ -18,7 +18,7 @@ import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils
 import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
-import { CompositionPropertyValuesProvider } from "~/shared/property/computeCompositionPropertyValues";
+import { CompositionPropertyValuesProvider } from "~/shared/composition/compositionRenderValues";
 import { connectActionState } from "~/state/stateUtils";
 import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { ViewBounds } from "~/timeline/ViewBounds";

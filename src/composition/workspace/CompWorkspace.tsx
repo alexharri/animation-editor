@@ -11,7 +11,7 @@ import { cssVariables } from "~/cssVariables";
 import { useActionState } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
-import { computeCompositionPropertyValues } from "~/shared/property/computeCompositionPropertyValues";
+import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { connectActionState } from "~/state/stateUtils";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -93,7 +93,7 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 
 	const map = useActionState((state) => {
 		const composition = state.compositionState.compositions[props.areaState.compositionId];
-		return computeCompositionPropertyValues(
+		return getCompositionRenderValues(
 			state,
 			composition.id,
 			composition.frameIndex,

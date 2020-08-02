@@ -6,7 +6,7 @@ import {
 } from "~/composition/transformUtils";
 import { RAD_TO_DEG_FAC } from "~/constants";
 import { requestAction } from "~/listener/requestAction";
-import { computeCompositionPropertyValues } from "~/shared/property/computeCompositionPropertyValues";
+import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState } from "~/state/stateUtils";
 
 const getTransformMap = (compositionId: string) => {
@@ -15,7 +15,7 @@ const getTransformMap = (compositionId: string) => {
 
 	const { frameIndex, width, height } = compositionState.compositions[compositionId];
 
-	const map = computeCompositionPropertyValues(
+	const map = getCompositionRenderValues(
 		actionState,
 		compositionId,
 		frameIndex,

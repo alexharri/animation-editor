@@ -39,7 +39,7 @@ interface Options {
 	recursive: boolean;
 }
 
-export const _compute = (context: Context, options: Options): CompositionRenderValues => {
+const _compute = (context: Context, options: Options): CompositionRenderValues => {
 	const {
 		compositionId,
 		compositionState,
@@ -230,7 +230,7 @@ export const _compute = (context: Context, options: Options): CompositionRenderV
 	return crawl(compositionId, frameIndex);
 };
 
-export const computeCompositionPropertyValues = (
+export const getCompositionRenderValues = (
 	state: ActionState,
 	compositionId: string,
 	frameIndex: number,
@@ -262,7 +262,7 @@ export const CompositionPropertyValuesProvider: React.FC<{
 	containerHeight: number;
 }> = ({ children, compositionId, frameIndex, containerWidth, containerHeight }) => {
 	const map = useActionState((state) => {
-		return computeCompositionPropertyValues(
+		return getCompositionRenderValues(
 			state,
 			compositionId,
 			frameIndex,
