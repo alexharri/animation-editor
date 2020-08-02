@@ -2,7 +2,7 @@ import * as mathjs from "mathjs";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
 import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorNodeType, RGBAColor, ValueType } from "~/types";
+import { NodeEditorNodeType, PropertyValueMap, RGBAColor, ValueType } from "~/types";
 import { capToRange, interpolate } from "~/util/math";
 
 const Type = NodeEditorNodeType;
@@ -21,15 +21,8 @@ export interface ComputeNodeContext {
 		width: number;
 		height: number;
 	};
-	propertyToValue: {
-		[propertyId: string]: {
-			rawValue: any;
-			computedValue: any;
-		};
-	};
-	layerIdToFrameIndex: {
-		[layerId: string]: number;
-	};
+	propertyToValue: PropertyValueMap;
+	frameIndex: number;
 }
 
 const parseNum = (arg: ComputeNodeArg): number => {
@@ -369,9 +362,7 @@ const compute: {
 	 * Width, Height, Frame
 	 */
 	[Type.composition]: (_args, ctx) => {
-		const { container } = ctx;
-
-		const frameIndex = ctx.layerIdToFrameIndex[ctx.layerId];
+		const { container, frameIndex } = ctx;
 
 		return [
 			toArg.number(container?.width ?? 150),

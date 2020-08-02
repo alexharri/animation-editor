@@ -2,6 +2,7 @@ import React from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { reduceCompProperties } from "~/composition/timeline/compTimeUtils";
+import { computeLayerTransformMap } from "~/composition/transformUtils";
 import { useActionState } from "~/hook/useActionState";
 import {
 	ComputeNodeArg,
@@ -13,7 +14,13 @@ import { NodeEditorState } from "~/nodeEditor/nodeEditorReducers";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
-import { LayerType, NodeEditorNodeType, PropertyValueMap } from "~/types";
+import {
+	AffineTransform,
+	CompositionRenderValues,
+	LayerType,
+	NodeEditorNodeType,
+	PropertyValueMap,
+} from "~/types";
 
 interface Context {
 	compositionId: string;
@@ -28,7 +35,11 @@ interface Context {
 	frameIndex: number;
 }
 
-export const _compute = (context: Context): PropertyValueMap => {
+interface Options {
+	recursive: boolean;
+}
+
+export const _compute = (context: Context, options: Options): CompositionRenderValues => {
 	const {
 		compositionId,
 		compositionState,
@@ -38,170 +49,185 @@ export const _compute = (context: Context): PropertyValueMap => {
 		frameIndex,
 	} = context;
 
-	const layerIdToFrameIndex: { [layerId: string]: number } = {};
-
-	(function crawl(compositionId: string, index) {
+	function crawl(
+		compositionId: string,
+		frameIndex: number,
+		parent?: CompositionRenderValues,
+		parentTransform?: AffineTransform,
+	): CompositionRenderValues {
 		const composition = compositionState.compositions[compositionId];
-
-		for (let i = 0; i < composition.layers.length; i += 1) {
-			const layer = compositionState.layers[composition.layers[i]];
-
-			layerIdToFrameIndex[layer.id] = frameIndex - index;
-
-			if (layer.type === LayerType.Composition) {
-				const id = compositionState.compositionLayerIdToComposition[layer.id];
-				crawl(id, layer.index);
-			}
-		}
-	})(compositionId, 0);
-
-	const propertyToValue: PropertyValueMap = {};
-
-	const properties = reduceCompProperties<CompositionProperty[]>(
-		compositionId,
-		compositionState,
-		(acc, property) => {
-			acc.push(property);
-			return acc;
-		},
-		[],
-		{ recursive: true },
-	);
-
-	for (const property of properties) {
-		const layer = compositionState.layers[property.layerId];
-		const frameIndex = layerIdToFrameIndex[layer.id];
-
-		const rawValue = property.timelineId
-			? getTimelineValueAtIndex({
-					timeline: timelineState[property.timelineId],
-					layerIndex: layer.index,
-					frameIndex,
-					selection: timelineSelectionState[property.timelineId],
-			  })
-			: property.value;
-
-		propertyToValue[property.id] = {
-			rawValue,
-			computedValue: rawValue,
+		const map: CompositionRenderValues = {
+			frameIndex,
+			properties: {},
+			compositionLayers: {},
+			transforms: {},
+			parent,
 		};
-	}
 
-	const computed: { [nodeId: string]: ComputeNodeArg[] } = {};
-
-	// const layerIds = reduceCompLayersRecursive<string[]>(
-	// 	compositionId,
-	// 	compositionState,
-	// 	propertyToValue,
-	// 	(acc, layer) => {
-	// 		acc.push(layer.id);
-	// 		return acc;
-	// 	},
-	// 	[],
-	// );
-
-	const composition = compositionState.compositions[compositionId];
-	const layerIds = composition.layers;
-
-	for (const layerId of layerIds) {
-		const layer = compositionState.layers[layerId];
-
-		if (!layer.graphId) {
-			continue;
-		}
-
-		const graph = context.graphs[layer.graphId];
-
-		const outputNodes: NodeEditorNode<NodeEditorNodeType.property_output>[] = [];
-
-		for (const key in graph.nodes) {
-			const node = graph.nodes[key];
-
-			if (node.type === NodeEditorNodeType.property_output) {
-				outputNodes.push(node as NodeEditorNode<NodeEditorNodeType.property_output>);
-			}
-		}
-
-		if (!outputNodes.length) {
-			continue;
-		}
-
-		const visitedNodes = new Set<string>();
-		const toCompute: string[] = [];
-
-		function dfs(node: NodeEditorNode<any>) {
-			if (visitedNodes.has(node.id)) {
-				return;
-			}
-
-			visitedNodes.add(node.id);
-
-			for (const input of node.inputs) {
-				if (input.pointer) {
-					dfs(graph.nodes[input.pointer.nodeId]);
-				}
-			}
-
-			toCompute.push(node.id);
-		}
-
-		for (const outputNode of outputNodes) {
-			dfs(outputNode);
-		}
-
-		const ctx: ComputeNodeContext = {
-			compositionId: layer.compositionId,
+		const properties = reduceCompProperties<CompositionProperty[]>(
+			compositionId,
 			compositionState,
-			computed,
-			container,
-			layerId,
-			layerIdToFrameIndex,
-			propertyToValue,
-		};
+			(acc, property) => {
+				acc.push(property);
+				return acc;
+			},
+			[],
+		);
 
-		for (const nodeId of toCompute) {
-			const node = graph.nodes[nodeId];
-			computed[node.id] = computeNodeOutputArgs(node, ctx);
+		// Compute raw values for each property in the composition
+		for (const property of properties) {
+			const layer = compositionState.layers[property.layerId];
+			const frameIndex = map.frameIndex;
+
+			const rawValue = property.timelineId
+				? getTimelineValueAtIndex({
+						timeline: timelineState[property.timelineId],
+						layerIndex: layer.index,
+						frameIndex,
+						selection: timelineSelectionState[property.timelineId],
+				  })
+				: property.value;
+
+			map.properties[property.id] = {
+				rawValue,
+				computedValue: rawValue,
+			};
 		}
 
-		for (const outputNode of outputNodes) {
-			const selectedProperty = compositionState.properties[outputNode.state.propertyId];
+		// Compute property values from layer graphs
+		const computed: { [nodeId: string]: ComputeNodeArg[] } = {};
+		for (const layerId of composition.layers) {
+			const layer = compositionState.layers[layerId];
 
-			// No property has been selected, the node does not affect
-			// the output
-			if (!selectedProperty) {
+			if (!layer.graphId) {
 				continue;
 			}
 
-			const properties =
-				selectedProperty.type === "group"
-					? selectedProperty.properties
-							.map((id) => context.compositionState.properties[id])
-							.filter(
-								(property): property is CompositionProperty =>
-									property.type === "property",
-							)
-					: [selectedProperty];
+			const graph = context.graphs[layer.graphId];
 
-			for (let j = 0; j < properties.length; j += 1) {
-				const property = properties[j];
+			// Find all output nodes
+			const outputNodes: NodeEditorNode<NodeEditorNodeType.property_output>[] = [];
+			for (const key in graph.nodes) {
+				const node = graph.nodes[key];
 
-				// Do not modify the property:value map if the input does not have
-				// a pointer.
-				//
-				// This allows us to, for example, have two property_output nodes that
-				// both reference Transform but modify different properties of the
-				// Transform group.
-				if (!outputNode.inputs[j].pointer) {
+				if (node.type === NodeEditorNodeType.property_output) {
+					outputNodes.push(node as NodeEditorNode<NodeEditorNodeType.property_output>);
+				}
+			}
+
+			if (!outputNodes.length) {
+				continue;
+			}
+
+			// Sort nodes to compute topologically
+			//
+			// We don't check for circularity yet. Infinite loops are easy to
+			// create right now.
+			const visitedNodes = new Set<string>();
+			const toCompute: string[] = [];
+
+			function dfs(node: NodeEditorNode<any>) {
+				if (visitedNodes.has(node.id)) {
+					return;
+				}
+
+				visitedNodes.add(node.id);
+
+				for (const input of node.inputs) {
+					if (input.pointer) {
+						dfs(graph.nodes[input.pointer.nodeId]);
+					}
+				}
+
+				toCompute.push(node.id);
+			}
+
+			for (const outputNode of outputNodes) {
+				dfs(outputNode);
+			}
+
+			const ctx: ComputeNodeContext = {
+				compositionId: layer.compositionId,
+				compositionState,
+				computed,
+				container,
+				layerId,
+				frameIndex,
+				propertyToValue: map.properties,
+			};
+
+			for (const nodeId of toCompute) {
+				const node = graph.nodes[nodeId];
+				computed[node.id] = computeNodeOutputArgs(node, ctx);
+			}
+
+			for (const outputNode of outputNodes) {
+				const selectedProperty = compositionState.properties[outputNode.state.propertyId];
+
+				// No property has been selected, the node does not affect
+				// the output
+				if (!selectedProperty) {
 					continue;
 				}
 
-				propertyToValue[property.id].computedValue = computed[outputNode.id][j].value;
+				const properties =
+					selectedProperty.type === "group"
+						? selectedProperty.properties
+								.map((id) => context.compositionState.properties[id])
+								.filter(
+									(property): property is CompositionProperty =>
+										property.type === "property",
+								)
+						: [selectedProperty];
+
+				for (let j = 0; j < properties.length; j += 1) {
+					const property = properties[j];
+
+					// Do not modify the property:value map if the input does not have
+					// a pointer.
+					//
+					// This allows us to, for example, have two property_output nodes that
+					// both reference Transform but modify different properties of the
+					// Transform group.
+					if (!outputNode.inputs[j].pointer) {
+						continue;
+					}
+
+					map.properties[property.id].computedValue = computed[outputNode.id][j].value;
+				}
 			}
 		}
+
+		// Compute transforms
+		// console.log({ parentTransform });
+		map.transforms = computeLayerTransformMap(
+			composition.id,
+			map.properties,
+			compositionState,
+			parentTransform,
+		);
+
+		if (options.recursive) {
+			// Construct maps for composition layers
+			for (const layerId of composition.layers) {
+				const layer = compositionState.layers[layerId];
+
+				if (layer.type === LayerType.Composition) {
+					const id = compositionState.compositionLayerIdToComposition[layer.id];
+					map.compositionLayers[layer.id] = crawl(
+						id,
+						map.frameIndex - layer.index,
+						map,
+						map.transforms[layer.id],
+					);
+				}
+			}
+		}
+
+		return map;
 	}
 
-	return propertyToValue;
+	return crawl(compositionId, frameIndex);
 };
 
 export const computeCompositionPropertyValues = (
@@ -212,7 +238,8 @@ export const computeCompositionPropertyValues = (
 		width: number;
 		height: number;
 	},
-): PropertyValueMap => {
+	options: Options,
+): CompositionRenderValues => {
 	const context: Context = {
 		compositionId,
 		compositionState: state.compositionState,
@@ -223,7 +250,7 @@ export const computeCompositionPropertyValues = (
 		frameIndex,
 	};
 
-	return _compute(context);
+	return _compute(context, options);
 };
 
 export const CompositionPropertyValuesContext = React.createContext<PropertyValueMap>({});
@@ -234,15 +261,21 @@ export const CompositionPropertyValuesProvider: React.FC<{
 	containerWidth: number;
 	containerHeight: number;
 }> = ({ children, compositionId, frameIndex, containerWidth, containerHeight }) => {
-	const propertyToValue = useActionState((state) => {
-		return computeCompositionPropertyValues(state, compositionId, frameIndex, {
-			width: containerWidth,
-			height: containerHeight,
-		});
+	const map = useActionState((state) => {
+		return computeCompositionPropertyValues(
+			state,
+			compositionId,
+			frameIndex,
+			{
+				width: containerWidth,
+				height: containerHeight,
+			},
+			{ recursive: false },
+		);
 	});
 
 	return (
-		<CompositionPropertyValuesContext.Provider value={propertyToValue}>
+		<CompositionPropertyValuesContext.Provider value={map.properties}>
 			{children}
 		</CompositionPropertyValuesContext.Provider>
 	);

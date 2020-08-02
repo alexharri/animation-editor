@@ -5,11 +5,13 @@ import { compositionActions } from "~/composition/state/compositionReducer";
 import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
 import styles from "~/composition/workspace/CompWorkspace.styles";
+import { CompWorkspaceViewportContext } from "~/composition/workspace/CompWorkspaceViewportContext";
 import { CompWorkspaceCompChildren } from "~/composition/workspace/layers/CompWorkspaceCompChildren";
 import { cssVariables } from "~/cssVariables";
 import { useActionState } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { computeCompositionPropertyValues } from "~/shared/property/computeCompositionPropertyValues";
 import { connectActionState } from "~/state/stateUtils";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -89,6 +91,20 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 	const propsRef = useRef(props);
 	propsRef.current = props;
 
+	const map = useActionState((state) => {
+		const composition = state.compositionState.compositions[props.areaState.compositionId];
+		return computeCompositionPropertyValues(
+			state,
+			composition.id,
+			composition.frameIndex,
+			{
+				width: composition.width,
+				height: composition.height,
+			},
+			{ recursive: true },
+		);
+	});
+
 	return (
 		<>
 			<div className={s("header")}></div>
@@ -113,12 +129,14 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 							<CompositionPlaybackProvider
 								compositionId={props.areaState.compositionId}
 							>
-								<CompWorkspaceCompChildren
-									compositionId={composition.id}
-									frameIndex={props.frameIndex}
-									containerHeight={composition.height}
-									containerWidth={composition.width}
-								/>
+								<CompWorkspaceViewportContext.Provider value={{ scale }}>
+									<CompWorkspaceCompChildren
+										compositionId={composition.id}
+										containerHeight={composition.height}
+										containerWidth={composition.width}
+										map={map}
+									/>
+								</CompWorkspaceViewportContext.Provider>
 							</CompositionPlaybackProvider>
 						</svg>
 					</div>

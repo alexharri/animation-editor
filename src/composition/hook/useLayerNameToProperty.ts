@@ -1,35 +1,24 @@
-import { useContext } from "react";
-import { computeLayerTransformMap } from "~/composition/transformUtils";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { useActionState } from "~/hook/useActionState";
-import { CompositionPropertyValuesContext } from "~/shared/property/computeCompositionPropertyValues";
-import { PropertyName } from "~/types";
+import { CompositionRenderValues, PropertyName } from "~/types";
 
-export const useLayerNameToProperty = (compositionId: string, layerId: string) => {
-	const propertyToValue = useContext(CompositionPropertyValuesContext);
-
+export const useLayerNameToProperty = (
+	map: CompositionRenderValues,
+	_compositionId: string,
+	layerId: string,
+) => {
 	return useActionState((state) => {
 		const properties = getLayerCompositionProperties(layerId, state.compositionState);
 		const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
 			(obj, p) => {
-				const value = propertyToValue[p.id];
+				const value = map.properties[p.id];
 				(obj as any)[PropertyName[p.name]] = value.computedValue;
 				return obj;
 			},
 			{} as any,
 		);
 
-		const transformMap = computeLayerTransformMap(
-			compositionId,
-			propertyToValue,
-			state.compositionState,
-		);
-
-		if (!transformMap[layerId]) {
-			return nameToProperty;
-		}
-
-		const { scale, rotation, translate, anchor } = transformMap[layerId];
+		const { scale, rotation, translate, anchor } = map.transforms[layerId];
 
 		return {
 			...nameToProperty,

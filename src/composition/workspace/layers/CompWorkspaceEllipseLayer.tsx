@@ -2,15 +2,12 @@ import React from "react";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { CompWorkspaceLayerBaseProps } from "~/composition/workspace/compWorkspaceTypes";
 import { getLayerTransformStyle } from "~/composition/workspace/layers/layerTransformStyle";
 import { useWorkspaceLayerShouldRender } from "~/composition/workspace/useWorkspaceLayerShouldRender";
 import { connectActionState } from "~/state/stateUtils";
 
-interface OwnProps {
-	compositionId: string;
-	layerId: string;
-	frameIndex: number;
-}
+type OwnProps = CompWorkspaceLayerBaseProps;
 interface StateProps {
 	isSelected: boolean;
 	layer: CompositionLayer;
@@ -18,8 +15,10 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompWorkspaceEllipseLayerComponent: React.FC<Props> = (props) => {
-	const nameToProperty = useLayerNameToProperty(props.compositionId, props.layerId);
-	const shouldRender = useWorkspaceLayerShouldRender(props.layer, props.frameIndex);
+	const { layer, map } = props;
+
+	const nameToProperty = useLayerNameToProperty(map, props.compositionId, layer.id);
+	const shouldRender = useWorkspaceLayerShouldRender(map.frameIndex, layer.index, layer.length);
 
 	if (!shouldRender) {
 		return null;
@@ -122,7 +121,6 @@ const CompWorkspaceEllipseLayerComponent: React.FC<Props> = (props) => {
 					/>
 				)}
 			</g>
-			<ellipse cx={PositionX} cy={PositionY} rx={5} ry={5} style={{ fill: "cyan" }} />
 		</>
 	);
 };

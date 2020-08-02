@@ -7,6 +7,13 @@ export type HSLColor = [number, number, number];
 export type RGBColor = [number, number, number];
 export type RGBAColor = [number, number, number, number];
 
+export interface AffineTransform {
+	translate: Vec2;
+	anchor: Vec2;
+	rotation: number; // Radians
+	scale: number;
+}
+
 export enum NodeEditorNodeType {
 	empty = "empty",
 
@@ -102,9 +109,14 @@ export interface PropertyValueMap {
 	};
 }
 
-export interface AffineTransform {
-	translate: Vec2;
-	anchor: Vec2;
-	rotation: number; // Radians
-	scale: number;
+export interface CompositionRenderValues {
+	properties: PropertyValueMap;
+	transforms: {
+		[layerId: string]: AffineTransform;
+	};
+	compositionLayers: {
+		[layerId: string]: CompositionRenderValues;
+	};
+	frameIndex: number;
+	parent?: CompositionRenderValues;
 }

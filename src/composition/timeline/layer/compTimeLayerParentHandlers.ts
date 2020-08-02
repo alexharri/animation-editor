@@ -15,13 +15,14 @@ const getTransformMap = (compositionId: string) => {
 
 	const { frameIndex, width, height } = compositionState.compositions[compositionId];
 
-	const propertyToValue = computeCompositionPropertyValues(
+	const map = computeCompositionPropertyValues(
 		actionState,
 		compositionId,
 		frameIndex,
 		{ width, height },
+		{ recursive: false },
 	);
-	const transformMap = computeLayerTransformMap(compositionId, propertyToValue, compositionState);
+	const transformMap = computeLayerTransformMap(compositionId, map.properties, compositionState);
 	return transformMap;
 };
 
