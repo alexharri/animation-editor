@@ -3,18 +3,11 @@ import { CompositionState } from "~/composition/state/compositionReducer";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
-import { AffineTransform, PropertyName } from "~/types";
+import { AffineTransform, PropertyName, PropertyValueMap } from "~/types";
 import { rotateVec2CCW } from "~/util/math";
 
 interface LayerTransformMap {
 	[layerId: string]: AffineTransform;
-}
-
-interface ValueMap {
-	[propertyId: string]: {
-		computedValue: any;
-		rawValue: any;
-	};
 }
 
 export const getLayerTransformProperties = (
@@ -40,7 +33,7 @@ export const getLayerTransformProperties = (
 
 const getBaseTransform = (
 	layerId: string,
-	propertyToValue: ValueMap,
+	propertyToValue: PropertyValueMap,
 	compositionState: CompositionState,
 ): AffineTransform => {
 	const props = getLayerCompositionProperties(layerId, compositionState).reduce<
@@ -62,8 +55,17 @@ const getBaseTransform = (
 /**
  * Modifies the `transform`
  */
-const applyParentTransform = (transform: AffineTransform, parentTransform: AffineTransform) => {
+const applyParentTransform = (
+	transform: AffineTransform,
+	parentTransform: AffineTransform,
+	isBaseTransform: boolean,
+) => {
 	transform.translate = transform.translate.add(parentTransform.translate);
+
+	if (isBaseTransform) {
+		transform.translate = transform.translate.sub(parentTransform.anchor);
+	}
+
 	transform.translate = rotateVec2CCW(
 		transform.translate,
 		parentTransform.rotation,
@@ -77,10 +79,18 @@ const applyParentTransform = (transform: AffineTransform, parentTransform: Affin
 	transform.scale = transform.scale * parentTransform.scale;
 };
 
+const defaultTransform: AffineTransform = {
+	anchor: Vec2.new(0, 0),
+	rotation: 0,
+	scale: 1,
+	translate: Vec2.new(0, 0),
+};
+
 export const computeLayerTransformMap = (
 	compositionId: string,
-	propertyToValue: ValueMap,
+	propertyToValue: PropertyValueMap,
 	compositionState: CompositionState,
+	baseTransform: AffineTransform = defaultTransform,
 ): LayerTransformMap => {
 	const map: LayerTransformMap = {};
 
@@ -95,7 +105,9 @@ export const computeLayerTransformMap = (
 
 		if (layer.parentLayerId) {
 			const parentTransform = map[layer.parentLayerId];
-			applyParentTransform(transform, parentTransform);
+			applyParentTransform(transform, parentTransform, false);
+		} else {
+			applyParentTransform(transform, baseTransform, true);
 		}
 
 		map[layer.id] = transform;

@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompTimePropertyColorValue } from "~/composition/timeline/property/value/CompTimePropertyColorValue";
 import { CompTimePropertyNumberValue } from "~/composition/timeline/property/value/CompTimePropertyNumberValue";
-import { CompositionPropertyValuesContext } from "~/shared/property/computeCompositionPropertyValues";
+import { CompositionPropertyValuesContext } from "~/shared/composition/compositionRenderValues";
 import { connectActionState } from "~/state/stateUtils";
 import { RGBAColor, ValueType } from "~/types";
 
