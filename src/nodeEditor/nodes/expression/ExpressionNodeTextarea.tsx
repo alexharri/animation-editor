@@ -51,8 +51,12 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 	};
 
 	const onBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-		const params = paramsRef.current!;
+		const params = paramsRef.current;
 		paramsRef.current = null;
+
+		if (!params) {
+			return;
+		}
 
 		const expression = e.target.value;
 		params.dispatch(

@@ -1,7 +1,7 @@
 import { CompTime } from "~/composition/timeline/CompTime";
 import { compTimeAreaReducer } from "~/composition/timeline/compTimeAreaReducer";
-import { compositionWorkspaceAreaReducer } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { CompositionWorkspace } from "~/composition/workspace/CompWorkspace";
+import { compositionWorkspaceAreaReducer } from "~/composition/workspace/compWorkspaceAreaReducer";
 import { AreaType } from "~/constants";
 import HistoryEditor from "~/historyEditor/HistoryEditor";
 import { NodeEditor } from "~/nodeEditor/NodeEditor";

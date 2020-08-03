@@ -1,10 +1,10 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { NumberInput } from "~/components/common/NumberInput";
 import { CompositionPlaybackProvider } from "~/composition/hook/useCompositionPlayback";
 import { compositionActions } from "~/composition/state/compositionReducer";
-import { CompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
-import { compositionWorkspaceHandlers } from "~/composition/workspace/compositionWorkspaceHandlers";
 import styles from "~/composition/workspace/CompWorkspace.styles";
+import { CompositionWorkspaceAreaState } from "~/composition/workspace/compWorkspaceAreaReducer";
+import { compWorkspaceHandlers } from "~/composition/workspace/compWorkspaceHandlers";
 import { CompWorkspaceViewportContext } from "~/composition/workspace/CompWorkspaceViewportContext";
 import { CompWorkspaceCompChildren } from "~/composition/workspace/layers/CompWorkspaceCompChildren";
 import { cssVariables } from "~/cssVariables";
@@ -105,10 +105,33 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 		);
 	});
 
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!containerRef.current) {
+			return;
+		}
+
+		const listener = (e: WheelEvent) => compWorkspaceHandlers.onWheel(e, props.areaId);
+
+		const el = containerRef.current;
+		el.addEventListener("wheel", listener, { passive: false });
+
+		return () => {
+			el.removeEventListener("wheel", listener);
+		};
+	}, [containerRef.current]);
+
 	return (
 		<>
 			<div className={s("header")}></div>
-			<div className={s("container")}>
+			<div
+				className={s("container")}
+				ref={containerRef}
+				onMouseDown={separateLeftRightMouse({
+					middle: (e) => compWorkspaceHandlers.onPanStart(props.areaId, e),
+				})}
+			>
 				<div
 					style={{
 						transform: `translate(${pan.x + props.width / 2}px, ${
@@ -146,14 +169,14 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 					className={s("panTarget")}
 					ref={panTarget}
 					onMouseDown={separateLeftRightMouse({
-						left: (e) => compositionWorkspaceHandlers.onPanStart(e, props.areaId),
+						left: (e) => compWorkspaceHandlers.onPanStart(props.areaId, e),
 					})}
 				/>
 				<div
 					className={s("zoomTarget")}
 					ref={zoomTarget}
 					onMouseDown={separateLeftRightMouse({
-						left: (e) => compositionWorkspaceHandlers.onZoomClick(e, props.areaId),
+						left: (e) => compWorkspaceHandlers.onZoomClick(e, props.areaId),
 					})}
 				/>
 			</div>
