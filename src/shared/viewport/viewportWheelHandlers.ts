@@ -136,13 +136,6 @@ export const createViewportWheelHandlers = <T extends PossibleAreaTypes>(
 				}
 			}
 		},
-
-		onMouseWheel: (e: WheelEvent, areaId: string) => {
-			e.preventDefault();
-
-			console.log("mousewheel", e);
-			handlers.onWheelScale(e, areaId);
-		},
 	};
 	return handlers;
 };
