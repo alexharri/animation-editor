@@ -130,3 +130,6 @@ export const COMP_TIME_TRACK_START_END_X_MARGIN = 4;
 export const COMP_TIME_LAYER_HEIGHT = 16;
 export const COMP_TIME_BETWEEN_LAYERS = 1;
 export const COMP_TIME_SEPARATOR_WIDTH = 2;
+
+export const TRACKPAD_ZOOM_DELTA_FAC = 1 / 7;
+export const MOUSE_WHEEL_DELTA_INCR = 120;

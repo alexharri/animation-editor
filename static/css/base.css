@@ -27,6 +27,7 @@ body {
 
 div {
 	user-select: none;
+	-webkit-user-select: none;
 }
 
 button {

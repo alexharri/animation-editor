@@ -1,7 +1,7 @@
+import { initialCompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
+import { initialCompositionWorkspaceAreaState } from "~/composition/workspace/compWorkspaceAreaReducer";
 import { AreaType } from "~/constants";
 import { initialNodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
-import { initialCompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
-import { initialCompositionWorkspaceAreaState } from "~/composition/workspace/compositionWorkspaceAreaReducer";
 import { AreaState } from "~/types/areaTypes";
 
 export const areaInitialStates: { [K in AreaType]: AreaState<K> } = {

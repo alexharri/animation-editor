@@ -1,7 +1,8 @@
 import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { cssVariables } from "~/cssVariables";
 import { NODE_EDITOR_NODE_H_PADDING } from "~/constants";
+import { cssVariables } from "~/cssVariables";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	container: css`
@@ -47,7 +48,9 @@ export const NodeEditorSelect: React.FC<Props> = (props) => {
 			<select
 				onChange={onChange}
 				className={s("select")}
-				onMouseDown={(e) => e.stopPropagation()}
+				onMouseDown={separateLeftRightMouse({
+					left: (e) => e.stopPropagation(),
+				})}
 				value={props.value}
 			>
 				{props.options.map((option) => (
