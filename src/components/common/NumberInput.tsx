@@ -1,9 +1,10 @@
 import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
 import styles from "~/components/common/NumberInput.styles";
 import { addListener, removeListener } from "~/listener/addListener";
+import { isKeyCodeOf, isKeyDown } from "~/listener/keyboard";
 import { interpolate } from "~/util/math";
-import { isKeyDown, isKeyCodeOf } from "~/listener/keyboard";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 function getDistance(a: Vec2, b: Vec2) {
 	return Math.hypot(b.x - a.x, b.y - a.y);
@@ -108,7 +109,9 @@ export class NumberInput extends React.Component<Props, State> {
 								this.onBlurFn();
 							}
 						}}
-						onMouseDown={(e) => e.stopPropagation()}
+						onMouseDown={separateLeftRightMouse({
+							left: (e) => e.stopPropagation(),
+						})}
 						style={{ width }}
 						onKeyDown={(e) => {
 							if (
@@ -149,7 +152,9 @@ export class NumberInput extends React.Component<Props, State> {
 							typeof this.props.showValue === "number" &&
 							this.props.showValue !== getUnmixedValue(this.props.value),
 					})}
-					onMouseDown={this.onMouseDown}
+					onMouseDown={separateLeftRightMouse({
+						left: this.onMouseDown,
+					})}
 					tabIndex={-1}
 				>
 					{this.props.label ? (

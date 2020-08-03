@@ -17,6 +17,7 @@ import { useGetRefRectFn, useRefRect } from "~/hook/useRefRect";
 import { requestAction } from "~/listener/requestAction";
 import { NODE_HEIGHT_CONSTANTS } from "~/nodeEditor/util/calculateNodeHeight";
 import { connectActionState, getActionState } from "~/state/stateUtils";
+import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
 
 const styles = ({ css }: StyleParams) => ({
@@ -307,9 +308,9 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 					<button
 						className={s("select")}
 						onClick={openLayerContextMenu}
-						onMouseDown={(e) => {
-							e.stopPropagation();
-						}}
+						onMouseDown={separateLeftRightMouse({
+							left: (e) => e.stopPropagation(),
+						})}
 						ref={selectLayerRef}
 					>
 						{selectedLayer ? selectedLayer.name : "No layer selected"}
@@ -321,9 +322,9 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 					<button
 						className={s("select")}
 						onClick={openPropertyContextMenu}
-						onMouseDown={(e) => {
-							e.stopPropagation();
-						}}
+						onMouseDown={separateLeftRightMouse({
+							left: (e) => e.stopPropagation(),
+						})}
 						ref={selectPropertyRef}
 					>
 						{selectedProperty

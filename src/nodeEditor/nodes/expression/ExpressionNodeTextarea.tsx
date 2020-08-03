@@ -1,11 +1,12 @@
 import React, { useRef } from "react";
-import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorNodeType, ValueType } from "~/types";
-import { connectActionState, getActionState } from "~/state/stateUtils";
 import { useComputeHistory } from "~/hook/useComputeHistory";
-import { RequestActionParams, requestAction } from "~/listener/requestAction";
+import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
+import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
 import { getExpressionUpdateIO } from "~/nodeEditor/nodes/expression/expressionUtils";
+import { connectActionState, getActionState } from "~/state/stateUtils";
+import { NodeEditorNodeType, ValueType } from "~/types";
+import { separateLeftRightMouse } from "~/util/mouse";
 
 interface OwnProps {
 	className: string;
@@ -97,7 +98,9 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 			key={expression}
 			defaultValue={expression}
 			className={props.className}
-			onMouseDown={(e) => e.stopPropagation()}
+			onMouseDown={separateLeftRightMouse({
+				left: (e) => e.stopPropagation(),
+			})}
 			onBlur={onBlur}
 			onFocus={onFocus}
 			style={{ height: props.textareaHeight }}

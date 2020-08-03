@@ -1,26 +1,26 @@
-import React, { useRef, useState, useEffect } from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { AreaComponentProps } from "~/types/areaTypes";
-import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
-import { nodeEditorHandlers } from "~/nodeEditor/nodeEditorHandlers";
-import styles from "~/nodeEditor/NodeEditor.styles";
+import React, { useEffect, useRef, useState } from "react";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { separateLeftRightMouse } from "~/util/mouse";
-import { Node } from "~/nodeEditor/nodes/Node";
-import { ExpressionNode } from "~/nodeEditor/nodes/expression/ExpressionNode";
-import { NumberInputNode } from "~/nodeEditor/nodes/NumberInputNode";
-import { NodeEditorConnections } from "~/nodeEditor/NodeEditorConnections";
-import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
 import { NodeEditorDragSelect } from "~/nodeEditor/dragSelect/NodeEditorDragSelect";
-import { NodePreview } from "~/nodeEditor/nodes/NodePreview";
+import styles from "~/nodeEditor/NodeEditor.styles";
+import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
+import { NodeEditorConnections } from "~/nodeEditor/NodeEditorConnections";
+import { nodeEditorHandlers } from "~/nodeEditor/nodeEditorHandlers";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { NodeEditorNodeType } from "~/types";
-import { Vec2LerpNode } from "~/nodeEditor/nodes/Vec2LerpNode";
-import { Vec2InputNode } from "~/nodeEditor/nodes/Vec2InputNode";
+import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
+import { ColorInputNode } from "~/nodeEditor/nodes/color/ColorInputNode";
+import { ExpressionNode } from "~/nodeEditor/nodes/expression/ExpressionNode";
+import { Node } from "~/nodeEditor/nodes/Node";
+import { NodePreview } from "~/nodeEditor/nodes/NodePreview";
+import { NumberInputNode } from "~/nodeEditor/nodes/NumberInputNode";
 import { PropertyInputNode } from "~/nodeEditor/nodes/property/PropertyInputNode";
 import { PropertyOutputNode } from "~/nodeEditor/nodes/property/PropertyOutputNode";
-import { ColorInputNode } from "~/nodeEditor/nodes/color/ColorInputNode";
+import { Vec2InputNode } from "~/nodeEditor/nodes/Vec2InputNode";
+import { Vec2LerpNode } from "~/nodeEditor/nodes/Vec2LerpNode";
+import { connectActionState } from "~/state/stateUtils";
+import { NodeEditorNodeType } from "~/types";
+import { AreaComponentProps } from "~/types/areaTypes";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -91,6 +91,23 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 		return () => {};
 	}, [clickCaptureFn.fn]);
 
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!containerRef.current) {
+			return;
+		}
+
+		const listener = (e: WheelEvent) => nodeEditorHandlers.onWheel(e, props.areaId);
+
+		const el = containerRef.current;
+		el.addEventListener("wheel", listener, { passive: false });
+
+		return () => {
+			el.removeEventListener("wheel", listener);
+		};
+	}, [containerRef.current]);
+
 	if (!graph) {
 		return null;
 	}
@@ -118,7 +135,9 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 							props.areaId,
 							setClickCaptureFn,
 						),
+					middle: (e) => nodeEditorHandlers.onPanStart(props.areaId, e),
 				})}
+				ref={containerRef}
 			>
 				<NodeEditorConnections
 					areaState={props.areaState}
