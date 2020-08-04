@@ -19,8 +19,9 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompWorkspaceCompChildrenComponent: React.FC<Props> = (props) => {
-	const { layerIds, layerTypes } = props;
+	const { layerIds: _layerIds, layerTypes } = props;
 
+	const layerIds = [..._layerIds];
 	const layers: React.ReactNode[] = [];
 
 	const getLayerContent = (i: number) => {
@@ -58,7 +59,7 @@ const CompWorkspaceCompChildrenComponent: React.FC<Props> = (props) => {
 		);
 	};
 
-	for (let i = layerIds.length - 1; i >= 0; i -= 1) {
+	for (let i = 0; i < layerIds.length; i += 1) {
 		layers.push(getLayerContent(i));
 	}
 
