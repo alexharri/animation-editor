@@ -1,4 +1,3 @@
-import { addListener } from "~/listener/addListener";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { getDistance } from "~/util/math";
 
@@ -80,7 +79,7 @@ export const mouseDownMoveAction = (
 			options.mouseMove(params, { initialMousePosition, mousePosition, moveVector });
 		});
 
-		addListener.once("mouseup", () => {
+		params.addListener.once("mouseup", () => {
 			options.mouseUp(params, hasMoved);
 		});
 	});

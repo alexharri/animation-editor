@@ -9,6 +9,7 @@ export interface CompTimeAreaState {
 	trackDragSelectRect: Rect | null;
 	layerIndexShift: number;
 	layerLengthShift: [number, number];
+	moveLayers: null | { layerId: string; type: "above" | "below" | "invalid" };
 }
 
 export const initialCompTimeAreaState: CompTimeAreaState = {
@@ -20,6 +21,7 @@ export const initialCompTimeAreaState: CompTimeAreaState = {
 	trackDragSelectRect: null,
 	layerIndexShift: 0,
 	layerLengthShift: [0, 0],
+	moveLayers: null,
 };
 
 export const compTimeAreaActions = {

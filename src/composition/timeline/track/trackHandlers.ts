@@ -1,7 +1,7 @@
 import { areaActions } from "~/area/state/areaActions";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
-import { compositionSelectionActions } from "~/composition/state/compositionSelectionReducer";
+import { compSelectionActions } from "~/composition/state/compositionSelectionReducer";
 import { compTimeAreaActions } from "~/composition/timeline/compTimeAreaReducer";
 import {
 	getCompTimeTrackYPositions,
@@ -134,7 +134,7 @@ const actions = {
 
 				if (additiveSelection) {
 					params.dispatch(
-						compositionSelectionActions.toggleLayerSelection(composition.id, layerId),
+						compSelectionActions.toggleLayerSelection(composition.id, layerId),
 					);
 
 					// If the layer is being deselected, we clear the selection of all timelines
@@ -153,10 +153,10 @@ const actions = {
 					// in the composition
 					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
 					params.dispatch(
-						compositionSelectionActions.toggleLayerSelection(composition.id, layerId),
+						compSelectionActions.toggleLayerSelection(composition.id, layerId),
 					);
 					params.dispatch(
-						compositionSelectionActions.removeLayersFromSelection(
+						compSelectionActions.removeLayersFromSelection(
 							composition.id,
 							composition.layers.filter((id) => id !== layerId),
 						),
@@ -239,19 +239,16 @@ const actions = {
 					// natural to deselect and resize other layers in the same action.
 					if (!compositionSelection.layers[layerId]) {
 						params.dispatch(
-							compositionSelectionActions.toggleLayerSelection(
-								composition.id,
-								layerId,
-							),
+							compSelectionActions.toggleLayerSelection(composition.id, layerId),
 						);
 					}
 				} else if (!compositionSelection.layers[layerId]) {
 					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
 					params.dispatch(
-						compositionSelectionActions.toggleLayerSelection(composition.id, layerId),
+						compSelectionActions.toggleLayerSelection(composition.id, layerId),
 					);
 					params.dispatch(
-						compositionSelectionActions.removeLayersFromSelection(
+						compSelectionActions.removeLayersFromSelection(
 							composition.id,
 							composition.layers.filter((id) => id !== layerId),
 						),
@@ -466,9 +463,7 @@ export const trackHandlers = {
 				).map((timelineId) => timelineState[timelineId]);
 
 				if (!hasMoved) {
-					params.dispatch(
-						compositionSelectionActions.clearCompositionSelection(composition.id),
-					);
+					params.dispatch(compSelectionActions.clearCompositionSelection(composition.id));
 					params.dispatch(
 						timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
 					);
@@ -522,9 +517,7 @@ export const trackHandlers = {
 					params.dispatch(
 						timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
 					);
-					params.dispatch(
-						compositionSelectionActions.clearCompositionSelection(composition.id),
-					);
+					params.dispatch(compSelectionActions.clearCompositionSelection(composition.id));
 				}
 
 				// Add keyframes to selection
@@ -540,7 +533,7 @@ export const trackHandlers = {
 				);
 				params.dispatch(
 					affectedPropertyIds.map((propertyId) => {
-						return compositionSelectionActions.addPropertyToSelection(
+						return compSelectionActions.addPropertyToSelection(
 							options.compositionId,
 							propertyId,
 						);
@@ -560,7 +553,7 @@ export const trackHandlers = {
 				];
 				params.dispatch(
 					affectedLayerIds.map((layerId) => {
-						return compositionSelectionActions.addLayerToSelection(
+						return compSelectionActions.addLayerToSelection(
 							options.compositionId,
 							layerId,
 						);

@@ -94,7 +94,7 @@ export const ProjectDragCompPreview: React.FC = () => {
 		}
 
 		// Below last item
-		const yMax = Math.max(...targets.map(({ rect }) => rect.top + rect.height));
+		const yMax = Math.max(rect.top, ...targets.map(({ rect }) => rect.top + rect.height));
 		renderCoords = {
 			left: rect.left,
 			width: rect.width,

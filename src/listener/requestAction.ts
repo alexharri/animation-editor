@@ -16,7 +16,7 @@ export const requestActionCancellation = (): void => {
 	_cancelAction?.();
 };
 
-interface Options {
+export interface RequestActionOptions {
 	history?: boolean;
 	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
 }
@@ -37,7 +37,7 @@ export interface RequestActionCallback {
 }
 
 const performRequestedAction = (
-	{ history = false, shouldAddToStack }: Options,
+	{ history = false, shouldAddToStack }: RequestActionOptions,
 	callback: RequestActionCallback,
 ): void => {
 	const actionId = (++_n).toString();
@@ -164,7 +164,10 @@ const performRequestedAction = (
 	});
 };
 
-export const requestAction = (options: Options, callback: RequestActionCallback): void => {
+export const requestAction = (
+	options: RequestActionOptions,
+	callback: RequestActionCallback,
+): void => {
 	if (!getActionId()) {
 		performRequestedAction(options, callback);
 		return;
