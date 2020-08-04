@@ -16,9 +16,11 @@ export const requestActionCancellation = (): void => {
 	_cancelAction?.();
 };
 
+export type ShouldAddToStackFn = (prevState: ActionState, nextState: ActionState) => boolean;
+
 export interface RequestActionOptions {
 	history?: boolean;
-	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
+	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 }
 
 export interface RequestActionParams {
@@ -121,11 +123,23 @@ const performRequestedAction = (
 				return;
 			}
 
-			if (
-				typeof shouldAddToStack === "function"
-					? !shouldAddToStack(getCurrentState(), getActionState())
-					: false
-			) {
+			const shouldAddToStackFns: ShouldAddToStackFn[] = [];
+
+			if (Array.isArray(shouldAddToStack)) {
+				shouldAddToStackFns.push(...shouldAddToStack);
+			} else if (typeof shouldAddToStack === "function") {
+				shouldAddToStackFns.push(shouldAddToStack);
+			}
+
+			let addToStack = typeof shouldAddToStack === "undefined";
+
+			for (const shouldAddToStack of shouldAddToStackFns) {
+				if (shouldAddToStack(getCurrentState(), getActionState())) {
+					addToStack = true;
+				}
+			}
+
+			if (!addToStack) {
 				store.dispatch(historyActions.cancelAction(actionId));
 				onComplete();
 				return;

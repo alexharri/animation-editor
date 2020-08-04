@@ -24,6 +24,7 @@ import {
 	requestAction,
 	RequestActionCallback,
 	RequestActionParams,
+	ShouldAddToStackFn,
 } from "~/listener/requestAction";
 import { createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
@@ -475,8 +476,21 @@ export const compTimeHandlers = {
 			);
 		};
 
+		const didLayerOrderChange: ShouldAddToStackFn = (a, b) => {
+			const layersA = a.compositionState.compositions[compositionId].layers;
+			const layersB = b.compositionState.compositions[compositionId].layers;
+
+			for (let i = 0; i < layersA.length; i += 1) {
+				if (layersA[i] !== layersB[i]) {
+					return true;
+				}
+			}
+
+			return false;
+		};
+
 		mouseDownMoveAction(e, {
-			shouldAddToStack: didCompSelectionChange(compositionId),
+			shouldAddToStack: [didCompSelectionChange(compositionId), didLayerOrderChange],
 			beforeMove: (params) => {
 				if (!additiveSelection && willBeSelected) {
 					// The selection is non-additive and the layer will be selected.
