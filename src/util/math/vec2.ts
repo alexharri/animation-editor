@@ -1,4 +1,6 @@
-import { interpolate } from "~/util/math";
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-misused-new */
+
+import { interpolate, rotateVec2CCW } from "~/util/math";
 
 export class Vec2 {
 	public static new(vec: { x: number; y: number } | { left: number; top: number }): Vec2;
@@ -76,6 +78,10 @@ export class Vec2 {
 		return new Vec2(this.x, this.y * scale);
 	}
 
+	public rotate(rad: number, anchor?: { x: number; y: number }): Vec2 {
+		return rotateVec2CCW(this, rad, anchor) as Vec2;
+	}
+
 	public copy(): Vec2 {
 		return new Vec2(this.x, this.y);
 	}
@@ -129,6 +135,7 @@ declare global {
 		public scale(scale: number, anchor?: Vec2): Vec2;
 		public scaleX(scale: number): Vec2;
 		public scaleY(scale: number): Vec2;
+		public rotate(rad: number): Vec2;
 		public copy(): Vec2;
 		public round(): Vec2;
 		public apply(fn: (vec2: Vec2) => Vec2): Vec2;

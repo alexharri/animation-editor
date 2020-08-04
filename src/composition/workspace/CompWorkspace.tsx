@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { NumberInput } from "~/components/common/NumberInput";
 import { CompositionPlaybackProvider } from "~/composition/hook/useCompositionPlayback";
 import { compositionActions } from "~/composition/state/compositionReducer";
@@ -122,6 +122,14 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 		};
 	}, [containerRef.current]);
 
+	const { left, top, width, height } = props;
+	const viewport = useMemo<Rect>(() => ({ left, top, width, height }), [
+		left,
+		top,
+		width,
+		height,
+	]);
+
 	return (
 		<>
 			<div className={s("header")}></div>
@@ -129,6 +137,7 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 				className={s("container")}
 				ref={containerRef}
 				onMouseDown={separateLeftRightMouse({
+					left: () => compWorkspaceHandlers.onMouseDownOut(composition.id),
 					middle: (e) => compWorkspaceHandlers.onPanStart(props.areaId, e),
 				})}
 			>
@@ -152,7 +161,7 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 							<CompositionPlaybackProvider
 								compositionId={props.areaState.compositionId}
 							>
-								<CompWorkspaceViewportContext.Provider value={{ scale }}>
+								<CompWorkspaceViewportContext.Provider value={{ scale, viewport }}>
 									<CompWorkspaceCompChildren
 										compositionId={composition.id}
 										containerHeight={composition.height}
