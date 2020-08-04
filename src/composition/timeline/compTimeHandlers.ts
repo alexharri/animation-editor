@@ -514,18 +514,16 @@ export const compTimeHandlers = {
 					return;
 				}
 
-				const { moveLayers: moveLayersBelow } = getAreaActionState<
-					AreaType.CompositionTimeline
-				>(areaId);
+				const { moveLayers } = getAreaActionState<AreaType.CompositionTimeline>(areaId);
 
-				if (moveLayersBelow) {
-					// Clear `moveLayersBelow`
+				if (moveLayers) {
+					// Clear `moveLayers`
 					params.dispatchToAreaState(
 						areaId,
 						compTimeAreaActions.setFields({ moveLayers: null }),
 					);
 
-					if (moveLayersBelow.type === "invalid") {
+					if (moveLayers.type === "invalid") {
 						params.submitAction("Add layer to selection");
 						return;
 					}
@@ -535,7 +533,7 @@ export const compTimeHandlers = {
 					params.dispatch(
 						compositionActions.moveLayers(
 							compositionId,
-							moveLayersBelow as { layerId: string; type: "above" | "below" },
+							moveLayers as { layerId: string; type: "above" | "below" },
 							compositionSelectionState,
 						),
 					);
