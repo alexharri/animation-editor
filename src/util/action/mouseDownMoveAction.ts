@@ -1,5 +1,4 @@
-import { addListener } from "~/listener/addListener";
-import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { requestAction, RequestActionParams, ShouldAddToStackFn } from "~/listener/requestAction";
 import { getDistance } from "~/util/math";
 
 interface MousePosition {
@@ -22,7 +21,7 @@ interface Options {
 	translateX?: (value: number) => number;
 	translateY?: (value: number) => number;
 	moveTreshold?: number;
-	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
+	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 }
 
 export const mouseDownMoveAction = (
@@ -50,7 +49,7 @@ export const mouseDownMoveAction = (
 		translated: translate(initialGlobalMousePosition),
 	};
 
-	requestAction({ history: true }, (params) => {
+	requestAction({ history: true, shouldAddToStack: options.shouldAddToStack }, (params) => {
 		options.beforeMove(params);
 
 		let hasMoved = false;
@@ -80,7 +79,7 @@ export const mouseDownMoveAction = (
 			options.mouseMove(params, { initialMousePosition, mousePosition, moveVector });
 		});
 
-		addListener.once("mouseup", () => {
+		params.addListener.once("mouseup", () => {
 			options.mouseUp(params, hasMoved);
 		});
 	});

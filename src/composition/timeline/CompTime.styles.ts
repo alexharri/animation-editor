@@ -39,11 +39,6 @@ export default ({ css }: StyleParams) => ({
 		flex-direction: column;
 	`,
 
-	layerWrapper: css`
-		flex-grow: 1;
-		overflow: hidden;
-	`,
-
 	right: css`
 		background: ${cssVariables.gray500};
 		overflow: hidden;

@@ -1,3 +1,4 @@
+import { Composition } from "~/composition/compositionTypes";
 import { getActionState } from "~/state/stateUtils";
 
 type Target = {
@@ -11,6 +12,28 @@ interface TargetGroup {
 	targets: Target[];
 }
 
+export const getLayerTargetsWithinComp = (
+	composition: Composition,
+	layerWrapper: HTMLDivElement,
+): Target[] => {
+	const targets: Target[] = [];
+
+	const layerEls = layerWrapper.querySelectorAll("[data-ct-layer-id]");
+
+	for (let j = 0; j < layerEls.length; j += 1) {
+		const layerEl = layerEls[j];
+		const layerId = layerEl.getAttribute("data-ct-layer-id")!;
+		const index = composition.layers.indexOf(layerId);
+
+		targets.push({
+			rect: layerEl.getBoundingClientRect(),
+			index: index,
+		});
+	}
+
+	return targets;
+};
+
 export const getCompEligibleTargets = () => {
 	const compEls = document.querySelectorAll("[data-ct-composition-id]");
 
@@ -19,30 +42,17 @@ export const getCompEligibleTargets = () => {
 	const compositionState = getActionState().compositionState;
 
 	for (let i = 0; i < compEls.length; i += 1) {
-		const compEl = compEls[i];
-		const compositionId = compEl.getAttribute("data-ct-composition-id")!;
+		const layerWrapper = compEls[i] as HTMLDivElement;
+		const compositionId = layerWrapper.getAttribute("data-ct-composition-id")!;
 
 		const composition = compositionState.compositions[compositionId];
 
 		const group: TargetGroup = {
 			compositionId,
-			rect: compEl.getBoundingClientRect(),
-			targets: [],
+			rect: layerWrapper.getBoundingClientRect(),
+			targets: getLayerTargetsWithinComp(composition, layerWrapper),
 		};
 		groups.push(group);
-
-		const layerEls = compEl.querySelectorAll("[data-ct-layer-id]");
-
-		for (let j = 0; j < layerEls.length; j += 1) {
-			const layerEl = layerEls[j];
-			const layerId = layerEl.getAttribute("data-ct-layer-id")!;
-			const index = composition.layers.indexOf(layerId);
-
-			group.targets.push({
-				rect: layerEl.getBoundingClientRect(),
-				index: index,
-			});
-		}
 	}
 
 	return groups;

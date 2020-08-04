@@ -4,6 +4,7 @@ import styles from "~/area/components/Area.styles";
 import { AreaErrorBoundary } from "~/area/components/AreaErrorBoundary";
 import { handleAreaDragFromCorner } from "~/area/handlers/areaDragFromCorner";
 import { areaActions } from "~/area/state/areaActions";
+import { AreaIdContext } from "~/area/util/AreaIdContext";
 import { EditIcon } from "~/components/icons/EditIcon";
 import { PenIcon } from "~/components/icons/PenIcon";
 import { AreaType, AREA_BORDER_WIDTH } from "~/constants";
@@ -126,15 +127,17 @@ export const AreaComponent: React.FC<Props> = (props) => {
 				<Icon />
 			</button>
 			<div className={s("area__content")}>
-				<AreaErrorBoundary
-					component={Component}
-					areaId={props.id}
-					areaState={props.state}
-					left={viewport.left + AREA_BORDER_WIDTH}
-					top={viewport.top + AREA_BORDER_WIDTH}
-					width={viewport.width - AREA_BORDER_WIDTH * 2}
-					height={viewport.height - AREA_BORDER_WIDTH * 2}
-				/>
+				<AreaIdContext.Provider value={props.id}>
+					<AreaErrorBoundary
+						component={Component}
+						areaId={props.id}
+						areaState={props.state}
+						left={viewport.left + AREA_BORDER_WIDTH}
+						top={viewport.top + AREA_BORDER_WIDTH}
+						width={viewport.width - AREA_BORDER_WIDTH * 2}
+						height={viewport.height - AREA_BORDER_WIDTH * 2}
+					/>
+				</AreaIdContext.Provider>
 			</div>
 		</div>
 	);

@@ -1,4 +1,5 @@
-import React, { useRef, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
+import { AreaIdContext } from "~/area/util/AreaIdContext";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { reduceLayerPropertiesAndGroups } from "~/composition/timeline/compTimeUtils";
@@ -68,6 +69,7 @@ const s = compileStylesheetLabelled(({ css }) => ({
 
 interface OwnProps {
 	layerId: string;
+	layerWrapper: React.RefObject<HTMLDivElement>;
 }
 interface StateProps {
 	name: string;
@@ -83,6 +85,8 @@ const CompTimeLayerNameComponent: React.FC<Props> = (props) => {
 
 	const [renaming, setRenaming] = useState(false);
 	const paramsRef = useRef<RequestActionParams | null>(null);
+
+	const areaId = useContext(AreaIdContext);
 
 	const onDoubleClick = () => {
 		requestAction({ history: true }, (params) => {
@@ -151,8 +155,10 @@ const CompTimeLayerNameComponent: React.FC<Props> = (props) => {
 					left: (e) =>
 						compTimeHandlers.onLayerNameMouseDown(
 							e,
+							areaId,
 							props.compositionId,
 							props.layerId,
+							props.layerWrapper,
 						),
 				})}
 				onDoubleClick={onDoubleClick}

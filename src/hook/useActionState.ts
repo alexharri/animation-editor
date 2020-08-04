@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { shallowEqual, useSelector } from "react-redux";
 import { getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
@@ -14,6 +14,16 @@ export const useActionState = <T>(selector: Selector<T>, { shallow = true } = {}
 		shallow ? shallowEqual : undefined,
 	);
 	return result;
+};
+
+export const useMemoActionState = <T>(selector: Selector<T>, deps: React.DependencyList): T => {
+	const selectorRef = useRef(selector);
+	selectorRef.current = selector;
+
+	return useMemo(() => {
+		const actionState = getActionStateFromApplicationState(store.getState());
+		return selectorRef.current(actionState);
+	}, deps);
 };
 
 export const useActionStateEffect = (

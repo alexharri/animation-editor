@@ -2,7 +2,7 @@ import { ActionType, createAction, getType } from "typesafe-actions";
 import { CompositionSelection } from "~/composition/compositionTypes";
 import { removeKeysFromMap } from "~/util/mapUtils";
 
-export const compositionSelectionActions = {
+export const compSelectionActions = {
 	toggleLayerSelection: createAction("comp/TOGGLE_LAYER_SELECTED", (action) => {
 		return (compositionId: string, layerId: string) => action({ compositionId, layerId });
 	}),
@@ -44,14 +44,14 @@ const createNewCompSelection = (): CompositionSelection => ({
 	properties: {},
 });
 
-type Action = ActionType<typeof compositionSelectionActions>;
+type Action = ActionType<typeof compSelectionActions>;
 
 const singleCompositionSelectionReducer = (
 	state: CompositionSelection,
 	action: Action,
 ): CompositionSelection => {
 	switch (action.type) {
-		case getType(compositionSelectionActions.toggleLayerSelection): {
+		case getType(compSelectionActions.toggleLayerSelection): {
 			const { layerId } = action.payload;
 
 			return {
@@ -65,7 +65,7 @@ const singleCompositionSelectionReducer = (
 			};
 		}
 
-		case getType(compositionSelectionActions.removeLayersFromSelection): {
+		case getType(compSelectionActions.removeLayersFromSelection): {
 			const { layerIds } = action.payload;
 
 			return {
@@ -74,7 +74,7 @@ const singleCompositionSelectionReducer = (
 			};
 		}
 
-		case getType(compositionSelectionActions.removePropertiesFromSelection): {
+		case getType(compSelectionActions.removePropertiesFromSelection): {
 			const { propertyIds } = action.payload;
 
 			return {
@@ -83,7 +83,7 @@ const singleCompositionSelectionReducer = (
 			};
 		}
 
-		case getType(compositionSelectionActions.togglePropertySelection): {
+		case getType(compSelectionActions.togglePropertySelection): {
 			const { propertyId } = action.payload;
 
 			return {
@@ -97,11 +97,11 @@ const singleCompositionSelectionReducer = (
 			};
 		}
 
-		case getType(compositionSelectionActions.clearCompositionSelection): {
+		case getType(compSelectionActions.clearCompositionSelection): {
 			return { ...state, properties: {}, layers: {} };
 		}
 
-		case getType(compositionSelectionActions.addPropertyToSelection): {
+		case getType(compSelectionActions.addPropertyToSelection): {
 			const { propertyId } = action.payload;
 			return {
 				...state,
@@ -112,7 +112,7 @@ const singleCompositionSelectionReducer = (
 			};
 		}
 
-		case getType(compositionSelectionActions.addLayerToSelection): {
+		case getType(compSelectionActions.addLayerToSelection): {
 			const { layerId } = action.payload;
 			return {
 				...state,

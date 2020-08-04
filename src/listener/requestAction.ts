@@ -16,9 +16,11 @@ export const requestActionCancellation = (): void => {
 	_cancelAction?.();
 };
 
-interface Options {
+export type ShouldAddToStackFn = (prevState: ActionState, nextState: ActionState) => boolean;
+
+export interface RequestActionOptions {
 	history?: boolean;
-	shouldAddToStack?: (prevState: ActionState, nextState: ActionState) => boolean;
+	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 }
 
 export interface RequestActionParams {
@@ -37,7 +39,7 @@ export interface RequestActionCallback {
 }
 
 const performRequestedAction = (
-	{ history = false, shouldAddToStack }: Options,
+	{ history = false, shouldAddToStack }: RequestActionOptions,
 	callback: RequestActionCallback,
 ): void => {
 	const actionId = (++_n).toString();
@@ -121,11 +123,23 @@ const performRequestedAction = (
 				return;
 			}
 
-			if (
-				typeof shouldAddToStack === "function"
-					? !shouldAddToStack(getCurrentState(), getActionState())
-					: false
-			) {
+			const shouldAddToStackFns: ShouldAddToStackFn[] = [];
+
+			if (Array.isArray(shouldAddToStack)) {
+				shouldAddToStackFns.push(...shouldAddToStack);
+			} else if (typeof shouldAddToStack === "function") {
+				shouldAddToStackFns.push(shouldAddToStack);
+			}
+
+			let addToStack = typeof shouldAddToStack === "undefined";
+
+			for (const shouldAddToStack of shouldAddToStackFns) {
+				if (shouldAddToStack(getCurrentState(), getActionState())) {
+					addToStack = true;
+				}
+			}
+
+			if (!addToStack) {
 				store.dispatch(historyActions.cancelAction(actionId));
 				onComplete();
 				return;
@@ -164,7 +178,10 @@ const performRequestedAction = (
 	});
 };
 
-export const requestAction = (options: Options, callback: RequestActionCallback): void => {
+export const requestAction = (
+	options: RequestActionOptions,
+	callback: RequestActionCallback,
+): void => {
 	if (!getActionId()) {
 		performRequestedAction(options, callback);
 		return;

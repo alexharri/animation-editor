@@ -9,8 +9,8 @@ import { CompositionState } from "~/composition/state/compositionReducer";
 import styles from "~/composition/timeline/CompTime.styles";
 import { compTimeAreaActions, CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
+import { CompTimeLayerList } from "~/composition/timeline/CompTimeLayerList";
 import { capCompTimePanY } from "~/composition/timeline/compTimeUtils";
-import { CompTimeLayer } from "~/composition/timeline/layer/CompTimeLayer";
 import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
 import { TrackEditor } from "~/composition/timeline/track/TrackEditor";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
@@ -18,7 +18,6 @@ import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils
 import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
-import { CompositionPropertyValuesProvider } from "~/shared/composition/compositionRenderValues";
 import { connectActionState } from "~/state/stateUtils";
 import { TimelineEditor } from "~/timeline/TimelineEditor";
 import { ViewBounds } from "~/timeline/ViewBounds";
@@ -206,26 +205,11 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 						Graph Editor
 					</button>
 				</div>
-				<CompositionPropertyValuesProvider
+				<CompTimeLayerList
 					compositionId={composition.id}
-					frameIndex={composition.frameIndex}
-					containerWidth={composition.width}
-					containerHeight={composition.height}
-				>
-					<div className={s("layerWrapper")} data-ct-composition-id={composition.id}>
-						<div style={{ transform: `translateY(${-panY}px)` }}>
-							{composition.layers.map((layerId) => {
-								return (
-									<CompTimeLayer
-										compositionId={props.composition.id}
-										id={layerId}
-										key={layerId}
-									/>
-								);
-							})}
-						</div>
-					</div>
-				</CompositionPropertyValuesProvider>
+					moveLayers={props.areaState.moveLayers}
+					panY={props.areaState.panY}
+				/>
 			</div>
 			<div
 				className={s("separator")}

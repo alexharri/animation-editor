@@ -19,6 +19,7 @@ const s = compileStylesheetLabelled(styles);
 interface OwnProps {
 	id: string;
 	compositionId: string;
+	layerWrapper: React.RefObject<HTMLDivElement>;
 }
 interface StateProps {
 	layer: CompositionLayer;
@@ -33,7 +34,7 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 	} = props;
 
 	return (
-		<div data-ct-layer-id={props.id}>
+		<div data-ct-layer-id={props.id} style={{ position: "relative" }}>
 			<div
 				className={s("container")}
 				onMouseDown={separateLeftRightMouse({
@@ -52,7 +53,7 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 						});
 					}}
 				/>
-				<CompTimeLayerName layerId={props.id} />
+				<CompTimeLayerName layerId={props.id} layerWrapper={props.layerWrapper} />
 				<div
 					title={layer.graphId ? "Delete Layer Graph" : "Create Layer Graph"}
 					className={s("graph", { active: !!layer.graphId })}

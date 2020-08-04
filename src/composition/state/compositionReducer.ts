@@ -56,6 +56,17 @@ export const compositionActions = {
 		) => action({ compositionId, layerIndexShift, selectionState });
 	}),
 
+	moveLayers: createAction("comp/MOVE_LAYERS", (action) => {
+		return (
+			compositionId: string,
+			moveLayers: {
+				type: "above" | "below";
+				layerId: string;
+			},
+			selectionState: CompositionSelectionState,
+		) => action({ compositionId, moveLayers, selectionState });
+	}),
+
 	applyLayerLengthShift: createAction("comp/APPLY_LAYER_LENGTH_SHIFT", (action) => {
 		return (
 			compositionId: string,
@@ -170,6 +181,51 @@ export const compositionReducer = (
 			}
 
 			return newState;
+		}
+
+		case getType(compositionActions.moveLayers): {
+			const {
+				compositionId,
+				moveLayers: { layerId, type },
+				selectionState,
+			} = action.payload;
+
+			const selection = getCompSelectionFromState(compositionId, selectionState);
+			const composition = state.compositions[compositionId];
+
+			const notSelected: string[] = [];
+			const selected: string[] = [];
+
+			for (const layerId of composition.layers) {
+				if (selection.layers[layerId]) {
+					selected.push(layerId);
+				} else {
+					notSelected.push(layerId);
+				}
+			}
+
+			let insertIndex: number;
+
+			if (!layerId) {
+				insertIndex = 0;
+			} else {
+				insertIndex = notSelected.indexOf(layerId) + (type === "below" ? 1 : 0);
+			}
+
+			const layers = [...notSelected];
+			layers.splice(insertIndex, 0, ...selected);
+
+			return {
+				...state,
+				compositions: modifyItemsInMap(
+					state.compositions,
+					compositionId,
+					(composition) => ({
+						...composition,
+						layers,
+					}),
+				),
+			};
 		}
 
 		case getType(compositionActions.applyLayerLengthShift): {
