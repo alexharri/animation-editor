@@ -269,10 +269,13 @@ export const compTimeHandlers = {
 	},
 
 	onPropertyKeyframeIconMouseDown: (
+		e: React.MouseEvent,
 		compositionId: string,
 		propertyId: string,
 		timelineId: string,
 	): void => {
+		e.stopPropagation();
+
 		const { compositionState, timelines, timelineSelection } = getActionState();
 		const composition = compositionState.compositions[compositionId];
 		const property = compositionState.properties[propertyId] as CompositionProperty;

@@ -19,7 +19,11 @@ import { getCompositionRenderValues } from "~/shared/composition/compositionRend
 import { createViewportWheelHandlers } from "~/shared/viewport/viewportWheelHandlers";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
-import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
+import {
+	createTimelineKeyframe,
+	getTimelineValueAtIndex,
+	splitKeyframesAtIndex,
+} from "~/timeline/timelineUtils";
 import { PropertyName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 
@@ -198,7 +202,7 @@ export const compWorkspaceHandlers = {
 					didMove = true;
 				}
 
-				const { compositionState, compositionSelectionState } = getActionState();
+				const { timelines, compositionState, compositionSelectionState } = getActionState();
 				const compositionSelection = getCompSelectionFromState(
 					compositionId,
 					compositionSelectionState,
@@ -239,24 +243,75 @@ export const compWorkspaceHandlers = {
 							.rotate(-transform.rotation);
 					}
 
-					for (let i = 0; i < 2; i += 1) {
+					i: for (let i = 0; i < 2; i += 1) {
 						const axis = i === 0 ? "x" : "y";
 
 						const propertyId = layerPositionPropertyIds[layerId][i];
 						const initialValue = layerInitialPositions[layerId][axis];
+						const value = initialValue + moveVector[axis];
 
 						const property = compositionState.properties[
 							propertyId
 						] as CompositionProperty;
 
 						if (!property.timelineId) {
+							toDispatch.push(compositionActions.setPropertyValue(propertyId, value));
+							continue;
+						}
+
+						const timeline = timelines[property.timelineId];
+						const keyframes = timeline.keyframes;
+
+						const { frameIndex } = composition;
+
+						// Frame index before first timeline keyframe
+						if (frameIndex < keyframes[0].index) {
 							toDispatch.push(
-								compositionActions.setPropertyValue(
-									propertyId,
-									initialValue + moveVector[axis],
+								timelineActions.setKeyframe(
+									timeline.id,
+									createTimelineKeyframe(value, frameIndex),
 								),
 							);
+							continue i;
+						}
+
+						// Frame index after last timeline keyframe
+						if (frameIndex > keyframes[keyframes.length - 1].index) {
+							toDispatch.push(
+								timelineActions.setKeyframe(
+									timeline.id,
+									createTimelineKeyframe(value, frameIndex),
+								),
+							);
+							continue i;
+						}
+
+						const kIndex = keyframes.map((k) => k.index).indexOf(frameIndex);
+
+						// Frame index exactly at a specific keyframe
+						if (kIndex !== -1) {
+							toDispatch.push(
+								timelineActions.setKeyframe(timeline.id, {
+									...keyframes[kIndex],
+									value,
+								}),
+							);
 							continue;
+						}
+
+						for (let j = 0; j < keyframes.length; j += 1) {
+							if (frameIndex < keyframes[j].index) {
+								continue;
+							}
+
+							const [k0, k, k1] = splitKeyframesAtIndex(
+								keyframes[j],
+								keyframes[j + 1],
+								frameIndex,
+							);
+							toDispatch.push(timelineActions.setKeyframe(timeline.id, k0));
+							toDispatch.push(timelineActions.setKeyframe(timeline.id, k));
+							toDispatch.push(timelineActions.setKeyframe(timeline.id, k1));
 						}
 					}
 				}
