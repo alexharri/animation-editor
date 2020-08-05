@@ -17,6 +17,39 @@ import {
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { getDistance, getDistance as _getDistance, isVecInRect, rectOfTwoVecs } from "~/util/math";
 
+const getYUpperLower = (viewport: Rect, mousePositionGlobal: Vec2): [number, number] => {
+	const { y } = mousePositionGlobal;
+	const buffer = 5;
+	const yUpper = Math.max(0, viewport.top - (y - buffer));
+	const yLower = Math.max(0, y + buffer - (viewport.top + viewport.height));
+	return [yUpper, yLower];
+};
+
+const getYFac = (
+	viewport: Rect,
+	options: {
+		length: number;
+		timelines: Timeline[];
+		viewBounds: [number, number];
+		viewport: Rect;
+	},
+) => {
+	const timelinePaths = options.timelines.map((timeline) =>
+		timelineKeyframesToPathList(timeline.keyframes),
+	);
+
+	const renderOptions = {
+		timelines: options.timelines,
+		length: options.length,
+		viewBounds: options.viewBounds,
+		width: viewport.width,
+		height: viewport.height,
+	};
+	const toViewportY = createToTimelineViewportY(timelinePaths, renderOptions);
+	const toViewportX = createToTimelineViewportX(renderOptions);
+	return (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
+};
+
 const PAN_FAC = 0.0004;
 const MIN_DIST = 6;
 
@@ -51,28 +84,7 @@ const actions = {
 		);
 		const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
 
-		let yFac: number;
-		{
-			const renderOptions = {
-				timelines,
-				length: options.length,
-				viewBounds: options.viewBounds,
-				width: viewport.width,
-				height: viewport.height,
-			};
-			const toViewportY = createToTimelineViewportY(timelinePaths, renderOptions);
-			const toViewportX = createToTimelineViewportX(renderOptions);
-
-			yFac = (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
-		}
-
-		const getYUpperLower = (mousePositionGlobal: Vec2): [number, number] => {
-			const { y } = mousePositionGlobal;
-			const buffer = 5;
-			const yUpper = Math.max(0, viewport.top - (y - buffer));
-			const yLower = Math.max(0, y + buffer - (viewport.top + viewport.height));
-			return [yUpper, yLower];
-		};
+		const yFac = getYFac(viewport, options);
 
 		let yPan = 0;
 
@@ -94,7 +106,7 @@ const actions = {
 				}
 			},
 			tickShouldUpdate: ({ mousePosition }) => {
-				const [yUpper, yLower] = getYUpperLower(mousePosition.global);
+				const [yUpper, yLower] = getYUpperLower(viewport, mousePosition.global);
 				return !!(yUpper || yLower);
 			},
 			mouseMove: (params, { moveVector: _moveVector, mousePosition, keyDown, firstMove }) => {
@@ -105,7 +117,7 @@ const actions = {
 					params.dispatch(timelines.map((t) => timelineActions.setYPan(t.id, 0)));
 				}
 
-				const [yUpper, yLower] = getYUpperLower(mousePosition.global);
+				const [yUpper, yLower] = getYUpperLower(viewport, mousePosition.global);
 
 				if (yLower) {
 					yPan -= yLower * boundsDiff * PAN_FAC;
@@ -251,13 +263,7 @@ const actions = {
 		);
 		const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
 
-		const getYUpperLower = (mousePositionGlobal: Vec2): [number, number] => {
-			const { y } = mousePositionGlobal;
-			const buffer = 5;
-			const yUpper = Math.max(0, viewport.top - (y - buffer));
-			const yLower = Math.max(0, y + buffer - (viewport.top + viewport.height));
-			return [yUpper, yLower];
-		};
+		const yFac = getYFac(viewport, options);
 
 		let yPan = 0;
 
@@ -304,7 +310,7 @@ const actions = {
 				);
 			},
 			tickShouldUpdate: ({ mousePosition }) => {
-				const [yUpper, yLower] = getYUpperLower(mousePosition.global);
+				const [yUpper, yLower] = getYUpperLower(viewport, mousePosition.global);
 				return !!(yUpper || yLower);
 			},
 			mouseMove: (params, { moveVector: _moveVector, mousePosition, keyDown, firstMove }) => {
@@ -315,7 +321,7 @@ const actions = {
 					params.dispatch(timelines.map((t) => timelineActions.setYPan(t.id, 0)));
 				}
 
-				const [yUpper, yLower] = getYUpperLower(mousePosition.global);
+				const [yUpper, yLower] = getYUpperLower(viewport, mousePosition.global);
 
 				if (yLower) {
 					yPan -= yLower * boundsDiff * PAN_FAC;
@@ -328,20 +334,6 @@ const actions = {
 				}
 
 				const moveVector = _moveVector.translated.copy();
-
-				const timelineActionState = getActionState().timelines;
-
-				const renderOptions = {
-					length: options.length,
-					timelines: timelines.map(({ id }) => timelineActionState[id]),
-					height: viewport.height,
-					width: viewport.width,
-					viewBounds,
-				};
-				const toViewportY = createToTimelineViewportY(timelinePaths, renderOptions);
-				const toViewportX = createToTimelineViewportX(renderOptions);
-
-				const yFac = (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
 
 				const { x: indexShift, y: valueShift } = moveVector;
 
