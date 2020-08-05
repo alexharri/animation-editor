@@ -493,6 +493,7 @@ export const compTimeHandlers = {
 		};
 
 		mouseDownMoveAction(e, {
+			keys: [],
 			shouldAddToStack: [didCompSelectionChange(compositionId), didLayerOrderChange],
 			beforeMove: (params) => {
 				if (!additiveSelection && willBeSelected) {
