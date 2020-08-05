@@ -10,32 +10,32 @@ interface MousePosition {
 
 type Key = keyof typeof keys;
 
-interface MouseMoveOptions<KM> {
+interface MouseMoveOptions<KeyMap> {
 	initialMousePosition: MousePosition;
 	mousePosition: MousePosition;
 	moveVector: MousePosition;
-	keyDown: KM;
+	keyDown: KeyMap;
 }
 
-interface Options<T extends Key, KM extends { [K in T]: boolean }> {
-	keys: T[];
+interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
+	keys: K[];
 	beforeMove: (params: RequestActionParams) => void;
-	mouseMove: (params: RequestActionParams, options: MouseMoveOptions<KM>) => void;
+	mouseMove: (params: RequestActionParams, options: MouseMoveOptions<KeyMap>) => void;
 	mouseUp: (params: RequestActionParams, hasMoved: boolean) => void;
 	translate?: (vec: Vec2) => Vec2;
 	translateX?: (value: number) => number;
 	translateY?: (value: number) => number;
 	moveTreshold?: number;
 	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
-	tickShouldUpdate?: (options: MouseMoveOptions<KM>) => boolean;
+	tickShouldUpdate?: (options: MouseMoveOptions<KeyMap>) => boolean;
 }
 
 export const mouseDownMoveAction = <
-	T extends Key = "Shift",
-	KM extends { [K in T]: boolean } = { [K in T]: boolean }
+	K extends Key,
+	KeyMap extends { [_ in K]: boolean } = { [_ in K]: boolean }
 >(
 	eOrInitialPos: React.MouseEvent | MouseEvent | Vec2,
-	options: Options<T, KM>,
+	options: Options<K, KeyMap>,
 ): void => {
 	let translate: (vec: Vec2) => Vec2;
 
@@ -62,7 +62,7 @@ export const mouseDownMoveAction = <
 		options.beforeMove(params);
 
 		let hasMoved = false;
-		let lastKeyDownMap: KM = {} as KM;
+		let lastKeyDownMap: KeyMap = {} as KeyMap;
 
 		let currentMousePosition = initialGlobalMousePosition;
 		let lastUsedMousePosition = initialGlobalMousePosition;
@@ -80,8 +80,8 @@ export const mouseDownMoveAction = <
 
 			let shouldUpdate = false;
 
-			const keyDownMap = (lastKeyDownMap = options.keys.reduce<KM>((acc, key) => {
-				const keyDown = isKeyDown(key) as KM[T];
+			const keyDownMap = (lastKeyDownMap = options.keys.reduce<KeyMap>((acc, key) => {
+				const keyDown = isKeyDown(key) as KeyMap[K];
 
 				if (lastKeyDownMap[key] !== keyDown) {
 					shouldUpdate = true;
@@ -89,7 +89,7 @@ export const mouseDownMoveAction = <
 
 				acc[key] = keyDown;
 				return acc;
-			}, {} as KM));
+			}, {} as KeyMap));
 
 			const getOptions = () => {
 				const globalMousePosition = currentMousePosition;
@@ -102,7 +102,7 @@ export const mouseDownMoveAction = <
 					global: mousePosition.global.sub(initialMousePosition.global),
 					translated: mousePosition.translated.sub(initialMousePosition.translated),
 				};
-				const mouseMoveOptions: MouseMoveOptions<KM> = {
+				const mouseMoveOptions: MouseMoveOptions<KeyMap> = {
 					initialMousePosition,
 					mousePosition,
 					moveVector,

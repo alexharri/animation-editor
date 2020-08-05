@@ -47,6 +47,7 @@ const actions = {
 		);
 
 		mouseDownMoveAction(e, {
+			keys: [],
 			translateX: (value) => transformGlobalToTimelineX(value, options),
 			beforeMove: (params) => {
 				const timeline = timelineState[timelineId];
@@ -113,6 +114,7 @@ const actions = {
 		},
 	) => {
 		mouseDownMoveAction(e, {
+			keys: [],
 			translateX: (value) => transformGlobalToTimelineX(value, options),
 			beforeMove: (params) => {
 				const { compositionState, compositionSelectionState } = getActionState();
@@ -220,6 +222,7 @@ const actions = {
 		);
 
 		mouseDownMoveAction(e, {
+			keys: [],
 			translateX: (value) => transformGlobalToTimelineX(value, options),
 			beforeMove: (params) => {
 				const timelineIds = getTimelineIdsReferencedByComposition(
@@ -442,6 +445,7 @@ export const trackHandlers = {
 		const additiveSelection = isKeyDown("Command") || isKeyDown("Shift");
 
 		mouseDownMoveAction(e, {
+			keys: [],
 			shouldAddToStack: didCompSelectionChange(options.compositionId),
 			translate: (vec) => transformGlobalToTrackPosition(vec, options),
 			beforeMove: () => {},
