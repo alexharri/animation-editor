@@ -138,7 +138,7 @@ export const mouseDownMoveAction = <
 
 			if (!hasMoved) {
 				if (
-					getDistance(currentMousePosition, initialMousePosition.global) >=
+					getDistance(currentMousePosition, initialMousePosition.global) <=
 					(options.moveTreshold ?? 5)
 				) {
 					return;
