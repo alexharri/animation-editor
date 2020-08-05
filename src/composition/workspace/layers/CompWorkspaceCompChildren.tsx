@@ -19,9 +19,10 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const CompWorkspaceCompChildrenComponent: React.FC<Props> = (props) => {
-	const { layerIds: _layerIds, layerTypes } = props;
+	const { layerIds: _layerIds, layerTypes: _layerTypes } = props;
 
-	const layerIds = [..._layerIds];
+	const layerTypes = [..._layerTypes].reverse();
+	const layerIds = [..._layerIds].reverse();
 	const layers: React.ReactNode[] = [];
 
 	const getLayerContent = (i: number) => {
