@@ -15,6 +15,7 @@ interface MouseMoveOptions<KeyMap> {
 	mousePosition: MousePosition;
 	moveVector: MousePosition;
 	keyDown: KeyMap;
+	firstMove: boolean;
 }
 
 interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
@@ -62,6 +63,7 @@ export const mouseDownMoveAction = <
 		options.beforeMove(params);
 
 		let hasMoved = false;
+		let hasCalledMove = false;
 		let lastKeyDownMap: KeyMap = {} as KeyMap;
 
 		let currentMousePosition = initialGlobalMousePosition;
@@ -111,6 +113,7 @@ export const mouseDownMoveAction = <
 					mousePosition,
 					moveVector,
 					keyDown: keyDownMap,
+					firstMove: !hasCalledMove,
 				};
 				return _options;
 			};
@@ -126,6 +129,7 @@ export const mouseDownMoveAction = <
 			lastUsedMousePosition = currentMousePosition;
 
 			options.mouseMove(params, getOptions());
+			hasCalledMove = true;
 		};
 		requestAnimationFrame(tick);
 
@@ -134,7 +138,7 @@ export const mouseDownMoveAction = <
 
 			if (!hasMoved) {
 				if (
-					getDistance(currentMousePosition, initialMousePosition.global) >=
+					getDistance(currentMousePosition, initialMousePosition.global) <=
 					(options.moveTreshold ?? 5)
 				) {
 					return;
