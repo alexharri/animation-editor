@@ -111,7 +111,7 @@ export const mouseDownMoveAction = <
 				return mouseMoveOptions;
 			};
 
-			if (options.tickShouldUpdate && options.tickShouldUpdate(getOptions())) {
+			if (!shouldUpdate && options.tickShouldUpdate?.(getOptions())) {
 				shouldUpdate = true;
 			}
 
