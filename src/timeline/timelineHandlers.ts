@@ -21,58 +21,6 @@ const PAN_FAC = 0.0004;
 const MIN_DIST = 6;
 
 const actions = {
-	onLeftClickOutside: (
-		e: React.MouseEvent,
-		options: {
-			length: number;
-			timelines: Timeline[];
-			viewBounds: [number, number];
-			viewport: Rect;
-		},
-	) => {
-		const { timelines } = options;
-		const initialMousePos = Vec2.fromEvent(e);
-
-		requestAction(
-			{ history: true },
-			({ addListener, dispatch, cancelAction, submitAction }) => {
-				let hasMoved = false;
-
-				addListener.repeated("mousemove", (e) => {
-					const mousePos = Vec2.fromEvent(e);
-					if (!hasMoved) {
-						// We don't consider the mouse to be "moved" until the mouse has moved at least
-						// 5px from where it was initially.
-						if (getDistance(initialMousePos, mousePos) > 5) {
-							hasMoved = true;
-						} else {
-							return;
-						}
-					}
-
-					// const p0 = transformGlobalToTimelinePosition(initialMousePos, options);
-					// const p1 = transformGlobalToTimelinePosition(mousePos, options);
-					// const rect = rectOfTwoVecs(p0, p1);
-					// dispatch(timelineActions.setDragSelectRect(timeline.id, rect));
-				});
-
-				addListener.once("mouseup", () => {
-					if (hasMoved) {
-						// const isAdditiveSelection = isKeyDown("Shift");
-						// dispatch(
-						// 	timelineActions.submitDragSelectRect(timeline.id, isAdditiveSelection),
-						// );
-						// submitAction("Modify selection");
-						cancelAction();
-					} else {
-						timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
-						submitAction("Modify selection");
-					}
-				});
-			},
-		);
-	},
-
 	keyframeMouseDown: (
 		initialMousePos: Vec2,
 		timelineIndex: number,
@@ -254,8 +202,7 @@ const actions = {
 	},
 
 	controlPointMouseDown: (
-		{ addListener, dispatch, cancelAction, submitAction }: RequestActionParams,
-		initialGlobalMousePos: Vec2,
+		initialMousePos: Vec2,
 		timelineIndex: number,
 		index: number,
 		direction: "left" | "right",
@@ -271,29 +218,10 @@ const actions = {
 		const timeline = timelines[timelineIndex];
 		const k = timeline.keyframes[index];
 
-		// Add keyframe to selection if not part of current selection.
-		//
-		// If not part of current selection and shift key was not down, the current
-		// timeline selection is cleared.
-		{
-			const selected = getActionState().timelineSelection[timeline.id]?.keyframes[k.id];
-
-			if (!selected) {
-				if (!isKeyDown("Shift")) {
-					timelines.forEach((timeline) => {
-						dispatch(timelineActions.clearSelection(timeline.id));
-					});
-				}
-				dispatch(timelineActions.toggleKeyframeSelection(timeline.id, k.id));
-			}
-		}
-
 		// Whether or not the angle of the other control point of the keyframe should
 		// be reflected according the the control point being moved.
-		let reflect: boolean | undefined;
-
 		const shouldReflect = k.reflectControlPoints;
-		reflect = isKeyDown("Alt") ? !shouldReflect : shouldReflect;
+		let reflect = isKeyDown("Alt") ? !shouldReflect : shouldReflect;
 
 		const timelineSelectionState = getActionState().timelineSelection;
 		const timelineSelectedKeyframes = timelines.map<
@@ -321,155 +249,154 @@ const actions = {
 			timelines,
 			timelinePaths,
 		);
+		const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
 
-		// Lock yBounds and init pan for all timelines.
-		//
-		// In the future the yBound should be controll via CompositionTimeline's
-		// area state.
-		timelines.forEach(({ id }) => {
-			dispatch(timelineActions.setYBounds(id, yBounds));
-			dispatch(timelineActions.setYPan(id, 0));
-		});
-
-		if (altDownAtMouseDown) {
-			// If alt was down, toggle the reflection preferences of all selected
-			// keyframes in all active timelines.
-			timelineSelectedKeyframes.forEach((ids, timelineIndex) => {
-				const timeline = timelines[timelineIndex];
-				ids.forEach(({ keyframe, index }) => {
-					dispatch(
-						timelineActions.setKeyframeReflectControlPoints(
-							timeline.id,
-							index,
-							!keyframe.reflectControlPoints,
-						),
-					);
-				});
-			});
-		}
-
-		// Set mousedown keyframe specifically because `options.reflect` may
-		// Have been provided.
-		dispatch(timelineActions.setKeyframeReflectControlPoints(timeline.id, index, reflect));
+		const getYUpperLower = (mousePositionGlobal: Vec2): [number, number] => {
+			const { y } = mousePositionGlobal;
+			const buffer = 5;
+			const yUpper = Math.max(0, viewport.top - (y - buffer));
+			const yLower = Math.max(0, y + buffer - (viewport.top + viewport.height));
+			return [yUpper, yLower];
+		};
 
 		let yPan = 0;
-		let hasMoved = false;
-		let mousePos: Vec2;
-		let lastUsedMousePos: Vec2;
-		let lastShift = isKeyDown("Shift");
-		let hasSubmitted = false;
 
-		addListener.repeated("mousemove", (e) => {
-			hasMoved = true;
-			mousePos = Vec2.fromEvent(e);
-		});
-
-		const tick = () => {
-			if (hasSubmitted) {
-				return;
-			}
-			requestAnimationFrame(tick);
-
-			if (!hasMoved) {
-				return;
-			}
-
-			let shouldAlwaysUpdate = false;
-
-			if (lastShift !== isKeyDown("Shift")) {
-				lastShift = !lastShift;
-				shouldAlwaysUpdate = true;
-			}
-
-			const buffer = 5;
-			const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
-			const yUpper = Math.max(0, viewport.top - (mousePos.y - buffer));
-			const yLower = Math.max(0, mousePos.y + buffer - (viewport.top + viewport.height));
-
-			if (yLower) {
-				shouldAlwaysUpdate = true;
-				yPan -= yLower * boundsDiff * PAN_FAC;
-			} else if (yUpper) {
-				shouldAlwaysUpdate = true;
-				yPan += yUpper * boundsDiff * PAN_FAC;
-			}
-
-			if (yLower || yUpper) {
-				timelines.forEach(({ id }) => dispatch(timelineActions.setYPan(id, yPan)));
-			}
-
-			if (!shouldAlwaysUpdate && lastUsedMousePos === mousePos) {
-				return;
-			}
-
-			lastUsedMousePos = mousePos;
-
-			const timelineActionState = getActionState().timelines;
-
-			const renderOptions = {
-				length: options.length,
-				timelines: timelines.map(({ id }) => timelineActionState[id]),
-				height: viewport.height,
-				width: viewport.width,
-				viewBounds,
-			};
-			const toViewportY = createToTimelineViewportY(timelinePaths, renderOptions);
-			const toViewportX = createToTimelineViewportX(renderOptions);
-
-			const initialPos = transformGlobalToTimelinePosition(initialGlobalMousePos, options);
-			const pos = transformGlobalToTimelinePosition(mousePos, options).addY(yPan);
-
-			const yFac = (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
-
-			const { x: indexShift, y: valueShift } = pos.sub(initialPos);
-
-			const indexDiff =
-				direction === "left"
-					? timeline.keyframes[index].index - timeline.keyframes[index - 1].index
-					: timeline.keyframes[index + 1].index - timeline.keyframes[index].index;
-
-			timelines.forEach((timeline) => {
-				dispatch(
-					timelineActions.setControlPointShift(timeline.id, {
-						indexDiff,
-						direction: direction,
-						indexShift,
-						valueShift,
-						yFac,
-						shiftDown: lastShift,
-					}),
-				);
-			});
-		};
-		requestAnimationFrame(tick);
-
-		addListener.once("mouseup", () => {
-			hasSubmitted = true;
-			timelines.forEach(({ id }) => {
-				dispatch(timelineActions.setYBounds(id, null));
-				dispatch(timelineActions.setYPan(id, 0));
-			});
-
-			if (!hasMoved) {
-				if (!altDownAtMouseDown) {
-					cancelAction();
-					return;
+		mouseDownMoveAction(initialMousePos, {
+			keys: ["Shift"],
+			translate: (vec) => transformGlobalToTimelinePosition(vec, options).addY(yPan),
+			beforeMove: (params) => {
+				// Add keyframe to selection if not part of current selection.
+				//
+				// If not part of current selection and shift key was not down, the current
+				// timeline selection is cleared.
+				const timelineSelectionState = getActionState().timelineSelection;
+				const selected = timelineSelectionState[timeline.id]?.keyframes[k.id];
+				if (!selected) {
+					if (!isKeyDown("Shift")) {
+						timelines.forEach((timeline) => {
+							params.dispatch(timelineActions.clearSelection(timeline.id));
+						});
+					}
+					params.dispatch(timelineActions.toggleKeyframeSelection(timeline.id, k.id));
 				}
 
-				dispatch(
-					timelineActions.setKeyframeControlPoint(timeline.id, index, direction, null),
-				);
-				submitAction("Remove control point");
-				return;
-			} else {
-				const timelineSelectionState = getActionState().timelineSelection;
-				timelines.forEach(({ id }) => {
-					const selection = timelineSelectionState[id];
-					dispatch(timelineActions.applyControlPointShift(id, selection));
-				});
-			}
+				if (altDownAtMouseDown) {
+					// If alt was down, toggle the reflection preferences of all selected
+					// keyframes in all active timelines.
+					timelineSelectedKeyframes.forEach((ids, timelineIndex) => {
+						const timeline = timelines[timelineIndex];
+						ids.forEach(({ keyframe, index }) => {
+							params.dispatch(
+								timelineActions.setKeyframeReflectControlPoints(
+									timeline.id,
+									index,
+									!keyframe.reflectControlPoints,
+								),
+							);
+						});
+					});
+				}
 
-			submitAction("Move control point");
+				// Set mousedown keyframe specifically because `options.reflect` may
+				// Have been provided.
+				params.dispatch(
+					timelineActions.setKeyframeReflectControlPoints(timeline.id, index, reflect),
+				);
+			},
+			tickShouldUpdate: ({ mousePosition }) => {
+				const [yUpper, yLower] = getYUpperLower(mousePosition.global);
+				return !!(yUpper || yLower);
+			},
+			mouseMove: (params, { moveVector: _moveVector, mousePosition, keyDown, firstMove }) => {
+				if (firstMove) {
+					params.dispatch(
+						timelines.map((t) => timelineActions.setYBounds(t.id, yBounds)),
+					);
+					params.dispatch(timelines.map((t) => timelineActions.setYPan(t.id, 0)));
+				}
+
+				const [yUpper, yLower] = getYUpperLower(mousePosition.global);
+
+				if (yLower) {
+					yPan -= yLower * boundsDiff * PAN_FAC;
+				} else if (yUpper) {
+					yPan += yUpper * boundsDiff * PAN_FAC;
+				}
+
+				if (yLower || yUpper) {
+					params.dispatch(timelines.map((t) => timelineActions.setYPan(t.id, yPan)));
+				}
+
+				const moveVector = _moveVector.translated.copy();
+
+				const timelineActionState = getActionState().timelines;
+
+				const renderOptions = {
+					length: options.length,
+					timelines: timelines.map(({ id }) => timelineActionState[id]),
+					height: viewport.height,
+					width: viewport.width,
+					viewBounds,
+				};
+				const toViewportY = createToTimelineViewportY(timelinePaths, renderOptions);
+				const toViewportX = createToTimelineViewportX(renderOptions);
+
+				const yFac = (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
+
+				const { x: indexShift, y: valueShift } = moveVector;
+
+				const indexDiff =
+					direction === "left"
+						? timeline.keyframes[index].index - timeline.keyframes[index - 1].index
+						: timeline.keyframes[index + 1].index - timeline.keyframes[index].index;
+
+				params.dispatch(
+					timelines.map((t) =>
+						timelineActions.setControlPointShift(t.id, {
+							indexDiff,
+							direction: direction,
+							indexShift,
+							valueShift,
+							yFac,
+							shiftDown: keyDown.Shift,
+						}),
+					),
+				);
+			},
+			mouseUp: (params, hasMoved) => {
+				timelines.forEach(({ id }) => {
+					params.dispatch(timelineActions.setYBounds(id, null));
+					params.dispatch(timelineActions.setYPan(id, 0));
+				});
+
+				if (!hasMoved) {
+					if (!altDownAtMouseDown) {
+						params.cancelAction();
+						return;
+					}
+
+					params.dispatch(
+						timelineActions.setKeyframeControlPoint(
+							timeline.id,
+							index,
+							direction,
+							null,
+						),
+					);
+					params.submitAction("Remove control point");
+					return;
+				} else {
+					const timelineSelectionState = getActionState().timelineSelection;
+
+					params.dispatch(
+						timelines.map(({ id }) =>
+							timelineActions.applyControlPointShift(id, timelineSelectionState[id]),
+						),
+					);
+				}
+
+				params.submitAction("Move control point");
+			},
 		});
 	},
 
@@ -781,16 +708,7 @@ export const timelineHandlers = {
 			viewport: Rect;
 		},
 	): void => {
-		requestAction({ history: true }, (params) => {
-			actions.controlPointMouseDown(
-				params,
-				initialMousePos,
-				timelineIndex,
-				index,
-				direction,
-				options,
-			);
-		});
+		actions.controlPointMouseDown(initialMousePos, timelineIndex, index, direction, options);
 	},
 
 	onKeyframeMouseDown: (
