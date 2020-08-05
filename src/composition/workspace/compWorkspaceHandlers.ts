@@ -170,6 +170,7 @@ export const compWorkspaceHandlers = {
 		);
 
 		mouseDownMoveAction(e, {
+			keys: ["Shift"],
 			shouldAddToStack: [didCompSelectionChange(compositionId), () => didMove],
 			translate: (vec) => transformGlobalToNodeEditorPosition(vec, viewport, scale, pan),
 			beforeMove: (params) => {
@@ -192,7 +193,7 @@ export const compWorkspaceHandlers = {
 					addLayerToSelection(params);
 				}
 			},
-			mouseMove: (params, { moveVector: _moveVector }) => {
+			mouseMove: (params, { moveVector: _moveVector, keyDown }) => {
 				// Layer was deselected, do not move selected layers.
 				if (additiveSelection && !willBeSelected) {
 					return;
@@ -217,6 +218,14 @@ export const compWorkspaceHandlers = {
 				for (const layerId of layerIds) {
 					const layer = compositionState.layers[layerId];
 					let moveVector = _moveVector.translated.copy();
+
+					if (keyDown.Shift) {
+						if (Math.abs(moveVector.x) > Math.abs(moveVector.y)) {
+							moveVector.y = 0;
+						} else {
+							moveVector.x = 0;
+						}
+					}
 
 					if (layer.parentLayerId) {
 						// Check if any layer in the parent chain is selected, if so skip
@@ -248,7 +257,7 @@ export const compWorkspaceHandlers = {
 
 						const propertyId = layerPositionPropertyIds[layerId][i];
 						const initialValue = layerInitialPositions[layerId][axis];
-						const value = initialValue + moveVector[axis];
+						let value = initialValue + moveVector[axis];
 
 						const property = compositionState.properties[
 							propertyId
