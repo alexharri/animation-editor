@@ -257,7 +257,7 @@ export const compWorkspaceHandlers = {
 
 						const propertyId = layerPositionPropertyIds[layerId][i];
 						const initialValue = layerInitialPositions[layerId][axis];
-						let value = initialValue + moveVector[axis];
+						const value = initialValue + moveVector[axis];
 
 						const property = compositionState.properties[
 							propertyId
