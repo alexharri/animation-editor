@@ -91,24 +91,28 @@ export const mouseDownMoveAction = <
 				return acc;
 			}, {} as KeyMap));
 
+			let _options!: MouseMoveOptions<KeyMap>;
 			const getOptions = () => {
+				if (_options) {
+					return _options;
+				}
+
 				const globalMousePosition = currentMousePosition;
 				const mousePosition: MousePosition = {
 					global: globalMousePosition,
 					translated: translate(globalMousePosition),
 				};
-
 				const moveVector: MousePosition = {
 					global: mousePosition.global.sub(initialMousePosition.global),
 					translated: mousePosition.translated.sub(initialMousePosition.translated),
 				};
-				const mouseMoveOptions: MouseMoveOptions<KeyMap> = {
+				_options = {
 					initialMousePosition,
 					mousePosition,
 					moveVector,
 					keyDown: keyDownMap,
 				};
-				return mouseMoveOptions;
+				return _options;
 			};
 
 			if (!shouldUpdate && options.tickShouldUpdate?.(getOptions())) {
