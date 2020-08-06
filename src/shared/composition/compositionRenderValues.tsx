@@ -50,6 +50,9 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 		frameIndex,
 	} = context;
 
+	// May be reused since node ids are not reused in different graphs
+	const expressionCache = {};
+
 	function crawl(
 		compositionId: string,
 		frameIndex: number,
@@ -159,6 +162,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 					arrayModifierIndex: amodIndex,
 					frameIndex,
 					propertyToValue: map.properties,
+					expressionCache,
 				};
 
 				for (const nodeId of toCompute) {
@@ -204,7 +208,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 					}
 				}
 
-				if (amodIndex === 0) {
+				if (options.recursive && amodIndex === 0) {
 					const countPropertyId = getLayerArrayModifierCountPropertyId(
 						layerId,
 						compositionState,

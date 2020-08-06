@@ -24,6 +24,7 @@ export interface ComputeNodeContext {
 	};
 	propertyToValue: PropertyValueMap;
 	frameIndex: number;
+	expressionCache: { [nodeId: string]: mathjs.EvalFunction };
 }
 
 const parseNum = (arg: ComputeNodeArg): number => {
@@ -303,8 +304,12 @@ const compute: {
 		return color.map((x) => toArg.number(x));
 	},
 
-	[Type.expr]: (args, _ctx, node, state: NodeEditorNodeState<NodeEditorNodeType.expr>) => {
-		const expression = state.expression;
+	[Type.expr]: (args, ctx, node, state: NodeEditorNodeState<NodeEditorNodeType.expr>) => {
+		if (!ctx.expressionCache[node.id]) {
+			ctx.expressionCache[node.id] = mathjs.compile(state.expression);
+		}
+
+		const expression = ctx.expressionCache[node.id];
 
 		const scope = {
 			...node.outputs.reduce<{ [key: string]: any }>((obj, output) => {
@@ -317,7 +322,7 @@ const compute: {
 			}, {}),
 		};
 
-		mathjs.evaluate(expression, scope);
+		expression.evaluate(scope);
 
 		const resolve = (res: any): ComputeNodeArg => {
 			switch (mathjs.typeOf(res)) {

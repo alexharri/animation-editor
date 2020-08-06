@@ -73,20 +73,27 @@ export const applyParentTransform = (
 		transform.translate = transform.translate.sub(parentTransform.anchor);
 	}
 
-	transform.translate = rotateVec2CCW(
-		transform.translate,
-		parentTransform.rotation,
-		parentTransform.translate,
-	);
-	transform.translate = transform.translate.scale(
-		parentTransform.scale,
-		parentTransform.translate,
-	);
+	if (parentTransform.rotation !== 0) {
+		transform.translate = rotateVec2CCW(
+			transform.translate,
+			parentTransform.rotation,
+			parentTransform.translate,
+		);
+	}
+	if (parentTransform.scale !== 1) {
+		transform.translate = transform.translate.scale(
+			parentTransform.scale,
+			parentTransform.translate,
+		);
+	}
 	transform.rotation += parentTransform.rotation;
 	transform.scale = transform.scale * parentTransform.scale;
 	return transform;
 };
 
+/**
+ * This is done extremely inefficiently. This should be cached 100%
+ */
 export const applyIndexTransform = (
 	_transform: AffineTransform,
 	indexTransform: AffineTransform,
