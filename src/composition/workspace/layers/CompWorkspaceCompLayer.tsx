@@ -37,7 +37,7 @@ const CompWorkspaceCompLayerComponent: React.FC<Props> = (props) => {
 					compositionId={props.compositionReferenceId}
 					containerWidth={nameToProperty.Width}
 					containerHeight={nameToProperty.Height}
-					map={map.compositionLayers[props.layerId]}
+					map={map.compositionLayers[props.layerId][props.index]}
 				/>
 			</g>
 		</>

@@ -129,7 +129,7 @@ export interface CompositionRenderValues {
 		};
 	};
 	compositionLayers: {
-		[layerId: string]: CompositionRenderValues;
+		[layerId: string]: { [index: number]: CompositionRenderValues };
 	};
 	frameIndex: number;
 	parent?: CompositionRenderValues;

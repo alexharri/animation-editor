@@ -2,7 +2,7 @@ import React from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { reduceCompProperties } from "~/composition/timeline/compTimeUtils";
-import { computeLayerTransformMap } from "~/composition/transformUtils";
+import { applyIndexTransform, computeLayerTransformMap } from "~/composition/transformUtils";
 import { getLayerArrayModifierCountPropertyId } from "~/composition/util/compositionPropertyUtils";
 import { useActionState } from "~/hook/useActionState";
 import {
@@ -229,13 +229,34 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 				const layer = compositionState.layers[layerId];
 
 				if (layer.type === LayerType.Composition) {
-					const id = compositionState.compositionLayerIdToComposition[layer.id];
-					map.compositionLayers[layer.id] = crawl(
-						id,
-						map.frameIndex - layer.index,
-						map,
-						map.transforms[layer.id].transform[0],
+					map.compositionLayers[layer.id] = {};
+
+					let count = 1;
+
+					const countPropertyId = getLayerArrayModifierCountPropertyId(
+						layerId,
+						compositionState,
 					);
+					if (countPropertyId) {
+						count = map.properties[countPropertyId].computedValue[0];
+					}
+
+					for (let i = 0; i < count; i += 1) {
+						let transform = map.transforms[layer.id].transform[i];
+						const { indexTransform } = map.transforms[layer.id];
+
+						if (indexTransform) {
+							transform = applyIndexTransform(transform, indexTransform!, i);
+						}
+
+						const id = compositionState.compositionLayerIdToComposition[layer.id];
+						map.compositionLayers[layer.id][i] = crawl(
+							id,
+							map.frameIndex - layer.index,
+							map,
+							transform,
+						);
+					}
 				}
 			}
 		}

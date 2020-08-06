@@ -87,7 +87,7 @@ export const applyParentTransform = (
 	return transform;
 };
 
-export const applyIndexTransformAsParent = (
+export const applyIndexTransform = (
 	_transform: AffineTransform,
 	indexTransform: AffineTransform,
 	index: number,
@@ -97,28 +97,6 @@ export const applyIndexTransformAsParent = (
 	const count = Math.abs(index);
 	for (let i = 0; i < count; i += 1) {
 		transform = applyParentTransform(indexTransform, transform, true);
-	}
-
-	return transform;
-};
-
-export const applyIndexTransform = (
-	_transform: AffineTransform,
-	indexTransform: AffineTransform,
-	index: number,
-): AffineTransform => {
-	const tru = true;
-	if (tru) {
-		return applyIndexTransformAsParent(_transform, indexTransform, index);
-	}
-
-	let transform = { ..._transform };
-
-	const count = Math.abs(index);
-	for (let i = 0; i < count; i += 1) {
-		transform.scale = transform.scale * indexTransform.scale;
-		transform.rotation = transform.rotation + indexTransform.rotation;
-		transform.translate = transform.translate.add(indexTransform.translate);
 	}
 
 	return transform;

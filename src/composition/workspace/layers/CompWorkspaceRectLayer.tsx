@@ -42,7 +42,8 @@ const CompWorkspaceRectLayerComponent: React.FC<Props> = (props) => {
 	const fillColor = `rgba(${Fill.join(",")})`;
 	const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
-	let { transform, indexTransform } = map.transforms[props.layerId];
+	let transform = map.transforms[props.layerId].transform[props.index];
+	let { indexTransform } = map.transforms[props.layerId];
 
 	if (indexTransform) {
 		transform = applyIndexTransform(transform, indexTransform, props.index);

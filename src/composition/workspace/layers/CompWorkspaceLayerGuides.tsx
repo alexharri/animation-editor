@@ -199,6 +199,9 @@ const CompWorkspaceLayerGuidesComponent: React.FC<Props> = (props) => {
 
 	const { scale } = React.useContext(CompWorkspaceViewportContext);
 
+	const { viewport } = useContext(CompWorkspaceViewportContext);
+	const areaId = useContext(AreaIdContext);
+
 	if (!shouldRender) {
 		return null;
 	}
@@ -232,9 +235,6 @@ const CompWorkspaceLayerGuidesComponent: React.FC<Props> = (props) => {
 
 	const transform = map.transforms[props.layerId].transform[0];
 	const transformStyle = getLayerTransformStyle(transform);
-
-	const { viewport } = useContext(CompWorkspaceViewportContext);
-	const areaId = useContext(AreaIdContext);
 
 	return (
 		<>
