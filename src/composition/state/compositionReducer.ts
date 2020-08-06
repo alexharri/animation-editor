@@ -6,15 +6,17 @@ import {
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
 import { createLayer } from "~/composition/layer/createLayer";
+import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import {
 	reduceCompPropertiesAndGroups,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/timeline/compTimeUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { LayerType, RGBAColor } from "~/types";
+import { LayerType, PropertyGroupName, RGBAColor } from "~/types";
 import {
 	addListToMap,
+	createGenMapIdFn,
 	modifyItemInUnionMap,
 	modifyItemsInMap,
 	removeKeysFromMap,
@@ -144,6 +146,14 @@ export const compositionActions = {
 
 	setLayerParentLayerId: createAction("comp/SET_LAYER_PARENT_LAYER_ID", (action) => {
 		return (layerId: string, parentLayerId: string) => action({ layerId, parentLayerId });
+	}),
+
+	addModifierToLayer: createAction("comp/ADD_MODIFIER_TO_LAYER", (action) => {
+		return (
+			layerId: string,
+			propertyId: string,
+			propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup>,
+		) => action({ layerId, propertyId, propertiesToAdd });
 	}),
 };
 
@@ -547,6 +557,51 @@ export const compositionReducer = (
 					parentLayerId,
 				})),
 			};
+		}
+
+		case getType(compositionActions.addModifierToLayer): {
+			const { layerId, propertyId, propertiesToAdd } = action.payload;
+
+			const layer = { ...state.layers[layerId] };
+			const newState = {
+				...state,
+				layers: { ...state.layers, [layer.id]: layer },
+				properties: addListToMap(state.properties, propertiesToAdd, "id"),
+			};
+
+			const properties = layer.properties.map(
+				(propertyId) => newState.properties[propertyId],
+			);
+			const propertyNames = properties.map((p) => (p.type === "group" ? p.name : null));
+
+			let groupIndex = propertyNames.indexOf(PropertyGroupName.Modifiers);
+
+			if (groupIndex === -1) {
+				const createId = createGenMapIdFn(newState.properties);
+				const { group, properties } = createLayerModifierProperties({
+					compositionId: layer.compositionId,
+					layerId,
+					createId,
+				});
+				newState.properties = addListToMap(
+					newState.properties,
+					[group, ...properties],
+					"id",
+				);
+				layer.properties = [group.id, ...layer.properties];
+				groupIndex = 0;
+			}
+
+			newState.properties = modifyItemInUnionMap(
+				newState.properties,
+				layer.properties[groupIndex],
+				(group: CompositionPropertyGroup) => ({
+					...group,
+					properties: [...group.properties, propertyId],
+				}),
+			);
+
+			return newState;
 		}
 
 		default:

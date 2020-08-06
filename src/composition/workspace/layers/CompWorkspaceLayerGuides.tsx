@@ -194,7 +194,7 @@ type Props = OwnProps & StateProps;
 const CompWorkspaceLayerGuidesComponent: React.FC<Props> = (props) => {
 	const { layer, map } = props;
 
-	const nameToProperty = useLayerNameToProperty(map, props.compositionId, layer.id);
+	const nameToProperty = useLayerNameToProperty(map, props.compositionId, layer.id, props.index);
 	const shouldRender = useWorkspaceLayerShouldRender(map.frameIndex, layer.index, layer.length);
 
 	const { scale } = React.useContext(CompWorkspaceViewportContext);
@@ -230,14 +230,8 @@ const CompWorkspaceLayerGuidesComponent: React.FC<Props> = (props) => {
 		}
 	}
 
-	const transformStyle = getLayerTransformStyle(
-		PositionX,
-		PositionY,
-		AnchorX,
-		AnchorY,
-		Rotation,
-		Scale,
-	);
+	const transform = map.transforms[props.layerId].transform[0];
+	const transformStyle = getLayerTransformStyle(transform);
 
 	const { viewport } = useContext(CompWorkspaceViewportContext);
 	const areaId = useContext(AreaIdContext);
@@ -274,7 +268,7 @@ const CompWorkspaceLayerGuidesComponent: React.FC<Props> = (props) => {
 					scale={scale}
 					height={height}
 					width={width}
-					transform={map.transforms[props.layerId]}
+					transform={transform}
 				/>
 			) : null}
 		</>

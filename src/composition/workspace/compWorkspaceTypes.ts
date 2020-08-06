@@ -4,4 +4,5 @@ export interface CompWorkspaceLayerBaseProps {
 	compositionId: string;
 	layerId: string;
 	map: CompositionRenderValues;
+	index: number;
 }

@@ -1,4 +1,5 @@
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
+import { createArrayModifier } from "~/composition/modifiers/arrayModifier";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
@@ -8,6 +9,7 @@ import { NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
 import { LayerType, NodeEditorNodeType } from "~/types";
+import { createGenMapIdFn } from "~/util/mapUtils";
 
 interface Options {
 	compositionId: string;
@@ -38,6 +40,38 @@ export const createCompTimeContextMenu = (
 			});
 		}
 
+		// Add modifier
+		if (layerId) {
+			options.push({
+				label: "Add modifier",
+				options: [
+					{
+						label: "Array",
+						onSelect: () => {
+							const { compositionState } = getActionState();
+
+							const { propertyId, propertiesToAdd } = createArrayModifier({
+								compositionId,
+								layerId,
+								createId: createGenMapIdFn(compositionState.properties),
+							});
+
+							params.dispatch(
+								compositionActions.addModifierToLayer(
+									layerId,
+									propertyId,
+									propertiesToAdd,
+								),
+							);
+							params.dispatch(contextMenuActions.closeContextMenu());
+							params.submitAction("Add array modifier to layer");
+						},
+					},
+				],
+			});
+		}
+
+		// Remove layer
 		if (layerId) {
 			const removeLayer = () => {
 				const { compositionState, nodeEditor: nodeEditorState } = getActionState();

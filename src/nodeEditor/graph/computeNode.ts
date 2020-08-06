@@ -17,6 +17,7 @@ export interface ComputeNodeContext {
 	compositionState: CompositionState;
 	compositionId: string;
 	layerId: string;
+	arrayModifierIndex: number;
 	container: {
 		width: number;
 		height: number;
@@ -369,6 +370,10 @@ const compute: {
 			toArg.number(container?.height ?? 150),
 			toArg.number(frameIndex),
 		];
+	},
+
+	[Type.array_modifier_index]: (_args, ctx) => {
+		return [toArg.number(ctx.arrayModifierIndex)];
 	},
 
 	[Type.property_input]: (

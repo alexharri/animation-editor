@@ -23,7 +23,7 @@ const CompTimePropertyValueComponent: React.FC<Props> = (props) => {
 		return (
 			<CompTimePropertyColorValue
 				propertyId={props.propertyId}
-				value={value.computedValue as RGBAColor}
+				value={value.computedValue[0] as RGBAColor}
 			/>
 		);
 	}
@@ -32,7 +32,7 @@ const CompTimePropertyValueComponent: React.FC<Props> = (props) => {
 		return (
 			<CompTimePropertyNumberValue
 				propertyId={props.propertyId}
-				computedValue={value.computedValue as number}
+				computedValue={value.computedValue[0] as number}
 				rawValue={value.rawValue as number}
 			/>
 		);

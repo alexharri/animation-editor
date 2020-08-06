@@ -34,8 +34,8 @@ export const compTimeLayerParentHandlers = {
 
 			const transformMap = getTransformMap(layer.compositionId);
 
-			const transform = transformMap[layer.id];
-			const parentTransform = transformMap[parentId];
+			const { transform } = transformMap[layer.id];
+			const { transform: parentTransform } = transformMap[parentId];
 
 			const { anchor, scale, rotation, translate } = adjustTransformToParent(
 				transform,
@@ -67,7 +67,7 @@ export const compTimeLayerParentHandlers = {
 			const layer = compositionState.layers[layerId];
 
 			const transformMap = getTransformMap(layer.compositionId);
-			const { anchor, translate, rotation, scale } = transformMap[layer.id];
+			const { anchor, translate, rotation, scale } = transformMap[layer.id].transform;
 
 			const properties = getLayerTransformProperties(layerId, compositionState);
 

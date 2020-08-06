@@ -83,6 +83,10 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 			default: true,
 		},
 		createAddNodeOption({
+			type: NodeEditorNodeType.array_modifier_index,
+			label: "Array modifier index",
+		}),
+		createAddNodeOption({
 			type: NodeEditorNodeType.composition,
 			label: "Composition",
 		}),

@@ -40,6 +40,8 @@ export enum NodeEditorNodeType {
 	property_output = "property_output",
 	property_input = "property_input",
 
+	array_modifier_index = "array_modifier_index",
+
 	composition = "composition",
 }
 
@@ -57,41 +59,48 @@ export enum ValueFormat {
 }
 
 export enum PropertyGroupName {
-	Transform,
-	Dimensions,
-	Content,
-	Structure,
+	Transform = 0,
+	Dimensions = 1,
+	Content = 2,
+	Structure = 3,
+	Modifiers = 4,
+
+	// Modifiers
+	ArrayModifier = 5,
 }
 
 export enum LayerType {
-	Rect,
-	Ellipse,
-	Composition,
+	Rect = 0,
+	Ellipse = 1,
+	Composition = 2,
 }
 
 export enum PropertyName {
 	// Transform Properties
-	AnchorX,
-	AnchorY,
-	Scale,
-	PositionX,
-	PositionY,
-	Rotation,
-	Opacity,
+	AnchorX = 0,
+	AnchorY = 1,
+	Scale = 2,
+	PositionX = 3,
+	PositionY = 4,
+	Rotation = 5,
+	Opacity = 6,
 
 	// Rect properties
-	Width,
-	Height,
+	Width = 7,
+	Height = 8,
 
 	// Look properties
-	Fill,
-	StrokeColor,
-	StrokeWidth,
-	BorderRadius,
+	Fill = 9,
+	StrokeColor = 10,
+	StrokeWidth = 11,
+	BorderRadius = 12,
 
 	// Ellipse properties
-	OuterRadius,
-	InnerRadius,
+	OuterRadius = 13,
+	InnerRadius = 14,
+
+	// Array Modifier
+	ArrayModifier_Count = 15,
 }
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
@@ -104,7 +113,9 @@ export type KeySelectionMap = Partial<{ [key: string]: true }>;
 
 export interface PropertyValueMap {
 	[propertyId: string]: {
-		computedValue: any;
+		computedValue: {
+			[index: number]: any;
+		};
 		rawValue: any;
 	};
 }
@@ -112,7 +123,10 @@ export interface PropertyValueMap {
 export interface CompositionRenderValues {
 	properties: PropertyValueMap;
 	transforms: {
-		[layerId: string]: AffineTransform;
+		[layerId: string]: {
+			transform: { [index: number]: AffineTransform };
+			indexTransform: AffineTransform | null;
+		};
 	};
 	compositionLayers: {
 		[layerId: string]: CompositionRenderValues;

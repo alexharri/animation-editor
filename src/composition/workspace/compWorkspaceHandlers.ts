@@ -246,7 +246,7 @@ export const compWorkspaceHandlers = {
 							continue;
 						}
 
-						const transform = renderValues.transforms[layer.parentLayerId];
+						const { transform } = renderValues.transforms[layer.parentLayerId];
 						moveVector = moveVector
 							.scale(1 / transform.scale)
 							.rotate(-transform.rotation);

@@ -21,7 +21,7 @@ type Props = OwnProps & StateProps;
 const CompWorkspaceCompLayerComponent: React.FC<Props> = (props) => {
 	const { layer, map } = props;
 
-	const nameToProperty = useLayerNameToProperty(map, props.compositionId, layer.id);
+	const nameToProperty = useLayerNameToProperty(map, props.compositionId, layer.id, props.index);
 	const shouldRender = useWorkspaceLayerShouldRender(map.frameIndex, layer.index, layer.length);
 
 	if (!shouldRender) {

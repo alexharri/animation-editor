@@ -1,4 +1,6 @@
 import React from "react";
+import { CompositionState } from "~/composition/state/compositionReducer";
+import { getLayerArrayModifierCountPropertyId } from "~/composition/util/compositionPropertyUtils";
 import { CompWorkspaceCompLayer } from "~/composition/workspace/layers/CompWorkspaceCompLayer";
 import { CompWorkspaceEllipseLayer } from "~/composition/workspace/layers/CompWorkspaceEllipseLayer";
 import { CompWorkspaceLayerGuides } from "~/composition/workspace/layers/CompWorkspaceLayerGuides";
@@ -15,6 +17,7 @@ interface OwnProps {
 interface StateProps {
 	layerIds: string[];
 	layerTypes: LayerType[];
+	compositionState: CompositionState;
 }
 type Props = OwnProps & StateProps;
 
@@ -28,36 +31,55 @@ const CompWorkspaceCompChildrenComponent: React.FC<Props> = (props) => {
 	const getLayerContent = (i: number) => {
 		const layerId = layerIds[i];
 
-		if (layerTypes[i] === LayerType.Composition) {
-			return (
-				<CompWorkspaceCompLayer
-					key={layerId}
+		let count = 1;
+
+		const countId = getLayerArrayModifierCountPropertyId(layerId, props.compositionState);
+		if (countId) {
+			count = props.map.properties[countId].rawValue;
+		}
+
+		const children: React.ReactNode[] = [];
+
+		for (let j = 0; j < count; j += 1) {
+			if (layerTypes[i] === LayerType.Composition) {
+				children.push(
+					<CompWorkspaceCompLayer
+						key={layerId + ":" + j}
+						compositionId={props.compositionId}
+						layerId={layerId}
+						map={props.map}
+						index={j}
+					/>,
+				);
+				continue;
+			}
+
+			if (layerTypes[i] === LayerType.Ellipse) {
+				children.push(
+					<CompWorkspaceEllipseLayer
+						key={layerId + ":" + j}
+						compositionId={props.compositionId}
+						layerId={layerId}
+						map={props.map}
+						index={j}
+					/>,
+				);
+				continue;
+			}
+
+			children.push(
+				<CompWorkspaceRectLayer
+					key={layerId + ":" + j}
 					compositionId={props.compositionId}
 					layerId={layerId}
 					map={props.map}
-				/>
+					index={j}
+				/>,
 			);
+			continue;
 		}
 
-		if (layerTypes[i] === LayerType.Ellipse) {
-			return (
-				<CompWorkspaceEllipseLayer
-					key={layerId}
-					compositionId={props.compositionId}
-					layerId={layerId}
-					map={props.map}
-				/>
-			);
-		}
-
-		return (
-			<CompWorkspaceRectLayer
-				key={layerId}
-				compositionId={props.compositionId}
-				layerId={layerId}
-				map={props.map}
-			/>
-		);
+		return <g key={layerId}>{children}</g>;
 	};
 
 	for (let i = 0; i < layerIds.length; i += 1) {
@@ -74,6 +96,7 @@ const CompWorkspaceCompChildrenComponent: React.FC<Props> = (props) => {
 						compositionId={props.compositionId}
 						layerId={layerId}
 						map={props.map}
+						index={0}
 					/>
 				))}
 		</>
@@ -88,6 +111,7 @@ const mapState: MapActionState<StateProps, OwnProps> = (
 	return {
 		layerIds: layers,
 		layerTypes: layers.map((id) => compositionState.layers[id].type),
+		compositionState,
 	};
 };
 

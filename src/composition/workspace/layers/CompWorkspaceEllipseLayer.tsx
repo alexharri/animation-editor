@@ -1,6 +1,7 @@
 import React from "react";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { useLayerNameToProperty } from "~/composition/hook/useLayerNameToProperty";
+import { applyIndexTransform } from "~/composition/transformUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { CompWorkspaceLayerBaseProps } from "~/composition/workspace/compWorkspaceTypes";
 import { getLayerTransformStyle } from "~/composition/workspace/layers/layerTransformStyle";
@@ -17,27 +18,14 @@ type Props = OwnProps & StateProps;
 const CompWorkspaceEllipseLayerComponent: React.FC<Props> = (props) => {
 	const { layer, map } = props;
 
-	const nameToProperty = useLayerNameToProperty(map, props.compositionId, layer.id);
+	const nameToProperty = useLayerNameToProperty(map, props.compositionId, layer.id, props.index);
 	const shouldRender = useWorkspaceLayerShouldRender(map.frameIndex, layer.index, layer.length);
 
 	if (!shouldRender) {
 		return null;
 	}
 
-	const {
-		PositionX,
-		PositionY,
-		AnchorX,
-		AnchorY,
-		Scale,
-		Opacity,
-		Rotation,
-		Fill,
-		StrokeWidth,
-		StrokeColor,
-		InnerRadius,
-		OuterRadius,
-	} = nameToProperty;
+	const { Opacity, Fill, StrokeWidth, StrokeColor, InnerRadius, OuterRadius } = nameToProperty;
 
 	const fillColor = `rgba(${Fill.join(",")})`;
 	const strokeColor = `rgba(${StrokeColor.join(",")})`;
@@ -48,14 +36,14 @@ const CompWorkspaceEllipseLayerComponent: React.FC<Props> = (props) => {
 		return null;
 	}
 
-	const transformStyle = getLayerTransformStyle(
-		PositionX,
-		PositionY,
-		AnchorX,
-		AnchorY,
-		Rotation,
-		Scale,
-	);
+	let transform = map.transforms[props.layerId].transform[props.index];
+	let { indexTransform } = map.transforms[props.layerId];
+
+	if (indexTransform) {
+		transform = applyIndexTransform(transform, indexTransform, props.index);
+	}
+
+	const transformStyle = getLayerTransformStyle(transform);
 
 	return (
 		<>

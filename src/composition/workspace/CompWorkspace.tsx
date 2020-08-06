@@ -92,17 +92,22 @@ const CompositionWorkspaceComponent: React.FC<Props> = (props) => {
 	propsRef.current = props;
 
 	const map = useActionState((state) => {
-		const composition = state.compositionState.compositions[props.areaState.compositionId];
-		return getCompositionRenderValues(
-			state,
-			composition.id,
-			composition.frameIndex,
-			{
-				width: composition.width,
-				height: composition.height,
-			},
-			{ recursive: true },
-		);
+		try {
+			const composition = state.compositionState.compositions[props.areaState.compositionId];
+			return getCompositionRenderValues(
+				state,
+				composition.id,
+				composition.frameIndex,
+				{
+					width: composition.width,
+					height: composition.height,
+				},
+				{ recursive: true },
+			);
+		} catch (e) {
+			console.error(e);
+			throw e;
+		}
 	});
 
 	const containerRef = useRef<HTMLDivElement>(null);
