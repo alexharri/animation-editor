@@ -9,6 +9,7 @@ import { DEG_TO_RAD_FAC } from "~/constants";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
 import { AffineTransform, PropertyName, PropertyValueMap } from "~/types";
 import { rotateVec2CCW } from "~/util/math";
+import { Mat2 } from "~/util/math/mat";
 
 interface LayerTransformMap {
 	[layerId: string]: {
@@ -16,6 +17,10 @@ interface LayerTransformMap {
 		indexTransform: AffineTransform | null;
 	};
 }
+
+export const transformMat2 = (transform: AffineTransform): Mat2 => {
+	return Mat2.rotation(transform.rotation).scale(transform.scale);
+};
 
 export const getLayerTransformProperties = (
 	layerId: string,
@@ -171,12 +176,13 @@ export const adjustTransformToParent = (
 ): AffineTransform => {
 	const translateDiff = transform.translate.sub(parentTransform.translate);
 
+	const rmat = Mat2.rotation(-parentTransform.rotation);
+	const translate = translateDiff
+		.multiplyMat2(rmat, parentTransform.anchor)
+		.scale(1 / parentTransform.scale, parentTransform.anchor);
+
 	const anchor = transform.anchor;
-	const translate = rotateVec2CCW(
-		translateDiff,
-		-parentTransform.rotation,
-		parentTransform.anchor,
-	).scale(1 / parentTransform.scale, parentTransform.anchor);
+
 	const rotation = transform.rotation - parentTransform.rotation;
 	const scale = transform.scale / parentTransform.scale;
 
@@ -186,27 +192,4 @@ export const adjustTransformToParent = (
 		rotation,
 		scale,
 	};
-};
-
-export const transformToMatrix = (
-	transform: AffineTransform,
-): [[number, number], [number, number]] => {
-	// Identity vectors
-	let i = Vec2.new(1, 0);
-	let j = Vec2.new(0, 1);
-
-	const rRad = transform.rotation;
-
-	// Apply rotation
-	i = i.apply((vec) => rotateVec2CCW(vec, rRad));
-	j = j.apply((vec) => rotateVec2CCW(vec, rRad));
-
-	// Apply scale
-	i = i.scale(transform.scale);
-	j = j.scale(transform.scale);
-
-	return [
-		[i.x, i.y],
-		[j.x, j.y],
-	];
 };

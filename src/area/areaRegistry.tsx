@@ -1,8 +1,7 @@
 import { CompTime } from "~/composition/timeline/CompTime";
 import { compTimeAreaReducer } from "~/composition/timeline/compTimeAreaReducer";
-import { CompositionWorkspace } from "~/composition/workspace/CompWorkspace";
 import { compositionWorkspaceAreaReducer } from "~/composition/workspace/compWorkspaceAreaReducer";
-import { CompWorkspaceCanvas } from "~/composition/workspace/CompWorkspaceCanvas";
+import { CompWorkspace } from "~/composition/workspace/CompWorkspaceCanvas";
 import { AreaType } from "~/constants";
 import HistoryEditor from "~/historyEditor/HistoryEditor";
 import { NodeEditor } from "~/nodeEditor/NodeEditor";
@@ -11,15 +10,13 @@ import { Project } from "~/project/Project";
 import { AreaComponentProps, AreaState } from "~/types/areaTypes";
 import { VectorEditor } from "~/vectorEditor/VectorEditor";
 
-console.log(CompositionWorkspace, CompWorkspaceCanvas);
-
 export const areaComponentRegistry: {
 	[T in AreaType]: React.ComponentType<AreaComponentProps<AreaState<T>>>;
 } = {
 	[AreaType.VectorEditor]: VectorEditor,
 	[AreaType.CompositionTimeline]: CompTime,
 	// [AreaType.CompositionWorkspace]: CompositionWorkspace,
-	[AreaType.CompositionWorkspace]: CompWorkspaceCanvas,
+	[AreaType.CompositionWorkspace]: CompWorkspace,
 	[AreaType.NodeEditor]: NodeEditor,
 	[AreaType.History]: HistoryEditor,
 	[AreaType.Project]: Project,

@@ -114,13 +114,13 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 	}, [containerRef.current]);
 
 	const onMouseMove = (e: React.MouseEvent) => {
+		mousePositionRef.current = Vec2.fromEvent(e);
+
 		const guidesCtx = guideCanvasRef.current?.getContext("2d");
 
 		if (!guidesCtx) {
 			return;
 		}
-
-		mousePositionRef.current = Vec2.fromEvent(e);
 
 		renderCompositionWorkspaceGuides(getOptions(props, guidesCtx, mousePositionRef.current));
 	};
@@ -128,7 +128,11 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 	const { left, top, width, height } = props;
 
 	return (
-		<div style={{ background: cssVariables.gray400 }} ref={containerRef}>
+		<div
+			style={{ background: cssVariables.gray400 }}
+			ref={containerRef}
+			onMouseMove={onMouseMove}
+		>
 			<canvas
 				ref={canvasRef}
 				height={height}
@@ -140,10 +144,16 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 				height={height}
 				width={width}
 				style={{ position: "absolute", top: 0, left: 0 }}
-				onMouseMove={onMouseMove}
-				onMouseDown={(e) =>
-					compWorkspaceHandlers.onMouseDown(e, props.areaId, { left, top, width, height })
-				}
+				onMouseDown={separateLeftRightMouse({
+					left: (e) =>
+						compWorkspaceHandlers.onMouseDown(e, props.areaId, {
+							left,
+							top,
+							width,
+							height,
+						}),
+					middle: (e) => compWorkspaceHandlers.onPanStart(props.areaId, e),
+				})}
 			/>
 			<div
 				className={s("panTarget")}
@@ -171,4 +181,4 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = ({
 	compositionSelectionState,
 });
 
-export const CompWorkspaceCanvas = connectActionState(mapStateToProps)(CompWorkspaceComponent);
+export const CompWorkspace = connectActionState(mapStateToProps)(CompWorkspaceComponent);

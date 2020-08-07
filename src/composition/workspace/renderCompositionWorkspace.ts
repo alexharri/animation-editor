@@ -1,7 +1,7 @@
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import { applyIndexTransform } from "~/composition/transformUtils";
+import { applyIndexTransform, transformMat2 } from "~/composition/transformUtils";
 import {
 	getLayerArrayModifierCountPropertyId,
 	getLayerCompositionProperties,
@@ -9,8 +9,9 @@ import {
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { cssVariables } from "~/cssVariables";
-import { AffineTransform, CompositionRenderValues, LayerType, PropertyName } from "~/types";
-import { isVecInPoly, rotateVec2CCW } from "~/util/math";
+import { CompositionRenderValues, LayerType, PropertyName } from "~/types";
+import { isVecInPoly } from "~/util/math";
+import { Mat2 } from "~/util/math/mat";
 
 const getNameToProperty = (
 	map: CompositionRenderValues,
@@ -66,29 +67,6 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 	ctx.rect(pan.x, pan.y, composition.width * scale, composition.height * scale);
 	ctx.fill();
 
-	const getTransformMatrix = (
-		transform: AffineTransform,
-	): [[number, number], [number, number]] => {
-		// Identity vectors
-		let i = Vec2.new(1, 0);
-		let j = Vec2.new(0, 1);
-
-		const rRad = transform.rotation;
-
-		// Apply rotation
-		i = i.apply((vec) => rotateVec2CCW(vec, rRad));
-		j = j.apply((vec) => rotateVec2CCW(vec, rRad));
-
-		// Apply scale
-		i = i.scale(transform.scale);
-		j = j.scale(transform.scale);
-
-		return [
-			[i.x, i.y],
-			[j.x, j.y],
-		];
-	};
-
 	function renderRectLayer(map: CompositionRenderValues, layer: CompositionLayer, index: number) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id, index);
 
@@ -112,25 +90,22 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 			transform = applyIndexTransform(transform, indexTransform, index);
 		}
 
-		const [[ix, iy], [jx, jy]] = getTransformMatrix(transform);
+		const mat2 = transformMat2(transform);
 
-		const pArr = [
+		const corners = [
 			[1, 0],
 			[1, 1],
 			[0, 1],
 			[0, 0],
-		].map(([_0, _1]) => {
-			const p = Vec2.new(_0 * Width, _1 * Height).sub(transform.anchor);
-
-			const x = ix * p.x + jx * p.y + transform.translate.x;
-			const y = iy * p.x + jy * p.y + transform.translate.y;
-
-			return Vec2.new(x, y).scale(scale).add(pan);
+		].map(([tx, ty]) => {
+			const x = tx * Width - transform.anchor.x;
+			const y = ty * Height - transform.anchor.y;
+			return mat2.multiply(Vec2.new(x, y)).add(transform.translate).scale(scale).add(pan);
 		});
 
 		ctx.beginPath();
-		ctx.moveTo(pArr[pArr.length - 1].x, pArr[pArr.length - 1].y);
-		for (const p of pArr) {
+		ctx.moveTo(corners[corners.length - 1].x, corners[corners.length - 1].y);
+		for (const p of corners) {
 			ctx.lineTo(p.x, p.y);
 		}
 		ctx.fillStyle = fillColor;
@@ -158,7 +133,7 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 			transform = applyIndexTransform(transform, indexTransform, index);
 		}
 
-		const [[ix, iy], [jx, jy]] = getTransformMatrix(transform);
+		const [[ix, iy], [jx, jy]] = transformMat2(transform).matrix;
 
 		const toPos = (_x: number, _y: number) => {
 			const p = Vec2.new(_x, _y);
@@ -169,8 +144,8 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 			return Vec2.new(x, y).scale(scale).add(pan);
 		};
 
-		const or = OuterRadius * transform.scale * scale;
-		const ir = InnerRadius * transform.scale * scale;
+		const or = Math.abs(OuterRadius * transform.scale * scale);
+		const ir = Math.abs(InnerRadius * transform.scale * scale);
 
 		const c = toPos(-transform.anchor.x, -transform.anchor.y);
 
@@ -252,29 +227,6 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 
 	const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
 
-	const getTransformMatrix = (
-		transform: AffineTransform,
-	): [[number, number], [number, number]] => {
-		// Identity vectors
-		let i = Vec2.new(1, 0);
-		let j = Vec2.new(0, 1);
-
-		const rRad = transform.rotation;
-
-		// Apply rotation
-		i = i.apply((vec) => rotateVec2CCW(vec, rRad));
-		j = j.apply((vec) => rotateVec2CCW(vec, rRad));
-
-		// Apply scale
-		i = i.scale(transform.scale);
-		j = j.scale(transform.scale);
-
-		return [
-			[i.x, i.y],
-			[j.x, j.y],
-		];
-	};
-
 	const selection = getCompSelectionFromState(composition.id, options.compositionSelectionState);
 	let hasHoveredLayer = false;
 
@@ -317,34 +269,32 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 			transform = applyIndexTransform(transform, indexTransform, index);
 		}
 
-		const [[ix, iy], [jx, jy]] = getTransformMatrix(transform);
-
-		const pArr = [
+		const mat2 = transformMat2(transform);
+		const corners = [
 			[1, 0],
 			[1, 1],
 			[0, 1],
 			[0, 0],
-		].map(([_0, _1]) => {
-			let p = Vec2.new(_0 * width, _1 * height).sub(transform.anchor);
+		].map(([tx, ty]) => {
+			let x = tx * width - transform.anchor.x;
+			let y = ty * height - transform.anchor.y;
 
 			if (layer.type === LayerType.Ellipse) {
 				const r = nameToProperty.OuterRadius;
-				p = p.sub(Vec2.new(r, r));
+				x -= r;
+				y -= r;
 			}
 
-			const x = ix * p.x + jx * p.y + transform.translate.x;
-			const y = iy * p.x + jy * p.y + transform.translate.y;
-
-			return Vec2.new(x, y).scale(scale).add(pan);
+			return mat2.multiply(Vec2.new(x, y)).add(transform.translate).scale(scale).add(pan);
 		});
 
 		if (options.mousePosition && !hasHoveredLayer) {
 			const mousePosition = options.mousePosition.sub(Vec2.new(viewport.left, viewport.top));
 
-			if (isVecInPoly(mousePosition, pArr)) {
+			if (isVecInPoly(mousePosition, corners)) {
 				ctx.beginPath();
-				ctx.moveTo(pArr[pArr.length - 1].x, pArr[pArr.length - 1].y);
-				for (const p of pArr) {
+				ctx.moveTo(corners[corners.length - 1].x, corners[corners.length - 1].y);
+				for (const p of corners) {
 					ctx.lineTo(p.x, p.y);
 				}
 				ctx.strokeStyle = "cyan";
@@ -359,9 +309,9 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 			return;
 		}
 
-		for (const p of pArr) {
-			const x = p.x - W / 2;
-			const y = p.y - W / 2;
+		for (const c of corners) {
+			const x = c.x - W / 2;
+			const y = c.y - W / 2;
 
 			// Render shadow
 			ctx.beginPath();
@@ -386,8 +336,9 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 		ctx.arc(c.x, c.y, R, 0, 2 * Math.PI, false);
 		ctx.stroke();
 
-		const ri = Vec2.new(0, 1).rotate(nameToProperty.Rotation * DEG_TO_RAD_FAC);
-		const rj = Vec2.new(1, 0).rotate(nameToProperty.Rotation * DEG_TO_RAD_FAC);
+		const rmat = Mat2.rotation(nameToProperty.Rotation * DEG_TO_RAD_FAC);
+		const ri = rmat.i();
+		const rj = rmat.j();
 
 		for (const fac of [1, -1]) {
 			// Line shadows
