@@ -242,3 +242,20 @@ export const distanceFromTranslatedX = (
 	const bScaled = b * (1 / xt);
 	return Math.abs(aScaled - bScaled);
 };
+
+export const isVecInPoly = (vec: Vec2, poly: Vec2[]) => {
+	const { x, y } = vec;
+
+	let inside = false;
+
+	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+		const intersect =
+			poly[i].y > y !== poly[j].y > y &&
+			x < ((poly[j].x - poly[i].x) * (y - poly[i].y)) / (poly[j].y - poly[i].y) + poly[i].x;
+		if (intersect) {
+			inside = !inside;
+		}
+	}
+
+	return inside;
+};

@@ -1,9 +1,13 @@
 import React, { useEffect, useLayoutEffect, useRef } from "react";
 import { CompositionState } from "~/composition/state/compositionReducer";
+import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import CompWorkspaceStyles from "~/composition/workspace/CompWorkspace.styles";
 import { CompositionWorkspaceAreaState } from "~/composition/workspace/compWorkspaceAreaReducer";
 import { compWorkspaceHandlers } from "~/composition/workspace/compWorkspaceHandlers";
-import { renderCompWorkspace } from "~/composition/workspace/renderCompositionWorkspace";
+import {
+	renderCompositionWorkspaceGuides,
+	renderCompWorkspace,
+} from "~/composition/workspace/renderCompositionWorkspace";
 import { cssVariables } from "~/cssVariables";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
@@ -12,20 +16,57 @@ import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
+const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?: Vec2) => {
+	const { width, height, left, top } = props;
+
+	const state = getActionState();
+	const compositionId = props.areaState.compositionId;
+	const { compositionState, compositionSelectionState } = state;
+
+	const composition = compositionState.compositions[compositionId];
+	const map = getCompositionRenderValues(
+		state,
+		composition.id,
+		composition.frameIndex,
+		{
+			width: composition.width,
+			height: composition.height,
+		},
+		{ recursive: true },
+	);
+
+	const { pan, scale } = props.areaState;
+
+	const options = {
+		ctx,
+		compositionId,
+		compositionState,
+		compositionSelectionState,
+		map,
+		pan,
+		scale,
+		viewport: { width, height, left, top },
+		mousePosition,
+	};
+	return options;
+};
+
 const s = compileStylesheetLabelled(CompWorkspaceStyles);
 
 type OwnProps = AreaComponentProps<CompositionWorkspaceAreaState>;
 interface StateProps {
 	compositionState: CompositionState;
+	compositionSelectionState: CompositionSelectionState;
 }
 type Props = OwnProps & StateProps;
 
 const CompWorkspaceComponent: React.FC<Props> = (props) => {
-	const { width, height, left, top } = props;
-
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const guideCanvasRef = useRef<HTMLCanvasElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
 	const zoomTarget = useRef<HTMLDivElement>(null);
+
+	const mousePositionRef = useRef<Vec2 | undefined>(undefined);
 
 	useKeyDownEffect("Space", (down) => {
 		if (panTarget.current) {
@@ -44,39 +85,15 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 	});
 
 	useLayoutEffect(() => {
-		const ctx = canvasRef.current?.getContext("2d");
+		const mainCtx = canvasRef.current?.getContext("2d");
+		const guidesCtx = guideCanvasRef.current?.getContext("2d");
 
-		if (!ctx) {
+		if (!mainCtx || !guidesCtx) {
 			return;
 		}
 
-		const state = getActionState();
-		const compositionId = props.areaState.compositionId;
-		const { compositionState } = state;
-
-		const composition = compositionState.compositions[compositionId];
-		const map = getCompositionRenderValues(
-			state,
-			composition.id,
-			composition.frameIndex,
-			{
-				width: composition.width,
-				height: composition.height,
-			},
-			{ recursive: true },
-		);
-
-		const { pan, scale } = props.areaState;
-
-		renderCompWorkspace({
-			ctx,
-			compositionId,
-			compositionState,
-			map,
-			pan,
-			scale,
-			viewport: { width, height, left, top },
-		});
+		renderCompWorkspace(getOptions(props, mainCtx));
+		renderCompositionWorkspaceGuides(getOptions(props, guidesCtx, mousePositionRef.current));
 	}, [props]);
 
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -96,9 +113,38 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 		};
 	}, [containerRef.current]);
 
+	const onMouseMove = (e: React.MouseEvent) => {
+		const guidesCtx = guideCanvasRef.current?.getContext("2d");
+
+		if (!guidesCtx) {
+			return;
+		}
+
+		mousePositionRef.current = Vec2.fromEvent(e);
+
+		renderCompositionWorkspaceGuides(getOptions(props, guidesCtx, mousePositionRef.current));
+	};
+
+	const { left, top, width, height } = props;
+
 	return (
 		<div style={{ background: cssVariables.gray400 }} ref={containerRef}>
-			<canvas ref={canvasRef} height={height} width={width} />
+			<canvas
+				ref={canvasRef}
+				height={height}
+				width={width}
+				style={{ position: "absolute", top: 0, left: 0 }}
+			/>
+			<canvas
+				ref={guideCanvasRef}
+				height={height}
+				width={width}
+				style={{ position: "absolute", top: 0, left: 0 }}
+				onMouseMove={onMouseMove}
+				onMouseDown={(e) =>
+					compWorkspaceHandlers.onMouseDown(e, props.areaId, { left, top, width, height })
+				}
+			/>
 			<div
 				className={s("panTarget")}
 				ref={panTarget}
@@ -117,8 +163,12 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ compositionState }) => ({
+const mapStateToProps: MapActionState<StateProps, OwnProps> = ({
 	compositionState,
+	compositionSelectionState,
+}) => ({
+	compositionState,
+	compositionSelectionState,
 });
 
 export const CompWorkspaceCanvas = connectActionState(mapStateToProps)(CompWorkspaceComponent);

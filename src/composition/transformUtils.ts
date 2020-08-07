@@ -187,3 +187,26 @@ export const adjustTransformToParent = (
 		scale,
 	};
 };
+
+export const transformToMatrix = (
+	transform: AffineTransform,
+): [[number, number], [number, number]] => {
+	// Identity vectors
+	let i = Vec2.new(1, 0);
+	let j = Vec2.new(0, 1);
+
+	const rRad = transform.rotation;
+
+	// Apply rotation
+	i = i.apply((vec) => rotateVec2CCW(vec, rRad));
+	j = j.apply((vec) => rotateVec2CCW(vec, rRad));
+
+	// Apply scale
+	i = i.scale(transform.scale);
+	j = j.scale(transform.scale);
+
+	return [
+		[i.x, i.y],
+		[j.x, j.y],
+	];
+};

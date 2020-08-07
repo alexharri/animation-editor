@@ -1,4 +1,5 @@
 import { CompositionProperty } from "~/composition/compositionTypes";
+import { getLayerDimensions, getLayerNameToProperty } from "~/composition/layer/layerUtils";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { compSelectionActions } from "~/composition/state/compositionSelectionReducer";
 import {
@@ -24,10 +25,92 @@ import {
 	getTimelineValueAtIndex,
 	splitKeyframesAtIndex,
 } from "~/timeline/timelineUtils";
-import { PropertyName } from "~/types";
+import { LayerType, PropertyName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
+import { isVecInPoly, rotateVec2CCW } from "~/util/math";
 
 export const compWorkspaceHandlers = {
+	onMouseDown: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
+		let layerId = "";
+
+		const { pan: _pan, scale, compositionId } = getAreaActionState<
+			AreaType.CompositionWorkspace
+		>(areaId);
+		const actionState = getActionState();
+		const { compositionState } = actionState;
+
+		const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
+
+		const composition = compositionState.compositions[compositionId];
+		const map = getCompositionRenderValues(
+			actionState,
+			compositionId,
+			composition.frameIndex,
+			{
+				width: composition.width,
+				height: composition.height,
+			},
+			{ recursive: false },
+		);
+
+		for (const currLayerId of composition.layers) {
+			const layer = compositionState.layers[currLayerId];
+			const nameToProperty = getLayerNameToProperty(map, compositionState, currLayerId);
+			const [width, height] = getLayerDimensions(layer.type, nameToProperty);
+
+			const transform = map.transforms[currLayerId].transform[0];
+
+			// Identity vectors
+			let i = Vec2.new(1, 0);
+			let j = Vec2.new(0, 1);
+
+			const rRad = transform.rotation;
+
+			// Apply rotation
+			i = i.apply((vec) => rotateVec2CCW(vec, rRad));
+			j = j.apply((vec) => rotateVec2CCW(vec, rRad));
+
+			// Apply scale
+			i = i.scale(transform.scale);
+			j = j.scale(transform.scale);
+
+			const pArr = [
+				[1, 0],
+				[1, 1],
+				[0, 1],
+				[0, 0],
+			].map(([_0, _1]) => {
+				let p = Vec2.new(_0 * width, _1 * height).sub(transform.anchor);
+
+				if (layer.type === LayerType.Ellipse) {
+					const r = nameToProperty.OuterRadius;
+					p = p.sub(Vec2.new(r, r));
+				}
+
+				const x = i.x * p.x + j.x * p.y + transform.translate.x;
+				const y = i.y * p.x + j.y * p.y + transform.translate.y;
+
+				return Vec2.new(x, y).scale(scale).add(pan);
+			});
+
+			const mousePosition = Vec2.fromEvent(e).sub(Vec2.new(viewport.left, viewport.top));
+
+			if (!isVecInPoly(mousePosition, pArr)) {
+				continue;
+			}
+
+			layerId = currLayerId;
+			break;
+		}
+
+		if (!layerId) {
+			compWorkspaceHandlers.onMouseDownOut(compositionId);
+			return;
+		}
+
+		compWorkspaceHandlers.onLayerRectMouseDown(e, layerId, areaId, viewport);
+	},
+
 	onLayerRectMouseDown: (
 		e: React.MouseEvent,
 		layerId: string,
@@ -246,7 +329,7 @@ export const compWorkspaceHandlers = {
 							continue;
 						}
 
-						const { transform } = renderValues.transforms[layer.parentLayerId];
+						const transform = renderValues.transforms[layer.parentLayerId].transform[0];
 						moveVector = moveVector
 							.scale(1 / transform.scale)
 							.rotate(-transform.rotation);
