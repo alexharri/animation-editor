@@ -8,14 +8,11 @@ import { NodeEditor } from "~/nodeEditor/NodeEditor";
 import { nodeEditorAreaReducer } from "~/nodeEditor/nodeEditorAreaReducer";
 import { Project } from "~/project/Project";
 import { AreaComponentProps, AreaState } from "~/types/areaTypes";
-import { VectorEditor } from "~/vectorEditor/VectorEditor";
 
 export const areaComponentRegistry: {
 	[T in AreaType]: React.ComponentType<AreaComponentProps<AreaState<T>>>;
 } = {
-	[AreaType.VectorEditor]: VectorEditor,
 	[AreaType.CompositionTimeline]: CompTime,
-	// [AreaType.CompositionWorkspace]: CompositionWorkspace,
 	[AreaType.CompositionWorkspace]: CompWorkspace,
 	[AreaType.NodeEditor]: NodeEditor,
 	[AreaType.History]: HistoryEditor,
@@ -25,10 +22,19 @@ export const areaComponentRegistry: {
 export const areaStateReducerRegistry: {
 	[T in AreaType]: (state: AreaState<T>, action: any) => AreaState<T>;
 } = {
-	[AreaType.VectorEditor]: () => ({} as any),
 	[AreaType.CompositionTimeline]: compTimeAreaReducer,
 	[AreaType.CompositionWorkspace]: compositionWorkspaceAreaReducer,
 	[AreaType.NodeEditor]: nodeEditorAreaReducer,
 	[AreaType.History]: () => ({}),
 	[AreaType.Project]: () => ({}),
+};
+
+export const _areaReactKeyRegistry: Partial<
+	{
+		[T in AreaType]: keyof AreaState<T>;
+	}
+> = {
+	[AreaType.CompositionTimeline]: "compositionId",
+	[AreaType.CompositionWorkspace]: "compositionId",
+	[AreaType.NodeEditor]: "graphId",
 };

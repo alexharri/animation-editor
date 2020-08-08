@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { reduceCompProperties } from "~/composition/timeline/compTimeUtils";
 import { applyIndexTransform, computeLayerTransformMap } from "~/composition/transformUtils";
 import { getLayerArrayModifierCountPropertyId } from "~/composition/util/compositionPropertyUtils";
-import { useActionState } from "~/hook/useActionState";
 import {
 	ComputeNodeArg,
 	ComputeNodeContext,
@@ -12,16 +11,12 @@ import {
 } from "~/nodeEditor/graph/computeNode";
 import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorState } from "~/nodeEditor/nodeEditorReducers";
+import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
+import { store } from "~/state/store";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
-import {
-	AffineTransform,
-	CompositionRenderValues,
-	LayerType,
-	NodeEditorNodeType,
-	PropertyValueMap,
-} from "~/types";
+import { AffineTransform, CompositionRenderValues, LayerType, NodeEditorNodeType } from "~/types";
 
 interface Context {
 	compositionId: string;
@@ -344,29 +339,141 @@ export const getCompositionRenderValues = (
 	return map;
 };
 
-export const CompositionPropertyValuesContext = React.createContext<PropertyValueMap>({});
+type Value = { rawValue: any; computedValue: { [index: number]: any } };
+
+export const CompositionPropertyValuesContext = React.createContext<{
+	subscribe: (propertyId: string, listener: (value: Value) => void) => () => void;
+	getValue: (propertyId: string) => Value;
+}>({} as any);
 
 export const CompositionPropertyValuesProvider: React.FC<{
 	compositionId: string;
-	frameIndex: number;
-	containerWidth: number;
-	containerHeight: number;
-}> = ({ children, compositionId, frameIndex, containerWidth, containerHeight }) => {
-	const map = useActionState((state) => {
+}> = ({ children, compositionId }) => {
+	const getMap = (state: ActionState): CompositionRenderValues => {
+		const composition = state.compositionState.compositions[compositionId];
+		const { frameIndex, width, height } = composition;
 		return getCompositionRenderValues(
 			state,
 			compositionId,
 			frameIndex,
-			{
-				width: containerWidth,
-				height: containerHeight,
-			},
+			{ width, height },
 			{ recursive: false },
 		);
-	});
+	};
+
+	const lastMapRef = useRef<CompositionRenderValues>(getMap(getActionState()));
+	const lastStateRef = useRef<ActionState | null>(null);
+	const shouldRenderRef = useRef(true);
+	const nRef = useRef(0);
+	const listenersRef = useRef<
+		Array<{ id: string; propertyId: string; listener: (value: Value) => void }>
+	>([]);
+
+	useEffect(() => {
+		const unsub = store.subscribe(() => {
+			if (shouldRenderRef.current) {
+				return;
+			}
+
+			const lastState = lastStateRef.current;
+			const state = getActionStateFromApplicationState(store.getState());
+
+			lastStateRef.current = state;
+
+			shouldRenderRef.current = (() => {
+				if (!lastState) {
+					return true;
+				}
+
+				if (state.compositionState !== lastState.compositionState) {
+					return true;
+				}
+
+				return false;
+			})();
+		});
+
+		return unsub;
+	}, []);
+
+	const render = () => {
+		const map = getMap(getActionState());
+		const lastMap = lastMapRef.current;
+
+		lastMapRef.current = map;
+		shouldRenderRef.current = false;
+
+		const listeners = listenersRef.current;
+		for (const { listener, propertyId } of listeners) {
+			const rawValue = map.properties[propertyId].rawValue;
+			const lastRawValue = lastMap.properties[propertyId].rawValue;
+
+			const computedValue = map.properties[propertyId].computedValue[0];
+			const lastComputedValue = lastMap.properties[propertyId].computedValue[0];
+
+			if (computedValue === lastComputedValue && rawValue === lastRawValue) {
+				continue;
+			}
+
+			listener(map.properties[propertyId]);
+		}
+	};
+
+	useEffect(() => {
+		let mounted = true;
+
+		const tick = () => {
+			if (mounted) {
+				requestAnimationFrame(tick);
+			}
+
+			const shouldRender = shouldRenderRef.current;
+
+			if (!shouldRender) {
+				return;
+			}
+
+			shouldRenderRef.current = false;
+			render();
+		};
+		tick();
+
+		return () => {
+			mounted = false;
+		};
+	}, []);
+
+	const getValue = (propertyId: string): Value => {
+		const map = lastMapRef.current;
+		const value = map.properties[propertyId];
+
+		if (!value) {
+			console.log(map, propertyId);
+		}
+
+		return value;
+	};
+
+	const subscribe = (propertyId: string, listener: (value: Value) => void) => {
+		const id = (++nRef.current).toString();
+
+		listenersRef.current.push({ id, propertyId, listener });
+
+		return function unsubscribe() {
+			const listeners = listenersRef.current;
+			for (let i = 0; i < listeners.length; i += 1) {
+				if (listeners[i].id !== id) {
+					continue;
+				}
+
+				listeners.splice(i, 1);
+				break;
+			}
+		};
+	};
 
 	return (
-		<CompositionPropertyValuesContext.Provider value={map.properties}>
+		<CompositionPropertyValuesContext.Provider value={{ getValue, subscribe }}>
 			{children}
 		</CompositionPropertyValuesContext.Provider>
 	);

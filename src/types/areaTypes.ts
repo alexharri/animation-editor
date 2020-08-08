@@ -7,7 +7,6 @@ interface _AreaStates {
 	[AreaType.NodeEditor]: NodeEditorAreaState;
 	[AreaType.CompositionTimeline]: CompTimeAreaState;
 	[AreaType.CompositionWorkspace]: CompositionWorkspaceAreaState;
-	[AreaType.VectorEditor]: {};
 	[AreaType.History]: {};
 	[AreaType.Project]: {};
 }

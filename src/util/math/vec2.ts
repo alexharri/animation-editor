@@ -79,7 +79,7 @@ export class Vec2 {
 		return new Vec2(this.x, this.y * scale);
 	}
 
-	public rotate(rad: number, anchor?: { x: number; y: number }): Vec2 {
+	public rotate(rad: number, anchor = Vec2.new(0, 0)): Vec2 {
 		return rotateVec2CCW(this, rad, anchor) as Vec2;
 	}
 

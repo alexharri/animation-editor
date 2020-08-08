@@ -1,3 +1,5 @@
+import { Mat2 } from "~/util/math/mat";
+
 export const interpolate = (a: number, b: number, t: number) => a * (1 - t) + b * t;
 
 export const addVec2 = (a: { x: number; y: number }, b: { x: number; y: number }): Vec2 =>
@@ -103,22 +105,10 @@ export const translateToRange = (
  * @param angle - Angle to rotate CCW in radians
  * @param anchor - `vec` is rotated around the anchor
  */
-export function rotateVec2CCW(vec: Vec2, angle: number, anchor = { x: 0, y: 0 }): Vec2 {
-	const sin = Math.sin(angle);
-	const cos = Math.cos(angle);
-
-	const newVec = vec.copy();
-
-	newVec.x -= anchor.x;
-	newVec.y -= anchor.y;
-
-	const newX = newVec.x * cos - newVec.y * sin;
-	const newY = newVec.x * sin + newVec.y * cos;
-
-	newVec.x = newX + anchor.x;
-	newVec.y = newY + anchor.y;
-
-	return newVec;
+export function rotateVec2CCW(vec: Vec2, angle: number, anchor = Vec2.new(0, 0)): Vec2 {
+	const x = vec.x - anchor.x;
+	const y = vec.y - anchor.y;
+	return Mat2.rotation(angle).multiplyVec2(Vec2.new(x, y)).add(anchor);
 }
 
 export const positiveAngleRadians = (angle: number) => {

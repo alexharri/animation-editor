@@ -8,9 +8,10 @@ import {
 	renderCompWorkspace,
 } from "~/composition/workspace/renderCompositionWorkspace";
 import { cssVariables } from "~/cssVariables";
+import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
-import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
+import { getActionState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -54,14 +55,10 @@ const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?:
 const s = compileStylesheetLabelled(CompWorkspaceStyles);
 
 type OwnProps = AreaComponentProps<CompositionWorkspaceAreaState>;
-interface StateProps {
-	// compositionState: CompositionState;
-	// compositionSelectionState: CompositionSelectionState;
-}
+interface StateProps {}
 type Props = OwnProps & StateProps;
 
 const CompWorkspaceComponent: React.FC<Props> = (props) => {
-	const lastStateRef = useRef<ActionState | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const guideCanvasRef = useRef<HTMLCanvasElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
@@ -106,33 +103,25 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 		};
 	}, [containerRef.current]);
 
-	useEffect(() => {
-		const unsub = store.subscribe(() => {
-			if (shouldRenderRef.current) {
-				return;
+	useActionStateEffect((state, prevState) => {
+		if (shouldRenderRef.current) {
+			return;
+		}
+
+		shouldRenderRef.current = (() => {
+			if (state.compositionState !== prevState.compositionState) {
+				return true;
 			}
 
-			const lastState = lastStateRef.current;
-			const state = getActionStateFromApplicationState(store.getState());
+			if (state.compositionSelectionState !== prevState.compositionSelectionState) {
+				return true;
+			}
 
-			lastStateRef.current = state;
-
-			shouldRenderRef.current = (() => {
-				if (!lastState) {
-					return true;
-				}
-
-				if (state.compositionState !== lastState.compositionState) {
-					return true;
-				}
-
-				if (state.compositionSelectionState !== lastState.compositionSelectionState) {
-					return true;
-				}
-
-				return false;
-			})();
-		});
+			return false;
+		})();
+	});
+	useEffect(() => {
+		const unsub = store.subscribe(() => {});
 
 		return unsub;
 	}, []);
