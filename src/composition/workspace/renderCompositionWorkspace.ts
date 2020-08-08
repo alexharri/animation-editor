@@ -1,13 +1,9 @@
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
+import { applyParentTransform, transformMat2 } from "~/composition/transformUtils";
 import {
-	applyParentTransform,
-	transformMat2,
-	_applyIndexTransform,
-} from "~/composition/transformUtils";
-import {
-	getLayerArrayModifierCountPropertyId,
+	getLayerArrayModifiers,
 	getLayerCompositionProperties,
 } from "~/composition/util/compositionPropertyUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
@@ -98,10 +94,10 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
 		}
 
-		let { indexTransforms } = map.transforms[layer.id];
-		if (indexTransforms[index]) {
-			transform = _applyIndexTransform(indexTransforms[index], transform);
-		}
+		// let { indexTransforms } = map.transforms[layer.id];
+		// if (indexTransforms[index]) {
+		// 	transform = _applyIndexTransform(indexTransforms[index], transform);
+		// }
 
 		const mat2 = transformMat2(transform);
 
@@ -150,10 +146,10 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
 		}
 
-		const { indexTransforms } = map.transforms[layer.id];
-		if (indexTransforms[index]) {
-			transform = _applyIndexTransform(indexTransforms[index], transform);
-		}
+		// const { indexTransforms } = map.transforms[layer.id];
+		// if (indexTransforms[index]) {
+		// 	transform = _applyIndexTransform(indexTransforms[index], transform);
+		// }
 
 		const [[ix, iy], [jx, jy]] = transformMat2(transform).matrix;
 
@@ -205,54 +201,60 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 		const composition = compositionState.compositions[compositionId];
 		const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
-		for (let i = layers.length - 1; i >= 0; i--) {
-			const layer = layers[i];
-			let count = 1;
+		const renderLayer = (layer: CompositionLayer, transformList: AffineTransform[]) => {
+			switch (layer.type) {
+				case LayerType.Composition: {
+					renderCompositionChildren(
+						map.compositionLayers[layer.id][0],
+						compositionState.compositionLayerIdToComposition[layer.id],
+						transformList,
+					);
+					break;
+				}
 
-			const countPropertyId = getLayerArrayModifierCountPropertyId(
-				layer.id,
-				compositionState,
-			);
-			if (countPropertyId) {
-				count = map.properties[countPropertyId].computedValue[0];
-			}
+				case LayerType.Rect: {
+					renderRectLayer(map, layer, 0, transformList);
+					break;
+				}
 
-			if (count < 1) {
-				continue;
-			}
-
-			for (let i = 0; i < count; i += 1) {
-				switch (layer.type) {
-					case LayerType.Composition: {
-						const indexTransform: AffineTransform =
-							count > 1
-								? map.transforms[layer.id].indexTransforms[i]
-								: {
-										anchor: Vec2.new(0, 0),
-										rotation: 0,
-										scale: 0,
-										translate: Vec2.new(0, 0),
-								  };
-						const indexTransforms = [...parentIndexTransforms, indexTransform];
-						renderCompositionChildren(
-							map.compositionLayers[layer.id][i],
-							compositionState.compositionLayerIdToComposition[layer.id],
-							indexTransforms,
-						);
-						break;
-					}
-
-					case LayerType.Rect: {
-						renderRectLayer(map, layer, i, parentIndexTransforms);
-						break;
-					}
-
-					case LayerType.Ellipse: {
-						renderEllipse(map, layer, i, parentIndexTransforms);
-						break;
-					}
+				case LayerType.Ellipse: {
+					renderEllipse(map, layer, 0, transformList);
+					break;
 				}
 			}
+		};
+
+		for (let i = layers.length - 1; i >= 0; i--) {
+			const layer = layers[i];
+
+			const arrayModifiers = getLayerArrayModifiers(layer.id, compositionState);
+
+			if (!arrayModifiers.length) {
+				renderLayer(layer, []);
+				return;
+			}
+
+			function dimension(dimensionIndex: number, transforms: AffineTransform[] = []) {
+				const mod = arrayModifiers[dimensionIndex];
+				const count = Math.max(1, map.properties[mod.countId].computedValue[0]);
+
+				const hasNext = !!arrayModifiers[dimensionIndex + 1];
+
+				for (let i = 0; i < count; i++) {
+					const transform = map.transforms[layer.id].indexTransforms[dimensionIndex][i];
+
+					if (hasNext) {
+						dimension(dimensionIndex + 1, [...transforms, transform]);
+						continue;
+					}
+
+					const transformList = [...parentIndexTransforms, ...transforms, transform];
+
+					renderLayer(layer, transformList);
+				}
+			}
+
+			dimension(0);
 		}
 	}
 
@@ -271,7 +273,9 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 	const selection = getCompSelectionFromState(composition.id, options.compositionSelectionState);
 	let hasHoveredLayer = false;
 
-	function renderGuides(map: CompositionRenderValues, layer: CompositionLayer, index: number) {
+	function renderGuides(map: CompositionRenderValues, layer: CompositionLayer) {
+		const index = 0;
+
 		const selected = selection.layers[layer.id];
 
 		if (hasHoveredLayer && !selected) {
@@ -304,11 +308,6 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 		}
 
 		let transform = map.transforms[layer.id].transform[index];
-
-		let { indexTransforms } = map.transforms[layer.id];
-		if (indexTransforms[index]) {
-			transform = _applyIndexTransform(indexTransforms[index], transform);
-		}
 
 		const mat2 = transformMat2(transform);
 		const corners = [
@@ -430,6 +429,6 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 	const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
 	for (const layer of layers) {
-		renderGuides(options.map, layer, 0);
+		renderGuides(options.map, layer);
 	}
 }

@@ -1,8 +1,8 @@
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import {
-	getLayerArrayModifierCountPropertyId,
-	getLayerArrayModifierTransform,
+	getLayerArrayModifierIndexTransform,
+	getLayerArrayModifiers,
 	getLayerCompositionProperties,
 } from "~/composition/util/compositionPropertyUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
@@ -14,7 +14,9 @@ import { Mat2 } from "~/util/math/mat";
 interface LayerTransformMap {
 	[layerId: string]: {
 		transform: { [index: number]: AffineTransform };
-		indexTransforms: { [index: number]: AffineTransform };
+		indexTransforms: Array<{
+			[index: number]: AffineTransform;
+		}>;
 	};
 }
 
@@ -182,14 +184,19 @@ export const computeLayerTransformMap = (
 
 		map[layer.id] = {
 			transform: {},
-			indexTransforms: {},
+			indexTransforms: [],
 		};
 
-		let count = 1;
-		const countPropertyId = getLayerArrayModifierCountPropertyId(layerId, compositionState);
+		const arrMods = getLayerArrayModifiers(layerId, compositionState);
 
-		if (options.recursive && countPropertyId) {
-			count = Math.max(1, propertyToValue[countPropertyId].computedValue[0]);
+		let count = 1;
+
+		if (options.recursive) {
+			for (const arrMod of arrMods) {
+				const { countId } = arrMod;
+				const countValue = propertyToValue[countId].computedValue[0];
+				count *= Math.max(1, countValue);
+			}
 		}
 
 		for (let i = 0; i < count; i++) {
@@ -205,9 +212,18 @@ export const computeLayerTransformMap = (
 			map[layer.id].transform[i] = transform;
 		}
 
-		if (options.recursive && countPropertyId) {
-			const indexTransform = getLayerArrayModifierTransform(layerId, compositionState, count);
-			map[layer.id].indexTransforms = indexTransform;
+		if (options.recursive) {
+			for (const arrMod of arrMods) {
+				const { countId, transformGroupId } = arrMod;
+				const count = Math.max(1, propertyToValue[countId].computedValue[0]);
+				const indexTransform = getLayerArrayModifierIndexTransform(
+					compositionState,
+					propertyToValue,
+					count,
+					transformGroupId,
+				);
+				map[layer.id].indexTransforms.push(indexTransform);
+			}
 		}
 	}
 

@@ -2,7 +2,7 @@ import { CompositionProperty, CompositionPropertyGroup } from "~/composition/com
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { getIndexTransformMap } from "~/composition/transformUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
-import { AffineTransform, PropertyGroupName, PropertyName } from "~/types";
+import { AffineTransform, PropertyGroupName, PropertyName, PropertyValueMap } from "~/types";
 
 const propertyGroupNameToLabel: { [key in keyof typeof PropertyGroupName]: string } = {
 	Dimensions: "Dimensions",
@@ -92,41 +92,12 @@ export const getLayerModifierPropertyGroupId = (
 	return layer.properties[index];
 };
 
-export const getLayerArrayModifierTransform = (
-	layerId: string,
+export const getLayerArrayModifierIndexTransform = (
 	compositionState: CompositionState,
+	propertyToValue: PropertyValueMap,
 	count: number,
+	transformGroupId: string,
 ): { [index: number]: AffineTransform } => {
-	const modifierGroupId = getLayerModifierPropertyGroupId(layerId, compositionState);
-
-	if (!modifierGroupId) {
-		return {};
-	}
-
-	const modifierGroup = compositionState.properties[modifierGroupId] as CompositionPropertyGroup;
-
-	let transformGroupId: string | undefined;
-
-	outer: for (const propertyId of modifierGroup.properties) {
-		const arrModGroup = compositionState.properties[propertyId] as CompositionPropertyGroup;
-
-		if (arrModGroup.name !== PropertyGroupName.ArrayModifier) {
-			continue;
-		}
-
-		for (let j = 0; j < arrModGroup.properties.length; j += 1) {
-			const property = compositionState.properties[arrModGroup.properties[j]];
-			if (property.name === PropertyGroupName.Transform) {
-				transformGroupId = property.id;
-				break outer;
-			}
-		}
-	}
-
-	if (!transformGroupId) {
-		return {};
-	}
-
 	const transformGroup = compositionState.properties[
 		transformGroupId
 	] as CompositionPropertyGroup;
@@ -134,42 +105,43 @@ export const getLayerArrayModifierTransform = (
 	const indexTransform = transformGroup.properties.reduce<AffineTransform>(
 		(transform, propertyId) => {
 			const property = compositionState.properties[propertyId] as CompositionProperty;
+			const value = propertyToValue[propertyId].computedValue[0];
 
 			switch (property.name) {
 				case PropertyName.PositionX: {
 					if (!transform.translate) {
 						transform.translate = Vec2.new(0, 0);
 					}
-					transform.translate.x = property.value;
+					transform.translate.x = value;
 					break;
 				}
 				case PropertyName.PositionY: {
 					if (!transform.translate) {
 						transform.translate = Vec2.new(0, 0);
 					}
-					transform.translate.y = property.value;
+					transform.translate.y = value;
 					break;
 				}
 				case PropertyName.AnchorX: {
 					if (!transform.anchor) {
 						transform.anchor = Vec2.new(0, 0);
 					}
-					transform.anchor.x = property.value;
+					transform.anchor.x = value;
 					break;
 				}
 				case PropertyName.AnchorY: {
 					if (!transform.anchor) {
 						transform.anchor = Vec2.new(0, 0);
 					}
-					transform.anchor.y = property.value;
+					transform.anchor.y = value;
 					break;
 				}
 				case PropertyName.Rotation: {
-					transform.rotation = property.value * DEG_TO_RAD_FAC;
+					transform.rotation = value * DEG_TO_RAD_FAC;
 					break;
 				}
 				case PropertyName.Scale: {
-					transform.scale = property.value;
+					transform.scale = value;
 					break;
 				}
 			}
@@ -212,4 +184,39 @@ export const getLayerArrayModifierCountPropertyId = (
 	}
 
 	return null;
+};
+
+export const getLayerArrayModifiers = (layerId: string, compositionState: CompositionState) => {
+	const out: Array<{ countId: string; transformGroupId: string }> = [];
+
+	const modifierGroupId = getLayerModifierPropertyGroupId(layerId, compositionState);
+
+	if (!modifierGroupId) {
+		return out;
+	}
+
+	const modifierGroup = compositionState.properties[modifierGroupId] as CompositionPropertyGroup;
+	const arrayModifierGroupIds = modifierGroup.properties.filter((propertyId) => {
+		const property = compositionState.properties[propertyId];
+		return property.name === PropertyGroupName.ArrayModifier;
+	});
+
+	for (let i = 0; i < arrayModifierGroupIds.length; i += 1) {
+		const group = compositionState.properties[
+			arrayModifierGroupIds[i]
+		] as CompositionPropertyGroup;
+
+		const names = group.properties.map(
+			(propertyId) => compositionState.properties[propertyId].name,
+		);
+		const countIndex = names.indexOf(PropertyName.ArrayModifier_Count);
+		const transformIndex = names.indexOf(PropertyGroupName.Transform);
+
+		out.push({
+			countId: group.properties[countIndex],
+			transformGroupId: group.properties[transformIndex],
+		});
+	}
+
+	return out;
 };

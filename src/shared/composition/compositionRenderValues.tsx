@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { reduceCompProperties } from "~/composition/timeline/compTimeUtils";
-import { applyIndexTransform, computeLayerTransformMap } from "~/composition/transformUtils";
+import { computeLayerTransformMap } from "~/composition/transformUtils";
 import { getLayerArrayModifierCountPropertyId } from "~/composition/util/compositionPropertyUtils";
 import {
 	ComputeNodeArg,
@@ -291,11 +291,6 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 
 					for (let i = 0; i < count; i += 1) {
 						let transform = map.transforms[layer.id].transform[i];
-						const { indexTransforms: indexTransform } = map.transforms[layer.id];
-
-						if (indexTransform) {
-							transform = applyIndexTransform(transform, indexTransform[i], i);
-						}
 
 						const id = compositionState.compositionLayerIdToComposition[layer.id];
 						map.compositionLayers[layer.id][i] = crawl(

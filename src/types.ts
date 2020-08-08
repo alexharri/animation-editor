@@ -125,7 +125,9 @@ export interface CompositionRenderValues {
 	transforms: {
 		[layerId: string]: {
 			transform: { [index: number]: AffineTransform };
-			indexTransforms: { [index: number]: AffineTransform };
+			indexTransforms: Array<{
+				[index: number]: AffineTransform;
+			}>;
 		};
 	};
 	compositionLayers: {
