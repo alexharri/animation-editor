@@ -22,7 +22,13 @@ const getTransformMap = (compositionId: string) => {
 		{ width, height },
 		{ recursive: false },
 	);
-	const transformMap = computeLayerTransformMap(compositionId, map.properties, compositionState);
+	const transformMap = computeLayerTransformMap(
+		compositionId,
+		map.properties,
+		compositionState,
+		undefined,
+		{ recursive: false },
+	);
 	return transformMap;
 };
 

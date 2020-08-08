@@ -14,7 +14,7 @@ import { Mat2 } from "~/util/math/mat";
 interface LayerTransformMap {
 	[layerId: string]: {
 		transform: { [index: number]: AffineTransform };
-		indexTransform: AffineTransform | null;
+		indexTransforms: { [index: number]: AffineTransform };
 	};
 }
 
@@ -66,34 +66,54 @@ const getBaseTransform = (
 };
 
 export const applyParentTransform = (
-	_transform: AffineTransform,
+	transform: AffineTransform,
 	parentTransform: AffineTransform,
 	isBaseTransform: boolean,
 ): AffineTransform => {
-	const transform = { ..._transform };
+	let translate = transform.translate;
 
-	transform.translate = transform.translate.add(parentTransform.translate);
+	translate = translate.add(parentTransform.translate);
 
 	if (isBaseTransform) {
-		transform.translate = transform.translate.sub(parentTransform.anchor);
+		translate = translate.sub(parentTransform.anchor);
 	}
 
 	if (parentTransform.rotation !== 0) {
-		transform.translate = rotateVec2CCW(
-			transform.translate,
-			parentTransform.rotation,
-			parentTransform.translate,
-		);
+		translate = rotateVec2CCW(translate, parentTransform.rotation, parentTransform.translate);
 	}
 	if (parentTransform.scale !== 1) {
-		transform.translate = transform.translate.scale(
-			parentTransform.scale,
-			parentTransform.translate,
-		);
+		translate = translate.scale(parentTransform.scale, parentTransform.translate);
 	}
-	transform.rotation += parentTransform.rotation;
-	transform.scale = transform.scale * parentTransform.scale;
-	return transform;
+
+	return {
+		translate,
+		anchor: transform.anchor,
+		rotation: transform.rotation + parentTransform.rotation,
+		scale: transform.scale * parentTransform.scale,
+	};
+};
+
+export const _applyIndexTransform = (
+	indexTransform: AffineTransform,
+	transform: AffineTransform,
+): AffineTransform => {
+	let translate = indexTransform.translate;
+
+	translate = translate.add(transform.translate);
+
+	if (transform.rotation !== 0) {
+		translate = rotateVec2CCW(translate, transform.rotation, transform.translate);
+	}
+	if (transform.scale !== 1) {
+		translate = translate.scale(transform.scale, transform.translate);
+	}
+
+	return {
+		translate,
+		anchor: transform.anchor.add(indexTransform.anchor),
+		rotation: indexTransform.rotation + transform.rotation,
+		scale: indexTransform.scale * transform.scale,
+	};
 };
 
 /**
@@ -108,10 +128,33 @@ export const applyIndexTransform = (
 
 	const count = Math.abs(index);
 	for (let i = 0; i < count; i += 1) {
-		transform = applyParentTransform(indexTransform, transform, true);
+		transform = _applyIndexTransform(indexTransform, transform);
 	}
 
 	return transform;
+};
+
+export const getIndexTransformMap = (
+	indexTransform: AffineTransform,
+	count: number,
+): { [index: number]: AffineTransform } => {
+	let transform: AffineTransform = {
+		translate: Vec2.new(0, 0),
+		anchor: Vec2.new(0, 0),
+		rotation: 0,
+		scale: 1,
+	};
+
+	const transforms: { [index: number]: AffineTransform } = {
+		[0]: transform,
+	};
+
+	for (let i = 1; i < count; i += 1) {
+		transform = _applyIndexTransform(indexTransform, transform);
+		transforms[i] = transform;
+	}
+
+	return transforms;
 };
 
 const defaultTransform: AffineTransform = {
@@ -126,6 +169,7 @@ export const computeLayerTransformMap = (
 	propertyToValue: PropertyValueMap,
 	compositionState: CompositionState,
 	baseTransform: AffineTransform = defaultTransform,
+	options: { recursive: boolean },
 ): LayerTransformMap => {
 	const map: LayerTransformMap = {};
 
@@ -138,14 +182,14 @@ export const computeLayerTransformMap = (
 
 		map[layer.id] = {
 			transform: {},
-			indexTransform: null,
+			indexTransforms: {},
 		};
 
 		let count = 1;
-
 		const countPropertyId = getLayerArrayModifierCountPropertyId(layerId, compositionState);
-		if (countPropertyId) {
-			count = propertyToValue[countPropertyId].computedValue[0];
+
+		if (options.recursive && countPropertyId) {
+			count = Math.max(1, propertyToValue[countPropertyId].computedValue[0]);
 		}
 
 		for (let i = 0; i < count; i++) {
@@ -161,9 +205,9 @@ export const computeLayerTransformMap = (
 			map[layer.id].transform[i] = transform;
 		}
 
-		if (countPropertyId) {
-			const indexTransform = getLayerArrayModifierTransform(layerId, compositionState)!;
-			map[layer.id].indexTransform = indexTransform;
+		if (options.recursive && countPropertyId) {
+			const indexTransform = getLayerArrayModifierTransform(layerId, compositionState, count);
+			map[layer.id].indexTransforms = indexTransform;
 		}
 	}
 

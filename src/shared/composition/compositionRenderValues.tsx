@@ -53,12 +53,29 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 	// May be reused since node ids are not reused in different graphs
 	const expressionCache = {};
 
-	function crawl(
+	const _compProperties: { [compositionId: string]: CompositionProperty[] } = {};
+	const getCompositionProperties = (compositionId: string) => {
+		if (!_compProperties[compositionId]) {
+			_compProperties[compositionId] = reduceCompProperties<CompositionProperty[]>(
+				compositionId,
+				compositionState,
+				(acc, property) => {
+					acc.push(property);
+					return acc;
+				},
+				[],
+			);
+		}
+
+		return _compProperties[compositionId];
+	};
+
+	const renderCompAtFrameIndex = (
+		parent: any,
+		parentTransform: AffineTransform | undefined,
 		compositionId: string,
 		frameIndex: number,
-		parent?: CompositionRenderValues,
-		parentTransform?: AffineTransform,
-	): CompositionRenderValues {
+	): CompositionRenderValues => {
 		const composition = compositionState.compositions[compositionId];
 		const map: CompositionRenderValues = {
 			frameIndex,
@@ -68,15 +85,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			parent,
 		};
 
-		const properties = reduceCompProperties<CompositionProperty[]>(
-			compositionId,
-			compositionState,
-			(acc, property) => {
-				acc.push(property);
-				return acc;
-			},
-			[],
-		);
+		const properties = getCompositionProperties(compositionId);
 
 		// Compute raw values for each property in the composition
 		for (const property of properties) {
@@ -225,6 +234,46 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			map.properties,
 			compositionState,
 			parentTransform,
+			options,
+		);
+
+		return map;
+	};
+
+	const _compRenderValues: { [key: string]: CompositionRenderValues } = {};
+	const getCompRenderValuesAtFrameIndex = (
+		parent: any,
+		parentTransform: AffineTransform | undefined,
+		compositionId: string,
+		frameIndex: number,
+	): CompositionRenderValues => {
+		const key = `${compositionId}:${frameIndex}`;
+
+		if (!_compRenderValues[key]) {
+			_compRenderValues[key] = renderCompAtFrameIndex(
+				parent,
+				parentTransform,
+				compositionId,
+				frameIndex,
+			);
+		}
+
+		return _compRenderValues[key];
+	};
+
+	function crawl(
+		compositionId: string,
+		frameIndex: number,
+		parent?: CompositionRenderValues,
+		parentTransform?: AffineTransform,
+	): CompositionRenderValues {
+		const composition = compositionState.compositions[compositionId];
+
+		const map = getCompRenderValuesAtFrameIndex(
+			parent,
+			parentTransform,
+			compositionId,
+			frameIndex,
 		);
 
 		if (options.recursive) {
@@ -247,10 +296,10 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 
 					for (let i = 0; i < count; i += 1) {
 						let transform = map.transforms[layer.id].transform[i];
-						const { indexTransform } = map.transforms[layer.id];
+						const { indexTransforms: indexTransform } = map.transforms[layer.id];
 
 						if (indexTransform) {
-							transform = applyIndexTransform(transform, indexTransform!, i);
+							transform = applyIndexTransform(transform, indexTransform[i], i);
 						}
 
 						const id = compositionState.compositionLayerIdToComposition[layer.id];

@@ -129,6 +129,7 @@ export const AreaComponent: React.FC<Props> = (props) => {
 			<div className={s("area__content")}>
 				<AreaIdContext.Provider value={props.id}>
 					<AreaErrorBoundary
+						key={props.id}
 						component={Component}
 						areaId={props.id}
 						areaState={props.state}

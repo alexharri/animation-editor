@@ -1,8 +1,7 @@
-import React, { useEffect, useLayoutEffect, useRef } from "react";
-import { CompositionState } from "~/composition/state/compositionReducer";
-import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
+import React, { useEffect, useRef } from "react";
 import CompWorkspaceStyles from "~/composition/workspace/CompWorkspace.styles";
 import { CompositionWorkspaceAreaState } from "~/composition/workspace/compWorkspaceAreaReducer";
+import { CompWorkspaceFooter } from "~/composition/workspace/CompWorkspaceFooter";
 import { compWorkspaceHandlers } from "~/composition/workspace/compWorkspaceHandlers";
 import {
 	renderCompositionWorkspaceGuides,
@@ -11,7 +10,8 @@ import {
 import { cssVariables } from "~/cssVariables";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
-import { connectActionState, getActionState } from "~/state/stateUtils";
+import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
+import { store } from "~/state/store";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -55,16 +55,21 @@ const s = compileStylesheetLabelled(CompWorkspaceStyles);
 
 type OwnProps = AreaComponentProps<CompositionWorkspaceAreaState>;
 interface StateProps {
-	compositionState: CompositionState;
-	compositionSelectionState: CompositionSelectionState;
+	// compositionState: CompositionState;
+	// compositionSelectionState: CompositionSelectionState;
 }
 type Props = OwnProps & StateProps;
 
 const CompWorkspaceComponent: React.FC<Props> = (props) => {
+	const lastStateRef = useRef<ActionState | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const guideCanvasRef = useRef<HTMLCanvasElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
 	const zoomTarget = useRef<HTMLDivElement>(null);
+	const shouldRenderRef = useRef(true);
+	const shouldRenderGuidesRef = useRef(false);
+	const propsRef = useRef(props);
+	propsRef.current = props;
 
 	const mousePositionRef = useRef<Vec2 | undefined>(undefined);
 
@@ -84,18 +89,6 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 		}
 	});
 
-	useLayoutEffect(() => {
-		const mainCtx = canvasRef.current?.getContext("2d");
-		const guidesCtx = guideCanvasRef.current?.getContext("2d");
-
-		if (!mainCtx || !guidesCtx) {
-			return;
-		}
-
-		renderCompWorkspace(getOptions(props, mainCtx));
-		renderCompositionWorkspaceGuides(getOptions(props, guidesCtx, mousePositionRef.current));
-	}, [props]);
-
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -113,16 +106,82 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 		};
 	}, [containerRef.current]);
 
+	useEffect(() => {
+		const unsub = store.subscribe(() => {
+			if (shouldRenderRef.current) {
+				return;
+			}
+
+			const lastState = lastStateRef.current;
+			const state = getActionStateFromApplicationState(store.getState());
+
+			lastStateRef.current = state;
+
+			shouldRenderRef.current = (() => {
+				if (!lastState) {
+					return true;
+				}
+
+				if (state.compositionState !== lastState.compositionState) {
+					return true;
+				}
+
+				if (state.compositionSelectionState !== lastState.compositionSelectionState) {
+					return true;
+				}
+
+				return false;
+			})();
+		});
+
+		return unsub;
+	}, []);
+
+	useEffect(() => {
+		let mounted = true;
+
+		const tick = () => {
+			if (mounted) {
+				requestAnimationFrame(tick);
+			}
+
+			const mainCtx = canvasRef.current?.getContext("2d");
+			const guidesCtx = guideCanvasRef.current?.getContext("2d");
+
+			if (!mainCtx || !guidesCtx) {
+				return;
+			}
+
+			const render = shouldRenderRef.current;
+			const renderGuides = render || shouldRenderGuidesRef.current;
+
+			if (render) {
+				shouldRenderRef.current = false;
+				renderCompWorkspace(getOptions(propsRef.current, mainCtx));
+			}
+
+			if (renderGuides) {
+				shouldRenderGuidesRef.current = false;
+				renderCompositionWorkspaceGuides(
+					getOptions(propsRef.current, guidesCtx, mousePositionRef.current),
+				);
+			}
+		};
+		tick();
+
+		return () => {
+			mounted = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		shouldRenderRef.current = true;
+	}, [props]);
+
 	const onMouseMove = (e: React.MouseEvent) => {
+		shouldRenderGuidesRef.current = true;
+
 		mousePositionRef.current = Vec2.fromEvent(e);
-
-		const guidesCtx = guideCanvasRef.current?.getContext("2d");
-
-		if (!guidesCtx) {
-			return;
-		}
-
-		renderCompositionWorkspaceGuides(getOptions(props, guidesCtx, mousePositionRef.current));
 	};
 
 	const { left, top, width, height } = props;
@@ -169,16 +228,18 @@ const CompWorkspaceComponent: React.FC<Props> = (props) => {
 					left: (e) => compWorkspaceHandlers.onZoomClick(e, props.areaId),
 				})}
 			/>
+			<CompWorkspaceFooter compositionId={props.areaState.compositionId} />
 		</div>
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = ({
-	compositionState,
-	compositionSelectionState,
-}) => ({
-	compositionState,
-	compositionSelectionState,
-});
+// const mapStateToProps: MapActionState<StateProps, OwnProps> = ({
+// 	compositionState,
+// 	compositionSelectionState,
+// }) => ({
+// 	compositionState,
+// 	compositionSelectionState,
+// });
 
-export const CompWorkspace = connectActionState(mapStateToProps)(CompWorkspaceComponent);
+// export const CompWorkspace = connectActionState(mapStateToProps)(CompWorkspaceComponent);
+export const CompWorkspace = CompWorkspaceComponent;

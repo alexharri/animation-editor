@@ -1,5 +1,6 @@
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
+import { getIndexTransformMap } from "~/composition/transformUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { AffineTransform, PropertyGroupName, PropertyName } from "~/types";
 
@@ -94,11 +95,12 @@ export const getLayerModifierPropertyGroupId = (
 export const getLayerArrayModifierTransform = (
 	layerId: string,
 	compositionState: CompositionState,
-): AffineTransform | null => {
+	count: number,
+): { [index: number]: AffineTransform } => {
 	const modifierGroupId = getLayerModifierPropertyGroupId(layerId, compositionState);
 
 	if (!modifierGroupId) {
-		return null;
+		return {};
 	}
 
 	const modifierGroup = compositionState.properties[modifierGroupId] as CompositionPropertyGroup;
@@ -122,56 +124,62 @@ export const getLayerArrayModifierTransform = (
 	}
 
 	if (!transformGroupId) {
-		return null;
+		return {};
 	}
 
 	const transformGroup = compositionState.properties[
 		transformGroupId
 	] as CompositionPropertyGroup;
-	return transformGroup.properties.reduce<AffineTransform>((transform, propertyId) => {
-		const property = compositionState.properties[propertyId] as CompositionProperty;
 
-		switch (property.name) {
-			case PropertyName.PositionX: {
-				if (!transform.translate) {
-					transform.translate = Vec2.new(0, 0);
-				}
-				transform.translate.x = property.value;
-				break;
-			}
-			case PropertyName.PositionY: {
-				if (!transform.translate) {
-					transform.translate = Vec2.new(0, 0);
-				}
-				transform.translate.y = property.value;
-				break;
-			}
-			case PropertyName.AnchorX: {
-				if (!transform.anchor) {
-					transform.anchor = Vec2.new(0, 0);
-				}
-				transform.anchor.x = property.value;
-				break;
-			}
-			case PropertyName.AnchorY: {
-				if (!transform.anchor) {
-					transform.anchor = Vec2.new(0, 0);
-				}
-				transform.anchor.y = property.value;
-				break;
-			}
-			case PropertyName.Rotation: {
-				transform.rotation = property.value * DEG_TO_RAD_FAC;
-				break;
-			}
-			case PropertyName.Scale: {
-				transform.scale = property.value;
-				break;
-			}
-		}
+	const indexTransform = transformGroup.properties.reduce<AffineTransform>(
+		(transform, propertyId) => {
+			const property = compositionState.properties[propertyId] as CompositionProperty;
 
-		return transform;
-	}, {} as any);
+			switch (property.name) {
+				case PropertyName.PositionX: {
+					if (!transform.translate) {
+						transform.translate = Vec2.new(0, 0);
+					}
+					transform.translate.x = property.value;
+					break;
+				}
+				case PropertyName.PositionY: {
+					if (!transform.translate) {
+						transform.translate = Vec2.new(0, 0);
+					}
+					transform.translate.y = property.value;
+					break;
+				}
+				case PropertyName.AnchorX: {
+					if (!transform.anchor) {
+						transform.anchor = Vec2.new(0, 0);
+					}
+					transform.anchor.x = property.value;
+					break;
+				}
+				case PropertyName.AnchorY: {
+					if (!transform.anchor) {
+						transform.anchor = Vec2.new(0, 0);
+					}
+					transform.anchor.y = property.value;
+					break;
+				}
+				case PropertyName.Rotation: {
+					transform.rotation = property.value * DEG_TO_RAD_FAC;
+					break;
+				}
+				case PropertyName.Scale: {
+					transform.scale = property.value;
+					break;
+				}
+			}
+
+			return transform;
+		},
+		{} as any,
+	);
+
+	return getIndexTransformMap(indexTransform, count);
 };
 
 export const getLayerArrayModifierCountPropertyId = (

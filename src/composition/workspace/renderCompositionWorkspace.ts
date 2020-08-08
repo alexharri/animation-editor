@@ -1,7 +1,11 @@
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import { applyIndexTransform, transformMat2 } from "~/composition/transformUtils";
+import {
+	applyParentTransform,
+	transformMat2,
+	_applyIndexTransform,
+} from "~/composition/transformUtils";
 import {
 	getLayerArrayModifierCountPropertyId,
 	getLayerCompositionProperties,
@@ -9,7 +13,7 @@ import {
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { cssVariables } from "~/cssVariables";
-import { CompositionRenderValues, LayerType, PropertyName } from "~/types";
+import { AffineTransform, CompositionRenderValues, LayerType, PropertyName } from "~/types";
 import { isVecInPoly } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
 
@@ -67,7 +71,12 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 	ctx.rect(pan.x, pan.y, composition.width * scale, composition.height * scale);
 	ctx.fill();
 
-	function renderRectLayer(map: CompositionRenderValues, layer: CompositionLayer, index: number) {
+	function renderRectLayer(
+		map: CompositionRenderValues,
+		layer: CompositionLayer,
+		index: number,
+		parentIndexTransforms: AffineTransform[] = [],
+	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id, index);
 
 		const {
@@ -84,10 +93,14 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 		const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
 		let transform = map.transforms[layer.id].transform[index];
-		let { indexTransform } = map.transforms[layer.id];
 
-		if (indexTransform) {
-			transform = applyIndexTransform(transform, indexTransform, index);
+		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
+			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
+		}
+
+		let { indexTransforms } = map.transforms[layer.id];
+		if (indexTransforms[index]) {
+			transform = _applyIndexTransform(indexTransforms[index], transform);
 		}
 
 		const mat2 = transformMat2(transform);
@@ -118,7 +131,12 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 		}
 	}
 
-	function renderEllipse(map: CompositionRenderValues, layer: CompositionLayer, index: number) {
+	function renderEllipse(
+		map: CompositionRenderValues,
+		layer: CompositionLayer,
+		index: number,
+		parentIndexTransforms: AffineTransform[] = [],
+	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id, index);
 
 		const { OuterRadius, InnerRadius, Fill, StrokeWidth, StrokeColor } = nameToProperty;
@@ -127,10 +145,14 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 		const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
 		let transform = map.transforms[layer.id].transform[index];
-		let { indexTransform } = map.transforms[layer.id];
 
-		if (indexTransform) {
-			transform = applyIndexTransform(transform, indexTransform, index);
+		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
+			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
+		}
+
+		const { indexTransforms } = map.transforms[layer.id];
+		if (indexTransforms[index]) {
+			transform = _applyIndexTransform(indexTransforms[index], transform);
 		}
 
 		const [[ix, iy], [jx, jy]] = transformMat2(transform).matrix;
@@ -175,7 +197,11 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 		}
 	}
 
-	function renderCompositionChildren(map: CompositionRenderValues, compositionId: string) {
+	function renderCompositionChildren(
+		map: CompositionRenderValues,
+		compositionId: string,
+		parentIndexTransforms: AffineTransform[] = [],
+	) {
 		const composition = compositionState.compositions[compositionId];
 		const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
@@ -191,23 +217,38 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 				count = map.properties[countPropertyId].computedValue[0];
 			}
 
+			if (count < 1) {
+				continue;
+			}
+
 			for (let i = 0; i < count; i += 1) {
 				switch (layer.type) {
 					case LayerType.Composition: {
+						const indexTransform: AffineTransform =
+							count > 1
+								? map.transforms[layer.id].indexTransforms[i]
+								: {
+										anchor: Vec2.new(0, 0),
+										rotation: 0,
+										scale: 0,
+										translate: Vec2.new(0, 0),
+								  };
+						const indexTransforms = [...parentIndexTransforms, indexTransform];
 						renderCompositionChildren(
 							map.compositionLayers[layer.id][i],
 							compositionState.compositionLayerIdToComposition[layer.id],
+							indexTransforms,
 						);
 						break;
 					}
 
 					case LayerType.Rect: {
-						renderRectLayer(map, layer, i);
+						renderRectLayer(map, layer, i, parentIndexTransforms);
 						break;
 					}
 
 					case LayerType.Ellipse: {
-						renderEllipse(map, layer, i);
+						renderEllipse(map, layer, i, parentIndexTransforms);
 						break;
 					}
 				}
@@ -263,10 +304,10 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 		}
 
 		let transform = map.transforms[layer.id].transform[index];
-		let { indexTransform } = map.transforms[layer.id];
 
-		if (indexTransform) {
-			transform = applyIndexTransform(transform, indexTransform, index);
+		let { indexTransforms } = map.transforms[layer.id];
+		if (indexTransforms[index]) {
+			transform = _applyIndexTransform(indexTransforms[index], transform);
 		}
 
 		const mat2 = transformMat2(transform);
