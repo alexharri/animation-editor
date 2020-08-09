@@ -6,7 +6,6 @@ export const useLayerNameToProperty = (
 	map: CompositionRenderValues,
 	_compositionId: string,
 	layerId: string,
-	index: number,
 ) => {
 	return useActionState((state) => {
 		const properties = getLayerCompositionProperties(layerId, state.compositionState);
@@ -14,8 +13,7 @@ export const useLayerNameToProperty = (
 		const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
 			(obj, p) => {
 				const value = map.properties[p.id];
-				(obj as any)[PropertyName[p.name]] =
-					value.computedValue[index] ?? value.computedValue[0];
+				(obj as any)[PropertyName[p.name]] = value.computedValue;
 				return obj;
 			},
 			{} as any,

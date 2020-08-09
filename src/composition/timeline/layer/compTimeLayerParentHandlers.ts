@@ -25,6 +25,7 @@ const getTransformMap = (compositionId: string) => {
 	const transformMap = computeLayerTransformMap(
 		compositionId,
 		map.properties,
+		map.arrayModifierProperties,
 		compositionState,
 		undefined,
 		{ recursive: false },

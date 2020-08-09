@@ -2,7 +2,13 @@ import { CompositionProperty, CompositionPropertyGroup } from "~/composition/com
 import { CompositionState } from "~/composition/state/compositionReducer";
 import { getIndexTransformMap } from "~/composition/transformUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
-import { AffineTransform, PropertyGroupName, PropertyName, PropertyValueMap } from "~/types";
+import {
+	AffineTransform,
+	ArrayModifierPropertyValueMap,
+	PropertyGroupName,
+	PropertyName,
+	PropertyValueMap,
+} from "~/types";
 
 const propertyGroupNameToLabel: { [key in keyof typeof PropertyGroupName]: string } = {
 	Dimensions: "Dimensions",
@@ -95,6 +101,7 @@ export const getLayerModifierPropertyGroupId = (
 export const getLayerArrayModifierIndexTransform = (
 	compositionState: CompositionState,
 	propertyToValue: PropertyValueMap,
+	arrayModifierPropertyToValue: ArrayModifierPropertyValueMap,
 	count: number,
 	transformGroupId: string,
 ): { [index: number]: AffineTransform } => {
@@ -102,10 +109,17 @@ export const getLayerArrayModifierIndexTransform = (
 		transformGroupId
 	] as CompositionPropertyGroup;
 
-	const indexTransform = transformGroup.properties.reduce<AffineTransform>(
-		(transform, propertyId) => {
-			const property = compositionState.properties[propertyId] as CompositionProperty;
-			const value = propertyToValue[propertyId].computedValue[0];
+	const indexTransforms: AffineTransform[] = [];
+
+	for (let i = 0; i < count; i += 1) {
+		const transform: AffineTransform = {} as any;
+
+		for (const propertyId of transformGroup.properties) {
+			const property = compositionState.properties[propertyId];
+			const value =
+				(arrayModifierPropertyToValue[propertyId] &&
+					arrayModifierPropertyToValue[propertyId][i]) ??
+				propertyToValue[propertyId].computedValue;
 
 			switch (property.name) {
 				case PropertyName.PositionX: {
@@ -145,13 +159,12 @@ export const getLayerArrayModifierIndexTransform = (
 					break;
 				}
 			}
+		}
 
-			return transform;
-		},
-		{} as any,
-	);
+		indexTransforms.push(transform);
+	}
 
-	return getIndexTransformMap(indexTransform, count);
+	return getIndexTransformMap(indexTransforms, count);
 };
 
 export const getLayerArrayModifierCountPropertyId = (
@@ -187,7 +200,7 @@ export const getLayerArrayModifierCountPropertyId = (
 };
 
 export const getLayerArrayModifiers = (layerId: string, compositionState: CompositionState) => {
-	const out: Array<{ countId: string; transformGroupId: string }> = [];
+	const out: Array<{ modifierGroupId: string; countId: string; transformGroupId: string }> = [];
 
 	const modifierGroupId = getLayerModifierPropertyGroupId(layerId, compositionState);
 
@@ -213,6 +226,7 @@ export const getLayerArrayModifiers = (layerId: string, compositionState: Compos
 		const transformIndex = names.indexOf(PropertyGroupName.Transform);
 
 		out.push({
+			modifierGroupId: group.id,
 			countId: group.properties[countIndex],
 			transformGroupId: group.properties[transformIndex],
 		});

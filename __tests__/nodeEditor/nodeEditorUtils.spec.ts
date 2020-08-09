@@ -1,12 +1,11 @@
 import "~/globals";
-
+import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import {
 	findInputsThatReferenceNodeOutputs,
 	removeNodeAndReferencesToItInGraph,
 } from "~/nodeEditor/nodeEditorUtils";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { ValueType } from "~/types";
-import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
 
 const _graphBase: NodeEditorGraphState = {
 	_addNodeOfTypeOnClick: null,
@@ -14,8 +13,10 @@ const _graphBase: NodeEditorGraphState = {
 	_dragOutputTo: null,
 	_dragSelectRect: null,
 	moveVector: Vec2.new(0, 0),
+	type: "layer_graph",
 	id: "0",
 	layerId: "",
+	propertyId: "",
 	nodes: {},
 	selection: { nodes: {} },
 };

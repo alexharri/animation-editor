@@ -68,7 +68,8 @@ const CompTimeLayerComponent: React.FC<Props> = (props) => {
 						title="Open Graph in area"
 						className={s("openGraphInArea", { active: true })}
 						onMouseDown={separateLeftRightMouse({
-							left: (e) => compTimeHandlers.onOpenGraphInAreaMouseDown(e, layer.id),
+							left: (e) =>
+								compTimeHandlers.onOpenGraphInAreaMouseDown(e, layer.graphId),
 						})}
 					>
 						<OpenInAreaIcon />

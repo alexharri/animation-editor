@@ -7,7 +7,12 @@ import {
 } from "~/composition/util/compositionPropertyUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
-import { AffineTransform, PropertyName, PropertyValueMap } from "~/types";
+import {
+	AffineTransform,
+	ArrayModifierPropertyValueMap,
+	PropertyName,
+	PropertyValueMap,
+} from "~/types";
 import { rotateVec2CCW } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
 
@@ -49,13 +54,12 @@ const getBaseTransform = (
 	layerId: string,
 	propertyToValue: PropertyValueMap,
 	compositionState: CompositionState,
-	index: number,
 ): AffineTransform => {
 	const props = getLayerCompositionProperties(layerId, compositionState).reduce<
 		{ [key in keyof typeof PropertyName]: any }
 	>((obj, p) => {
 		const value = propertyToValue[p.id];
-		(obj as any)[PropertyName[p.name]] = value.computedValue[index] ?? value.computedValue[0];
+		(obj as any)[PropertyName[p.name]] = value.computedValue;
 		return obj;
 	}, {} as any);
 
@@ -137,7 +141,7 @@ export const applyIndexTransform = (
 };
 
 export const getIndexTransformMap = (
-	indexTransform: AffineTransform,
+	indexTransforms: AffineTransform[],
 	count: number,
 ): { [index: number]: AffineTransform } => {
 	let transform: AffineTransform = {
@@ -152,7 +156,7 @@ export const getIndexTransformMap = (
 	};
 
 	for (let i = 1; i < count; i += 1) {
-		transform = _applyIndexTransform(indexTransform, transform);
+		transform = _applyIndexTransform(indexTransforms[i], transform);
 		transforms[i] = transform;
 	}
 
@@ -169,6 +173,7 @@ const defaultTransform: AffineTransform = {
 export const computeLayerTransformMap = (
 	compositionId: string,
 	propertyToValue: PropertyValueMap,
+	arrayModifierPropertyToValue: ArrayModifierPropertyValueMap,
 	compositionState: CompositionState,
 	baseTransform: AffineTransform = defaultTransform,
 	options: { recursive: boolean },
@@ -194,13 +199,13 @@ export const computeLayerTransformMap = (
 		if (options.recursive) {
 			for (const arrMod of arrMods) {
 				const { countId } = arrMod;
-				const countValue = propertyToValue[countId].computedValue[0];
+				const countValue = propertyToValue[countId].computedValue;
 				count *= Math.max(1, countValue);
 			}
 		}
 
 		for (let i = 0; i < count; i++) {
-			let transform = getBaseTransform(layerId, propertyToValue, compositionState, i);
+			let transform = getBaseTransform(layerId, propertyToValue, compositionState);
 
 			if (layer.parentLayerId) {
 				const parentTransform = map[layer.parentLayerId].transform[0];
@@ -215,10 +220,11 @@ export const computeLayerTransformMap = (
 		if (options.recursive) {
 			for (const arrMod of arrMods) {
 				const { countId, transformGroupId } = arrMod;
-				const count = Math.max(1, propertyToValue[countId].computedValue[0]);
+				const count = Math.max(1, propertyToValue[countId].computedValue);
 				const indexTransform = getLayerArrayModifierIndexTransform(
 					compositionState,
 					propertyToValue,
+					arrayModifierPropertyToValue,
 					count,
 					transformGroupId,
 				);

@@ -1,4 +1,6 @@
 import React from "react";
+import { GraphIcon } from "~/components/icons/GraphIcon";
+import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
 import { StopwatchIcon } from "~/components/icons/StopwatchIcon";
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
@@ -12,7 +14,7 @@ import {
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
-import { ValueType } from "~/types";
+import { PropertyGroupName, ValueType } from "~/types";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
@@ -36,6 +38,9 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 
 	if (property.type === "group") {
 		const { properties } = property;
+
+		const canHaveGraph = property.name === PropertyGroupName.ArrayModifier;
+		const graphId = property.graphId;
 
 		const toggleGroupOpen = () => {
 			requestAction({ history: true }, (params) => {
@@ -70,6 +75,42 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 						>
 							{getLayerPropertyGroupLabel(property.name)}
 						</div>
+						{canHaveGraph && (
+							<>
+								<div
+									title={
+										property.graphId
+											? "Delete Layer Graph"
+											: "Create Layer Graph"
+									}
+									className={s("graph", { active: !!graphId })}
+									onMouseDown={separateLeftRightMouse({
+										left: (e) =>
+											compTimeHandlers.onPropertyGraphMouseDown(
+												e,
+												property.id,
+											),
+									})}
+								>
+									<GraphIcon />
+								</div>
+								{!!graphId && (
+									<div
+										title="Open Graph in area"
+										className={s("openGraphInArea", { active: true })}
+										onMouseDown={separateLeftRightMouse({
+											left: (e) =>
+												compTimeHandlers.onOpenGraphInAreaMouseDown(
+													e,
+													graphId,
+												),
+										})}
+									>
+										<OpenInAreaIcon />
+									</div>
+								)}
+							</>
+						)}
 					</div>
 				</div>
 				{!property.collapsed &&

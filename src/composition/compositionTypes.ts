@@ -38,6 +38,7 @@ export interface CompositionPropertyGroup {
 	layerId: string;
 	properties: string[];
 	collapsed: boolean;
+	graphId: string; // Currently only ArrayModifier groups may have an associated graph
 }
 
 export type CompositionProperty = {

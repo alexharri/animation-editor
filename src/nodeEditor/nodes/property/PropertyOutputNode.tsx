@@ -1,6 +1,7 @@
 import React from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
+import { useMemoActionState } from "~/hook/useActionState";
 import { requestAction } from "~/listener/requestAction";
 import { NodeBody } from "~/nodeEditor/components/NodeBody";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
@@ -25,7 +26,11 @@ interface OwnProps {
 	nodeId: string;
 }
 interface StateProps {
-	layerId: string;
+	graphLayerId: string;
+	graphPropertyId: string;
+
+	graphLayerPropertyIds?: string[];
+
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
 	state: NodeEditorNodeState<NodeEditorNodeType.property_output>;
@@ -80,13 +85,35 @@ function PropertyOutputNodeComponent(props: Props) {
 		});
 	};
 
+	const selectFromPropertyIds = useMemoActionState(
+		({ compositionState }) => {
+			if (props.graphPropertyId) {
+				return [props.graphPropertyId];
+			}
+
+			const layer = compositionState.layers[props.graphLayerId];
+			return layer.properties;
+		},
+		[props.graphLayerPropertyIds],
+	);
+
+	const select = props.graphLayerId ? (
+		<PropertyNodeSelectProperty
+			selectFromPropertyIds={selectFromPropertyIds}
+			onSelectProperty={onSelectProperty}
+			selectedPropertyId={props.state.propertyId}
+		/>
+	) : (
+		<PropertyNodeSelectProperty
+			selectFromPropertyIds={selectFromPropertyIds}
+			onSelectProperty={onSelectProperty}
+			selectedPropertyId={props.state.propertyId}
+		/>
+	);
+
 	return (
 		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
-			<PropertyNodeSelectProperty
-				layerId={props.layerId}
-				onSelectProperty={onSelectProperty}
-				selectedPropertyId={props.state.propertyId}
-			/>
+			{select}
 			{inputs.map((input, i) => {
 				return (
 					<div className={s("input")} key={i}>
@@ -120,18 +147,28 @@ function PropertyOutputNodeComponent(props: Props) {
 	);
 }
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ nodeEditor },
+const mapState: MapActionState<StateProps, OwnProps> = (
+	{ nodeEditor, compositionState },
 	{ graphId, nodeId },
 ) => {
 	const graph = nodeEditor.graphs[graphId];
 	const node = graph.nodes[nodeId];
+	const state = node.state as StateProps["state"];
+
+	const graphLayerPropertyIds = graph.layerId
+		? compositionState.layers[graph.layerId].properties
+		: undefined;
+
 	return {
-		layerId: graph.layerId,
+		graphLayerId: graph.layerId,
+		graphPropertyId: graph.propertyId,
+
+		graphLayerPropertyIds,
+
 		inputs: node.inputs,
 		outputs: node.outputs,
-		state: node.state as StateProps["state"],
+		state,
 	};
 };
 
-export const PropertyOutputNode = connectActionState(mapStateToProps)(PropertyOutputNodeComponent);
+export const PropertyOutputNode = connectActionState(mapState)(PropertyOutputNodeComponent);

@@ -20,6 +20,7 @@ export const createLayerModifierProperties = (
 		layerId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
+		graphId: "",
 	};
 
 	return { properties, group };

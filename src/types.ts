@@ -113,15 +113,18 @@ export type KeySelectionMap = Partial<{ [key: string]: true }>;
 
 export interface PropertyValueMap {
 	[propertyId: string]: {
-		computedValue: {
-			[index: number]: any;
-		};
+		computedValue: any;
 		rawValue: any;
 	};
 }
 
+export interface ArrayModifierPropertyValueMap {
+	[propertyId: string]: { [index: number]: any };
+}
+
 export interface CompositionRenderValues {
 	properties: PropertyValueMap;
+	arrayModifierProperties: ArrayModifierPropertyValueMap;
 	transforms: {
 		[layerId: string]: {
 			transform: { [index: number]: AffineTransform };

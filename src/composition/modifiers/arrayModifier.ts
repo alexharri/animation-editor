@@ -18,6 +18,7 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		layerId: opts.layerId,
 		properties: [],
 		collapsed: true,
+		graphId: "",
 	};
 	propertiesToAdd.push(group);
 

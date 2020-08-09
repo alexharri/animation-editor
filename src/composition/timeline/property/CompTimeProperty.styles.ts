@@ -1,5 +1,5 @@
-import { StyleParams } from "~/util/stylesheets";
 import { cssVariables } from "~/cssVariables";
+import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
@@ -19,6 +19,58 @@ export default ({ css }: StyleParams) => ({
 		height: 16px;
 		display: flex;
 		align-items: stretch;
+	`,
+
+	graph: css`
+		margin-left: 2px;
+		height: 16px;
+		width: 16px;
+		position: relative;
+		cursor: pointer;
+
+		svg {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 14px;
+			height: 14px;
+			fill: ${cssVariables.light300};
+			transform: translate(-50%, -50%);
+		}
+
+		&--active {
+			svg {
+				fill: ${cssVariables.primary500};
+			}
+		}
+	`,
+
+	openGraphInArea: css`
+		margin-left: 2px;
+		height: 16px;
+		width: 16px;
+		position: relative;
+		cursor: grab;
+
+		&:active {
+			cursor: grabbing;
+		}
+
+		svg {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 14px;
+			height: 14px;
+			fill: ${cssVariables.light300};
+			transform: translate(-50%, -50%);
+		}
+
+		&--active {
+			svg {
+				fill: ${cssVariables.primary500};
+			}
+		}
 	`,
 
 	collapsedArrow: css`

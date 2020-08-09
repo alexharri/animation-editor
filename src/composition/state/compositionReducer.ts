@@ -144,6 +144,10 @@ export const compositionActions = {
 		return (layerId: string, graphId: string) => action({ layerId, graphId });
 	}),
 
+	setPropertyGraphId: createAction("comp/SET_PROPERTY_GRAPH_ID", (action) => {
+		return (propertyId: string, graphId: string) => action({ propertyId, graphId });
+	}),
+
 	setLayerParentLayerId: createAction("comp/SET_LAYER_PARENT_LAYER_ID", (action) => {
 		return (layerId: string, parentLayerId: string) => action({ layerId, parentLayerId });
 	}),
@@ -523,6 +527,21 @@ export const compositionReducer = (
 					...layer,
 					graphId,
 				})),
+			};
+		}
+
+		case getType(compositionActions.setPropertyGraphId): {
+			const { propertyId, graphId } = action.payload;
+			return {
+				...state,
+				properties: modifyItemInUnionMap(
+					state.properties,
+					propertyId,
+					(property: CompositionPropertyGroup) => ({
+						...property,
+						graphId,
+					}),
+				),
 			};
 		}
 

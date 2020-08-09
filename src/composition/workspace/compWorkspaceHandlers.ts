@@ -84,6 +84,7 @@ export const compWorkspaceHandlers = {
 
 				if (layer.type === LayerType.Ellipse) {
 					const r = nameToProperty.OuterRadius;
+					console.log(nameToProperty);
 					p = p.sub(Vec2.new(r, r));
 				}
 

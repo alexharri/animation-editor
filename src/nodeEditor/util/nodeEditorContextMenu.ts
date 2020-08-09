@@ -21,9 +21,19 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 	const { dispatch, submitAction } = params;
 
 	const actionState = getActionState();
-	const compositionState = actionState.compositionState;
 	const graph = actionState.nodeEditor.graphs[graphId];
-	const layer = compositionState.layers[graph.layerId];
+	const compositionState = actionState.compositionState;
+
+	let layerId: string;
+
+	if (graph.type === "layer_graph") {
+		layerId = graph.layerId;
+	} else {
+		const property = compositionState.properties[graph.propertyId];
+		layerId = property.layerId;
+	}
+
+	const layer = compositionState.layers[layerId];
 
 	const propertyGroups = layer.properties.map((id) => compositionState.properties[id]);
 	const transformGroup = propertyGroups.find((group): group is CompositionPropertyGroup => {

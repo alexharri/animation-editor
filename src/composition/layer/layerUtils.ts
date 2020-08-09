@@ -47,15 +47,13 @@ export const getLayerNameToProperty = (
 	map: CompositionRenderValues,
 	compositionState: CompositionState,
 	layerId: string,
-	index = 0,
 ) => {
 	const properties = getLayerCompositionProperties(layerId, compositionState);
 
 	const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
 		(obj, p) => {
 			const value = map.properties[p.id];
-			(obj as any)[PropertyName[p.name]] =
-				value.computedValue[index] ?? value.computedValue[0];
+			(obj as any)[PropertyName[p.name]] = value.computedValue;
 			return obj;
 		},
 		{} as any,

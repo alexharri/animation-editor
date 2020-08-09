@@ -17,15 +17,13 @@ const getNameToProperty = (
 	map: CompositionRenderValues,
 	compositionState: CompositionState,
 	layerId: string,
-	index: number,
 ) => {
 	const properties = getLayerCompositionProperties(layerId, compositionState);
 
 	const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
 		(obj, p) => {
 			const value = map.properties[p.id];
-			(obj as any)[PropertyName[p.name]] =
-				value.computedValue[index] ?? value.computedValue[0];
+			(obj as any)[PropertyName[p.name]] = value.computedValue;
 			return obj;
 		},
 		{} as any,
@@ -73,7 +71,7 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 		index: number,
 		parentIndexTransforms: AffineTransform[] = [],
 	) {
-		const nameToProperty = getNameToProperty(map, compositionState, layer.id, index);
+		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
 		const {
 			Width,
@@ -133,7 +131,7 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 		index: number,
 		parentIndexTransforms: AffineTransform[] = [],
 	) {
-		const nameToProperty = getNameToProperty(map, compositionState, layer.id, index);
+		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
 		const { OuterRadius, InnerRadius, Fill, StrokeWidth, StrokeColor } = nameToProperty;
 
@@ -236,7 +234,7 @@ export const renderCompWorkspace = (options: Omit<Options, "mousePosition">) => 
 
 			function dimension(dimensionIndex: number, transforms: AffineTransform[] = []) {
 				const mod = arrayModifiers[dimensionIndex];
-				const count = Math.max(1, map.properties[mod.countId].computedValue[0]);
+				const count = Math.max(1, map.properties[mod.countId].computedValue);
 
 				const hasNext = !!arrayModifiers[dimensionIndex + 1];
 
@@ -282,7 +280,7 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 			return;
 		}
 
-		const nameToProperty = getNameToProperty(map, compositionState, layer.id, index);
+		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
 		let width: number;
 		let height: number;

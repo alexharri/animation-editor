@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { CompositionState } from "~/composition/state/compositionReducer";
+import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import {
 	getLayerPropertyGroupLabel,
 	getLayerPropertyLabel,
@@ -16,7 +16,7 @@ import { cssVariables } from "~/cssVariables";
 import { useGetRefRectFn, useRefRect } from "~/hook/useRefRect";
 import { requestAction } from "~/listener/requestAction";
 import { NODE_HEIGHT_CONSTANTS } from "~/nodeEditor/util/calculateNodeHeight";
-import { connectActionState, getActionState } from "~/state/stateUtils";
+import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled, StyleParams } from "~/util/stylesheets";
 
@@ -96,18 +96,20 @@ const styles = ({ css }: StyleParams) => ({
 
 const s = compileStylesheetLabelled(styles);
 
-interface PropertyProps {
+interface PropertyOwnProps {
 	selectedPropertyId: string;
 	propertyId: string;
 	onSelectProperty: (propertyId: string) => void;
-	properties: CompositionState["properties"];
 	depth: number;
 }
+interface PropertyStateProps {
+	property: CompositionProperty | CompositionPropertyGroup;
+}
+type PropertyProps = PropertyOwnProps & PropertyStateProps;
 
-const Property: React.FC<PropertyProps> = (props) => {
-	const { depth, properties, propertyId, selectedPropertyId } = props;
+const PropertyComponent: React.FC<PropertyProps> = (props) => {
+	const { depth, property, propertyId, selectedPropertyId } = props;
 
-	const property = properties[propertyId];
 	const onClick = () => props.onSelectProperty(propertyId);
 	const depthLeft = 16 * depth;
 
@@ -134,7 +136,6 @@ const Property: React.FC<PropertyProps> = (props) => {
 					<Property
 						selectedPropertyId={selectedPropertyId}
 						propertyId={propertyId}
-						properties={properties}
 						onSelectProperty={props.onSelectProperty}
 						depth={depth + 1}
 						key={propertyId}
@@ -157,15 +158,27 @@ const Property: React.FC<PropertyProps> = (props) => {
 	);
 };
 
-interface LayerProps {
+const mapPropertyState: MapActionState<PropertyStateProps, PropertyOwnProps> = (
+	{ compositionState },
+	{ propertyId },
+) => ({
+	property: compositionState.properties[propertyId],
+});
+
+const Property = connectActionState(mapPropertyState)(PropertyComponent);
+
+interface LayerOwnProps {
 	selectedLayerId: string;
 	layerId: string;
 	onSelectLayer: (layerId: string) => void;
-	layers: CompositionState["layers"];
 }
+interface LayerStateProps {
+	name: string;
+}
+type LayerProps = LayerOwnProps & LayerStateProps;
 
-const Layer: React.FC<LayerProps> = (props) => {
-	const { layerId, layers, onSelectLayer, selectedLayerId } = props;
+const LayerComponent: React.FC<LayerProps> = (props) => {
+	const { layerId, name, onSelectLayer, selectedLayerId } = props;
 
 	const activeDot = layerId === selectedLayerId && (
 		<div
@@ -181,23 +194,33 @@ const Layer: React.FC<LayerProps> = (props) => {
 				className={s("contentContainer")}
 				style={{ marginLeft: CONTEXT_MENU_OPTION_PADDING_LEFT }}
 			>
-				<div className={s("name")}>{layers[layerId].name}</div>
+				<div className={s("name")}>{name}</div>
 			</div>
 		</div>
 	);
 };
 
+const mapLayerState: MapActionState<LayerStateProps, LayerOwnProps> = (
+	{ compositionState },
+	{ layerId },
+) => ({
+	name: compositionState.layers[layerId].name,
+});
+
+const Layer = connectActionState(mapLayerState)(LayerComponent);
+
 interface OwnProps {
-	layerId: string;
+	selectFromLayerIds?: string[];
+	selectFromPropertyIds?: string[];
+
 	selectedPropertyId: string;
 	onSelectProperty: (propertyId: string) => void;
 	selectedLayerId?: string;
 	onSelectLayer?: (layerId: string) => void;
 }
 interface StateProps {
-	layers: CompositionState["layers"];
-	properties: CompositionState["properties"];
-	propertyIds: string[];
+	selectedPropertyName?: string;
+	selectedLayerName?: string;
 }
 type Props = OwnProps & StateProps;
 
@@ -208,20 +231,12 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 	const getSelectPropertyRect = useGetRefRectFn(selectPropertyRef);
 	const getSelectLayerRect = useGetRefRectFn(selectLayerRef);
 
-	const selectedProperty = props.properties[props.selectedPropertyId];
-	const selectedLayer = props.layers[props.selectedLayerId || ""];
-
 	const openLayerContextMenu = () => {
 		requestAction({ history: false }, (params) => {
 			const onSelectLayer = (layerId: string) => {
 				params.cancelAction();
 				props.onSelectLayer!(layerId);
 			};
-
-			const compositionState = getActionState().compositionState;
-			const layer = compositionState.layers[props.layerId];
-			const composition = compositionState.compositions[layer.compositionId];
-			const layerIds = composition.layers;
 
 			const Component: React.FC<ContextMenuBaseProps> = ({ updateRect }) => {
 				const ref = useRef(null);
@@ -233,9 +248,8 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 
 				return (
 					<div className={s("dropdownContainer")} ref={ref}>
-						{layerIds.map((layerId) => (
+						{props.selectFromLayerIds!.map((layerId) => (
 							<Layer
-								layers={props.layers}
 								layerId={layerId}
 								selectedLayerId={props.selectedLayerId!}
 								onSelectLayer={onSelectLayer}
@@ -275,10 +289,9 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 
 				return (
 					<div className={s("dropdownContainer")} ref={ref}>
-						{props.propertyIds.map((propertyId) => (
+						{props.selectFromPropertyIds!.map((propertyId) => (
 							<Property
 								selectedPropertyId={props.selectedPropertyId}
-								properties={props.properties}
 								propertyId={propertyId}
 								depth={0}
 								key={propertyId}
@@ -301,9 +314,13 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 		});
 	};
 
+	const shouldSelectLayer = !!(
+		typeof props.onSelectLayer === "function" && props.selectFromLayerIds
+	);
+
 	return (
 		<>
-			{typeof props.onSelectLayer === "function" && (
+			{shouldSelectLayer && (
 				<div className={s("wrapper")}>
 					<button
 						className={s("select")}
@@ -313,11 +330,11 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 						})}
 						ref={selectLayerRef}
 					>
-						{selectedLayer ? selectedLayer.name : "No layer selected"}
+						{props.selectedLayerName || "No layer selected"}
 					</button>
 				</div>
 			)}
-			{(typeof props.onSelectLayer === "function" ? props.selectedLayerId : true) && (
+			{(shouldSelectLayer ? props.selectedLayerId : true) && (
 				<div className={s("wrapper")}>
 					<button
 						className={s("select")}
@@ -327,11 +344,7 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 						})}
 						ref={selectPropertyRef}
 					>
-						{selectedProperty
-							? selectedProperty.type === "property"
-								? getLayerPropertyLabel(selectedProperty.name)
-								: getLayerPropertyGroupLabel(selectedProperty.name)
-							: "Not selected"}
+						{props.selectedPropertyName || "Not selected"}
 					</button>
 				</div>
 			)}
@@ -340,15 +353,12 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 };
 
 const mapState: MapActionState<StateProps, OwnProps> = (
-	{ compositionState: compositions },
-	{ selectedLayerId, layerId },
+	{ compositionState },
+	{ selectedLayerId, selectedPropertyId },
 ) => ({
-	layers: compositions.layers,
-	properties: compositions.properties,
-
-	// `selectedLayerId` is undefined for `property_output` but a string (empty or
-	// not) for `property_input`.
-	propertyIds: compositions.layers[selectedLayerId ?? layerId]?.properties || [],
+	selectedLayerName: selectedLayerId && compositionState.layers[selectedLayerId].name,
+	selectedPropertyName:
+		selectedPropertyId && compositionState.properties[selectedPropertyId].name.toString(),
 });
 
 export const PropertyNodeSelectProperty = connectActionState(mapState)(

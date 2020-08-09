@@ -26,7 +26,7 @@ import {
 	RequestActionParams,
 	ShouldAddToStackFn,
 } from "~/listener/requestAction";
-import { createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
+import { createArrayModifierGraph, createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
@@ -35,6 +35,7 @@ import {
 	getTimelineValueAtIndex,
 	transformGlobalToTimelineX,
 } from "~/timeline/timelineUtils";
+import { PropertyGroupName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { animate } from "~/util/animation/animate";
 import { capToRange, getDistance, interpolate } from "~/util/math";
@@ -571,6 +572,35 @@ export const compTimeHandlers = {
 		});
 	},
 
+	onPropertyGraphMouseDown: (e: React.MouseEvent, propertyId: string): void => {
+		e.stopPropagation();
+
+		const compositionState = getActionState().compositionState;
+		const property = compositionState.properties[propertyId];
+
+		if (property.name !== PropertyGroupName.ArrayModifier) {
+			throw new Error("Only ArrayModifier property groups may have an associated graph");
+		}
+
+		requestAction({ history: true }, (params) => {
+			const { dispatch, submitAction } = params;
+
+			// If graph exists, delete it. If not, create one.
+			if (property.graphId) {
+				dispatch(compositionActions.setPropertyGraphId(propertyId, ""));
+				dispatch(nodeEditorActions.removeGraph(property.graphId));
+				submitAction("Remove array modifier graph");
+				return;
+			}
+
+			const graph = createArrayModifierGraph(propertyId);
+
+			dispatch(compositionActions.setPropertyGraphId(propertyId, graph.id));
+			dispatch(nodeEditorActions.setGraph(graph));
+			submitAction("Create array modifier graph");
+		});
+	},
+
 	onLayerGraphMouseDown: (e: React.MouseEvent, layerId: string): void => {
 		e.stopPropagation();
 
@@ -596,11 +626,8 @@ export const compTimeHandlers = {
 		});
 	},
 
-	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, layerId: string): void => {
+	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, graphId: string): void => {
 		const initialMousePos = Vec2.fromEvent(e);
-
-		const compositionState = getActionState().compositionState;
-		const layer = compositionState.layers[layerId];
 
 		requestAction({ history: true }, (params) => {
 			const { dispatch, cancelAction, submitAction, addListener } = params;
@@ -627,8 +654,7 @@ export const compTimeHandlers = {
 								type: AreaType.NodeEditor,
 								state: {
 									...areaInitialStates[AreaType.NodeEditor],
-									graphId: layer.graphId,
-									compositionId: layer.compositionId,
+									graphId,
 								},
 							},
 						},
@@ -664,7 +690,7 @@ export const compTimeHandlers = {
 				dispatch(
 					areaActions.setAreaType(areaId, AreaType.NodeEditor, {
 						...areaInitialStates[AreaType.NodeEditor],
-						graphId: layer.graphId,
+						graphId,
 					}),
 				);
 				dispatch(areaActions.setFields({ areaToOpen: null }));
