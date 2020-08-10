@@ -400,8 +400,8 @@ const compute: {
 					.filter(
 						(propertyId) => compositionState.properties[propertyId].type === "property",
 					)
-					.map((propertyId) => ctx.propertyToValue[propertyId].rawValue)
-			: [ctx.propertyToValue[selectedProperty.id].rawValue]
+					.map((propertyId) => ctx.propertyToValue[propertyId].computedValue)
+			: [ctx.propertyToValue[selectedProperty.id].computedValue]
 		).map((value) => toArg.number(value));
 	},
 

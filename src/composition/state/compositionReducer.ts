@@ -13,7 +13,7 @@ import {
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/timeline/compTimeUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { LayerType, PropertyGroupName, RGBAColor } from "~/types";
+import { LayerType, PropertyGroupName, RGBAColor, TransformBehavior } from "~/types";
 import {
 	addListToMap,
 	createGenMapIdFn,
@@ -108,7 +108,8 @@ export const compositionActions = {
 	}),
 
 	setPropertyValue: createAction("comp/SET_PROPERTY_VALUE", (action) => {
-		return (propertyId: string, value: number | RGBAColor) => action({ propertyId, value });
+		return (propertyId: string, value: number | RGBAColor | TransformBehavior) =>
+			action({ propertyId, value });
 	}),
 
 	setPropertyGroupCollapsed: createAction("comp/SET_PROP_GROUP_COLLAPSED", (action) => {

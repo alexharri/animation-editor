@@ -50,6 +50,7 @@ export enum ValueType {
 	Vec2 = "vec2",
 	Rect = "rect",
 	Color = "color",
+	TransformBehavior = "transform_behavior",
 	Any = "any",
 }
 
@@ -101,6 +102,7 @@ export enum PropertyName {
 
 	// Array Modifier
 	ArrayModifier_Count = 15,
+	ArrayModifier_TransformBehavior = 16,
 }
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
@@ -139,3 +141,5 @@ export interface CompositionRenderValues {
 	frameIndex: number;
 	parent?: CompositionRenderValues;
 }
+
+export type TransformBehavior = "recursive" | "absolute_for_computed" | "absolute";

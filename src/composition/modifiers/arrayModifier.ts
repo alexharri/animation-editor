@@ -22,11 +22,6 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 	};
 	propertiesToAdd.push(group);
 
-	const transform = createLayerTransformProperties(opts);
-
-	group.properties.push(transform.group.id);
-	propertiesToAdd.push(transform.group, ...transform.properties);
-
 	const count: CompositionProperty = {
 		type: "property",
 		id: opts.createId(),
@@ -41,6 +36,26 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 
 	group.properties.push(count.id);
 	propertiesToAdd.push(count);
+
+	const transformBehavior: CompositionProperty = {
+		type: "property",
+		id: opts.createId(),
+		compositionId: opts.compositionId,
+		layerId: opts.layerId,
+		name: PropertyName.ArrayModifier_TransformBehavior,
+		timelineId: "",
+		value: "recursive",
+		valueType: ValueType.TransformBehavior,
+		color: TimelineColors.Height,
+	};
+
+	group.properties.push(transformBehavior.id);
+	propertiesToAdd.push(transformBehavior);
+
+	const transform = createLayerTransformProperties(opts);
+
+	group.properties.push(transform.group.id);
+	propertiesToAdd.push(transform.group, ...transform.properties);
 
 	return { propertyId, propertiesToAdd };
 };

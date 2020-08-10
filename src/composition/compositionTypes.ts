@@ -4,6 +4,7 @@ import {
 	PropertyGroupName,
 	PropertyName,
 	RGBColor,
+	TransformBehavior,
 	ValueFormat,
 	ValueType,
 } from "~/types";
@@ -72,6 +73,10 @@ export type CompositionProperty = {
 	| {
 			valueType: ValueType.Vec2;
 			value: Vec2;
+	  }
+	| {
+			valueType: ValueType.TransformBehavior;
+			value: TransformBehavior;
 	  }
 );
 

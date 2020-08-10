@@ -12,6 +12,7 @@ import {
 	ArrayModifierPropertyValueMap,
 	PropertyName,
 	PropertyValueMap,
+	TransformBehavior,
 } from "~/types";
 import { rotateVec2CCW } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
@@ -99,48 +100,58 @@ export const applyParentTransform = (
 	};
 };
 
-export const _applyIndexTransform = (
+const applyIndexTransform = (
 	indexTransform: AffineTransform,
 	transform: AffineTransform,
 ): AffineTransform => {
-	let translate = indexTransform.translate;
+	const { rotation, scale } = transform;
 
-	translate = translate.add(transform.translate);
+	const anchor = indexTransform.anchor;
+	const origin = transform.translate.add(transform.anchor).sub(anchor);
 
-	if (transform.rotation !== 0) {
-		translate = rotateVec2CCW(translate, transform.rotation, transform.translate);
+	let translate = transform.translate.add(indexTransform.translate);
+
+	if (rotation !== 0) {
+		translate = rotateVec2CCW(translate, rotation, origin);
 	}
-	if (transform.scale !== 1) {
-		translate = translate.scale(transform.scale, transform.translate);
+	if (scale !== 1) {
+		translate = translate.scale(scale, origin);
 	}
 
 	return {
 		translate,
-		anchor: transform.anchor.add(indexTransform.anchor),
-		rotation: indexTransform.rotation + transform.rotation,
-		scale: indexTransform.scale * transform.scale,
+		anchor,
+		rotation: indexTransform.rotation + rotation,
+		scale: indexTransform.scale * scale,
 	};
 };
 
-/**
- * This is done extremely inefficiently. This should be cached 100%
- */
-export const applyIndexTransform = (
+const getIndexTransformMapRecursive = (
 	_transform: AffineTransform,
-	indexTransform: AffineTransform,
-	index: number,
-): AffineTransform => {
-	let transform = { ..._transform };
+	indexTransforms: AffineTransform[],
+	count: number,
+): { [index: number]: AffineTransform } => {
+	let transform: AffineTransform = {
+		translate: Vec2.new(0, 0),
+		anchor: indexTransforms[0].anchor,
+		rotation: 0,
+		scale: 1,
+	};
 
-	const count = Math.abs(index);
-	for (let i = 0; i < count; i += 1) {
-		transform = _applyIndexTransform(indexTransform, transform);
+	const transforms: { [index: number]: AffineTransform } = {
+		[0]: transform,
+	};
+
+	for (let i = 1; i < count; i += 1) {
+		transform = applyIndexTransform(indexTransforms[i], transform);
+		transforms[i] = transform;
+		// transform.anchor = Vec2.new(0, 0);
 	}
 
-	return transform;
+	return transforms;
 };
 
-export const getIndexTransformMap = (
+const getIndexTransformMapAbsolute = (
 	indexTransforms: AffineTransform[],
 	count: number,
 ): { [index: number]: AffineTransform } => {
@@ -151,16 +162,135 @@ export const getIndexTransformMap = (
 		scale: 1,
 	};
 
-	const transforms: { [index: number]: AffineTransform } = {
-		[0]: transform,
-	};
+	const transforms: { [index: number]: AffineTransform } = {};
 
-	for (let i = 1; i < count; i += 1) {
-		transform = _applyIndexTransform(indexTransforms[i], transform);
-		transforms[i] = transform;
+	for (let i = 0; i < count; i += 1) {
+		transforms[i] = applyIndexTransform(indexTransforms[i], transform);
 	}
 
 	return transforms;
+};
+
+const getIndexTransformMapAbsoluteForComputed = (
+	indexTransforms: AffineTransform[],
+	count: number,
+	isComputedByIndex: { [key: string]: boolean },
+): { [index: number]: AffineTransform } => {
+	let transform: AffineTransform = {
+		translate: Vec2.new(0, 0),
+		anchor: Vec2.new(0, 0),
+		rotation: 0,
+		scale: 1,
+	};
+
+	const transforms: { [index: number]: AffineTransform } = {
+		[0]: {
+			translate: Vec2.new(0, 0),
+			anchor: indexTransforms[0].anchor,
+			rotation: 0,
+			scale: 1,
+		},
+	};
+
+	const resetKey = (key: string) => {
+		switch (parseInt(key)) {
+			case PropertyName.AnchorX: {
+				transform.anchor.x = 0;
+				break;
+			}
+			case PropertyName.AnchorY: {
+				transform.anchor.y = 0;
+				break;
+			}
+			case PropertyName.PositionX: {
+				transform.translate.x = 0;
+				break;
+			}
+			case PropertyName.PositionY: {
+				transform.translate.y = 0;
+				break;
+			}
+			case PropertyName.Rotation: {
+				transform.rotation = 1;
+				break;
+			}
+			case PropertyName.Scale: {
+				transform.scale = 1;
+				break;
+			}
+		}
+	};
+
+	const computedKeys = Object.keys(isComputedByIndex).filter((key) => isComputedByIndex[key]);
+
+	if (computedKeys.length) {
+		for (const key of computedKeys) {
+			switch (parseInt(key)) {
+				case PropertyName.AnchorX: {
+					transforms[0].anchor.x = indexTransforms[0].anchor.x;
+					break;
+				}
+				case PropertyName.AnchorY: {
+					transforms[0].anchor.y = indexTransforms[0].anchor.y;
+					break;
+				}
+				case PropertyName.PositionX: {
+					transforms[0].translate.x = indexTransforms[0].translate.x;
+					break;
+				}
+				case PropertyName.PositionY: {
+					transforms[0].translate.y = indexTransforms[0].translate.y;
+					break;
+				}
+				case PropertyName.Rotation: {
+					transforms[0].rotation = indexTransforms[0].rotation;
+					break;
+				}
+				case PropertyName.Scale: {
+					transforms[0].scale = indexTransforms[0].scale;
+					break;
+				}
+			}
+		}
+	}
+
+	for (let i = 1; i < count; i += 1) {
+		transform = applyIndexTransform(indexTransforms[i], transform);
+		transforms[i] = transform;
+
+		if (computedKeys.length) {
+			transform = {
+				anchor: transform.anchor.copy(),
+				translate: transform.translate.copy(),
+				rotation: transform.rotation,
+				scale: transform.scale,
+			};
+
+			for (const key of computedKeys) {
+				resetKey(key);
+			}
+		}
+	}
+
+	return transforms;
+};
+
+export const getIndexTransformMap = (
+	transform: AffineTransform,
+	indexTransforms: AffineTransform[],
+	count: number,
+	isComputedByIndex: { [key: number]: boolean },
+	behavior: TransformBehavior,
+): { [index: number]: AffineTransform } => {
+	if (behavior === "absolute_for_computed") {
+		return getIndexTransformMapAbsoluteForComputed(indexTransforms, count, isComputedByIndex);
+	}
+
+	if (behavior === "recursive") {
+		return getIndexTransformMapRecursive(transform, indexTransforms, count);
+	}
+
+	return getIndexTransformMapAbsolute(indexTransforms, count);
 };
 
 const defaultTransform: AffineTransform = {
@@ -219,14 +349,19 @@ export const computeLayerTransformMap = (
 
 		if (options.recursive) {
 			for (const arrMod of arrMods) {
-				const { countId, transformGroupId } = arrMod;
+				const { countId, transformGroupId, transformBehaviorId } = arrMod;
+
 				const count = Math.max(1, propertyToValue[countId].computedValue);
+				const transformBehavior = propertyToValue[transformBehaviorId].computedValue;
+
 				const indexTransform = getLayerArrayModifierIndexTransform(
 					compositionState,
 					propertyToValue,
 					arrayModifierPropertyToValue,
 					count,
+					baseTransform,
 					transformGroupId,
+					transformBehavior,
 				);
 				map[layer.id].indexTransforms.push(indexTransform);
 			}

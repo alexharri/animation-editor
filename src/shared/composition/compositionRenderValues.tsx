@@ -233,9 +233,6 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 				const modifierGroup = compositionState.properties[
 					modifier.modifierGroupId
 				] as CompositionPropertyGroup;
-				const transformGroup = compositionState.properties[
-					modifier.transformGroupId
-				] as CompositionPropertyGroup;
 
 				if (!modifierGroup.graphId) {
 					continue;
@@ -248,9 +245,6 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 					continue;
 				}
 
-				for (const propertyId of transformGroup.properties) {
-					map.arrayModifierProperties[propertyId] = {};
-				}
 				let count = 1;
 
 				if (options.recursive) {
@@ -312,6 +306,10 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 							// Transform group.
 							if (!outputNode.inputs[j].pointer) {
 								continue;
+							}
+
+							if (!map.arrayModifierProperties[property.id]) {
+								map.arrayModifierProperties[property.id] = {};
 							}
 
 							map.arrayModifierProperties[property.id][i] =

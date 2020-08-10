@@ -104,7 +104,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	name: css`
-		width: 80px;
+		width: 128px;
 		font-size: 11px;
 		color: #bbb;
 		line-height: 16px;
@@ -157,5 +157,20 @@ export default ({ css }: StyleParams) => ({
 		padding: 16px;
 		border-radius: 4px;
 		border-bottom-left-radius: 0;
+	`,
+
+	select: css`
+		color: ${cssVariables.light500};
+		background-color: ${cssVariables.gray400};
+		padding: 0 4px;
+		border: none;
+		-webkit-appearance: none;
+		border-radius: 4px;
+		height: 16px;
+		line-height: 16px;
+		outline: none;
+		width: 140px;
+		font-size: 11px;
+		font-family: ${cssVariables.fontFamily};
 	`,
 });

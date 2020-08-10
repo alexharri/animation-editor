@@ -35,6 +35,7 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 	const { property } = props;
 
 	const marginLeft = 24 + props.depth * 20;
+	const nameWidth = 180 - props.depth * 20;
 
 	if (property.type === "group") {
 		const { properties } = property;
@@ -61,9 +62,8 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 							onClick={toggleGroupOpen}
 						/>
 						<div
-							className={s("name", {
-								active: props.isSelected,
-							})}
+							className={s("name", { active: props.isSelected })}
+							style={{ width: nameWidth }}
 							onMouseDown={separateLeftRightMouse({
 								left: (e) =>
 									compTimeHandlers.onPropertyNameMouseDown(
@@ -149,9 +149,8 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 					<StopwatchIcon />
 				</div>
 				<div
-					className={s("name", {
-						active: props.isSelected,
-					})}
+					className={s("name", { active: props.isSelected })}
+					style={{ width: nameWidth }}
 					onMouseDown={separateLeftRightMouse({
 						left: (e) =>
 							compTimeHandlers.onPropertyNameMouseDown(

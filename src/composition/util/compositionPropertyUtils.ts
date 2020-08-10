@@ -8,6 +8,7 @@ import {
 	PropertyGroupName,
 	PropertyName,
 	PropertyValueMap,
+	TransformBehavior,
 } from "~/types";
 
 const propertyGroupNameToLabel: { [key in keyof typeof PropertyGroupName]: string } = {
@@ -38,6 +39,7 @@ const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
 	OuterRadius: "Outer Radius",
 
 	ArrayModifier_Count: "Count",
+	ArrayModifier_TransformBehavior: "Transform Behavior",
 };
 
 export const getLayerPropertyLabel = (name: PropertyName): string => {
@@ -103,23 +105,31 @@ export const getLayerArrayModifierIndexTransform = (
 	propertyToValue: PropertyValueMap,
 	arrayModifierPropertyToValue: ArrayModifierPropertyValueMap,
 	count: number,
+	transform: AffineTransform,
 	transformGroupId: string,
+	behavior: TransformBehavior,
 ): { [index: number]: AffineTransform } => {
 	const transformGroup = compositionState.properties[
 		transformGroupId
 	] as CompositionPropertyGroup;
 
 	const indexTransforms: AffineTransform[] = [];
+	const isComputedByIndex: { [key: string]: boolean } = {};
 
 	for (let i = 0; i < count; i += 1) {
 		const transform: AffineTransform = {} as any;
 
 		for (const propertyId of transformGroup.properties) {
 			const property = compositionState.properties[propertyId];
-			const value =
-				(arrayModifierPropertyToValue[propertyId] &&
-					arrayModifierPropertyToValue[propertyId][i]) ??
-				propertyToValue[propertyId].computedValue;
+			const hasComputedByIndex = !!arrayModifierPropertyToValue[propertyId];
+
+			const value = hasComputedByIndex
+				? arrayModifierPropertyToValue[propertyId][i]
+				: propertyToValue[propertyId].computedValue;
+
+			if (property.type === "property") {
+				isComputedByIndex[property.name] = hasComputedByIndex;
+			}
 
 			switch (property.name) {
 				case PropertyName.PositionX: {
@@ -164,7 +174,7 @@ export const getLayerArrayModifierIndexTransform = (
 		indexTransforms.push(transform);
 	}
 
-	return getIndexTransformMap(indexTransforms, count);
+	return getIndexTransformMap(transform, indexTransforms, count, isComputedByIndex, behavior);
 };
 
 export const getLayerArrayModifierCountPropertyId = (
@@ -200,7 +210,12 @@ export const getLayerArrayModifierCountPropertyId = (
 };
 
 export const getLayerArrayModifiers = (layerId: string, compositionState: CompositionState) => {
-	const out: Array<{ modifierGroupId: string; countId: string; transformGroupId: string }> = [];
+	const out: Array<{
+		modifierGroupId: string;
+		countId: string;
+		transformBehaviorId: string;
+		transformGroupId: string;
+	}> = [];
 
 	const modifierGroupId = getLayerModifierPropertyGroupId(layerId, compositionState);
 
@@ -223,11 +238,13 @@ export const getLayerArrayModifiers = (layerId: string, compositionState: Compos
 			(propertyId) => compositionState.properties[propertyId].name,
 		);
 		const countIndex = names.indexOf(PropertyName.ArrayModifier_Count);
+		const transformBehaviorIndex = names.indexOf(PropertyName.ArrayModifier_TransformBehavior);
 		const transformIndex = names.indexOf(PropertyGroupName.Transform);
 
 		out.push({
 			modifierGroupId: group.id,
 			countId: group.properties[countIndex],
+			transformBehaviorId: group.properties[transformBehaviorIndex],
 			transformGroupId: group.properties[transformIndex],
 		});
 	}

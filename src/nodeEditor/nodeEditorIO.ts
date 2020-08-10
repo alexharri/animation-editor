@@ -454,4 +454,5 @@ export const nodeValidInputToOutputsMap: { [key in ValueType]: ValueType[] } = {
 	[ValueType.Rect]: [ValueType.Any, ValueType.Rect],
 	[ValueType.Vec2]: [ValueType.Any, ValueType.Vec2],
 	[ValueType.Color]: [ValueType.Any, ValueType.Color],
+	[ValueType.TransformBehavior]: [ValueType.TransformBehavior],
 };

@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { CompTimePropertyColorValue } from "~/composition/timeline/property/value/CompTimePropertyColorValue";
 import { CompTimePropertyNumberValue } from "~/composition/timeline/property/value/CompTimePropertyNumberValue";
+import { CompTimePropertyTransformBehaviorValue } from "~/composition/timeline/property/value/CompTimePropertyTransformBehaviorValue";
 import { CompositionPropertyValuesContext } from "~/shared/composition/compositionRenderValues";
 import { connectActionState } from "~/state/stateUtils";
 import { RGBAColor, ValueType } from "~/types";
@@ -39,6 +40,15 @@ const CompTimePropertyValueComponent: React.FC<Props> = (props) => {
 				propertyId={props.propertyId}
 				computedValue={value.computedValue as number}
 				rawValue={value.rawValue as number}
+			/>
+		);
+	}
+
+	if (props.valueType === ValueType.TransformBehavior) {
+		return (
+			<CompTimePropertyTransformBehaviorValue
+				propertyId={props.propertyId}
+				value={value.rawValue}
 			/>
 		);
 	}

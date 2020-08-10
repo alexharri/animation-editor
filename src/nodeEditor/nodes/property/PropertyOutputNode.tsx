@@ -1,5 +1,5 @@
 import React from "react";
-import { CompositionProperty } from "~/composition/compositionTypes";
+import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
 import { useMemoActionState } from "~/hook/useActionState";
 import { requestAction } from "~/listener/requestAction";
@@ -14,7 +14,7 @@ import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { PropertyNodeSelectProperty } from "~/nodeEditor/nodes/property/PropertyNodeSelectProperty";
 import { connectActionState, getActionState } from "~/state/stateUtils";
-import { NodeEditorNodeType } from "~/types";
+import { NodeEditorNodeType, PropertyGroupName } from "~/types";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
@@ -88,7 +88,16 @@ function PropertyOutputNodeComponent(props: Props) {
 	const selectFromPropertyIds = useMemoActionState(
 		({ compositionState }) => {
 			if (props.graphPropertyId) {
-				return [props.graphPropertyId];
+				const group = compositionState.properties[
+					props.graphPropertyId
+				] as CompositionPropertyGroup;
+				const names = group.properties.map(
+					(propertyId) => compositionState.properties[propertyId].name,
+				);
+				const index = names.indexOf(PropertyGroupName.Transform);
+				const transformGroupPropertyId = group.properties[index];
+
+				return [transformGroupPropertyId];
 			}
 
 			const layer = compositionState.layers[props.graphLayerId];
