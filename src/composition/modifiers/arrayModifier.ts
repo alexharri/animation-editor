@@ -44,7 +44,7 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		layerId: opts.layerId,
 		name: PropertyName.ArrayModifier_TransformBehavior,
 		timelineId: "",
-		value: "recursive",
+		value: "absolute_for_computed",
 		valueType: ValueType.TransformBehavior,
 		color: TimelineColors.Height,
 	};

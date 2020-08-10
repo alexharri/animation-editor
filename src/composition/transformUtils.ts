@@ -151,26 +151,6 @@ const getIndexTransformMapRecursive = (
 	return transforms;
 };
 
-const getIndexTransformMapAbsolute = (
-	indexTransforms: AffineTransform[],
-	count: number,
-): { [index: number]: AffineTransform } => {
-	let transform: AffineTransform = {
-		translate: Vec2.new(0, 0),
-		anchor: Vec2.new(0, 0),
-		rotation: 0,
-		scale: 1,
-	};
-
-	const transforms: { [index: number]: AffineTransform } = {};
-
-	for (let i = 0; i < count; i += 1) {
-		transforms[i] = applyIndexTransform(indexTransforms[i], transform);
-	}
-
-	return transforms;
-};
-
 const getIndexTransformMapAbsoluteForComputed = (
 	indexTransforms: AffineTransform[],
 	count: number,
@@ -282,15 +262,20 @@ export const getIndexTransformMap = (
 	isComputedByIndex: { [key: number]: boolean },
 	behavior: TransformBehavior,
 ): { [index: number]: AffineTransform } => {
-	if (behavior === "absolute_for_computed") {
-		return getIndexTransformMapAbsoluteForComputed(indexTransforms, count, isComputedByIndex);
-	}
+	switch (behavior) {
+		case "absolute_for_computed":
+			return getIndexTransformMapAbsoluteForComputed(
+				indexTransforms,
+				count,
+				isComputedByIndex,
+			);
 
-	if (behavior === "recursive") {
-		return getIndexTransformMapRecursive(transform, indexTransforms, count);
-	}
+		case "recursive":
+			return getIndexTransformMapRecursive(transform, indexTransforms, count);
 
-	return getIndexTransformMapAbsolute(indexTransforms, count);
+		default:
+			throw new Error("No transform behavior provided");
+	}
 };
 
 const defaultTransform: AffineTransform = {

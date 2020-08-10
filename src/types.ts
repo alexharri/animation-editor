@@ -142,4 +142,4 @@ export interface CompositionRenderValues {
 	parent?: CompositionRenderValues;
 }
 
-export type TransformBehavior = "recursive" | "absolute_for_computed" | "absolute";
+export type TransformBehavior = "recursive" | "absolute_for_computed";

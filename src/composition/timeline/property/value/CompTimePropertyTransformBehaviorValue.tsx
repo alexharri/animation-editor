@@ -26,8 +26,7 @@ export const CompTimePropertyTransformBehaviorValue: React.FC<Props> = (props) =
 	};
 
 	const behaviors: Array<{ label: string; value: TransformBehavior }> = [
-		{ value: "absolute", label: "Absolute" },
-		{ value: "absolute_for_computed", label: "Absolute for computed" },
+		{ value: "absolute_for_computed", label: "Default" },
 		{ value: "recursive", label: "Recursive" },
 	];
 

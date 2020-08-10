@@ -355,11 +355,22 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 const mapState: MapActionState<StateProps, OwnProps> = (
 	{ compositionState },
 	{ selectedLayerId, selectedPropertyId },
-) => ({
-	selectedLayerName: selectedLayerId && compositionState.layers[selectedLayerId].name,
-	selectedPropertyName:
-		selectedPropertyId && compositionState.properties[selectedPropertyId].name.toString(),
-});
+) => {
+	let selectedPropertyName: string | undefined;
+
+	if (selectedPropertyId) {
+		const property = compositionState.properties[selectedPropertyId];
+		selectedPropertyName =
+			property.type === "property"
+				? getLayerPropertyLabel(property.name)
+				: getLayerPropertyGroupLabel(property.name);
+	}
+
+	return {
+		selectedLayerName: selectedLayerId && compositionState.layers[selectedLayerId].name,
+		selectedPropertyName,
+	};
+};
 
 export const PropertyNodeSelectProperty = connectActionState(mapState)(
 	PropertyNodeSelectPropertyComponent,
