@@ -1,6 +1,7 @@
 import { CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { AreaType } from "~/constants";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
+import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
 import { RequestActionParams } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
@@ -77,28 +78,34 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 		onSelect: () => onAddSelect(options),
 	});
 
-	return [
-		{
-			label: "Property",
-			options: [
-				createAddNodeOption({
-					type: NodeEditorNodeType.property_input,
-					label: "Property input",
-				}),
-				createAddNodeOption({
-					type: NodeEditorNodeType.property_output,
-					label: "Property output",
-				}),
-			],
-			default: true,
-		},
-		createAddNodeOption({
-			type: NodeEditorNodeType.array_modifier_index,
-			label: "Array modifier index",
-		}),
+	const items: ContextMenuOption[] = [];
+
+	items.push({
+		label: "Property",
+		options: [
+			createAddNodeOption({
+				type: NodeEditorNodeType.property_input,
+				label: "Property input",
+			}),
+			createAddNodeOption({
+				type: NodeEditorNodeType.property_output,
+				label: "Property output",
+			}),
+		],
+		default: true,
+	});
+
+	items.push(
 		createAddNodeOption({
 			type: NodeEditorNodeType.composition,
 			label: "Composition",
+		}),
+	);
+
+	items.push(
+		createAddNodeOption({
+			type: NodeEditorNodeType.expr,
+			label: "Expression",
 		}),
 		{
 			label: "Number",
@@ -116,7 +123,6 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 					label: "Linear Interpolation",
 				}),
 			],
-			default: true,
 		},
 		{
 			label: "Vec2",
@@ -169,14 +175,16 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 				}),
 			],
 		},
-		{
-			label: "Math",
-			options: [
-				createAddNodeOption({
-					type: NodeEditorNodeType.expr,
-					label: "Expression",
-				}),
-			],
-		},
-	];
+	);
+
+	if (graph.type === "array_modifier_graph") {
+		items.push(
+			createAddNodeOption({
+				type: NodeEditorNodeType.array_modifier_index,
+				label: "Array modifier index",
+			}),
+		);
+	}
+
+	return items;
 };

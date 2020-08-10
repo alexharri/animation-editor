@@ -21,10 +21,18 @@ export default ({ css }: StyleParams) => ({
 		align-items: stretch;
 	`,
 
-	graph: css`
+	graphWrapper: css`
 		margin-left: 2px;
+		margin-right: 4px;
+		width: 48px;
+		display: flex;
+	`,
+
+	graph: css`
 		height: 16px;
 		width: 16px;
+		background: transparent;
+		border: none;
 		position: relative;
 		cursor: pointer;
 
@@ -172,5 +180,27 @@ export default ({ css }: StyleParams) => ({
 		width: 140px;
 		font-size: 11px;
 		font-family: ${cssVariables.fontFamily};
+	`,
+
+	moveUpDownButton: css`
+		border: none;
+		background: transparent;
+		padding: 2px;
+		width: 16px;
+		height: 16px;
+		outline: none;
+		cursor: pointer;
+
+		svg {
+			width: 13px;
+			height: 13px;
+			fill: ${cssVariables.light300};
+		}
+
+		&--down {
+			svg {
+				transform: translateY(-1px) rotate(180deg);
+			}
+		}
 	`,
 });

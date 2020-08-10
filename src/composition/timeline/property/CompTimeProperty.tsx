@@ -18,12 +18,24 @@ import { PropertyGroupName, ValueType } from "~/types";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
+const ArrowUpIcon = () => (
+	<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path
+			fillRule="evenodd"
+			clipRule="evenodd"
+			d="M16 3.01514L25.7425 12.7576L24.2576 14.2425L16 5.98499L7.74249 14.2425L6.25757 12.7576L16 3.01514Z"
+		/>
+		<path fillRule="evenodd" clipRule="evenodd" d="M15 28V4.5H17V28H15Z" />
+	</svg>
+);
+
 const s = compileStylesheetLabelled(styles);
 
 interface OwnProps {
 	compositionId: string;
 	id: string;
 	depth: number;
+	canBeReordered: boolean;
 }
 interface StateProps {
 	property: CompositionProperty | CompositionPropertyGroup;
@@ -42,6 +54,8 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 
 		const canHaveGraph = property.name === PropertyGroupName.ArrayModifier;
 		const graphId = property.graphId;
+
+		const { canBeReordered } = props;
 
 		const toggleGroupOpen = () => {
 			requestAction({ history: true }, (params) => {
@@ -76,8 +90,8 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 							{getLayerPropertyGroupLabel(property.name)}
 						</div>
 						{canHaveGraph && (
-							<>
-								<div
+							<div className={s("graphWrapper")}>
+								<button
 									title={
 										property.graphId
 											? "Delete Layer Graph"
@@ -85,15 +99,14 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 									}
 									className={s("graph", { active: !!graphId })}
 									onMouseDown={separateLeftRightMouse({
-										left: (e) =>
-											compTimeHandlers.onPropertyGraphMouseDown(
-												e,
-												property.id,
-											),
+										left: (e) => e.stopPropagation(),
 									})}
+									onClick={(e) =>
+										compTimeHandlers.onPropertyGraphMouseDown(e, property.id)
+									}
 								>
 									<GraphIcon />
-								</div>
+								</button>
 								{!!graphId && (
 									<div
 										title="Open Graph in area"
@@ -109,6 +122,34 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 										<OpenInAreaIcon />
 									</div>
 								)}
+							</div>
+						)}
+						{canBeReordered && (
+							<>
+								<button
+									title="Move up in list"
+									className={s("moveUpDownButton")}
+									onMouseDown={separateLeftRightMouse({
+										left: (e) => e.stopPropagation(),
+									})}
+									onClick={() =>
+										compTimeHandlers.moveModifierInList(property.id, -1)
+									}
+								>
+									<ArrowUpIcon />
+								</button>
+								<button
+									title="Move down in list"
+									className={s("moveUpDownButton", { down: true })}
+									onMouseDown={separateLeftRightMouse({
+										left: (e) => e.stopPropagation(),
+									})}
+									onClick={() =>
+										compTimeHandlers.moveModifierInList(property.id, 1)
+									}
+								>
+									<ArrowUpIcon />
+								</button>
 							</>
 						)}
 					</div>
@@ -120,6 +161,7 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 							id={id}
 							key={id}
 							depth={props.depth + 1}
+							canBeReordered={property.name === PropertyGroupName.Modifiers}
 						/>
 					))}
 			</>

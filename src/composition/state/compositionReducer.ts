@@ -12,6 +12,7 @@ import {
 	reduceCompPropertiesAndGroups,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/timeline/compTimeUtils";
+import { getLayerModifierPropertyGroupId } from "~/composition/util/compositionPropertyUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { LayerType, PropertyGroupName, RGBAColor, TransformBehavior } from "~/types";
 import {
@@ -159,6 +160,10 @@ export const compositionActions = {
 			propertyId: string,
 			propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup>,
 		) => action({ layerId, propertyId, propertiesToAdd });
+	}),
+
+	moveModifier: createAction("comp/MOVE_MODIFIER", (action) => {
+		return (modifierId: string, moveBy: -1 | 1) => action({ modifierId, moveBy });
 	}),
 };
 
@@ -622,6 +627,45 @@ export const compositionReducer = (
 			);
 
 			return newState;
+		}
+
+		case getType(compositionActions.moveModifier): {
+			const { modifierId, moveBy } = action.payload;
+
+			const modifier = state.properties[modifierId];
+			const layerId = modifier.layerId;
+
+			const modifierGroupId = getLayerModifierPropertyGroupId(layerId, state);
+
+			if (!modifierGroupId) {
+				throw new Error("Cannot move modfier. No Modifier group found.");
+			}
+
+			const modifierGroup = state.properties[modifierGroupId] as CompositionPropertyGroup;
+
+			const index = modifierGroup.properties.indexOf(modifierId);
+
+			if (index === -1) {
+				throw new Error(
+					`Cannot find modifier '${modifierId}' in group '${modifierGroupId}'.`,
+				);
+			}
+
+			const properties = [...modifierGroup.properties];
+			properties.splice(index, 1);
+			properties.splice(index + moveBy, 0, modifierId);
+
+			return {
+				...state,
+				properties: modifyItemInUnionMap(
+					state.properties,
+					modifierGroupId,
+					(item: CompositionPropertyGroup) => ({
+						...item,
+						properties,
+					}),
+				),
+			};
 		}
 
 		default:

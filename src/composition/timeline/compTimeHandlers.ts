@@ -787,4 +787,11 @@ export const compTimeHandlers = {
 			},
 		);
 	},
+
+	moveModifierInList: (modifierPropertyId: string, moveBy: -1 | 1) => {
+		requestAction({ history: true }, (params) => {
+			params.dispatch(compositionActions.moveModifier(modifierPropertyId, moveBy));
+			params.submitAction("Move modifier");
+		});
+	},
 };
