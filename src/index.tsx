@@ -1,15 +1,20 @@
-import "~/globals";
-
 import React from "react";
 import ReactDOM from "react-dom";
-
-import { App } from "~/App";
+import { Provider } from "react-redux";
+import "~/globals";
 import { addListener } from "~/listener/addListener";
 import { isKeyCodeOf, isKeyDown } from "~/listener/keyboard";
-import { store } from "~/state/store";
 import { historyActions } from "~/state/history/historyActions";
+import { store } from "~/state/store";
+import { App } from "./App";
 
-ReactDOM.render(<App />, document.getElementById("root"));
+const Root = () => (
+	<Provider store={store}>
+		<App />
+	</Provider>
+);
+
+ReactDOM.render(<Root />, document.getElementById("root"));
 
 // Disable right click context menu
 document.addEventListener("contextmenu", (e) => e.preventDefault(), false);

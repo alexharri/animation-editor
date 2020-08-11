@@ -1,6 +1,6 @@
 import React from "react";
-import { ProjectComp } from "~/project/composition/ProjectComp";
 import ProjectStyles from "~/project/Project.styles";
+import { ProjectComp } from "~/project/ProjectComp";
 import { createProjectContextMenu } from "~/project/projectContextMenu";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";

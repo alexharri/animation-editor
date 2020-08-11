@@ -1,5 +1,5 @@
-import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
-import { getTimelineIdsReferencedByComposition } from "~/composition/timeline/compTimeUtils";
+import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
+import { getTimelineIdsReferencedByComposition } from "~/composition/compositionUtils";
 import { isMapShallowEqual, mapKeysEqual } from "~/util/mapUtils";
 
 const _emptySelection = {

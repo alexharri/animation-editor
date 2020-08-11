@@ -7,7 +7,7 @@ import { getAreaActionState } from "~/state/stateUtils";
 import { interpolate } from "~/util/math";
 import { parseWheelEvent } from "~/util/wheelEvent";
 
-type PossibleAreaTypes = AreaType.NodeEditor | AreaType.CompositionWorkspace;
+type PossibleAreaTypes = AreaType.NodeEditor | AreaType.Workspace;
 
 interface Actions {
 	setPan: (pan: Vec2) => any;

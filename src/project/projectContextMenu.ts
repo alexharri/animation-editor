@@ -1,6 +1,6 @@
+import { compositionActions } from "~/composition/compositionReducer";
 import { Composition } from "~/composition/compositionTypes";
-import { compositionActions } from "~/composition/state/compositionReducer";
-import { getTimelineIdsReferencedByComposition } from "~/composition/timeline/compTimeUtils";
+import { getTimelineIdsReferencedByComposition } from "~/composition/compositionUtils";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
 import { requestAction } from "~/listener/requestAction";

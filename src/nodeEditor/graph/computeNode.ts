@@ -1,5 +1,5 @@
 import * as mathjs from "mathjs";
-import { CompositionState } from "~/composition/state/compositionReducer";
+import { CompositionState } from "~/composition/compositionReducer";
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
 import { NodeEditorNode, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorNodeType, PropertyValueMap, RGBAColor, ValueType } from "~/types";

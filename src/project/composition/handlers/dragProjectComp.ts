@@ -1,9 +1,9 @@
+import { compositionActions } from "~/composition/compositionReducer";
 import { requestAction } from "~/listener/requestAction";
-import { getDistance, isVecInRect } from "~/util/math";
+import { getDragCompositionEligibleTargets } from "~/project/dragCompositionEligibleTargets";
 import { projectActions } from "~/project/projectReducer";
-import { getCompEligibleTargets } from "~/project/compEligibleTargets";
-import { compositionActions } from "~/composition/state/compositionReducer";
 import { LayerType } from "~/types";
+import { getDistance, isVecInRect } from "~/util/math";
 
 export const dragProjectComp = (e: React.MouseEvent, compositionId: string) => {
 	const initialPosition = Vec2.fromEvent(e);
@@ -26,7 +26,7 @@ export const dragProjectComp = (e: React.MouseEvent, compositionId: string) => {
 			params.dispatch(projectActions.setDragComposition(compositionId, mousePosition));
 		});
 
-		const targetGroups = getCompEligibleTargets();
+		const targetGroups = getDragCompositionEligibleTargets();
 
 		params.addListener.once("mouseup", () => {
 			let targetCompositionId!: string;

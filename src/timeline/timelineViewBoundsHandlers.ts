@@ -1,10 +1,10 @@
-import { ViewBoundsProps } from "~/timeline/ViewBounds";
 import { TIMELINE_CANVAS_END_START_BUFFER } from "~/constants";
+import { TimelineViewBoundsProps } from "~/timeline/TimelineViewBounds";
 
 const MIN_FRAMES_BETWEEN = 24;
 
 export const viewBoundsHandlers = {
-	onLeftHandleMouseDown: (_e: React.MouseEvent, props: ViewBoundsProps): void => {
+	onLeftHandleMouseDown: (_e: React.MouseEvent, props: TimelineViewBoundsProps): void => {
 		props.requestUpdate(({ addListener, update, submit }) => {
 			const { viewBounds, left, width } = props;
 			addListener.repeated("mousemove", (e) => {
@@ -27,7 +27,7 @@ export const viewBoundsHandlers = {
 		});
 	},
 
-	onRightHandleMouseDown: (_e: React.MouseEvent, props: ViewBoundsProps): void => {
+	onRightHandleMouseDown: (_e: React.MouseEvent, props: TimelineViewBoundsProps): void => {
 		props.requestUpdate(({ addListener, update, submit }) => {
 			const { viewBounds, left, width } = props;
 			addListener.repeated("mousemove", (e) => {
@@ -53,7 +53,7 @@ export const viewBoundsHandlers = {
 	/**
 	 * When the user moves the viewBounds bar around
 	 */
-	onMoveViewBounds: (e: React.MouseEvent, props: ViewBoundsProps): void => {
+	onMoveViewBounds: (e: React.MouseEvent, props: TimelineViewBoundsProps): void => {
 		const initialMousePos = Vec2.fromEvent(e);
 
 		props.requestUpdate(({ addListener, update, submit }) => {

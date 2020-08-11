@@ -1,12 +1,12 @@
-import { CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
-import { CompositionWorkspaceAreaState } from "~/composition/workspace/compWorkspaceAreaReducer";
 import { AreaType } from "~/constants";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
+import { TimelineAreaState } from "~/timeline/timelineAreaReducer";
+import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 
 interface _AreaStates {
 	[AreaType.NodeEditor]: NodeEditorAreaState;
-	[AreaType.CompositionTimeline]: CompTimeAreaState;
-	[AreaType.CompositionWorkspace]: CompositionWorkspaceAreaState;
+	[AreaType.Timeline]: TimelineAreaState;
+	[AreaType.Workspace]: CompositionWorkspaceAreaState;
 	[AreaType.History]: {};
 	[AreaType.Project]: {};
 }

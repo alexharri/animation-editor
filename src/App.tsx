@@ -1,15 +1,12 @@
 import React, { useEffect } from "react";
 import { hot } from "react-hot-loader/root";
-import { Provider } from "react-redux";
-import { store } from "~/state/store";
-
-import { Toolbar } from "~/toolbar/Toolbar";
 import { AreaRoot } from "~/area/components/AreaRoot";
 import { ContextMenu } from "~/contextMenu/ContextMenu";
+import { CustomContextMenu } from "~/contextMenu/CustomContextMenu";
 import { addListener, removeListener } from "~/listener/addListener";
 import { isKeyCodeOf } from "~/listener/keyboard";
-import { CustomContextMenu } from "~/contextMenu/CustomContextMenu";
-import { ProjectDragCompPreview } from "~/project/dragComp/ProjectDragCompPreview";
+import { DragCompositionPreview } from "~/project/DragCompositionPreview";
+import { Toolbar } from "~/toolbar/Toolbar";
 
 export const AppComponent: React.FC = () => {
 	useEffect(() => {
@@ -27,13 +24,11 @@ export const AppComponent: React.FC = () => {
 
 	return (
 		<>
-			<Provider store={store}>
-				<ContextMenu />
-				<CustomContextMenu />
-				<Toolbar />
-				<AreaRoot />
-				<ProjectDragCompPreview />
-			</Provider>
+			<ContextMenu />
+			<CustomContextMenu />
+			<Toolbar />
+			<AreaRoot />
+			<DragCompositionPreview />
 		</>
 	);
 };
