@@ -74,6 +74,7 @@ export enum LayerType {
 	Rect = 0,
 	Ellipse = 1,
 	Composition = 2,
+	Shape = 3,
 }
 
 export enum PropertyName {

@@ -1,5 +1,5 @@
+import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionProperty } from "~/composition/compositionTypes";
-import { CompositionState } from "~/composition/state/compositionReducer";
 import {
 	getLayerArrayModifierIndexTransform,
 	getLayerArrayModifiers,

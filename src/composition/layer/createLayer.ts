@@ -1,3 +1,4 @@
+import { CompositionState } from "~/composition/compositionReducer";
 import {
 	CompositionLayer,
 	CompositionProperty,
@@ -11,7 +12,7 @@ import { createLayerModifierProperties } from "~/composition/layer/layerModifier
 import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
 import { createRectLayerProperties } from "~/composition/layer/rectLayerProperties";
-import { CompositionState } from "~/composition/state/compositionReducer";
+import { createShapeLayerProperties } from "~/composition/layer/shapeLayerProperties";
 import { LayerType } from "~/types";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
 import { getNonDuplicateName } from "~/util/names";
@@ -23,6 +24,8 @@ const getLayerTypeSpecificProperties = (
 	switch (type) {
 		case LayerType.Composition:
 			return createCompLayerProperties(opts);
+		case LayerType.Shape:
+			return createShapeLayerProperties(opts);
 		case LayerType.Rect:
 			return createRectLayerProperties(opts);
 		case LayerType.Ellipse:

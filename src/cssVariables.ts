@@ -40,7 +40,7 @@ export const cssCursors = {
 };
 
 export const cssZIndex = {
-	timelineEditor: {
+	graphEditor: {
 		panTarget: 50,
 		zoomTarget: 55,
 	},
@@ -59,7 +59,7 @@ export const cssZIndex = {
 		areaToOpenTarget: 99,
 		areaToOpen: 100,
 	},
-	compTime: {
+	timeline: {
 		scrubber: {
 			interactionArea: 1,
 			canvas: 2,

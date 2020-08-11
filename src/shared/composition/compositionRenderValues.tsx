@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
+import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
-import { CompositionState } from "~/composition/state/compositionReducer";
-import { reduceCompProperties } from "~/composition/timeline/compTimeUtils";
+import { reduceCompProperties } from "~/composition/compositionUtils";
 import { computeLayerTransformMap } from "~/composition/transformUtils";
 import {
 	getLayerArrayModifierCountPropertyId,

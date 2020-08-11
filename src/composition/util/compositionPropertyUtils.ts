@@ -1,5 +1,5 @@
+import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
-import { CompositionState } from "~/composition/state/compositionReducer";
 import { getIndexTransformMap } from "~/composition/transformUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import {

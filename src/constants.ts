@@ -89,8 +89,8 @@ export const toolGroups: Array<Array<{ tool: Tool }>> = [
 
 export enum AreaType {
 	NodeEditor = "node_editor",
-	CompositionTimeline = "composition_timeline",
-	CompositionWorkspace = "composition_workspace",
+	Timeline = "composition_timeline",
+	Workspace = "composition_workspace",
 	History = "history",
 	Project = "project",
 }

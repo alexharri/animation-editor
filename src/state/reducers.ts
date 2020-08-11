@@ -4,12 +4,12 @@ import {
 	compositionReducer,
 	CompositionState,
 	initialCompositionState,
-} from "~/composition/state/compositionReducer";
+} from "~/composition/compositionReducer";
 import {
 	compositionSelectionReducer,
 	CompositionSelectionState,
 	initialCompositionSelectionState,
-} from "~/composition/state/compositionSelectionReducer";
+} from "~/composition/compositionSelectionReducer";
 import {
 	contextMenuReducer,
 	ContextMenuState,

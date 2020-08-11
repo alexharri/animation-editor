@@ -1,4 +1,4 @@
-import { CompositionState } from "~/composition/state/compositionReducer";
+import { CompositionState } from "~/composition/compositionReducer";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { CompositionRenderValues, LayerType, PropertyName } from "~/types";
 
@@ -6,6 +6,7 @@ const layerTypeToName: { [key in keyof typeof LayerType]: string } = {
 	Ellipse: "Ellipse layer",
 	Rect: "Rect layer",
 	Composition: "Composition layer",
+	Shape: "Shape layer",
 };
 
 export const getLayerTypeName = (type: LayerType): string => {
@@ -24,6 +25,15 @@ export const getLayerDimensions = (
 		case LayerType.Composition: {
 			width = nameToProperty.Width;
 			height = nameToProperty.Height;
+			break;
+		}
+
+		/**
+		 * @todo calculate shape layer bounding box
+		 */
+		case LayerType.Shape: {
+			width = 100;
+			height = 100;
 			break;
 		}
 
