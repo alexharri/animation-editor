@@ -1,10 +1,8 @@
 import React from "react";
+import { GraphIcon } from "~/components/icons/GraphIcon";
+import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
 import { StopwatchIcon } from "~/components/icons/StopwatchIcon";
-import {
-	Composition,
-	CompositionProperty,
-	CompositionPropertyGroup,
-} from "~/composition/compositionTypes";
+import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { compositionActions } from "~/composition/state/compositionReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import styles from "~/composition/timeline/property/CompTimeProperty.styles";
@@ -16,10 +14,20 @@ import {
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
-import { Timeline } from "~/timeline/timelineTypes";
-import { ValueType } from "~/types";
+import { PropertyGroupName, ValueType } from "~/types";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
+
+const ArrowUpIcon = () => (
+	<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path
+			fillRule="evenodd"
+			clipRule="evenodd"
+			d="M16 3.01514L25.7425 12.7576L24.2576 14.2425L16 5.98499L7.74249 14.2425L6.25757 12.7576L16 3.01514Z"
+		/>
+		<path fillRule="evenodd" clipRule="evenodd" d="M15 28V4.5H17V28H15Z" />
+	</svg>
+);
 
 const s = compileStylesheetLabelled(styles);
 
@@ -27,12 +35,11 @@ interface OwnProps {
 	compositionId: string;
 	id: string;
 	depth: number;
+	canBeReordered: boolean;
 }
 interface StateProps {
 	property: CompositionProperty | CompositionPropertyGroup;
 	isSelected: boolean;
-	composition: Composition;
-	timeline?: Timeline;
 }
 type Props = OwnProps & StateProps;
 
@@ -40,9 +47,15 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 	const { property } = props;
 
 	const marginLeft = 24 + props.depth * 20;
+	const nameWidth = 180 - props.depth * 20;
 
 	if (property.type === "group") {
 		const { properties } = property;
+
+		const canHaveGraph = property.name === PropertyGroupName.ArrayModifier;
+		const graphId = property.graphId;
+
+		const { canBeReordered } = props;
 
 		const toggleGroupOpen = () => {
 			requestAction({ history: true }, (params) => {
@@ -63,9 +76,8 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 							onClick={toggleGroupOpen}
 						/>
 						<div
-							className={s("name", {
-								active: props.isSelected,
-							})}
+							className={s("name", { active: props.isSelected })}
+							style={{ width: nameWidth }}
 							onMouseDown={separateLeftRightMouse({
 								left: (e) =>
 									compTimeHandlers.onPropertyNameMouseDown(
@@ -77,6 +89,69 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 						>
 							{getLayerPropertyGroupLabel(property.name)}
 						</div>
+						{canHaveGraph && (
+							<div className={s("graphWrapper")}>
+								<button
+									title={
+										property.graphId
+											? "Delete Layer Graph"
+											: "Create Layer Graph"
+									}
+									className={s("graph", { active: !!graphId })}
+									onMouseDown={separateLeftRightMouse({
+										left: (e) => e.stopPropagation(),
+									})}
+									onClick={(e) =>
+										compTimeHandlers.onPropertyGraphMouseDown(e, property.id)
+									}
+								>
+									<GraphIcon />
+								</button>
+								{!!graphId && (
+									<div
+										title="Open Graph in area"
+										className={s("openGraphInArea", { active: true })}
+										onMouseDown={separateLeftRightMouse({
+											left: (e) =>
+												compTimeHandlers.onOpenGraphInAreaMouseDown(
+													e,
+													graphId,
+												),
+										})}
+									>
+										<OpenInAreaIcon />
+									</div>
+								)}
+							</div>
+						)}
+						{canBeReordered && (
+							<>
+								<button
+									title="Move up in list"
+									className={s("moveUpDownButton")}
+									onMouseDown={separateLeftRightMouse({
+										left: (e) => e.stopPropagation(),
+									})}
+									onClick={() =>
+										compTimeHandlers.moveModifierInList(property.id, -1)
+									}
+								>
+									<ArrowUpIcon />
+								</button>
+								<button
+									title="Move down in list"
+									className={s("moveUpDownButton", { down: true })}
+									onMouseDown={separateLeftRightMouse({
+										left: (e) => e.stopPropagation(),
+									})}
+									onClick={() =>
+										compTimeHandlers.moveModifierInList(property.id, 1)
+									}
+								>
+									<ArrowUpIcon />
+								</button>
+							</>
+						)}
 					</div>
 				</div>
 				{!property.collapsed &&
@@ -86,6 +161,7 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 							id={id}
 							key={id}
 							depth={props.depth + 1}
+							canBeReordered={property.name === PropertyGroupName.Modifiers}
 						/>
 					))}
 			</>
@@ -115,9 +191,8 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 					<StopwatchIcon />
 				</div>
 				<div
-					className={s("name", {
-						active: props.isSelected,
-					})}
+					className={s("name", { active: props.isSelected })}
+					style={{ width: nameWidth }}
 					onMouseDown={separateLeftRightMouse({
 						left: (e) =>
 							compTimeHandlers.onPropertyNameMouseDown(
@@ -136,10 +211,9 @@ const CompTimeLayerPropertyComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ timelines, compositionState, compositionSelectionState },
+	{ compositionState, compositionSelectionState },
 	{ id, compositionId },
 ) => {
-	const composition = compositionState.compositions[compositionId];
 	const property = compositionState.properties[id] as CompositionProperty;
 	const compositionSelection = getCompSelectionFromState(
 		compositionId,
@@ -147,11 +221,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	);
 	const isSelected = !!compositionSelection.properties[id];
 
-	const timeline = property.timelineId ? timelines[property.timelineId] : undefined;
-
 	return {
-		composition,
-		timeline,
 		isSelected,
 		property,
 	};

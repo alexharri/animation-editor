@@ -1,25 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { areaActions } from "~/area/state/areaActions";
-import {
-	Composition,
-	CompositionProperty,
-	CompositionSelection,
-} from "~/composition/compositionTypes";
-import { CompositionState } from "~/composition/state/compositionReducer";
 import styles from "~/composition/timeline/CompTime.styles";
 import { compTimeAreaActions, CompTimeAreaState } from "~/composition/timeline/compTimeAreaReducer";
 import { compTimeHandlers } from "~/composition/timeline/compTimeHandlers";
 import { CompTimeLayerList } from "~/composition/timeline/CompTimeLayerList";
+import { CompTimeTimeline } from "~/composition/timeline/CompTimeTimeline";
 import { capCompTimePanY } from "~/composition/timeline/compTimeUtils";
 import { CompTimeScrubber } from "~/composition/timeline/scrubber/CompTimeScrubber";
 import { TrackEditor } from "~/composition/timeline/track/TrackEditor";
-import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
-import { connectActionState } from "~/state/stateUtils";
-import { TimelineEditor } from "~/timeline/TimelineEditor";
+import { connectActionState, getActionState } from "~/state/stateUtils";
 import { ViewBounds } from "~/timeline/ViewBounds";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { capToRange, isVecInRect, splitRect } from "~/util/math";
@@ -30,15 +22,13 @@ const s = compileStylesheetLabelled(styles);
 
 type OwnProps = AreaComponentProps<CompTimeAreaState>;
 interface StateProps {
-	composition: Composition;
-	compositionSelection: CompositionSelection;
-	compositionState: CompositionState;
-	viewBounds: [number, number];
+	compositionLength: number;
 }
 type Props = OwnProps & StateProps;
 
 const CompTimeComponent: React.FC<Props> = (props) => {
-	const { composition } = props;
+	const { compositionId, viewBounds } = props.areaState;
+	const { compositionLength } = props;
 
 	const [t, setT] = useState(0.3);
 
@@ -76,35 +66,15 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 		});
 	};
 
-	const timelineIds: string[] = [];
-	const colors: Partial<{ [timelineId: string]: string }> = {};
-
-	const layers = props.composition.layers.map((id) => props.compositionState.layers[id]);
-	const properties: CompositionProperty[] = [];
-
-	for (let i = 0; i < layers.length; i += 1) {
-		properties.push(...getLayerCompositionProperties(layers[i].id, props.compositionState));
-	}
-
-	for (let i = 0; i < properties.length; i += 1) {
-		if (!props.compositionSelection.properties[properties[i].id]) {
-			continue;
-		}
-
-		if (properties[i].timelineId) {
-			timelineIds.push(properties[i].timelineId);
-			colors[properties[i].timelineId] = properties[i].color;
-		}
-	}
-
 	const outRef = useRef<HTMLDivElement>(null);
 
-	const panY = capCompTimePanY(
-		props.areaState.panY,
-		composition.id,
-		props.height - 32,
-		props.compositionState,
-	);
+	const panY = props.areaState.panY;
+	// const panY = capCompTimePanY(
+	// 	props.areaState.panY,
+	// 	composition.id,
+	// 	props.height - 32,
+	// 	props.compositionState,
+	// );
 
 	const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -121,11 +91,13 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 
 			e.preventDefault();
 
+			const { compositionState } = getActionState();
+
 			const panY = capCompTimePanY(
 				props.areaState.panY,
-				composition.id,
+				compositionId,
 				props.height,
-				props.compositionState,
+				compositionState,
 			);
 
 			let [viewportLeft, viewportRight] = splitRect(
@@ -139,10 +111,10 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 				: false;
 
 			compTimeHandlers.onWheelPan(e as any, props.areaId, {
-				compositionId: props.composition.id,
+				compositionId,
 				viewport: viewportRight,
-				compositionLength: props.composition.length,
-				viewBounds: props.viewBounds,
+				compositionLength,
+				viewBounds,
 				lockY,
 				panY,
 			});
@@ -167,10 +139,10 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 							? !isVecInRect(Vec2.fromEvent(e), viewportLeft)
 							: false;
 						compTimeHandlers.onPan(e, props.areaId, {
-							compositionId: props.composition.id,
+							compositionId,
 							viewport: viewportRight,
-							compositionLength: props.composition.length,
-							viewBounds: props.viewBounds,
+							compositionLength,
+							viewBounds,
 							lockY,
 							panY,
 						});
@@ -182,8 +154,8 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 				style={viewportLeft}
 				ref={outRef}
 				onMouseDown={separateLeftRightMouse({
-					left: () => compTimeHandlers.onMouseDownOut(props.composition.id),
-					right: (e) => compTimeHandlers.onRightClickOut(e, props.composition.id),
+					left: () => compTimeHandlers.onMouseDownOut(compositionId),
+					right: (e) => compTimeHandlers.onRightClickOut(e, compositionId),
 				})}
 			>
 				<div className={s("header")}>
@@ -206,7 +178,7 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 					</button>
 				</div>
 				<CompTimeLayerList
-					compositionId={composition.id}
+					compositionId={compositionId}
 					moveLayers={props.areaState.moveLayers}
 					panY={props.areaState.panY}
 				/>
@@ -222,7 +194,7 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 				<ViewBounds
 					left={viewportRight.left}
 					width={viewportRight.width}
-					compositionLength={props.composition.length}
+					compositionLength={compositionLength}
 					requestUpdate={(cb) => {
 						requestAction({ history: false }, (params) => {
 							cb({
@@ -239,12 +211,12 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 							});
 						});
 					}}
-					viewBounds={props.viewBounds}
+					viewBounds={viewBounds}
 				/>
 				<CompTimeScrubber
-					compositionId={props.composition.id}
+					compositionId={compositionId}
 					viewportRight={viewportRight}
-					viewBounds={props.viewBounds}
+					viewBounds={viewBounds}
 				/>
 				<div style={{ position: "relative" }}>
 					<div
@@ -253,7 +225,7 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 						onMouseDown={separateLeftRightMouse({
 							left: (e) =>
 								compTimeHandlers.onZoomClick(e, props.areaId, {
-									viewBounds: props.viewBounds,
+									viewBounds,
 									left: viewportRight.left,
 									width: viewportRight.width,
 								}),
@@ -262,8 +234,8 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 					{!props.areaState.graphEditorOpen && (
 						<TrackEditor
 							panY={props.areaState.panY}
-							viewBounds={props.viewBounds}
-							compositionId={props.composition.id}
+							viewBounds={viewBounds}
+							compositionId={compositionId}
 							viewport={{
 								width: viewportRight.width,
 								height: viewportRight.height - 32,
@@ -276,19 +248,13 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 							layerLengthShift={props.areaState.layerLengthShift}
 						/>
 					)}
-					{props.areaState.graphEditorOpen && timelineIds.length > 0 && (
-						<TimelineEditor
-							compositionTimelineAreaId={props.areaId}
-							ids={timelineIds}
-							viewport={{
-								...viewportRight,
-								height: viewportRight.height - 32,
-								top: viewportRight.top + 32,
-							}}
-							colors={colors}
-							viewBounds={props.viewBounds}
-							length={props.composition.length}
+					{props.areaState.graphEditorOpen && (
+						<CompTimeTimeline
+							areaId={props.areaId}
+							compositionId={props.areaState.compositionId}
 							dragSelectRect={props.areaState.dragSelectRect}
+							viewBounds={props.areaState.viewBounds}
+							viewport={viewportRight}
 						/>
 					)}
 				</div>
@@ -297,19 +263,11 @@ const CompTimeComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ compositionState, compositionSelectionState },
-	ownProps,
-) => {
-	const compositionSelection = getCompSelectionFromState(
-		ownProps.areaState.compositionId,
-		compositionSelectionState,
-	);
+const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ compositionState }, ownProps) => {
+	const composition = compositionState.compositions[ownProps.areaState.compositionId];
+
 	return {
-		compositionState,
-		compositionSelection,
-		composition: compositionState.compositions[ownProps.areaState.compositionId],
-		viewBounds: ownProps.areaState.viewBounds,
+		compositionLength: composition.length,
 	};
 };
 

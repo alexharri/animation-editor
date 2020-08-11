@@ -4,6 +4,7 @@ import {
 	PropertyGroupName,
 	PropertyName,
 	RGBColor,
+	TransformBehavior,
 	ValueFormat,
 	ValueType,
 } from "~/types";
@@ -38,6 +39,7 @@ export interface CompositionPropertyGroup {
 	layerId: string;
 	properties: string[];
 	collapsed: boolean;
+	graphId: string; // Currently only ArrayModifier groups may have an associated graph
 }
 
 export type CompositionProperty = {
@@ -71,6 +73,10 @@ export type CompositionProperty = {
 	| {
 			valueType: ValueType.Vec2;
 			value: Vec2;
+	  }
+	| {
+			valueType: ValueType.TransformBehavior;
+			value: TransformBehavior;
 	  }
 );
 

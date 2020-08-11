@@ -7,6 +7,7 @@ import { NodeEditorConnections } from "~/nodeEditor/NodeEditorConnections";
 import { nodeEditorHandlers } from "~/nodeEditor/nodeEditorHandlers";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
+import { ArrayModifierIndexNode } from "~/nodeEditor/nodes/arrayModifier/ArrayModifierIndexNode";
 import { ColorInputNode } from "~/nodeEditor/nodes/color/ColorInputNode";
 import { ExpressionNode } from "~/nodeEditor/nodes/expression/ExpressionNode";
 import { Node } from "~/nodeEditor/nodes/Node";
@@ -109,6 +110,7 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 	}, [containerRef.current]);
 
 	if (!graph) {
+		console.log(props);
 		return null;
 	}
 
@@ -197,6 +199,10 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 									NodeComponent = Vec2InputNode;
 									break;
 								}
+
+								case NodeEditorNodeType.array_modifier_index:
+									NodeComponent = ArrayModifierIndexNode;
+									break;
 							}
 
 							return (

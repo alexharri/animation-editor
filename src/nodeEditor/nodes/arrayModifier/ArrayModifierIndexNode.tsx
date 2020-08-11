@@ -1,10 +1,10 @@
 import React from "react";
 import { NodeBody } from "~/nodeEditor/components/NodeBody";
-import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
+import { NodeEditorNodeOutput, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { connectActionState } from "~/state/stateUtils";
-import { separateLeftRightMouse } from "~/util/mouse";
+import { NodeEditorNodeType } from "~/types";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
@@ -15,14 +15,15 @@ interface OwnProps {
 	nodeId: string;
 }
 interface StateProps {
-	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
+	state: NodeEditorNodeState<NodeEditorNodeType.array_modifier_index>;
+	layerId: string;
 }
 
 type Props = OwnProps & StateProps;
 
-function NodeComponent(props: Props) {
-	const { nodeId, areaId, graphId, outputs, inputs } = props;
+function ArrayModifierIndexNodeComponent(props: Props) {
+	const { areaId, graphId, nodeId, outputs } = props;
 
 	return (
 		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
@@ -45,35 +46,6 @@ function NodeComponent(props: Props) {
 					</div>
 				);
 			})}
-			{inputs.map((input, i) => {
-				return (
-					<div className={s("input")} key={i}>
-						<div
-							className={s("input__circle")}
-							onMouseDown={separateLeftRightMouse({
-								left: input.pointer
-									? (e) =>
-											nodeHandlers.onInputWithPointerMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											)
-									: (e) =>
-											nodeHandlers.onInputMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											),
-							})}
-						/>
-						<div className={s("input__name")}>{input.name}</div>
-					</div>
-				);
-			})}
 		</NodeBody>
 	);
 }
@@ -85,9 +57,12 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	const graph = nodeEditor.graphs[graphId];
 	const node = graph.nodes[nodeId];
 	return {
-		inputs: node.inputs,
 		outputs: node.outputs,
+		state: node.state as StateProps["state"],
+		layerId: graph.layerId,
 	};
 };
 
-export const Node = connectActionState(mapStateToProps)(NodeComponent);
+export const ArrayModifierIndexNode = connectActionState(mapStateToProps)(
+	ArrayModifierIndexNodeComponent,
+);

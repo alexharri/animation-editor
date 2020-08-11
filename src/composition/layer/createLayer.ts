@@ -7,6 +7,7 @@ import {
 } from "~/composition/compositionTypes";
 import { createCompLayerProperties } from "~/composition/layer/compLayerProperties";
 import { createEllipseLayerProperties } from "~/composition/layer/ellipseLayerProperties";
+import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
 import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
 import { createRectLayerProperties } from "~/composition/layer/rectLayerProperties";
@@ -33,7 +34,11 @@ const getLayerProperties = (
 	type: LayerType,
 	opts: CreatePropertyOptions,
 ): CreateLayerPropertyGroup[] => {
-	return [...getLayerTypeSpecificProperties(type, opts), createLayerTransformProperties(opts)];
+	return [
+		createLayerModifierProperties(opts),
+		...getLayerTypeSpecificProperties(type, opts),
+		createLayerTransformProperties(opts),
+	];
 };
 
 interface Options {

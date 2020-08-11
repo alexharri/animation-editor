@@ -29,8 +29,10 @@ export interface NodeEditorState {
 type Selection = KeySelectionMap;
 
 export interface NodeEditorGraphState {
-	id: string;
+	type: "layer_graph" | "array_modifier_graph";
 	layerId: string;
+	propertyId: string;
+	id: string;
 	moveVector: Vec2;
 	nodes: {
 		[nodeId: string]: NodeEditorNode<NodeEditorNodeType>;

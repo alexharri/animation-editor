@@ -5,7 +5,6 @@ import { initialNodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { AreaState } from "~/types/areaTypes";
 
 export const areaInitialStates: { [K in AreaType]: AreaState<K> } = {
-	[AreaType.VectorEditor]: {},
 	[AreaType.CompositionTimeline]: initialCompTimeAreaState,
 	[AreaType.CompositionWorkspace]: initialCompositionWorkspaceAreaState,
 	[AreaType.NodeEditor]: initialNodeEditorAreaState,

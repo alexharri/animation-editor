@@ -1,4 +1,4 @@
-import { NodeEditorNodeType, ValueType, RGBAColor } from "~/types";
+import { NodeEditorNodeType, RGBAColor, ValueType } from "~/types";
 
 export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEditorNodeInput[] => {
 	switch (type) {
@@ -198,6 +198,9 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 		case NodeEditorNodeType.composition:
 			return [];
 
+		case NodeEditorNodeType.array_modifier_index:
+			return [];
+
 		case NodeEditorNodeType.property_input:
 			return [];
 
@@ -351,6 +354,14 @@ export const getNodeEditorNodeDefaultOutputs = (
 				},
 			];
 
+		case NodeEditorNodeType.array_modifier_index:
+			return [
+				{
+					name: "Index",
+					type: ValueType.Number,
+				},
+			];
+
 		case NodeEditorNodeType.property_input:
 			return [];
 
@@ -417,6 +428,7 @@ type NodeEditorNodeStateMap = {
 	[NodeEditorNodeType.color_from_rgba_factors]: {};
 	[NodeEditorNodeType.color_to_rgba_factors]: {};
 	[NodeEditorNodeType.composition]: {};
+	[NodeEditorNodeType.array_modifier_index]: {};
 	[NodeEditorNodeType.property_input]: { layerId: string; propertyId: string };
 	[NodeEditorNodeType.property_output]: { propertyId: string };
 	[NodeEditorNodeType.expr]: {
@@ -442,4 +454,5 @@ export const nodeValidInputToOutputsMap: { [key in ValueType]: ValueType[] } = {
 	[ValueType.Rect]: [ValueType.Any, ValueType.Rect],
 	[ValueType.Vec2]: [ValueType.Any, ValueType.Vec2],
 	[ValueType.Color]: [ValueType.Any, ValueType.Color],
+	[ValueType.TransformBehavior]: [ValueType.TransformBehavior],
 };

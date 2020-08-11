@@ -1,5 +1,5 @@
-import { StyleParams } from "~/util/stylesheets";
 import { cssVariables } from "~/cssVariables";
+import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
@@ -19,6 +19,66 @@ export default ({ css }: StyleParams) => ({
 		height: 16px;
 		display: flex;
 		align-items: stretch;
+	`,
+
+	graphWrapper: css`
+		margin-left: 2px;
+		margin-right: 4px;
+		width: 48px;
+		display: flex;
+	`,
+
+	graph: css`
+		height: 16px;
+		width: 16px;
+		background: transparent;
+		border: none;
+		position: relative;
+		cursor: pointer;
+
+		svg {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 14px;
+			height: 14px;
+			fill: ${cssVariables.light300};
+			transform: translate(-50%, -50%);
+		}
+
+		&--active {
+			svg {
+				fill: ${cssVariables.primary500};
+			}
+		}
+	`,
+
+	openGraphInArea: css`
+		margin-left: 2px;
+		height: 16px;
+		width: 16px;
+		position: relative;
+		cursor: grab;
+
+		&:active {
+			cursor: grabbing;
+		}
+
+		svg {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 14px;
+			height: 14px;
+			fill: ${cssVariables.light300};
+			transform: translate(-50%, -50%);
+		}
+
+		&--active {
+			svg {
+				fill: ${cssVariables.primary500};
+			}
+		}
 	`,
 
 	collapsedArrow: css`
@@ -52,7 +112,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	name: css`
-		width: 80px;
+		width: 128px;
 		font-size: 11px;
 		color: #bbb;
 		line-height: 16px;
@@ -105,5 +165,42 @@ export default ({ css }: StyleParams) => ({
 		padding: 16px;
 		border-radius: 4px;
 		border-bottom-left-radius: 0;
+	`,
+
+	select: css`
+		color: ${cssVariables.light500};
+		background-color: ${cssVariables.gray400};
+		padding: 0 4px;
+		border: none;
+		-webkit-appearance: none;
+		border-radius: 4px;
+		height: 16px;
+		line-height: 16px;
+		outline: none;
+		width: 140px;
+		font-size: 11px;
+		font-family: ${cssVariables.fontFamily};
+	`,
+
+	moveUpDownButton: css`
+		border: none;
+		background: transparent;
+		padding: 2px;
+		width: 16px;
+		height: 16px;
+		outline: none;
+		cursor: pointer;
+
+		svg {
+			width: 13px;
+			height: 13px;
+			fill: ${cssVariables.light300};
+		}
+
+		&--down {
+			svg {
+				transform: translateY(-1px) rotate(180deg);
+			}
+		}
 	`,
 });

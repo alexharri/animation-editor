@@ -44,6 +44,7 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 		layerId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
+		graphId: "",
 	};
 
 	return { properties, group };

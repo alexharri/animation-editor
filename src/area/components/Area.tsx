@@ -1,5 +1,5 @@
 import React from "react";
-import { areaComponentRegistry } from "~/area/areaRegistry";
+import { areaComponentRegistry, _areaReactKeyRegistry } from "~/area/areaRegistry";
 import styles from "~/area/components/Area.styles";
 import { AreaErrorBoundary } from "~/area/components/AreaErrorBoundary";
 import { handleAreaDragFromCorner } from "~/area/handlers/areaDragFromCorner";
@@ -33,11 +33,6 @@ const areaTypeOptions: Array<{ icon: React.ComponentType; type: AreaType; label:
 		icon: PenIcon,
 		type: AreaType.Project,
 		label: "Project",
-	},
-	{
-		icon: PenIcon,
-		type: AreaType.VectorEditor,
-		label: "Vector Editor",
 	},
 	{
 		icon: PenIcon,
@@ -114,6 +109,9 @@ export const AreaComponent: React.FC<Props> = (props) => {
 		});
 	};
 
+	const areaStateKey = _areaReactKeyRegistry[props.type];
+	const key = areaStateKey ? props.state[areaStateKey] : props.id;
+
 	return (
 		<div data-areaid={id} className={s("area", { raised })} style={viewport}>
 			{["ne", "nw", "se", "sw"].map((dir) => (
@@ -129,6 +127,7 @@ export const AreaComponent: React.FC<Props> = (props) => {
 			<div className={s("area__content")}>
 				<AreaIdContext.Provider value={props.id}>
 					<AreaErrorBoundary
+						key={key}
 						component={Component}
 						areaId={props.id}
 						areaState={props.state}

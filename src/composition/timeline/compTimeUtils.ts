@@ -224,7 +224,7 @@ export function reduceCompProperties<T>(
 export function reduceCompPropertiesAndGroups<T>(
 	compositionId: string,
 	compositionState: CompositionState,
-	fn: (acc: T, property: CompositionProperty) => T,
+	fn: (acc: T, property: CompositionProperty | CompositionPropertyGroup) => T,
 	initialState: T,
 ): T {
 	const composition = compositionState.compositions[compositionId];
@@ -232,65 +232,11 @@ export function reduceCompPropertiesAndGroups<T>(
 	let acc = initialState;
 
 	for (let i = 0; i < composition.layers.length; i += 1) {
-		acc = reduceLayerPropertiesAndGroups(composition.layers[i], compositionState, fn, acc);
+		acc = reduceLayerPropertiesAndGroups<T>(composition.layers[i], compositionState, fn, acc);
 	}
 
 	return acc;
 }
-
-/**
- * Recursive means that we also use Composition layer layers.
- */
-// export function reduceCompLayersRecursive<T extends string[] = string[]>(
-// 	compositionId: string,
-// 	compositionState: CompositionState,
-// 	propertyToValue: PropertyValueMap,
-// ): { layerIds: T, containerMap: { [layerId: string]: { width: number, height: number } }} {
-// 	const composition = compositionState.compositions[compositionId];
-
-// 	const layerIds: string[] = [];
-// 	const containerMap: { [layerId: string]: { width: number, height: number } } = {
-// 		[compositionId]: {
-// 			width: composition.width,
-// 			height: composition.height,
-// 		}
-// 	};
-
-// 	const list = [...composition.layers];
-
-// 	for (let i = 0; i < list.length; i += 1) {
-// 		const layer = compositionState.layers[list[i]];
-
-// 		const isCompLayer = layer.type === LayerType.Composition;
-
-// 		if (isCompLayer) {
-// 			const item = reduceLayerProperties(
-// 				layer.id,
-// 				compositionState,
-// 				(acc, property) => {
-// 					if (property.name === PropertyName.Width) {
-// 						acc.width = propertyToValue[property.id].rawValue;
-// 					} else if (property.name === PropertyName.Height) {
-// 						acc.height = propertyToValue[property.id].rawValue;
-// 					}
-// 					return acc;
-// 				},
-// 				{ width: 0, height: 0 },
-// 			);
-
-// 		}
-
-// 		acc = fn(acc, layer);
-
-// 		if (isCompLayer) {
-// 			const compositionId = compositionState.compositionLayerIdToComposition[layer.id];
-// 			const composition = compositionState.compositions[compositionId];
-// 			list.push(...composition.layers);
-// 		}
-// 	}
-
-// 	return {layerIds, containerMap };
-// }
 
 export const reduceVisibleCompProperties = <T>(
 	compositionId: string,

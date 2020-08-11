@@ -22,7 +22,14 @@ const getTransformMap = (compositionId: string) => {
 		{ width, height },
 		{ recursive: false },
 	);
-	const transformMap = computeLayerTransformMap(compositionId, map.properties, compositionState);
+	const transformMap = computeLayerTransformMap(
+		compositionId,
+		map.properties,
+		map.arrayModifierProperties,
+		compositionState,
+		undefined,
+		{ recursive: false },
+	);
 	return transformMap;
 };
 
@@ -34,8 +41,8 @@ export const compTimeLayerParentHandlers = {
 
 			const transformMap = getTransformMap(layer.compositionId);
 
-			const transform = transformMap[layer.id];
-			const parentTransform = transformMap[parentId];
+			const transform = transformMap[layer.id].transform[0];
+			const parentTransform = transformMap[parentId].transform[0];
 
 			const { anchor, scale, rotation, translate } = adjustTransformToParent(
 				transform,
@@ -67,7 +74,7 @@ export const compTimeLayerParentHandlers = {
 			const layer = compositionState.layers[layerId];
 
 			const transformMap = getTransformMap(layer.compositionId);
-			const { anchor, translate, rotation, scale } = transformMap[layer.id];
+			const { anchor, translate, rotation, scale } = transformMap[layer.id].transform[0];
 
 			const properties = getLayerTransformProperties(layerId, compositionState);
 

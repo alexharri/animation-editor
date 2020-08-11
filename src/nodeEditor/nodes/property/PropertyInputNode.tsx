@@ -1,5 +1,5 @@
 import React from "react";
-import { CompositionProperty } from "~/composition/compositionTypes";
+import { CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
 import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
 import { requestAction } from "~/listener/requestAction";
 import { NodeBody } from "~/nodeEditor/components/NodeBody";
@@ -24,7 +24,12 @@ interface OwnProps {
 	nodeId: string;
 }
 interface StateProps {
-	layerId: string;
+	graphLayerId: string;
+	graphPropertyId: string;
+
+	compositionLayerIds: string[];
+	layerPropertyIds?: string[];
+
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
 	state: NodeEditorNodeState<NodeEditorNodeType.property_input>;
@@ -33,7 +38,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function PropertyInputNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs } = props;
+	const { areaId, graphId, nodeId, outputs, compositionLayerIds, layerPropertyIds } = props;
 
 	const onSelectLayer = (layerId: string) => {
 		requestAction({ history: true }, (params) => {
@@ -97,7 +102,8 @@ function PropertyInputNodeComponent(props: Props) {
 	return (
 		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
 			<PropertyNodeSelectProperty
-				layerId={props.layerId}
+				selectFromLayerIds={compositionLayerIds}
+				selectFromPropertyIds={layerPropertyIds}
 				onSelectProperty={onSelectProperty}
 				onSelectLayer={onSelectLayer}
 				selectedPropertyId={props.state.propertyId}
@@ -127,16 +133,39 @@ function PropertyInputNodeComponent(props: Props) {
 }
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ nodeEditor },
+	{ compositionState, nodeEditor },
 	{ graphId, nodeId },
 ) => {
 	const graph = nodeEditor.graphs[graphId];
 	const node = graph.nodes[nodeId];
+	const state = node.state as StateProps["state"];
+
+	let layer: CompositionLayer;
+
+	if (graph.type === "layer_graph") {
+		layer = compositionState.layers[graph.layerId];
+	} else {
+		const property = compositionState.properties[graph.propertyId];
+		layer = compositionState.layers[property.layerId];
+	}
+
+	const composition = compositionState.compositions[layer.compositionId];
+
+	const compositionLayerIds = composition.layers;
+	const layerPropertyIds = state.layerId
+		? compositionState.layers[state.layerId].properties
+		: undefined;
+
 	return {
-		layerId: graph.layerId,
+		graphLayerId: graph.layerId,
+		graphPropertyId: graph.propertyId,
+
+		compositionLayerIds,
+		layerPropertyIds,
+
 		inputs: node.inputs,
 		outputs: node.outputs,
-		state: node.state as StateProps["state"],
+		state,
 	};
 };
 

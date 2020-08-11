@@ -6,15 +6,18 @@ import {
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
 import { createLayer } from "~/composition/layer/createLayer";
+import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
 import { CompositionSelectionState } from "~/composition/state/compositionSelectionReducer";
 import {
 	reduceCompPropertiesAndGroups,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/timeline/compTimeUtils";
+import { getLayerModifierPropertyGroupId } from "~/composition/util/compositionPropertyUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { LayerType, RGBAColor } from "~/types";
+import { LayerType, PropertyGroupName, RGBAColor, TransformBehavior } from "~/types";
 import {
 	addListToMap,
+	createGenMapIdFn,
 	modifyItemInUnionMap,
 	modifyItemsInMap,
 	removeKeysFromMap,
@@ -106,7 +109,8 @@ export const compositionActions = {
 	}),
 
 	setPropertyValue: createAction("comp/SET_PROPERTY_VALUE", (action) => {
-		return (propertyId: string, value: number | RGBAColor) => action({ propertyId, value });
+		return (propertyId: string, value: number | RGBAColor | TransformBehavior) =>
+			action({ propertyId, value });
 	}),
 
 	setPropertyGroupCollapsed: createAction("comp/SET_PROP_GROUP_COLLAPSED", (action) => {
@@ -142,8 +146,24 @@ export const compositionActions = {
 		return (layerId: string, graphId: string) => action({ layerId, graphId });
 	}),
 
+	setPropertyGraphId: createAction("comp/SET_PROPERTY_GRAPH_ID", (action) => {
+		return (propertyId: string, graphId: string) => action({ propertyId, graphId });
+	}),
+
 	setLayerParentLayerId: createAction("comp/SET_LAYER_PARENT_LAYER_ID", (action) => {
 		return (layerId: string, parentLayerId: string) => action({ layerId, parentLayerId });
+	}),
+
+	addModifierToLayer: createAction("comp/ADD_MODIFIER_TO_LAYER", (action) => {
+		return (
+			layerId: string,
+			propertyId: string,
+			propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup>,
+		) => action({ layerId, propertyId, propertiesToAdd });
+	}),
+
+	moveModifier: createAction("comp/MOVE_MODIFIER", (action) => {
+		return (modifierId: string, moveBy: -1 | 1) => action({ modifierId, moveBy });
 	}),
 };
 
@@ -516,6 +536,21 @@ export const compositionReducer = (
 			};
 		}
 
+		case getType(compositionActions.setPropertyGraphId): {
+			const { propertyId, graphId } = action.payload;
+			return {
+				...state,
+				properties: modifyItemInUnionMap(
+					state.properties,
+					propertyId,
+					(property: CompositionPropertyGroup) => ({
+						...property,
+						graphId,
+					}),
+				),
+			};
+		}
+
 		case getType(compositionActions.setLayerName): {
 			const { layerId, name } = action.payload;
 			return {
@@ -546,6 +581,90 @@ export const compositionReducer = (
 					...layer,
 					parentLayerId,
 				})),
+			};
+		}
+
+		case getType(compositionActions.addModifierToLayer): {
+			const { layerId, propertyId, propertiesToAdd } = action.payload;
+
+			const layer = { ...state.layers[layerId] };
+			const newState = {
+				...state,
+				layers: { ...state.layers, [layer.id]: layer },
+				properties: addListToMap(state.properties, propertiesToAdd, "id"),
+			};
+
+			const properties = layer.properties.map(
+				(propertyId) => newState.properties[propertyId],
+			);
+			const propertyNames = properties.map((p) => (p.type === "group" ? p.name : null));
+
+			let groupIndex = propertyNames.indexOf(PropertyGroupName.Modifiers);
+
+			if (groupIndex === -1) {
+				const createId = createGenMapIdFn(newState.properties);
+				const { group, properties } = createLayerModifierProperties({
+					compositionId: layer.compositionId,
+					layerId,
+					createId,
+				});
+				newState.properties = addListToMap(
+					newState.properties,
+					[group, ...properties],
+					"id",
+				);
+				layer.properties = [group.id, ...layer.properties];
+				groupIndex = 0;
+			}
+
+			newState.properties = modifyItemInUnionMap(
+				newState.properties,
+				layer.properties[groupIndex],
+				(group: CompositionPropertyGroup) => ({
+					...group,
+					properties: [...group.properties, propertyId],
+				}),
+			);
+
+			return newState;
+		}
+
+		case getType(compositionActions.moveModifier): {
+			const { modifierId, moveBy } = action.payload;
+
+			const modifier = state.properties[modifierId];
+			const layerId = modifier.layerId;
+
+			const modifierGroupId = getLayerModifierPropertyGroupId(layerId, state);
+
+			if (!modifierGroupId) {
+				throw new Error("Cannot move modfier. No Modifier group found.");
+			}
+
+			const modifierGroup = state.properties[modifierGroupId] as CompositionPropertyGroup;
+
+			const index = modifierGroup.properties.indexOf(modifierId);
+
+			if (index === -1) {
+				throw new Error(
+					`Cannot find modifier '${modifierId}' in group '${modifierGroupId}'.`,
+				);
+			}
+
+			const properties = [...modifierGroup.properties];
+			properties.splice(index, 1);
+			properties.splice(index + moveBy, 0, modifierId);
+
+			return {
+				...state,
+				properties: modifyItemInUnionMap(
+					state.properties,
+					modifierGroupId,
+					(item: CompositionPropertyGroup) => ({
+						...item,
+						properties,
+					}),
+				),
 			};
 		}
 

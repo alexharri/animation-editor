@@ -36,23 +36,12 @@ interface OwnProps {
 	} | null;
 }
 interface StateProps {
-	frameIndex: number;
 	layerIds: string[];
-	compositionWidth: number;
-	compositionHeight: number;
 }
 type Props = OwnProps & StateProps;
 
 const CompTimeLayerListComponent: React.FC<Props> = (props) => {
-	const {
-		layerIds,
-		compositionId,
-		frameIndex,
-		compositionWidth,
-		compositionHeight,
-		panY,
-		moveLayers,
-	} = props;
+	const { layerIds, compositionId, panY, moveLayers } = props;
 
 	const layerWrapper = useRef<HTMLDivElement>(null);
 
@@ -96,12 +85,7 @@ const CompTimeLayerListComponent: React.FC<Props> = (props) => {
 	);
 
 	return (
-		<CompositionPropertyValuesProvider
-			compositionId={compositionId}
-			frameIndex={frameIndex}
-			containerWidth={compositionWidth}
-			containerHeight={compositionHeight}
-		>
+		<CompositionPropertyValuesProvider compositionId={compositionId}>
 			<div
 				className={s("layerWrapper")}
 				ref={layerWrapper}
@@ -131,17 +115,9 @@ const mapState: MapActionState<StateProps, OwnProps> = (
 	{ compositionState },
 	{ compositionId },
 ) => {
-	const {
-		frameIndex,
-		width: compositionWidth,
-		height: compositionHeight,
-		layers: layerIds,
-	} = compositionState.compositions[compositionId];
+	const { layers: layerIds } = compositionState.compositions[compositionId];
 	return {
 		layerIds,
-		frameIndex,
-		compositionHeight,
-		compositionWidth,
 	};
 };
 
