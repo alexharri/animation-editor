@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { Tool } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
@@ -8,6 +9,8 @@ import { store } from "~/state/store";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
+import { moveToolHandlers } from "~/workspace/moveTool";
+import { penToolHandlers } from "~/workspace/penTool";
 import { renderCompositionWorkspaceGuides, renderWorkspace } from "~/workspace/renderWorkspace";
 import WorkspaceStyles from "~/workspace/Workspace.styles";
 import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
@@ -17,9 +20,9 @@ import { workspaceHandlers } from "~/workspace/workspaceHandlers";
 const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?: Vec2) => {
 	const { width, height, left, top } = props;
 
-	const state = getActionState();
+	const state = getActionState({ allowSelectionIndexShift: true });
 	const compositionId = props.areaState.compositionId;
-	const { compositionState, compositionSelectionState } = state;
+	const { compositionState, compositionSelectionState, shapeState, shapeSelectionState } = state;
 
 	const composition = compositionState.compositions[compositionId];
 	const map = getCompositionRenderValues(
@@ -40,6 +43,8 @@ const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?:
 		compositionId,
 		compositionState,
 		compositionSelectionState,
+		shapeState,
+		shapeSelectionState,
 		map,
 		pan,
 		scale,
@@ -172,6 +177,23 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 
 	const { left, top, width, height } = props;
 
+	const onMouseDown = (e: React.MouseEvent) => {
+		const { tool } = getActionState();
+
+		const viewport = { left, top, width, height };
+
+		switch (tool.selected) {
+			case Tool.pen: {
+				console.log("pen tool");
+				penToolHandlers.onMouseDown(e, props.areaId, viewport);
+				break;
+			}
+			default: {
+				moveToolHandlers.onMouseDown(e, props.areaId, viewport);
+			}
+		}
+	};
+
 	return (
 		<div
 			style={{ background: cssVariables.gray400 }}
@@ -190,13 +212,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				width={width}
 				style={{ position: "absolute", top: 0, left: 0 }}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) =>
-						workspaceHandlers.onMouseDown(e, props.areaId, {
-							left,
-							top,
-							width,
-							height,
-						}),
+					left: onMouseDown,
 					middle: (e) => workspaceHandlers.onPanStart(props.areaId, e),
 				})}
 			/>

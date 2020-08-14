@@ -78,6 +78,10 @@ export type CompositionProperty = {
 			valueType: ValueType.TransformBehavior;
 			value: TransformBehavior;
 	  }
+	| {
+			valueType: ValueType.ShapeReference;
+			value: string;
+	  }
 );
 
 export interface PropertyToValueMap {

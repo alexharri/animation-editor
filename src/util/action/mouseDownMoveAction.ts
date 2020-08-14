@@ -1,6 +1,11 @@
 import { keys } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
-import { requestAction, RequestActionParams, ShouldAddToStackFn } from "~/listener/requestAction";
+import {
+	requestAction,
+	RequestActionCallback,
+	RequestActionParams,
+	ShouldAddToStackFn,
+} from "~/listener/requestAction";
 import { getDistance } from "~/util/math";
 
 interface MousePosition {
@@ -19,8 +24,9 @@ interface MouseMoveOptions<KeyMap> {
 }
 
 interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
+	params?: RequestActionParams;
 	keys: K[];
-	beforeMove: (params: RequestActionParams) => void;
+	beforeMove: (params: RequestActionParams, options: { mousePosition: MousePosition }) => void;
 	mouseMove: (params: RequestActionParams, options: MouseMoveOptions<KeyMap>) => void;
 	mouseUp: (params: RequestActionParams, hasMoved: boolean) => void;
 	translate?: (vec: Vec2) => Vec2;
@@ -59,8 +65,8 @@ export const mouseDownMoveAction = <
 		translated: translate(initialGlobalMousePosition),
 	};
 
-	requestAction({ history: true, shouldAddToStack: options.shouldAddToStack }, (params) => {
-		options.beforeMove(params);
+	const fn: RequestActionCallback = (params) => {
+		options.beforeMove(params, { mousePosition: initialMousePosition });
 
 		let hasMoved = false;
 		let hasCalledMove = false;
@@ -150,5 +156,12 @@ export const mouseDownMoveAction = <
 		params.addListener.once("mouseup", () => {
 			options.mouseUp(params, hasMoved);
 		});
-	});
+	};
+
+	if (options.params) {
+		fn(options.params);
+		return;
+	}
+
+	requestAction({ history: true, shouldAddToStack: options.shouldAddToStack }, fn);
 };

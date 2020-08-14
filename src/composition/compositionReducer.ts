@@ -162,6 +162,14 @@ export const compositionActions = {
 		) => action({ layerId, propertyId, propertiesToAdd });
 	}),
 
+	addPropertyToPropertyGroup: createAction("comp/ADD_PROPERTY_TO_PROPERTY_GROUP", (action) => {
+		return (
+			addToPropertyGroup: string,
+			propertyId: string,
+			propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup>,
+		) => action({ addToPropertyGroup, propertyId, propertiesToAdd });
+	}),
+
 	moveModifier: createAction("comp/MOVE_MODIFIER", (action) => {
 		return (modifierId: string, moveBy: -1 | 1) => action({ modifierId, moveBy });
 	}),
@@ -620,6 +628,25 @@ export const compositionReducer = (
 			newState.properties = modifyItemInUnionMap(
 				newState.properties,
 				layer.properties[groupIndex],
+				(group: CompositionPropertyGroup) => ({
+					...group,
+					properties: [...group.properties, propertyId],
+				}),
+			);
+
+			return newState;
+		}
+
+		case getType(compositionActions.addPropertyToPropertyGroup): {
+			const { addToPropertyGroup, propertyId, propertiesToAdd } = action.payload;
+
+			const newState = {
+				...state,
+				properties: addListToMap(state.properties, propertiesToAdd, "id"),
+			};
+			newState.properties = modifyItemInUnionMap(
+				newState.properties,
+				addToPropertyGroup,
 				(group: CompositionPropertyGroup) => ({
 					...group,
 					properties: [...group.properties, propertyId],

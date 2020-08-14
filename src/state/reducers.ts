@@ -21,6 +21,12 @@ import {
 	NodeEditorState,
 } from "~/nodeEditor/nodeEditorReducers";
 import { initialProjectState, projectReducer, ProjectState } from "~/project/projectReducer";
+import { initialShapeState, shapeReducer, ShapeState } from "~/shape/shapeReducer";
+import {
+	initialShapeSelectionState,
+	shapeSelectionReducer,
+	ShapeSelectionState,
+} from "~/shape/shapeSelectionReducer";
 import { ActionBasedState, createActionBasedReducer } from "~/state/history/actionBasedReducer";
 import { createReducerWithHistory, HistoryState } from "~/state/history/historyReducer";
 import { initialTimelineState, timelineReducer, TimelineState } from "~/timeline/timelineReducer";
@@ -39,6 +45,8 @@ declare global {
 		nodeEditor: HistoryState<NodeEditorState>;
 		contextMenu: ActionBasedState<ContextMenuState>;
 		project: HistoryState<ProjectState>;
+		shapeState: HistoryState<ShapeState>;
+		shapeSelectionState: HistoryState<ShapeSelectionState>;
 		timelines: HistoryState<TimelineState>;
 		timelineSelection: HistoryState<TimelineSelectionState>;
 		tool: ActionBasedState<ToolState>;
@@ -51,6 +59,8 @@ declare global {
 		nodeEditor: NodeEditorState;
 		contextMenu: ContextMenuState;
 		project: ProjectState;
+		shapeState: ShapeState;
+		shapeSelectionState: ShapeSelectionState;
 		timelines: TimelineState;
 		timelineSelection: TimelineSelectionState;
 		tool: ToolState;
@@ -74,13 +84,20 @@ const reducers = {
 	compositionSelectionState: createReducerWithHistory(
 		initialCompositionSelectionState,
 		compositionSelectionReducer,
-		{ selectionForKey: "compositions" },
+		{ selectionForKey: "compositionState" },
 	),
 
 	nodeEditor: createReducerWithHistory(initialNodeEditorState, nodeEditorReducer),
 	contextMenu: createActionBasedReducer(initialContextMenuState, contextMenuReducer),
 
 	project: createReducerWithHistory(initialProjectState, projectReducer),
+
+	shapeState: createReducerWithHistory(initialShapeState, shapeReducer),
+	shapeSelectionState: createReducerWithHistory(
+		initialShapeSelectionState,
+		shapeSelectionReducer,
+		{ selectionForKey: "shapeState" },
+	),
 
 	timelines: createReducerWithHistory(initialTimelineState, timelineReducer),
 	timelineSelection: createReducerWithHistory(

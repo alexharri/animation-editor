@@ -51,6 +51,7 @@ export enum ValueType {
 	Rect = "rect",
 	Color = "color",
 	TransformBehavior = "transform_behavior",
+	ShapeReference = "shape_ref",
 	Any = "any",
 }
 
@@ -59,22 +60,29 @@ export enum ValueFormat {
 	Rotation,
 }
 
-export enum PropertyGroupName {
-	Transform = 0,
-	Dimensions = 1,
-	Content = 2,
-	Structure = 3,
-	Modifiers = 4,
-
-	// Modifiers
-	ArrayModifier = 5,
-}
-
 export enum LayerType {
 	Rect = 0,
 	Ellipse = 1,
 	Composition = 2,
 	Shape = 3,
+}
+
+// Property group names start at 5000 so they don't overlap with property names.
+// This allows us to find certain groups/properties like so:
+//
+//		property.name === PropertyName.X
+//
+// when the `property` may be either a Property or a PropertyGroup
+export enum PropertyGroupName {
+	Transform = 5000,
+	Dimensions = 5001,
+	Content = 5002,
+	Structure = 5003,
+	Modifiers = 5004,
+	Shape = 5006,
+
+	// Modifiers
+	ArrayModifier = 5005,
 }
 
 export enum PropertyName {
@@ -104,6 +112,9 @@ export enum PropertyName {
 	// Array Modifier
 	ArrayModifier_Count = 15,
 	ArrayModifier_TransformBehavior = 16,
+
+	// Shape Layer
+	ShapeLayer_Path = 17,
 }
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
