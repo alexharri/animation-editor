@@ -1,20 +1,27 @@
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { createShapeLayerShape } from "~/composition/path/shapeLayerPath";
 import { transformMat2 } from "~/composition/transformUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
+import { isKeyDown } from "~/listener/keyboard";
+import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { shapeActions } from "~/shape/shapeReducer";
 import { shapeSelectionActions } from "~/shape/shapeSelectionReducer";
 import { ShapeControlPoint, ShapeEdge, ShapeGraph, ShapeNode } from "~/shape/shapeTypes";
-import { getShapeNodeToEdges, getShapeSelectionFromState } from "~/shape/shapeUtils";
+import {
+	getShapeContinuePathFrom,
+	getShapeLayerShapeIds,
+	getShapeNodeToEdges,
+	getShapePathClosePathNode,
+	getShapeSelectionFromState,
+} from "~/shape/shapeUtils";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { LayerType, PropertyGroupName, PropertyName } from "~/types";
+import { LayerType, PropertyGroupName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
-import { getDistance } from "~/util/math";
+import { getDistance, quadraticToCubicBezier } from "~/util/math";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
 export const penToolHandlers = {
@@ -47,7 +54,7 @@ export const penToolHandlers = {
 
 	onShapeLayerMouseDown: (
 		e: React.MouseEvent,
-		shapeLayerId: string,
+		layerId: string,
 		areaId: string,
 		viewport: Rect,
 	) => {
@@ -58,44 +65,7 @@ export const penToolHandlers = {
 		const { compositionId, scale, pan: _pan } = areaState;
 		const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
 
-		const layer = compositionState.layers[shapeLayerId];
-
-		// Get all Shapes of the shape layer
-
-		// Find content group
-		const names = layer.properties.map(
-			(propertyId) => compositionState.properties[propertyId].name,
-		);
-		const groupIndex = names.indexOf(PropertyGroupName.Content);
-		const contentsGroupId = layer.properties[groupIndex];
-		const contentsGroup = compositionState.properties[
-			contentsGroupId
-		] as CompositionPropertyGroup;
-
-		// Find all shape groups within contents group
-		const shapeGroupIds = contentsGroup.properties.filter((propertyId) => {
-			const property = compositionState.properties[propertyId] as CompositionPropertyGroup;
-			return property.name === PropertyGroupName.Shape;
-		});
-
-		const shapeIds: string[] = [];
-
-		// Find all shapes within all the shapes
-		for (const shapeGroupId of shapeGroupIds) {
-			const shapeGroup = compositionState.properties[
-				shapeGroupId
-			] as CompositionPropertyGroup;
-
-			for (const propertyId of shapeGroup.properties) {
-				const property = compositionState.properties[propertyId] as CompositionProperty;
-
-				if (property.name === PropertyName.ShapeLayer_Path) {
-					shapeIds.push(property.value); // Value is shapeId
-				}
-			}
-		}
-
-		// All path ids found, now for the hit test
+		const shapeIds = getShapeLayerShapeIds(layerId, compositionState);
 
 		const composition = compositionState.compositions[compositionId];
 		const map = getCompositionRenderValues(
@@ -109,7 +79,7 @@ export const penToolHandlers = {
 			{ recursive: false },
 		);
 
-		const transform = map.transforms[shapeLayerId].transform[0];
+		const transform = map.transforms[layerId].transform[0];
 		const mat2 = transformMat2(transform);
 		const translateToViewport = (vec: Vec2): Vec2 => {
 			return mat2.multiplyVec2(vec).add(transform.translate).scale(scale).add(pan);
@@ -146,7 +116,8 @@ export const penToolHandlers = {
 							translateToViewport(position.add(transform.translate)),
 						) < 5
 					) {
-						console.log("HIT CP");
+						penToolHandlers.controlPointMouseDown(e, cp.id, areaId, viewport);
+						return;
 					}
 				}
 			}
@@ -158,149 +129,235 @@ export const penToolHandlers = {
 				const position = node.position;
 
 				if (getDistance(mousePosition, translateToViewport(position)) < 5) {
-					console.log("HIT NODE");
+					penToolHandlers.nodeMouseDown(e, layerId, nodeId, areaId, viewport);
 					return;
 				}
 			}
 		}
 
-		const shapeIdToNodeToEdges = shapeIds.reduce<{
-			[shapeId: string]: { [nodeId: string]: string[] };
-		}>((obj, shapeId) => {
-			obj[shapeId] = getShapeNodeToEdges(shapeId, shapeState);
-			return obj;
-		}, {});
+		const continuePathFrom = getShapeContinuePathFrom(
+			shapeIds,
+			shapeState,
+			shapeSelectionState,
+		);
 
-		// Nothing was hit
-		//
-		// Check if:
-		//
-		//		a) A single node is selected
-		//		b) A single control point is selected
-		// 		c) A single node and its associated control point are both selected
-		//
-		// The 'single' part applies to the combined selection of all paths. If two nodes
-		// are selected in different paths then they cancel each other out.
-		//
-		// If a control point is selected, we treat it as if its associated node is selected.
-		//
-		// The node must be a filament (only has one full edge). If the node has two full
-		// edges than we cannot extend the path it.
-		//
-		// If all of those conditions apply, we extend the path from the node
-		const getNodeToContinue = (): [string, string | undefined] | undefined => {
-			let selectedNode: string | undefined;
-			let selectedControlPoint: string | undefined;
-
-			for (const shapeId of shapeIds) {
-				const shape = shapeState.shapes[shapeId];
-				const selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
-
-				for (const edgeId of shape.edges) {
-					const edge = shapeState.edges[edgeId];
-
-					for (const cpId of [edge.cp0, edge.cp1]) {
-						if (!cpId || !selection.controlPoints[cpId]) {
-							continue;
-						}
-
-						if (selectedControlPoint) {
-							// Two selected control points, break
-							return undefined;
-						}
-						selectedControlPoint = cpId;
-					}
-				}
-
-				for (const nodeId of shape.nodes) {
-					if (!selection.nodes[nodeId]) {
-						continue;
-					}
-
-					if (selectedNode) {
-						// Two selected nodes points, break
-						return undefined;
-					}
-
-					selectedNode = nodeId;
-				}
-			}
-
-			if (selectedNode && selectedControlPoint) {
-				const node = shapeState.nodes[selectedNode];
-				const edgeIds = shapeIdToNodeToEdges[node.shapeId][node.id];
-
-				for (const edgeId of edgeIds) {
-					const edge = shapeState.edges[edgeId];
-
-					if (!edge.n0) {
-						if (selectedControlPoint === edge.cp1) {
-							// partial edge's control point is the selected. Valid.
-							return [selectedNode, selectedControlPoint];
-						}
-
-						// The node's partial edge control point is not the
-						// selected control point. Invalid.
-						return undefined;
-					}
-
-					if (!edge.n1) {
-						if (selectedControlPoint === edge.cp0) {
-							return [selectedNode, selectedControlPoint];
-						}
-
-						return undefined;
-					}
-
-					// Edge is full, continue
-				}
-
-				// Node has no partial edges where `selectedControlPoint` can show up. Invalid
-				return undefined;
-			}
-
-			if (selectedControlPoint) {
-				const cp = shapeState.controlPoints[selectedControlPoint]!;
-				const edge = shapeState.edges[cp.edgeId];
-
-				const nodeId = edge.cp0 !== cp.id ? edge.n1 : edge.n0;
-				const otherNodeId = edge.cp0 !== cp.id ? edge.n0 : edge.n1;
-
-				if (otherNodeId) {
-					// Is control point of full edge. Invalid
-					return undefined;
-				}
-
-				return [nodeId, selectedControlPoint];
-			}
-
-			if (selectedNode) {
-				const node = shapeState.nodes[selectedNode];
-				const edgeIds = shapeIdToNodeToEdges[node.shapeId][node.id];
-
-				if (edgeIds.length < 2) {
-					return [selectedNode, undefined];
-				}
-			}
-
-			return undefined;
-		};
-
-		const toContinue = getNodeToContinue();
-
-		if (!toContinue) {
+		if (!continuePathFrom) {
 			// Nothing was hit, clear the selection and create a new path on the shape layer.
-			penToolHandlers.createNewPathOnShapeLayer(e, shapeLayerId, areaId, viewport);
+			penToolHandlers.createNewPathOnShapeLayer(e, layerId, areaId, viewport);
 			return;
 		}
 
-		const [nodeId, preferControlPoint] = toContinue;
+		const [nodeId, preferControlPoint] = continuePathFrom;
 
 		// Should continue node
-		penToolHandlers.continueShape(e, nodeId, preferControlPoint, areaId, viewport);
+		penToolHandlers.continuePath(e, nodeId, preferControlPoint, areaId, viewport);
 	},
 
-	continueShape: (
+	controlPointMouseDown: (e: React.MouseEvent, cpId: string, areaId: string, viewport: Rect) => {
+		if (isKeyDown("Alt")) {
+			requestAction({ history: true }, (params) => {
+				const { shapeState } = getActionState();
+				const cp = shapeState.controlPoints[cpId]!;
+				const edge = shapeState.edges[cp.edgeId];
+				const which = edge.cp0 === cpId ? "cp0" : "cp1";
+
+				params.dispatch(
+					shapeActions.removeControlPoint(cpId),
+					shapeActions.setEdgeControlPointId(cp!.edgeId, which, ""),
+				);
+
+				if (which === "cp0" && !edge.n1) {
+					// Removing cp of stray edge, remove edge entirely
+					params.dispatch(shapeActions.removeEdge(edge.shapeId, cp.edgeId));
+				}
+
+				params.submitAction("Remove control point");
+			});
+			return;
+		}
+
+		const { pan, scale } = getAreaActionState<AreaType.Workspace>(areaId);
+
+		const { shapeState, shapeSelectionState } = getActionState();
+
+		const cp = shapeState.controlPoints[cpId]!;
+		const edge = shapeState.edges[cp.edgeId];
+		const shapeId = edge.shapeId;
+
+		let selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
+
+		const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
+		const willBeSelected = additiveSelection ? !selection.controlPoints[cpId] : true;
+
+		const clearShapeSelection = (params: RequestActionParams) => {
+			params.dispatch(shapeSelectionActions.clearShapeSelection(shapeId));
+		};
+		const addCpToSelection = (params: RequestActionParams) => {
+			params.dispatch(shapeSelectionActions.addControlPointToSelection(shapeId, cpId));
+		};
+		const removeCpFromSelection = (params: RequestActionParams) => {
+			params.dispatch(shapeSelectionActions.removeControlPointFromSelection(shapeId, cpId));
+		};
+
+		mouseDownMoveAction(e, {
+			keys: ["Shift"],
+			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
+			beforeMove: (params) => {
+				if (!additiveSelection && !selection.nodes[cpId]) {
+					// The selection is non-additive and the cp will be selected.
+					//
+					// Clear the selection of all shapes within the composition and then
+					// add the cp to the selection.
+					clearShapeSelection(params);
+					addCpToSelection(params);
+					return;
+				}
+
+				if (additiveSelection && !willBeSelected) {
+					// The selection is additive and the node will NOT be selected.
+					//
+					// Deselect the node.
+					removeCpFromSelection(params);
+				} else {
+					addCpToSelection(params);
+				}
+
+				selection = getShapeSelectionFromState(
+					shapeId,
+					getActionState().shapeSelectionState,
+				);
+			},
+			mouseMove: (params, { moveVector }) => {
+				params.dispatch(shapeActions.setMoveVector(shapeId, moveVector.translated));
+			},
+			mouseUp: (params, hasMoved) => {
+				selection = getShapeSelectionFromState(
+					shapeId,
+					getActionState().shapeSelectionState,
+				);
+
+				if (additiveSelection && !willBeSelected) {
+					params.submitAction("Remove control point from shape selection");
+					return;
+				}
+
+				if (hasMoved) {
+					params.dispatch(shapeActions.applyMoveVector(shapeId, selection));
+					params.submitAction("Move selected objects in shape");
+					return;
+				}
+
+				if (!additiveSelection) {
+					clearShapeSelection(params);
+					addCpToSelection(params);
+				}
+
+				params.submitAction("Add control point to shape selection");
+			},
+		});
+	},
+
+	nodeMouseDown: (
+		e: React.MouseEvent,
+		layerId: string,
+		nodeId: string,
+		areaId: string,
+		viewport: Rect,
+	) => {
+		const { pan, scale } = getAreaActionState<AreaType.Workspace>(areaId);
+
+		const { compositionState, shapeState, shapeSelectionState } = getActionState();
+
+		const node = shapeState.nodes[nodeId];
+		const shapeId = node.shapeId;
+
+		// Check if a single node is selected and the hit node is the close path node.
+		const shapeIds = getShapeLayerShapeIds(layerId, compositionState);
+		const continueFrom = getShapeContinuePathFrom(shapeIds, shapeState, shapeSelectionState);
+
+		if (continueFrom) {
+			const closePathNodeId = getShapePathClosePathNode(continueFrom[0], shapeState);
+
+			if (nodeId === closePathNodeId) {
+				penToolHandlers.completePath(e, continueFrom[0], closePathNodeId, areaId, viewport);
+				return;
+			}
+		}
+
+		let selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
+
+		const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
+		const willBeSelected = additiveSelection ? !selection.nodes[nodeId] : true;
+
+		const clearShapeSelection = (params: RequestActionParams) => {
+			params.dispatch(shapeSelectionActions.clearShapeSelection(shapeId));
+		};
+		const addNodeToSelection = (params: RequestActionParams) => {
+			params.dispatch(shapeSelectionActions.addNodeToSelection(shapeId, nodeId));
+		};
+		const removeNodeFromSelection = (params: RequestActionParams) => {
+			params.dispatch(shapeSelectionActions.removeNodeFromSelection(shapeId, nodeId));
+		};
+
+		mouseDownMoveAction(e, {
+			keys: ["Shift"],
+			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
+			beforeMove: (params) => {
+				if (!additiveSelection && !selection.nodes[nodeId]) {
+					// The selection is non-additive and the node will be selected.
+					//
+					// Clear the selection of all shapes within the composition and then
+					// add the node to the selection.
+					clearShapeSelection(params);
+					addNodeToSelection(params);
+					return;
+				}
+
+				if (additiveSelection && !willBeSelected) {
+					// The selection is additive and the node will NOT be selected.
+					//
+					// Deselect the node.
+					removeNodeFromSelection(params);
+				} else {
+					addNodeToSelection(params);
+				}
+
+				selection = getShapeSelectionFromState(
+					shapeId,
+					getActionState().shapeSelectionState,
+				);
+			},
+			mouseMove: (params, { moveVector }) => {
+				params.dispatch(shapeActions.setMoveVector(shapeId, moveVector.translated));
+			},
+			mouseUp: (params, hasMoved) => {
+				selection = getShapeSelectionFromState(
+					shapeId,
+					getActionState().shapeSelectionState,
+				);
+
+				if (additiveSelection && !willBeSelected) {
+					params.submitAction("Remove node from shape selection");
+					return;
+				}
+
+				if (hasMoved) {
+					params.dispatch(shapeActions.applyMoveVector(shapeId, selection));
+					params.submitAction("Move selected objects in shape");
+					return;
+				}
+
+				if (!additiveSelection) {
+					clearShapeSelection(params);
+					addNodeToSelection(params);
+				}
+
+				params.submitAction("Add node to shape selection");
+			},
+		});
+	},
+
+	continuePath: (
 		e: React.MouseEvent,
 		fromNodeId: string,
 		preferControlPointId: string | undefined,
@@ -499,12 +556,237 @@ export const penToolHandlers = {
 		});
 	},
 
+	/**
+	 * @param n0Id - From
+	 * @param n1Id - To
+	 */
+	completePath: (
+		e: React.MouseEvent,
+		n0Id: string,
+		n1Id: string,
+		areaId: string,
+		viewport: Rect,
+	) => {
+		const { pan, scale } = getAreaActionState<AreaType.Workspace>(areaId);
+
+		const shapeState = getActionState().shapeState;
+
+		const { shapeId } = shapeState.nodes[n0Id];
+		const nodeToEdges = getShapeNodeToEdges(shapeId, shapeState);
+
+		const createEdgeId = createGenMapIdFn(shapeState.edges);
+		const createCpId = createGenMapIdFn(shapeState.controlPoints);
+
+		const n0 = shapeState.nodes[n0Id];
+		const n1 = shapeState.nodes[n0Id];
+
+		let n0InitialEdgeId: string | undefined;
+		let n1InitialEdgeId: string | undefined;
+
+		let n0InitialCp: Vec2 | undefined;
+		let n1InitialCp: Vec2 | undefined;
+
+		let n0rcpId: string | undefined;
+		let n1rcpId: string | undefined;
+		let cp0Id: string | undefined;
+		let cp1Id: string | undefined;
+		let rcpId: string | undefined;
+
+		for (const edgeId of nodeToEdges[n0Id]) {
+			const edge = shapeState.edges[edgeId];
+			if (!edge.n1) {
+				n0InitialEdgeId = edgeId;
+			} else {
+				n0rcpId = edge.n0 === n0Id ? edge.cp0 : edge.cp1;
+			}
+		}
+		for (const edgeId of nodeToEdges[n1Id]) {
+			const edge = shapeState.edges[edgeId];
+			if (!edge.n1) {
+				n1InitialEdgeId = edgeId;
+				break;
+			} else {
+				n1rcpId = edge.n0 === n1Id ? edge.cp0 : edge.cp1;
+			}
+		}
+
+		if (n0InitialEdgeId) {
+			const { cp0 } = shapeState.edges[n0InitialEdgeId];
+			n0InitialCp = shapeState.controlPoints[cp0]!.position;
+		}
+		if (n1InitialEdgeId) {
+			const { cp0 } = shapeState.edges[n1InitialEdgeId];
+			n1InitialCp = shapeState.controlPoints[cp0]!.position;
+		}
+
+		let edgeId!: string;
+
+		mouseDownMoveAction(e, {
+			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
+			keys: [],
+			beforeMove: (params) => {
+				const toDispatch: any[] = [];
+				console.log({ n0InitialEdgeId, n1InitialEdgeId });
+
+				if (n0InitialEdgeId && n1InitialEdgeId) {
+					const n0Edge = shapeState.edges[n0InitialEdgeId];
+					const n1Edge = shapeState.edges[n1InitialEdgeId];
+
+					console.log({ n0Edge, n1Edge });
+
+					// Remove the stray edge of n1
+					toDispatch.push(shapeActions.removeEdge(shapeId, n1InitialEdgeId));
+
+					edgeId = n0InitialEdgeId;
+					cp0Id = n0Edge.cp0;
+					cp1Id = n1Edge.cp0; // Reuse id
+					rcpId = n1rcpId;
+
+					// Connect n0's stray edge to n1
+					toDispatch.push(
+						shapeActions.setEdgeNodeId(edgeId, "n1", n1Id),
+						shapeActions.setEdgeControlPointId(edgeId, "cp1", cp1Id),
+					);
+				} else if (n0InitialEdgeId) {
+					const edge = shapeState.edges[n0InitialEdgeId];
+
+					edgeId = n0InitialEdgeId;
+					cp0Id = edge.cp0;
+					cp1Id = createCpId();
+					rcpId = n1rcpId;
+
+					let position = n0rcpId
+						? shapeState.controlPoints[n0rcpId]!.position.scale(-1)
+						: undefined;
+
+					if (!position) {
+						const [, , p2, p3] = quadraticToCubicBezier(
+							n0.position,
+							n0.position.add(n0InitialCp!),
+							null,
+							n1.position,
+						);
+						position = p2.sub(p3);
+					}
+
+					const cp1: ShapeControlPoint = {
+						edgeId,
+						id: cp1Id,
+						position,
+					};
+
+					toDispatch.push(
+						shapeActions.setEdgeNodeId(edgeId, "n1", n1Id),
+						shapeActions.setEdgeControlPointId(edgeId, "cp1", cp1Id),
+						shapeActions.setControlPoint(cp1),
+					);
+				} else if (n1InitialEdgeId) {
+					const edge = shapeState.edges[n1InitialEdgeId];
+					// here
+					edgeId = n1InitialEdgeId;
+					cp0Id = createCpId();
+					cp1Id = edge.cp0;
+					rcpId = n1rcpId;
+
+					let position = n0rcpId
+						? shapeState.controlPoints[n0rcpId]!.position.scale(-1)
+						: undefined;
+
+					if (!position) {
+						const [p0, p1] = quadraticToCubicBezier(
+							n0.position,
+							null,
+							n1.position.add(n1InitialCp!),
+							n1.position,
+						);
+						position = p1.sub(p0);
+					}
+
+					const cp0: ShapeControlPoint = {
+						edgeId,
+						id: cp0Id,
+						position,
+					};
+
+					toDispatch.push(
+						shapeActions.setEdgeNodeId(edgeId, "n1", n0Id),
+						shapeActions.setEdgeControlPointId(edgeId, "cp1", cp0Id),
+						shapeActions.setControlPoint(cp0),
+					);
+				} else {
+					// Creating edge from nothing, just create a line
+					const edge: ShapeEdge = {
+						id: createEdgeId(),
+						shapeId,
+						n0: n0Id,
+						n1: n1Id,
+						cp0: "",
+						cp1: "",
+					};
+					rcpId = n1rcpId;
+					edgeId = edge.id;
+					toDispatch.push(shapeActions.addEdge(shapeId, edge));
+				}
+
+				params.dispatch(toDispatch);
+			},
+			mouseMove: (params, { firstMove, moveVector }) => {
+				// Either both cp0Id and cp1Id or neither does.
+				if (firstMove && !cp0Id && !cp1Id) {
+					cp1Id = createCpId();
+					const cp1: ShapeControlPoint = {
+						id: cp1Id,
+						edgeId,
+						position: moveVector.translated.scale(-1),
+					};
+					params.dispatch(
+						shapeActions.setEdgeControlPointId(edgeId, "cp1", cp1Id),
+						shapeActions.setControlPoint(cp1),
+					);
+
+					let position = n0rcpId
+						? shapeState.controlPoints[n0rcpId]!.position.scale(-1)
+						: undefined;
+
+					if (position) {
+						cp0Id = createCpId();
+						const cp0: ShapeControlPoint = {
+							id: cp0Id,
+							edgeId,
+							position,
+						};
+
+						params.dispatch(
+							shapeActions.setEdgeControlPointId(edgeId, "cp0", cp0Id),
+							shapeActions.setControlPoint(cp0),
+						);
+					}
+				}
+
+				params.dispatch(
+					shapeActions.setControlPointPosition(cp1Id!, moveVector.translated.scale(-1)),
+				);
+
+				if (rcpId) {
+					params.dispatch(
+						shapeActions.setControlPointPosition(rcpId, moveVector.translated),
+					);
+				}
+			},
+			mouseUp: (params) => {
+				params.submitAction("Close path");
+			},
+		});
+	},
+
 	createNewPathOnShapeLayer: (
 		e: React.MouseEvent,
 		layerId: string,
 		areaId: string,
 		viewport: Rect,
-	) => {},
+	) => {
+		console.log("Create new path on shape layer");
+	},
 
 	mouseDownCreateShapeLayer: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
 		const { compositionId, pan, scale } = getAreaActionState<AreaType.Workspace>(areaId);
@@ -594,10 +876,10 @@ export const penToolHandlers = {
 					const e1: ShapeEdge = {
 						id: e1Id,
 						shapeId,
-						n1: nodeId,
-						cp1: e1cpId,
-						n0: "",
-						cp0: "",
+						n0: nodeId,
+						cp0: e1cpId,
+						n1: "",
+						cp1: "",
 					};
 					const e0cp: ShapeControlPoint = {
 						edgeId: e0Id,
@@ -619,14 +901,9 @@ export const penToolHandlers = {
 					);
 				} else {
 					params.dispatch(
-						shapeActions.setEdgeControlPointPosition(
-							e0Id,
-							"cp0",
-							moveVector.translated,
-						),
-						shapeActions.setEdgeControlPointPosition(
-							e1Id,
-							"cp1",
+						shapeActions.setControlPointPosition(e0cpId, moveVector.translated),
+						shapeActions.setControlPointPosition(
+							e1cpId,
 							moveVector.translated.scale(-1),
 						),
 					);

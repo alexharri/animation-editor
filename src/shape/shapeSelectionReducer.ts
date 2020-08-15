@@ -11,6 +11,10 @@ export const shapeSelectionActions = {
 		return (shapeId: string, nodeId: string) => action({ shapeId, nodeId });
 	}),
 
+	removeNodeFromSelection: createAction("sh_sel/REMOVE_NODE_FROM_SELECTION", (action) => {
+		return (shapeId: string, nodeId: string) => action({ shapeId, nodeId });
+	}),
+
 	addEdgeToSelection: createAction("sh_sel/ADD_EDGE_TO_SELECTION", (action) => {
 		return (shapeId: string, edgeId: string) => action({ shapeId, edgeId });
 	}),
@@ -24,6 +28,10 @@ export const shapeSelectionActions = {
 	}),
 
 	toggleControlPointSelection: createAction("sh_sel/TOGGLE_CP_SELECTED", (action) => {
+		return (shapeId: string, cpId: string) => action({ shapeId, cpId });
+	}),
+
+	removeControlPointFromSelection: createAction("sh_sel/REMOVE_CP_FROM_SELECTION", (action) => {
 		return (shapeId: string, cpId: string) => action({ shapeId, cpId });
 	}),
 
@@ -50,11 +58,7 @@ const singleShapeSelectionReducer = (state: ShapeSelection, action: Action): Sha
 	switch (action.type) {
 		case getType(shapeSelectionActions.addNodeToSelection): {
 			const { nodeId } = action.payload;
-
-			return {
-				...state,
-				nodes: { ...state.nodes, [nodeId]: true },
-			};
+			return { ...state, nodes: { ...state.nodes, [nodeId]: true } };
 		}
 
 		case getType(shapeSelectionActions.toggleNodeSelection): {
@@ -66,6 +70,11 @@ const singleShapeSelectionReducer = (state: ShapeSelection, action: Action): Sha
 					? removeKeysFromMap(state.nodes, [nodeId])
 					: { ...state.nodes, [nodeId]: true },
 			};
+		}
+
+		case getType(shapeSelectionActions.removeNodeFromSelection): {
+			const { nodeId } = action.payload;
+			return { ...state, nodes: removeKeysFromMap(state.nodes, [nodeId]) };
 		}
 
 		case getType(shapeSelectionActions.addEdgeToSelection): {
@@ -105,6 +114,15 @@ const singleShapeSelectionReducer = (state: ShapeSelection, action: Action): Sha
 				controlPoints: state.controlPoints[cpId]
 					? removeKeysFromMap(state.controlPoints, [cpId])
 					: { ...state.controlPoints, [cpId]: true },
+			};
+		}
+
+		case getType(shapeSelectionActions.removeControlPointFromSelection): {
+			const { cpId } = action.payload;
+
+			return {
+				...state,
+				controlPoints: removeKeysFromMap(state.controlPoints, [cpId]),
 			};
 		}
 

@@ -14,11 +14,10 @@ import {
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { cssVariables } from "~/cssVariables";
-import { getShapePath } from "~/shape/getShapePath";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { ShapeControlPoint } from "~/shape/shapeTypes";
-import { getShapeSelectionFromState } from "~/shape/shapeUtils";
+import { getShapePath, getShapeSelectionFromState } from "~/shape/shapeUtils";
 import {
 	AffineTransform,
 	CompositionRenderValues,
@@ -76,6 +75,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		compositionId,
 		compositionState,
 		shapeState,
+		shapeSelectionState,
 		viewport,
 		pan: _pan,
 		scale,
@@ -232,7 +232,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		};
 
 		for (const shapeId of shapeIds) {
-			const paths = getShapePath(shapeId, shapeState, toPos);
+			const paths = getShapePath(shapeId, shapeState, shapeSelectionState, toPos);
 
 			if (!paths) {
 				continue;
@@ -520,7 +520,9 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 			const shape = shapeState.shapes[shapeId];
 			const selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
 
-			const paths = getShapePath(shapeId, shapeState, toPos);
+			const { moveVector } = shape;
+
+			const paths = getShapePath(shapeId, shapeState, shapeSelectionState, toPos);
 
 			if (paths) {
 				ctx.beginPath();
@@ -552,12 +554,19 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 						continue;
 					}
 
-					const p0 = toPos(node.position);
-					const p1 = toPos(node.position.add(cp.position));
+					let p0 = node.position;
+					if (selection.nodes[node.id]) {
+						p0 = p0.add(moveVector);
+					}
+
+					let p1 = p0.add(cp.position);
+					if (selection.controlPoints[cp.id] && !selection.nodes[node.id]) {
+						p1 = p1.add(moveVector);
+					}
 
 					// Render handle line
 					ctx.beginPath();
-					traceLine(ctx, [p0, p1]);
+					traceLine(ctx, [toPos(p0), toPos(p1)]);
 					ctx.lineWidth = 1;
 					ctx.strokeStyle = cssVariables.light300;
 					ctx.stroke();
@@ -566,7 +575,7 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 					// Render handle diamond
 					renderDiamond(
 						ctx,
-						p1,
+						toPos(p1),
 						selection.controlPoints[cp.id]
 							? {
 									fillColor: cssVariables.primary500,
@@ -593,10 +602,14 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 				}
 
 				const node = shapeState.nodes[nodeId];
-				const position = toPos(node.position);
+				let position = node.position;
+
+				if (selection.nodes[node.id]) {
+					position = position.add(moveVector);
+				}
 
 				ctx.beginPath();
-				traceCircle(ctx, position, 3.5);
+				traceCircle(ctx, toPos(position), 3.5);
 				ctx.lineWidth = 2.5;
 				ctx.fillStyle = selection.nodes[nodeId] ? cssVariables.primary500 : "white";
 				ctx.strokeStyle = selection.nodes[nodeId] ? "white" : cssVariables.primary500;

@@ -77,30 +77,25 @@ const performRequestedAction = (
 	store.dispatch(historyActions.startAction(actionId));
 
 	const dispatch: RequestActionParams["dispatch"] = (action, ...args) => {
-		try {
-			if (Array.isArray(action)) {
-				if (args.length) {
-					console.warn(
-						"Dispatch received an array as the first argument AND received additional arguments.",
-					);
-				}
-
-				store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
-				return;
-			}
-
+		if (Array.isArray(action)) {
 			if (args.length) {
-				store.dispatch(
-					historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
+				console.warn(
+					"Dispatch received an array as the first argument AND received additional arguments.",
 				);
-				return;
 			}
 
-			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
-		} catch (e) {
-			// We don't want thrown errors to interfere with the rest of the handler.
-			console.dir(e);
+			store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
+			return;
 		}
+
+		if (args.length) {
+			store.dispatch(
+				historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
+			);
+			return;
+		}
+
+		store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 	};
 
 	callback({

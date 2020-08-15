@@ -1,5 +1,11 @@
 import { ActionType, createAction, getType } from "typesafe-actions";
-import { ShapeControlPoint, ShapeEdge, ShapeGraph, ShapeNode } from "~/shape/shapeTypes";
+import {
+	ShapeControlPoint,
+	ShapeEdge,
+	ShapeGraph,
+	ShapeNode,
+	ShapeSelection,
+} from "~/shape/shapeTypes";
 import { addListToMap, modifyItemsInMap, removeKeysFromMap } from "~/util/mapUtils";
 
 export interface ShapeState {
@@ -26,8 +32,12 @@ export const shapeActions = {
 		return (shapeId: string, rect: Rect) => action({ shapeId, rect });
 	}),
 
+	setMoveVector: createAction("shape/SET_MOVE_VECTOR", (action) => {
+		return (shapeId: string, moveVector: Vec2) => action({ shapeId, moveVector });
+	}),
+
 	applyMoveVector: createAction("shape/APPLY_MOVE_VECTOR", (action) => {
-		return (shapeId: string) => action({ shapeId });
+		return (shapeId: string, selection: ShapeSelection) => action({ shapeId, selection });
 	}),
 
 	addEdge: createAction("shape/ADD_EDGE", (action) => {
@@ -65,6 +75,10 @@ export const shapeActions = {
 		return (cp: ShapeControlPoint) => action({ cp });
 	}),
 
+	setControlPointPosition: createAction("shape/SET_CP_POSITION", (action) => {
+		return (cpId: string, position: Vec2) => action({ cpId, position });
+	}),
+
 	removeControlPoint: createAction("shape/REMOVE_CP", (action) => {
 		return (cpId: string) => action({ cpId });
 	}),
@@ -99,8 +113,62 @@ export const shapeReducer = (
 			throw new Error("Not implemented");
 		}
 
+		case getType(shapeActions.setMoveVector): {
+			const { shapeId, moveVector } = action.payload;
+			return {
+				...state,
+				shapes: modifyItemsInMap(state.shapes, shapeId, (shape) => ({
+					...shape,
+					moveVector,
+				})),
+			};
+		}
+
 		case getType(shapeActions.applyMoveVector): {
-			throw new Error("Not implemented");
+			const { shapeId, selection } = action.payload;
+
+			/**
+			 * @todo Apply the move vector
+			 */
+			const { moveVector } = state.shapes[shapeId];
+
+			const selectedNodeIds = Object.keys(selection.nodes);
+
+			const newState: ShapeState = {
+				...state,
+				shapes: modifyItemsInMap(state.shapes, shapeId, (shape) => ({
+					...shape,
+					moveVector: Vec2.new(0, 0),
+				})),
+				nodes: modifyItemsInMap(state.nodes, selectedNodeIds, (node) => ({
+					...node,
+					position: node.position.add(moveVector),
+				})),
+				controlPoints: { ...state.controlPoints },
+			};
+
+			const applyMoveVectorToCp = (cpId: string) => {
+				const cp = state.controlPoints[cpId]!;
+				newState.controlPoints[cpId] = {
+					...cp,
+					position: cp?.position.add(moveVector),
+				};
+			};
+
+			const edgeIds = state.shapes[shapeId].edges;
+			for (const edgeId of edgeIds) {
+				const edge = newState.edges[edgeId];
+
+				if (selection.controlPoints[edge.cp0] && !selection.nodes[edge.n0]) {
+					applyMoveVectorToCp(edge.cp0);
+				}
+
+				if (selection.controlPoints[edge.cp1] && !selection.nodes[edge.n1]) {
+					applyMoveVectorToCp(edge.cp1);
+				}
+			}
+
+			return newState;
 		}
 
 		case getType(shapeActions.addEdge): {
@@ -195,6 +263,17 @@ export const shapeReducer = (
 			return {
 				...state,
 				controlPoints: addListToMap(state.controlPoints, [cp], "id"),
+			};
+		}
+
+		case getType(shapeActions.setControlPointPosition): {
+			const { cpId, position } = action.payload;
+			return {
+				...state,
+				controlPoints: modifyItemsInMap(state.controlPoints, cpId, (cp) => ({
+					...cp!,
+					position,
+				})),
 			};
 		}
 
