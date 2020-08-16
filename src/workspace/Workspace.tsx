@@ -10,7 +10,7 @@ import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { moveToolHandlers } from "~/workspace/moveTool";
-import { penToolHandlers } from "~/workspace/penTool";
+import { penToolHandlers } from "~/workspace/penTool/penTool";
 import { renderCompositionWorkspaceGuides, renderWorkspace } from "~/workspace/renderWorkspace";
 import { useWorkspaceCursor } from "~/workspace/useWorkspaceCursor";
 import WorkspaceStyles from "~/workspace/Workspace.styles";
@@ -175,6 +175,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 	const setCursor = useWorkspaceCursor(guideCanvasRef, {
 		compositionId: props.areaState.compositionId,
 		viewport: { width, left, top, height },
+		areaId: props.areaId,
 	});
 
 	const onMouseMove = (e: React.MouseEvent) => {

@@ -64,6 +64,10 @@ export class Vec2 {
 		return new Vec2(this.x, this.y - y);
 	}
 
+	public subXY(x: number, y: number): Vec2 {
+		return new Vec2(this.x - x, this.y - y);
+	}
+
 	public scale(scale: number, anchor = Vec2.new(0, 0)): Vec2 {
 		return new Vec2(
 			anchor.x + (this.x - anchor.x) * scale,
@@ -137,6 +141,7 @@ declare global {
 		public sub(vec: Vec2): Vec2;
 		public subX(x: number): Vec2;
 		public subY(y: number): Vec2;
+		public subXY(x: number, y: number): Vec2;
 		public scale(scale: number, anchor?: Vec2): Vec2;
 		public scaleX(scale: number): Vec2;
 		public scaleY(scale: number): Vec2;

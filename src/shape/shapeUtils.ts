@@ -6,7 +6,8 @@ import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { ShapeEdge, ShapeGraph, ShapeSelection } from "~/shape/shapeTypes";
 import { LayerType, PropertyGroupName, PropertyName } from "~/types";
-import { quadraticToCubicBezier } from "~/util/math";
+import { getDistance, quadraticToCubicBezier } from "~/util/math";
+import { PenToolContext } from "~/workspace/penTool/penToolContext";
 
 export const getShapeNodeToEdges = (
 	shapeId: string,
@@ -383,4 +384,82 @@ export const getSelectedShapeLayerId = (
 	}
 
 	return null;
+};
+
+type PathTargetObject =
+	| {
+			type: "node";
+			id: string;
+	  }
+	| {
+			type: "control_point";
+			id: string;
+	  }
+	| {
+			type: undefined;
+			id: string;
+	  };
+
+export const getPathTargetObject = (pathId: string, ctx: PenToolContext): PathTargetObject => {
+	const DIST = 7;
+
+	const {
+		normalToViewport,
+		shapeState,
+		shapeSelectionState,
+		layerTransform,
+		mousePosition,
+	} = ctx;
+
+	const path = shapeState.paths[pathId];
+	const shape = shapeState.shapes[path.shapeId];
+	const selection = getShapeSelectionFromState(path.shapeId, shapeSelectionState);
+
+	const { moveVector } = shape;
+
+	for (const item of path.items) {
+		const { nodeId, left, right } = item;
+
+		const node = shapeState.nodes[nodeId];
+		const nodeSelected = selection.nodes[nodeId];
+
+		const position = nodeSelected ? node.position.add(moveVector) : node.position;
+
+		for (const part of [left, right]) {
+			if (!part || !part.controlPointId) {
+				continue;
+			}
+
+			const { controlPointId } = part;
+			const cp = shapeState.controlPoints[controlPointId]!;
+			const cpSelected = selection.controlPoints[controlPointId];
+
+			let cpPos = position.add(cp.position);
+
+			if (!nodeSelected && cpSelected) {
+				cpPos = cpPos.add(moveVector);
+			}
+
+			if (
+				getDistance(
+					mousePosition.viewport,
+					normalToViewport(cpPos.add(layerTransform.translate)),
+				) < DIST
+			) {
+				return {
+					type: "control_point",
+					id: controlPointId,
+				};
+			}
+		}
+
+		if (getDistance(mousePosition.viewport, normalToViewport(position)) < DIST) {
+			return {
+				type: "node",
+				id: nodeId,
+			};
+		}
+	}
+
+	return { type: undefined, id: "" };
 };

@@ -1,32 +1,75 @@
 import { Tool } from "~/constants";
 import { cssCursors } from "~/cssVariables";
-import { getSelectedShapeLayerId } from "~/shape/shapeUtils";
+import {
+	getPathTargetObject,
+	getSelectedShapeLayerId,
+	getShapeContinuePathFrom,
+	getShapeLayerPathIds,
+	getShapePathClosePathNodeId,
+} from "~/shape/shapeUtils";
 import { getActionState } from "~/state/stateUtils";
+import { constructPenToolContext } from "~/workspace/penTool/penToolContext";
 
 interface Options {
 	compositionId: string;
 	viewport: Rect;
+	areaId: string;
 }
 
-const penTool = (_e: React.MouseEvent, el: HTMLElement, options: Options) => {
-	const { compositionId } = options;
+const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
+	const { compositionId, areaId, viewport } = options;
 	const { compositionState, compositionSelectionState } = getActionState();
 
-	const selectedShapeLayer = getSelectedShapeLayerId(
+	const layerId = getSelectedShapeLayerId(
 		compositionId,
 		compositionState,
 		compositionSelectionState,
 	);
 
-	console.log(selectedShapeLayer);
-
-	if (!selectedShapeLayer) {
+	if (!layerId) {
 		el.style.cursor = cssCursors.penTool.default;
 		console.log(cssCursors.penTool.default);
 		return;
 	}
 
-	el.style.cursor = "";
+	const ctx = constructPenToolContext(e, layerId, areaId, viewport);
+	const { shapeState, shapeSelectionState } = ctx;
+
+	const pathIds = getShapeLayerPathIds(layerId, compositionState);
+
+	for (const pathId of pathIds) {
+		const { type, id } = getPathTargetObject(pathId, ctx);
+
+		switch (type) {
+			case "node": {
+				// See if node is close node
+				const continueFrom = getShapeContinuePathFrom(
+					pathIds,
+					shapeState,
+					shapeSelectionState,
+				);
+				const closeNodeId =
+					continueFrom && getShapePathClosePathNodeId(continueFrom, shapeState);
+
+				if (closeNodeId === id) {
+					el.style.cursor = cssCursors.penTool.closePath;
+					break;
+				}
+
+				el.style.cursor = cssCursors.penTool.moveSelection;
+				break;
+			}
+			case "control_point": {
+				el.style.cursor = cssCursors.penTool.moveSelection;
+				break;
+			}
+			default:
+				continue;
+		}
+		return;
+	}
+
+	el.style.cursor = cssCursors.penTool.default;
 };
 
 export const useWorkspaceCursor = (

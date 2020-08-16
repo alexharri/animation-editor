@@ -1,7 +1,6 @@
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
 import { createShapeLayerShapeGroup } from "~/composition/path/shapeLayerPath";
-import { transformMat2 } from "~/composition/transformUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
@@ -17,20 +16,27 @@ import {
 	ShapePathItem,
 } from "~/shape/shapeTypes";
 import {
+	getPathTargetObject,
 	getShapeContinuePathFrom,
 	getShapeLayerPathIds,
 	getShapePathClosePathNodeId,
 	getShapeSelectionFromState,
 } from "~/shape/shapeUtils";
-import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { LayerType, PropertyGroupName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
-import { getDistance } from "~/util/math";
+import { constructPenToolContext, PenToolContext } from "~/workspace/penTool/penToolContext";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
 export const penToolHandlers = {
+	/**
+	 * Move tool mouse down with a single selected shape layer
+	 */
+	moveToolMouseDown: (e: React.MouseEvent, layerId: string, areaId: string, viewport: Rect) => {
+		console.log("move tool pen tool mouse down");
+	},
+
 	onMouseDown: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
 		// See if a single shape layer is selected
 		//
@@ -50,7 +56,8 @@ export const penToolHandlers = {
 		});
 
 		if (selectedShapeLayers.length === 1) {
-			penToolHandlers.onShapeLayerMouseDown(e, selectedShapeLayers[0], areaId, viewport);
+			const ctx = constructPenToolContext(e, selectedShapeLayers[0], areaId, viewport);
+			penToolHandlers.onShapeLayerMouseDown(ctx);
 			return;
 		}
 
@@ -58,73 +65,25 @@ export const penToolHandlers = {
 		penToolHandlers.mouseDownCreateShapeLayer(e, areaId, viewport);
 	},
 
-	onShapeLayerMouseDown: (
-		e: React.MouseEvent,
-		layerId: string,
-		areaId: string,
-		viewport: Rect,
-	) => {
+	onShapeLayerMouseDown: (ctx: PenToolContext) => {
 		const actionState = getActionState();
 		const { compositionState, shapeState, shapeSelectionState } = actionState;
-		const areaState = getAreaActionState<AreaType.Workspace>(areaId);
 
-		const { compositionId, scale, pan: _pan } = areaState;
-		const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
+		const { layerId } = ctx;
 
 		const pathIds = getShapeLayerPathIds(layerId, compositionState);
 
-		const composition = compositionState.compositions[compositionId];
-		const map = getCompositionRenderValues(
-			actionState,
-			compositionId,
-			composition.frameIndex,
-			{
-				width: composition.width,
-				height: composition.height,
-			},
-			{ recursive: false },
-		);
-
-		const transform = map.transforms[layerId].transform[0];
-		const mat2 = transformMat2(transform);
-		const translateToViewport = (vec: Vec2): Vec2 => {
-			return mat2.multiplyVec2(vec).add(transform.translate).scale(scale).add(pan);
-		};
-
-		const mousePosition = Vec2.fromEvent(e).sub(Vec2.new(viewport.left, viewport.top));
-
 		for (const pathId of pathIds) {
-			const path = shapeState.paths[pathId];
+			const { type, id } = getPathTargetObject(pathId, ctx);
 
-			for (const item of path.items) {
-				const { nodeId, left, right } = item;
-
-				const node = shapeState.nodes[nodeId];
-
-				for (const part of [left, right]) {
-					if (!part || !part.controlPointId) {
-						continue;
-					}
-
-					const { controlPointId } = part;
-					const cp = shapeState.controlPoints[controlPointId]!;
-
-					const cpPos = node.position.add(cp.position);
-
-					if (
-						getDistance(
-							mousePosition,
-							translateToViewport(cpPos.add(transform.translate)),
-						) < 5
-					) {
-						penToolHandlers.controlPointMouseDown(e, cp.id, areaId, viewport);
-						return;
-					}
+			switch (type) {
+				case "node": {
+					penToolHandlers.nodeMouseDown(ctx, id);
+					break;
 				}
-
-				if (getDistance(mousePosition, translateToViewport(node.position)) < 5) {
-					penToolHandlers.nodeMouseDown(e, layerId, nodeId, areaId, viewport);
-					return;
+				case "control_point": {
+					penToolHandlers.controlPointMouseDown(ctx, id);
+					break;
 				}
 			}
 		}
@@ -133,20 +92,19 @@ export const penToolHandlers = {
 
 		if (!continueFrom) {
 			// Nothing was hit, clear the selection and create a new path on the shape layer.
-			penToolHandlers.createNewPathOnShapeLayer(e, layerId, areaId, viewport);
+			penToolHandlers.createNewPathOnShapeLayer(ctx);
 			return;
 		}
 
-		// Should continue node
-		penToolHandlers.continuePath(e, continueFrom, areaId, viewport);
+		penToolHandlers.continuePath(ctx, continueFrom);
 	},
 
-	controlPointMouseDown: (e: React.MouseEvent, cpId: string, areaId: string, viewport: Rect) => {
+	controlPointMouseDown: (ctx: PenToolContext, cpId: string) => {
 		if (isKeyDown("Alt")) {
 			requestAction({ history: true }, (params) => {
 				const toDispatch: any[] = [];
 
-				const { shapeState } = getActionState();
+				const { shapeState } = ctx;
 				const cp = shapeState.controlPoints[cpId]!;
 				const edge = shapeState.edges[cp.edgeId];
 				const which = edge.cp0 === cpId ? "cp0" : "cp1";
@@ -204,9 +162,7 @@ export const penToolHandlers = {
 			return;
 		}
 
-		const { pan, scale } = getAreaActionState<AreaType.Workspace>(areaId);
-
-		const { shapeState, shapeSelectionState } = getActionState();
+		const { shapeState, shapeSelectionState } = ctx;
 
 		const cp = shapeState.controlPoints[cpId]!;
 		const edge = shapeState.edges[cp.edgeId];
@@ -227,9 +183,9 @@ export const penToolHandlers = {
 			params.dispatch(shapeSelectionActions.removeControlPointFromSelection(shapeId, cpId));
 		};
 
-		mouseDownMoveAction(e, {
+		mouseDownMoveAction(ctx.mousePosition.global, {
 			keys: ["Shift"],
-			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
+			translate: ctx.globalToNormal,
 			beforeMove: (params) => {
 				if (!additiveSelection && !selection.nodes[cpId]) {
 					// The selection is non-additive and the cp will be selected.
@@ -285,16 +241,9 @@ export const penToolHandlers = {
 		});
 	},
 
-	nodeMouseDown: (
-		e: React.MouseEvent,
-		layerId: string,
-		nodeId: string,
-		areaId: string,
-		viewport: Rect,
-	) => {
-		const { pan, scale } = getAreaActionState<AreaType.Workspace>(areaId);
-
-		const { compositionState, shapeState, shapeSelectionState } = getActionState();
+	nodeMouseDown: (ctx: PenToolContext, nodeId: string) => {
+		const { layerId, shapeState, shapeSelectionState } = ctx;
+		const { compositionState } = getActionState();
 
 		const node = shapeState.nodes[nodeId];
 		const shapeId = node.shapeId;
@@ -307,7 +256,7 @@ export const penToolHandlers = {
 			const closePathNodeId = getShapePathClosePathNodeId(continueFrom, shapeState);
 
 			if (nodeId === closePathNodeId) {
-				penToolHandlers.completePath(e, continueFrom, areaId, viewport);
+				penToolHandlers.completePath(ctx, continueFrom);
 				return;
 			}
 		}
@@ -327,9 +276,9 @@ export const penToolHandlers = {
 			params.dispatch(shapeSelectionActions.removeNodeFromSelection(shapeId, nodeId));
 		};
 
-		mouseDownMoveAction(e, {
+		mouseDownMoveAction(ctx.mousePosition.global, {
 			keys: ["Shift"],
-			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
+			translate: ctx.globalToNormal,
 			beforeMove: (params) => {
 				if (!additiveSelection && !selection.nodes[nodeId]) {
 					// The selection is non-additive and the node will be selected.
@@ -386,18 +335,13 @@ export const penToolHandlers = {
 	},
 
 	continuePath: (
-		e: React.MouseEvent,
+		ctx: PenToolContext,
 		continueFrom: { pathId: string; direction: "left" | "right" },
-		areaId: string,
-		viewport: Rect,
 	) => {
-		const { pan, scale } = getAreaActionState<AreaType.Workspace>(areaId);
-
-		const shapeState = getActionState().shapeState;
-
+		const { shapeState } = ctx;
 		const { direction, pathId } = continueFrom;
-		const path = shapeState.paths[pathId];
 
+		const path = shapeState.paths[pathId];
 		const dirLeft = direction === "left";
 
 		let p0ItemIndex = dirLeft ? 0 : path.items.length - 1; // Will be modified when item1 is inserted
@@ -428,8 +372,8 @@ export const penToolHandlers = {
 		let nextEdgeId!: string;
 		let nextcp0Id!: string;
 
-		mouseDownMoveAction(e, {
-			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
+		mouseDownMoveAction(ctx.mousePosition.global, {
+			translate: ctx.globalToNormal,
 			keys: [],
 			beforeMove: (params, { mousePosition }) => {
 				const toDispatch: any[] = [];
@@ -641,13 +585,9 @@ export const penToolHandlers = {
 	},
 
 	completePath: (
-		e: React.MouseEvent,
+		ctx: PenToolContext,
 		continueFrom: { pathId: string; direction: "left" | "right" },
-		areaId: string,
-		viewport: Rect,
 	) => {
-		const { pan, scale } = getAreaActionState<AreaType.Workspace>(areaId);
-
 		const shapeState = getActionState().shapeState;
 
 		const { pathId, direction } = continueFrom;
@@ -666,8 +606,8 @@ export const penToolHandlers = {
 		let rcp0Id: string;
 		let rcp1Id: string;
 
-		mouseDownMoveAction(e, {
-			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
+		mouseDownMoveAction(ctx.mousePosition.global, {
+			translate: ctx.globalToNormal,
 			keys: [],
 			beforeMove: (params) => {
 				const toDispatch: any[] = [];
@@ -777,12 +717,7 @@ export const penToolHandlers = {
 		});
 	},
 
-	createNewPathOnShapeLayer: (
-		e: React.MouseEvent,
-		layerId: string,
-		areaId: string,
-		viewport: Rect,
-	) => {
+	createNewPathOnShapeLayer: (_ctx: PenToolContext) => {
 		console.log("Create new path on shape layer");
 	},
 
@@ -805,6 +740,8 @@ export const penToolHandlers = {
 		const e0cpId = createCpId();
 		const e1cpId = createCpId();
 
+		let ctx: PenToolContext;
+
 		mouseDownMoveAction(e, {
 			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
 			keys: [],
@@ -815,6 +752,9 @@ export const penToolHandlers = {
 					compSelectionActions.clearCompositionSelection(compositionId),
 					compSelectionActions.addLayerToSelection(compositionId, layerId),
 				);
+
+				// Layer has been created, context can be constructed
+				ctx = constructPenToolContext(e, layerId, areaId, viewport);
 
 				// Create and select shape + path
 				const shape: ShapeGraph = {

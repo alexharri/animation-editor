@@ -13,6 +13,7 @@ import {
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { getSelectedShapeLayerId } from "~/shape/shapeUtils";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
@@ -24,6 +25,7 @@ import {
 import { PropertyName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { isVecInPoly } from "~/util/math";
+import { penToolHandlers } from "~/workspace/penTool/penTool";
 import {
 	globalToWorkspacePosition,
 	workspaceLayerBoundingBoxCorners,
@@ -31,11 +33,22 @@ import {
 
 export const moveToolHandlers = {
 	onMouseDown: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
-		let layerId = "";
-
 		const { pan: _pan, scale, compositionId } = getAreaActionState<AreaType.Workspace>(areaId);
 		const actionState = getActionState();
-		const { compositionState } = actionState;
+		const { compositionState, compositionSelectionState } = actionState;
+
+		const selectedShapeLayer = getSelectedShapeLayerId(
+			compositionId,
+			compositionState,
+			compositionSelectionState,
+		);
+
+		if (selectedShapeLayer) {
+			penToolHandlers.moveToolMouseDown(e, selectedShapeLayer, areaId, viewport);
+			return;
+		}
+
+		let layerId = "";
 
 		const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
 

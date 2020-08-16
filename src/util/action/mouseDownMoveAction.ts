@@ -6,12 +6,8 @@ import {
 	RequestActionParams,
 	ShouldAddToStackFn,
 } from "~/listener/requestAction";
+import { MousePosition } from "~/types";
 import { getDistance } from "~/util/math";
-
-interface MousePosition {
-	global: Vec2;
-	translated: Vec2;
-}
 
 type Key = keyof typeof keys;
 
@@ -35,6 +31,7 @@ interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
 	moveTreshold?: number;
 	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 	tickShouldUpdate?: (options: MouseMoveOptions<KeyMap>) => boolean;
+	viewport?: Rect;
 }
 
 export const mouseDownMoveAction = <
@@ -62,6 +59,9 @@ export const mouseDownMoveAction = <
 		eOrInitialPos instanceof Vec2 ? eOrInitialPos : Vec2.fromEvent(eOrInitialPos);
 	const initialMousePosition: MousePosition = {
 		global: initialGlobalMousePosition,
+		viewport: options.viewport
+			? initialGlobalMousePosition.sub(Vec2.new(options.viewport.left, options.viewport.top))
+			: initialGlobalMousePosition,
 		translated: translate(initialGlobalMousePosition),
 	};
 
@@ -108,10 +108,16 @@ export const mouseDownMoveAction = <
 				const globalMousePosition = currentMousePosition;
 				const mousePosition: MousePosition = {
 					global: globalMousePosition,
+					viewport: options.viewport
+						? globalMousePosition.sub(
+								Vec2.new(options.viewport.left, options.viewport.top),
+						  )
+						: globalMousePosition,
 					translated: translate(globalMousePosition),
 				};
 				const moveVector: MousePosition = {
 					global: mousePosition.global.sub(initialMousePosition.global),
+					viewport: mousePosition.viewport.sub(initialMousePosition.viewport),
 					translated: mousePosition.translated.sub(initialMousePosition.translated),
 				};
 				_options = {

@@ -39,6 +39,8 @@ export const cssCursors = {
 	},
 	penTool: {
 		default: `url("/static/cursors/pen_default.png") 0 0, default`,
+		moveSelection: `url("/static/cursors/selection_move.png") 0 0, default`,
+		closePath: `url("/static/cursors/pen_select_point.png") 0 0, default`,
 	},
 };
 

@@ -155,3 +155,9 @@ export interface CompositionRenderValues {
 }
 
 export type TransformBehavior = "recursive" | "absolute_for_computed";
+
+export interface MousePosition {
+	global: Vec2;
+	viewport: Vec2;
+	translated: Vec2;
+}
