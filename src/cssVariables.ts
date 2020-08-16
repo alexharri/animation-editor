@@ -37,6 +37,9 @@ export const cssCursors = {
 		right: `url("/static/cursors/arrow_e.png") 12 10, default`,
 		down: `url("/static/cursors/arrow_s.png") 12 10, default`,
 	},
+	penTool: {
+		default: `url("/static/cursors/pen_default.png") 0 0, default`,
+	},
 };
 
 export const cssZIndex = {

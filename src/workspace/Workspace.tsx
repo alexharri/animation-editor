@@ -12,6 +12,7 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { moveToolHandlers } from "~/workspace/moveTool";
 import { penToolHandlers } from "~/workspace/penTool";
 import { renderCompositionWorkspaceGuides, renderWorkspace } from "~/workspace/renderWorkspace";
+import { useWorkspaceCursor } from "~/workspace/useWorkspaceCursor";
 import WorkspaceStyles from "~/workspace/Workspace.styles";
 import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 import { WorkspaceFooter } from "~/workspace/WorkspaceFooter";
@@ -169,13 +170,20 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 		shouldRenderRef.current = true;
 	}, [props]);
 
+	const { left, top, width, height } = props;
+
+	const setCursor = useWorkspaceCursor(guideCanvasRef, {
+		compositionId: props.areaState.compositionId,
+		viewport: { width, left, top, height },
+	});
+
 	const onMouseMove = (e: React.MouseEvent) => {
 		shouldRenderGuidesRef.current = true;
 
 		mousePositionRef.current = Vec2.fromEvent(e);
-	};
 
-	const { left, top, width, height } = props;
+		setCursor(e);
+	};
 
 	const onMouseDown = (e: React.MouseEvent) => {
 		const { tool } = getActionState();
@@ -184,7 +192,6 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 
 		switch (tool.selected) {
 			case Tool.pen: {
-				console.log("pen tool");
 				penToolHandlers.onMouseDown(e, props.areaId, viewport);
 				break;
 			}

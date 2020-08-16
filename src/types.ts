@@ -51,7 +51,7 @@ export enum ValueType {
 	Rect = "rect",
 	Color = "color",
 	TransformBehavior = "transform_behavior",
-	ShapeReference = "shape_ref",
+	Path = "path",
 	Any = "any",
 }
 

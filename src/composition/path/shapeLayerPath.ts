@@ -7,7 +7,7 @@ import { createLayerTransformProperties } from "~/composition/layer/layerTransfo
 import { TimelineColors } from "~/constants";
 import { PropertyGroupName, PropertyName, ValueType } from "~/types";
 
-export const createShapeLayerShape = (shapeId: string, opts: CreatePropertyOptions) => {
+export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyOptions) => {
 	const propertyId = opts.createId();
 	const propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup> = [];
 
@@ -25,8 +25,8 @@ export const createShapeLayerShape = (shapeId: string, opts: CreatePropertyOptio
 	const shape: CompositionProperty = {
 		type: "property",
 		name: PropertyName.ShapeLayer_Path,
-		valueType: ValueType.ShapeReference,
-		value: shapeId,
+		valueType: ValueType.Path,
+		value: pathId,
 		id: opts.createId(),
 		compositionId: opts.compositionId,
 		layerId: opts.layerId,

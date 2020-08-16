@@ -134,8 +134,9 @@ export const mouseDownMoveAction = <
 
 			lastUsedMousePosition = currentMousePosition;
 
-			options.mouseMove(params, getOptions());
+			const callOpts = getOptions();
 			hasCalledMove = true;
+			options.mouseMove(params, callOpts);
 		};
 		requestAnimationFrame(tick);
 

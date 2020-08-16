@@ -17,7 +17,7 @@ import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { ShapeControlPoint } from "~/shape/shapeTypes";
-import { getShapePath, getShapeSelectionFromState } from "~/shape/shapeUtils";
+import { getShapeSelectionFromState, pathIdToPathList } from "~/shape/shapeUtils";
 import {
 	AffineTransform,
 	CompositionRenderValues,
@@ -208,7 +208,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		index: number,
 		parentIndexTransforms: AffineTransform[] = [],
 	) {
-		const shapeIds = reduceLayerProperties<string[]>(
+		const pathIds = reduceLayerProperties<string[]>(
 			layer.id,
 			compositionState,
 			(acc, property) => {
@@ -231,8 +231,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			return mat2.multiplyVec2(vec).add(transform.translate).scale(scale).add(pan);
 		};
 
-		for (const shapeId of shapeIds) {
-			const paths = getShapePath(shapeId, shapeState, shapeSelectionState, toPos);
+		for (const pathId of pathIds) {
+			const paths = pathIdToPathList(pathId, shapeState, shapeSelectionState, toPos);
 
 			if (!paths) {
 				continue;
@@ -522,7 +522,7 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 
 			const { moveVector } = shape;
 
-			const paths = getShapePath(shapeId, shapeState, shapeSelectionState, toPos);
+			const paths = pathIdToPathList(shapeId, shapeState, shapeSelectionState, toPos);
 
 			if (paths) {
 				ctx.beginPath();

@@ -4,6 +4,8 @@ import {
 	ShapeEdge,
 	ShapeGraph,
 	ShapeNode,
+	ShapePath,
+	ShapePathItem,
 	ShapeSelection,
 } from "~/shape/shapeTypes";
 import { addListToMap, modifyItemsInMap, removeKeysFromMap } from "~/util/mapUtils";
@@ -21,11 +23,37 @@ export interface ShapeState {
 	controlPoints: Partial<{
 		[controlPointId: string]: ShapeControlPoint;
 	}>;
+	paths: {
+		[pathId: string]: ShapePath;
+	};
 }
 
 export const shapeActions = {
 	setShape: createAction("shape/SET", (action) => {
 		return (shape: ShapeGraph) => action({ shape });
+	}),
+
+	setPath: createAction("shape/SET_PATH", (action) => {
+		return (path: ShapePath) => action({ path });
+	}),
+
+	setPathItem: createAction("shape/SET_PATH_ITEM", (action) => {
+		return (pathId: string, itemIndex: number, item: ShapePathItem) =>
+			action({ pathId, itemIndex, item });
+	}),
+
+	setPathItemControlPointId: createAction("shape/SET_PATH_ITEM_CP_ID", (action) => {
+		return (
+			pathId: string,
+			which: "left" | "right",
+			itemIndex: number,
+			controlPointId: string,
+		) => action({ pathId, itemIndex, which, controlPointId });
+	}),
+
+	insertPathItem: createAction("shape/INSERT_PATH_ITEM", (action) => {
+		return (pathId: string, item: ShapePathItem, direction: "left" | "right") =>
+			action({ pathId, item, direction });
 	}),
 
 	applySelectionRect: createAction("shape/APPLY_SELECTION_RECT", (action) => {
@@ -91,6 +119,7 @@ export const initialShapeState: ShapeState = {
 	edges: {},
 	nodes: {},
 	controlPoints: {},
+	paths: {},
 };
 
 export const shapeReducer = (
@@ -100,12 +129,76 @@ export const shapeReducer = (
 	switch (action.type) {
 		case getType(shapeActions.setShape): {
 			const { shape } = action.payload;
+			return { ...state, shapes: { ...state.shapes, [shape.id]: shape } };
+		}
+
+		case getType(shapeActions.setPath): {
+			const { path } = action.payload;
+			return { ...state, paths: { ...state.paths, [path.id]: path } };
+		}
+
+		case getType(shapeActions.setPathItem): {
+			const { pathId, item: newItem, itemIndex } = action.payload;
 			return {
 				...state,
-				shapes: {
-					...state.shapes,
-					[shape.id]: shape,
-				},
+				paths: modifyItemsInMap(state.paths, pathId, (path) => {
+					return {
+						...path,
+						items: path.items.map((item, i) => (i === itemIndex ? newItem : item)),
+					};
+				}),
+			};
+		}
+
+		case getType(shapeActions.setPathItemControlPointId): {
+			const { pathId, itemIndex, which, controlPointId } = action.payload;
+			return {
+				...state,
+				paths: modifyItemsInMap(state.paths, pathId, (path) => {
+					return {
+						...path,
+						items: path.items.map((item, i) => {
+							if (i !== itemIndex) {
+								return item;
+							}
+
+							const newItem = { ...item };
+
+							if (which === "left") {
+								newItem.left = {
+									...newItem.left!,
+									controlPointId,
+								};
+							} else {
+								newItem.right = {
+									...newItem.right!,
+									controlPointId,
+								};
+							}
+
+							return newItem;
+						}),
+					};
+				}),
+			};
+		}
+
+		case getType(shapeActions.insertPathItem): {
+			const { pathId, item, direction } = action.payload;
+
+			return {
+				...state,
+				paths: modifyItemsInMap(state.paths, pathId, (path) => {
+					const items = [...path.items];
+
+					if (direction === "left") {
+						items.splice(0, 0, item);
+					} else {
+						items.push(item);
+					}
+
+					return { ...path, items };
+				}),
 			};
 		}
 

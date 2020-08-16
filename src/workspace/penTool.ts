@@ -1,6 +1,6 @@
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { createShapeLayerShape } from "~/composition/path/shapeLayerPath";
+import { createShapeLayerShapeGroup } from "~/composition/path/shapeLayerPath";
 import { transformMat2 } from "~/composition/transformUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
@@ -8,12 +8,18 @@ import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { shapeActions } from "~/shape/shapeReducer";
 import { shapeSelectionActions } from "~/shape/shapeSelectionReducer";
-import { ShapeControlPoint, ShapeEdge, ShapeGraph, ShapeNode } from "~/shape/shapeTypes";
+import {
+	ShapeControlPoint,
+	ShapeEdge,
+	ShapeGraph,
+	ShapeNode,
+	ShapePath,
+	ShapePathItem,
+} from "~/shape/shapeTypes";
 import {
 	getShapeContinuePathFrom,
-	getShapeLayerShapeIds,
-	getShapeNodeToEdges,
-	getShapePathClosePathNode,
+	getShapeLayerPathIds,
+	getShapePathClosePathNodeId,
 	getShapeSelectionFromState,
 } from "~/shape/shapeUtils";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
@@ -21,7 +27,7 @@ import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { LayerType, PropertyGroupName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
-import { getDistance, quadraticToCubicBezier } from "~/util/math";
+import { getDistance } from "~/util/math";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
 export const penToolHandlers = {
@@ -65,7 +71,7 @@ export const penToolHandlers = {
 		const { compositionId, scale, pan: _pan } = areaState;
 		const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
 
-		const shapeIds = getShapeLayerShapeIds(layerId, compositionState);
+		const pathIds = getShapeLayerPathIds(layerId, compositionState);
 
 		const composition = compositionState.compositions[compositionId];
 		const map = getCompositionRenderValues(
@@ -87,90 +93,112 @@ export const penToolHandlers = {
 
 		const mousePosition = Vec2.fromEvent(e).sub(Vec2.new(viewport.left, viewport.top));
 
-		for (const shapeId of shapeIds) {
-			const shape = shapeState.shapes[shapeId];
+		for (const pathId of pathIds) {
+			const path = shapeState.paths[pathId];
 
-			// Check if the control point of any edge was hit
+			for (const item of path.items) {
+				const { nodeId, left, right } = item;
 
-			for (const edgeId of shape.edges) {
-				const edge = shapeState.edges[edgeId];
-				const cp0 = shapeState.controlPoints[edge.cp0];
-				const cp1 = shapeState.controlPoints[edge.cp1];
+				const node = shapeState.nodes[nodeId];
 
-				const edgeParts: Array<[string, ShapeControlPoint | undefined]> = [
-					[edge.n0, cp0],
-					[edge.n1, cp1],
-				];
-
-				for (const [nodeId, cp] of edgeParts) {
-					if (!nodeId || !cp) {
+				for (const part of [left, right]) {
+					if (!part || !part.controlPointId) {
 						continue;
 					}
 
-					const node = shapeState.nodes[nodeId];
-					const position = node.position.add(cp.position);
+					const { controlPointId } = part;
+					const cp = shapeState.controlPoints[controlPointId]!;
+
+					const cpPos = node.position.add(cp.position);
 
 					if (
 						getDistance(
 							mousePosition,
-							translateToViewport(position.add(transform.translate)),
+							translateToViewport(cpPos.add(transform.translate)),
 						) < 5
 					) {
 						penToolHandlers.controlPointMouseDown(e, cp.id, areaId, viewport);
 						return;
 					}
 				}
-			}
 
-			// Check if any node was hit
-
-			for (const nodeId of shape.nodes) {
-				const node = shapeState.nodes[nodeId];
-				const position = node.position;
-
-				if (getDistance(mousePosition, translateToViewport(position)) < 5) {
+				if (getDistance(mousePosition, translateToViewport(node.position)) < 5) {
 					penToolHandlers.nodeMouseDown(e, layerId, nodeId, areaId, viewport);
 					return;
 				}
 			}
 		}
 
-		const continuePathFrom = getShapeContinuePathFrom(
-			shapeIds,
-			shapeState,
-			shapeSelectionState,
-		);
+		const continueFrom = getShapeContinuePathFrom(pathIds, shapeState, shapeSelectionState);
 
-		if (!continuePathFrom) {
+		if (!continueFrom) {
 			// Nothing was hit, clear the selection and create a new path on the shape layer.
 			penToolHandlers.createNewPathOnShapeLayer(e, layerId, areaId, viewport);
 			return;
 		}
 
-		const [nodeId, preferControlPoint] = continuePathFrom;
-
 		// Should continue node
-		penToolHandlers.continuePath(e, nodeId, preferControlPoint, areaId, viewport);
+		penToolHandlers.continuePath(e, continueFrom, areaId, viewport);
 	},
 
 	controlPointMouseDown: (e: React.MouseEvent, cpId: string, areaId: string, viewport: Rect) => {
 		if (isKeyDown("Alt")) {
 			requestAction({ history: true }, (params) => {
+				const toDispatch: any[] = [];
+
 				const { shapeState } = getActionState();
 				const cp = shapeState.controlPoints[cpId]!;
 				const edge = shapeState.edges[cp.edgeId];
 				const which = edge.cp0 === cpId ? "cp0" : "cp1";
 
-				params.dispatch(
+				toDispatch.push(
 					shapeActions.removeControlPoint(cpId),
 					shapeActions.setEdgeControlPointId(cp!.edgeId, which, ""),
 				);
 
-				if (which === "cp0" && !edge.n1) {
-					// Removing cp of stray edge, remove edge entirely
-					params.dispatch(shapeActions.removeEdge(edge.shapeId, cp.edgeId));
+				// Find all paths that reference the control point
+				const pathIds = Object.keys(shapeState.paths);
+				for (const pathId of pathIds) {
+					const path = shapeState.paths[pathId];
+					if (path.shapeId !== edge.shapeId) {
+						continue;
+					}
+
+					for (let i = 0; i < path.items.length; i += 1) {
+						let item = path.items[i];
+
+						if (item.left?.controlPointId === cp.id) {
+							item = {
+								...item,
+								left: {
+									...item.left,
+									controlPointId: "",
+								},
+							};
+						}
+
+						if (item.right?.controlPointId === cp.id) {
+							item = {
+								...item,
+								right: {
+									...item.right,
+									controlPointId: "",
+								},
+							};
+						}
+
+						if (item !== path.items[i]) {
+							toDispatch.push(shapeActions.setPathItem(pathId, i, item));
+						}
+					}
 				}
 
+				if (which === "cp0" && !edge.n1) {
+					// Removing cp of stray edge, remove edge entirely
+					toDispatch.push(shapeActions.removeEdge(edge.shapeId, cp.edgeId));
+				}
+
+				params.dispatch(toDispatch);
 				params.submitAction("Remove control point");
 			});
 			return;
@@ -272,14 +300,14 @@ export const penToolHandlers = {
 		const shapeId = node.shapeId;
 
 		// Check if a single node is selected and the hit node is the close path node.
-		const shapeIds = getShapeLayerShapeIds(layerId, compositionState);
-		const continueFrom = getShapeContinuePathFrom(shapeIds, shapeState, shapeSelectionState);
+		const pathIds = getShapeLayerPathIds(layerId, compositionState);
+		const continueFrom = getShapeContinuePathFrom(pathIds, shapeState, shapeSelectionState);
 
 		if (continueFrom) {
-			const closePathNodeId = getShapePathClosePathNode(continueFrom[0], shapeState);
+			const closePathNodeId = getShapePathClosePathNodeId(continueFrom, shapeState);
 
 			if (nodeId === closePathNodeId) {
-				penToolHandlers.completePath(e, continueFrom[0], closePathNodeId, areaId, viewport);
+				penToolHandlers.completePath(e, continueFrom, areaId, viewport);
 				return;
 			}
 		}
@@ -359,8 +387,7 @@ export const penToolHandlers = {
 
 	continuePath: (
 		e: React.MouseEvent,
-		fromNodeId: string,
-		preferControlPointId: string | undefined,
+		continueFrom: { pathId: string; direction: "left" | "right" },
 		areaId: string,
 		viewport: Rect,
 	) => {
@@ -368,31 +395,24 @@ export const penToolHandlers = {
 
 		const shapeState = getActionState().shapeState;
 
+		const { direction, pathId } = continueFrom;
+		const path = shapeState.paths[pathId];
+
+		const dirLeft = direction === "left";
+
+		let p0ItemIndex = dirLeft ? 0 : path.items.length - 1; // Will be modified when item1 is inserted
+		let p0Item = path.items[p0ItemIndex];
+		let p0Part1 = (dirLeft ? p0Item.left : p0Item.right)!;
+
+		let p1ItemIndex = dirLeft ? 0 : path.items.length; // Assumes that item1 has already been inserted
+		let p1Item!: ShapePathItem;
+		let p1Part0!: ShapePathItem["left"];
+		let p1Part1!: ShapePathItem["left"];
+
+		let useEdgeId = p0Part1?.edgeId;
+		const fromNodeId = p0Item.nodeId;
+
 		const node = shapeState.nodes[fromNodeId];
-		const nodeToEdges = getShapeNodeToEdges(node.shapeId, shapeState);
-
-		let useEdgeId: string | undefined;
-
-		if (preferControlPointId) {
-			for (const id of nodeToEdges[fromNodeId]) {
-				const edge = shapeState.edges[id];
-
-				if (edge.cp0 === preferControlPointId) {
-					useEdgeId = id;
-					break;
-				}
-				if (edge.cp1 === preferControlPointId) {
-					useEdgeId = id;
-					break;
-				}
-			}
-
-			if (!useEdgeId) {
-				throw new Error(
-					`Did not find edge with control point '${preferControlPointId}' to continue shape from node '${fromNodeId}'`,
-				);
-			}
-		}
 
 		const { shapeId } = node;
 
@@ -422,7 +442,9 @@ export const penToolHandlers = {
 
 				toDispatch.push(shapeActions.addNode(shapeId, newNode));
 
-				if (!prevEdgeId) {
+				// Create/modify the part of item 0 that references the edge between the currently
+				// selected node and the new node.
+				if (!p0Part1) {
 					prevEdgeId = createMapNumberId(shapeState.edges);
 
 					const edge: ShapeEdge = {
@@ -434,13 +456,44 @@ export const penToolHandlers = {
 						cp1: "",
 					};
 					toDispatch.push(shapeActions.addEdge(shapeId, edge));
+					p0Part1 = {
+						edgeId: prevEdgeId,
+						controlPointId: "",
+					};
+					p0Item = {
+						...p0Item,
+						[direction]: p0Part1,
+					};
+					toDispatch.push(shapeActions.setPathItem(pathId, p0ItemIndex, p0Item));
 				} else {
-					const edge = shapeState.edges[prevEdgeId];
+					const edge = shapeState.edges[p0Part1.edgeId];
 					toDispatch.push(
-						shapeActions.setEdgeNodeId(prevEdgeId!, edge.n0 ? "n1" : "n0", newNodeId),
+						shapeActions.setEdgeNodeId(
+							p0Part1.edgeId,
+							edge.n0 ? "n1" : "n0",
+							newNodeId,
+						),
 					);
 				}
 
+				// Create path item for the new node
+				p1Part0 = {
+					controlPointId: "",
+					edgeId: prevEdgeId!,
+				};
+				p1Item = {
+					nodeId: newNodeId,
+					left: dirLeft ? null : p1Part0,
+					right: dirLeft ? p1Part0 : null,
+				};
+				toDispatch.push(shapeActions.insertPathItem(pathId, p1Item, direction));
+
+				// If we're inserting item1 before item0, increment itemIndex
+				if (direction === "left") {
+					p0ItemIndex++;
+				}
+
+				// Select newly created node
 				toDispatch.push(
 					shapeSelectionActions.clearShapeSelection(shapeId),
 					shapeSelectionActions.addNodeToSelection(shapeId, newNodeId),
@@ -449,39 +502,43 @@ export const penToolHandlers = {
 				params.dispatch(toDispatch);
 			},
 			mouseMove: (params, { firstMove, moveVector }) => {
-				const { shapeState } = getActionState();
-
 				const prevCpPos = moveVector.translated.scale(-1);
 				const nextCpPos = moveVector.translated;
 
 				if (firstMove) {
-					if (prevEdgeId) {
-						const edge = shapeState.edges[prevEdgeId];
+					if (p0Part1.controlPointId) {
+						// part0 had a control point, we only need to create a control
+						// point for part1
 
-						const completeEdge = (id: string, which: "cp0" | "cp1") => {
-							const cp: ShapeControlPoint = {
-								id,
-								edgeId: prevEdgeId!,
-								position: moveVector.translated,
-							};
-							params.dispatch(
-								shapeActions.setControlPoint(cp),
-								shapeActions.setEdgeControlPointId(prevEdgeId!, which, id),
-							);
+						const newCpId = createCpId();
+						const which = "cp1";
+						prevcp0Id = dirLeft ? newCpId : p0Part1.controlPointId;
+						prevcp0Id = dirLeft ? p0Part1.controlPointId : newCpId;
+
+						const cp: ShapeControlPoint = {
+							id: newCpId,
+							edgeId: p0Part1.edgeId,
+							position: moveVector.translated,
 						};
 
-						if (edge.cp0 === preferControlPointId) {
-							prevcp0Id = preferControlPointId;
-							prevcp1Id = createCpId();
-							completeEdge(prevcp1Id, "cp1");
-						} else {
-							// cp1 is preferControlPointId
-							prevcp0Id = createCpId();
-							prevcp1Id = preferControlPointId!;
-							completeEdge(prevcp0Id, "cp0");
-						}
+						p1Part0 = {
+							edgeId: p0Part1.edgeId,
+							controlPointId: cp.id,
+						};
+						p1Item = {
+							nodeId: newNodeId,
+							left: dirLeft ? null : p1Part0,
+							right: dirLeft ? p1Part0 : null,
+						};
+
+						params.dispatch(
+							shapeActions.setControlPoint(cp),
+							shapeActions.setEdgeControlPointId(p0Part1.edgeId, which, newCpId),
+							shapeActions.setPathItem(pathId, p1ItemIndex, p1Item),
+						);
 					} else {
-						// Create edge and both control points
+						// No control point for part0, we are creating control points
+						// for part0 and part1
 
 						prevEdgeId = createEdgeId();
 						prevcp0Id = createCpId();
@@ -505,15 +562,34 @@ export const penToolHandlers = {
 							edgeId: prevEdgeId,
 							position: node.position.lerp(prevCpPos, 0.4),
 						};
+						p0Part1 = {
+							edgeId: edge.id,
+							controlPointId: cp0.id,
+						};
+						p0Item = {
+							...p0Item,
+							[direction]: p0Part1,
+						};
+						p1Part0 = {
+							edgeId: edge.id,
+							controlPointId: cp1.id,
+						};
+						p1Item = {
+							nodeId: newNodeId,
+							left: dirLeft ? null : p1Part0,
+							right: dirLeft ? p1Part0 : null,
+						};
 
 						params.dispatch(
 							shapeActions.addEdge(shapeId, edge),
 							shapeActions.setControlPoint(cp0),
 							shapeActions.setControlPoint(cp1),
+							shapeActions.setPathItem(pathId, p0ItemIndex, p0Item),
+							shapeActions.setPathItem(pathId, p1ItemIndex, p1Item),
 						);
 					}
 
-					// Create next edge
+					// Create p1Items's part 1
 					nextEdgeId = createEdgeId();
 					nextcp0Id = createCpId();
 
@@ -530,24 +606,32 @@ export const penToolHandlers = {
 						edgeId: nextEdgeId,
 						position: moveVector.translated,
 					};
+					p1Part1 = {
+						edgeId: nextEdgeId,
+						controlPointId: nextcp0Id,
+					};
+					p1Item = {
+						nodeId: newNodeId,
+						left: dirLeft ? p1Part1 : p1Part0,
+						right: dirLeft ? p1Part0 : p1Part1,
+					};
 
 					params.dispatch(
 						shapeActions.addEdge(shapeId, nextEdge),
 						shapeActions.setControlPoint(nextcp0),
+						shapeActions.setPathItem(pathId, p1ItemIndex, p1Item),
 						shapeSelectionActions.addControlPointToSelection(shapeId, nextcp0Id),
 					);
 
 					return;
 				}
 
-				const edge = shapeState.edges[prevEdgeId!];
-
-				const prevWhich = edge.n0 === fromNodeId ? "cp1" : "cp0";
-				const nextWhich = "cp0";
+				const x0 = p1Part0!.controlPointId;
+				const x1 = p1Part1!.controlPointId;
 
 				params.dispatch(
-					shapeActions.setEdgeControlPointPosition(prevEdgeId!, prevWhich, prevCpPos),
-					shapeActions.setEdgeControlPointPosition(nextEdgeId!, nextWhich, nextCpPos),
+					shapeActions.setControlPointPosition(x0, prevCpPos),
+					shapeActions.setControlPointPosition(x1, nextCpPos),
 				);
 			},
 			mouseUp: (params) => {
@@ -556,14 +640,9 @@ export const penToolHandlers = {
 		});
 	},
 
-	/**
-	 * @param n0Id - From
-	 * @param n1Id - To
-	 */
 	completePath: (
 		e: React.MouseEvent,
-		n0Id: string,
-		n1Id: string,
+		continueFrom: { pathId: string; direction: "left" | "right" },
 		areaId: string,
 		viewport: Rect,
 	) => {
@@ -571,207 +650,126 @@ export const penToolHandlers = {
 
 		const shapeState = getActionState().shapeState;
 
-		const { shapeId } = shapeState.nodes[n0Id];
-		const nodeToEdges = getShapeNodeToEdges(shapeId, shapeState);
+		const { pathId, direction } = continueFrom;
+		const path = shapeState.paths[pathId];
+		const { shapeId } = path;
+		const dirLeft = direction === "left";
 
-		const createEdgeId = createGenMapIdFn(shapeState.edges);
-		const createCpId = createGenMapIdFn(shapeState.controlPoints);
+		let edgeId: string;
 
-		const n0 = shapeState.nodes[n0Id];
-		const n1 = shapeState.nodes[n0Id];
+		let item0Index = 0;
+		let item0 = path.items[item0Index];
 
-		let n0InitialEdgeId: string | undefined;
-		let n1InitialEdgeId: string | undefined;
+		let item1Index = path.items.length - 1;
+		let item1 = path.items[item1Index];
 
-		let n0InitialCp: Vec2 | undefined;
-		let n1InitialCp: Vec2 | undefined;
-
-		let n0rcpId: string | undefined;
-		let n1rcpId: string | undefined;
-		let cp0Id: string | undefined;
-		let cp1Id: string | undefined;
-		let rcpId: string | undefined;
-
-		for (const edgeId of nodeToEdges[n0Id]) {
-			const edge = shapeState.edges[edgeId];
-			if (!edge.n1) {
-				n0InitialEdgeId = edgeId;
-			} else {
-				n0rcpId = edge.n0 === n0Id ? edge.cp0 : edge.cp1;
-			}
-		}
-		for (const edgeId of nodeToEdges[n1Id]) {
-			const edge = shapeState.edges[edgeId];
-			if (!edge.n1) {
-				n1InitialEdgeId = edgeId;
-				break;
-			} else {
-				n1rcpId = edge.n0 === n1Id ? edge.cp0 : edge.cp1;
-			}
-		}
-
-		if (n0InitialEdgeId) {
-			const { cp0 } = shapeState.edges[n0InitialEdgeId];
-			n0InitialCp = shapeState.controlPoints[cp0]!.position;
-		}
-		if (n1InitialEdgeId) {
-			const { cp0 } = shapeState.edges[n1InitialEdgeId];
-			n1InitialCp = shapeState.controlPoints[cp0]!.position;
-		}
-
-		let edgeId!: string;
+		let rcp0Id: string;
+		let rcp1Id: string;
 
 		mouseDownMoveAction(e, {
 			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
 			keys: [],
 			beforeMove: (params) => {
 				const toDispatch: any[] = [];
-				console.log({ n0InitialEdgeId, n1InitialEdgeId });
 
-				if (n0InitialEdgeId && n1InitialEdgeId) {
-					const n0Edge = shapeState.edges[n0InitialEdgeId];
-					const n1Edge = shapeState.edges[n1InitialEdgeId];
+				edgeId = item0.left?.edgeId || item1.right?.edgeId || "";
+				let cp0Id = item1.right?.controlPointId || "";
+				let cp1Id = item0.left?.controlPointId || "";
 
-					console.log({ n0Edge, n1Edge });
-
-					// Remove the stray edge of n1
-					toDispatch.push(shapeActions.removeEdge(shapeId, n1InitialEdgeId));
-
-					edgeId = n0InitialEdgeId;
-					cp0Id = n0Edge.cp0;
-					cp1Id = n1Edge.cp0; // Reuse id
-					rcpId = n1rcpId;
-
-					// Connect n0's stray edge to n1
-					toDispatch.push(
-						shapeActions.setEdgeNodeId(edgeId, "n1", n1Id),
-						shapeActions.setEdgeControlPointId(edgeId, "cp1", cp1Id),
-					);
-				} else if (n0InitialEdgeId) {
-					const edge = shapeState.edges[n0InitialEdgeId];
-
-					edgeId = n0InitialEdgeId;
-					cp0Id = edge.cp0;
-					cp1Id = createCpId();
-					rcpId = n1rcpId;
-
-					let position = n0rcpId
-						? shapeState.controlPoints[n0rcpId]!.position.scale(-1)
-						: undefined;
-
-					if (!position) {
-						const [, , p2, p3] = quadraticToCubicBezier(
-							n0.position,
-							n0.position.add(n0InitialCp!),
-							null,
-							n1.position,
-						);
-						position = p2.sub(p3);
-					}
-
-					const cp1: ShapeControlPoint = {
-						edgeId,
-						id: cp1Id,
-						position,
-					};
-
-					toDispatch.push(
-						shapeActions.setEdgeNodeId(edgeId, "n1", n1Id),
-						shapeActions.setEdgeControlPointId(edgeId, "cp1", cp1Id),
-						shapeActions.setControlPoint(cp1),
-					);
-				} else if (n1InitialEdgeId) {
-					const edge = shapeState.edges[n1InitialEdgeId];
-					// here
-					edgeId = n1InitialEdgeId;
-					cp0Id = createCpId();
-					cp1Id = edge.cp0;
-					rcpId = n1rcpId;
-
-					let position = n0rcpId
-						? shapeState.controlPoints[n0rcpId]!.position.scale(-1)
-						: undefined;
-
-					if (!position) {
-						const [p0, p1] = quadraticToCubicBezier(
-							n0.position,
-							null,
-							n1.position.add(n1InitialCp!),
-							n1.position,
-						);
-						position = p1.sub(p0);
-					}
-
-					const cp0: ShapeControlPoint = {
-						edgeId,
-						id: cp0Id,
-						position,
-					};
-
-					toDispatch.push(
-						shapeActions.setEdgeNodeId(edgeId, "n1", n0Id),
-						shapeActions.setEdgeControlPointId(edgeId, "cp1", cp0Id),
-						shapeActions.setControlPoint(cp0),
-					);
-				} else {
-					// Creating edge from nothing, just create a line
-					const edge: ShapeEdge = {
-						id: createEdgeId(),
-						shapeId,
-						n0: n0Id,
-						n1: n1Id,
-						cp0: "",
-						cp1: "",
-					};
-					rcpId = n1rcpId;
-					edgeId = edge.id;
-					toDispatch.push(shapeActions.addEdge(shapeId, edge));
+				if (!edgeId) {
+					edgeId = createMapNumberId(shapeState.edges);
 				}
+
+				if (item0.left) {
+					if (item0.left.edgeId !== edgeId) {
+						const deleteEdgeId = item0.left.edgeId;
+						toDispatch.push(shapeActions.removeEdge(shapeId, deleteEdgeId));
+					}
+
+					item0 = {
+						...item0,
+						left: {
+							edgeId,
+							controlPointId: cp1Id,
+						},
+					};
+					toDispatch.push(shapeActions.setPathItem(pathId, item0Index, item0));
+				}
+
+				if (item1.right) {
+					if (item1.right.edgeId !== edgeId) {
+						const deleteEdgeId = item1.right.edgeId;
+						toDispatch.push(shapeActions.removeEdge(shapeId, deleteEdgeId));
+					}
+
+					item1 = {
+						...item1,
+						right: {
+							edgeId,
+							controlPointId: cp0Id,
+						},
+					};
+					toDispatch.push(shapeActions.setPathItem(pathId, item1Index, item1));
+				}
+
+				const edge: ShapeEdge = {
+					id: edgeId,
+					shapeId,
+					cp0: cp0Id || "",
+					cp1: cp1Id || "",
+					n0: item1.nodeId,
+					n1: item0.nodeId,
+				};
+				toDispatch.push(shapeActions.addEdge(shapeId, edge));
 
 				params.dispatch(toDispatch);
 			},
 			mouseMove: (params, { firstMove, moveVector }) => {
-				// Either both cp0Id and cp1Id or neither does.
-				if (firstMove && !cp0Id && !cp1Id) {
-					cp1Id = createCpId();
-					const cp1: ShapeControlPoint = {
-						id: cp1Id,
+				const createCpId = createGenMapIdFn(getActionState().shapeState.controlPoints);
+
+				const item = dirLeft ? item1 : item0;
+				const itemIndex = dirLeft ? item1Index : item0Index;
+				const left = dirLeft ? "left" : "right";
+				const right = dirLeft ? "right" : "left";
+				const cp0 = dirLeft ? "cp1" : "cp0";
+				const cp1 = dirLeft ? "cp0" : "cp1";
+
+				if (firstMove) {
+					rcp0Id = item[left]?.controlPointId || "";
+					rcp1Id = item[right]?.controlPointId || "";
+				}
+
+				if (!rcp0Id) {
+					rcp0Id = createCpId();
+					const cp: ShapeControlPoint = {
+						id: rcp0Id,
+						edgeId,
+						position: moveVector.translated,
+					};
+					params.dispatch(
+						shapeActions.setControlPoint(cp),
+						shapeActions.setEdgeControlPointId(item[left]!.edgeId, cp0, rcp0Id),
+						shapeActions.setPathItemControlPointId(pathId, left, itemIndex, rcp0Id),
+					);
+				}
+				if (!rcp1Id) {
+					rcp1Id = createCpId();
+					const cp: ShapeControlPoint = {
+						id: rcp1Id,
 						edgeId,
 						position: moveVector.translated.scale(-1),
 					};
 					params.dispatch(
-						shapeActions.setEdgeControlPointId(edgeId, "cp1", cp1Id),
-						shapeActions.setControlPoint(cp1),
+						shapeActions.setControlPoint(cp),
+						shapeActions.setEdgeControlPointId(item[right]!.edgeId, cp1, rcp1Id),
+						shapeActions.setPathItemControlPointId(pathId, right, itemIndex, rcp1Id),
 					);
-
-					let position = n0rcpId
-						? shapeState.controlPoints[n0rcpId]!.position.scale(-1)
-						: undefined;
-
-					if (position) {
-						cp0Id = createCpId();
-						const cp0: ShapeControlPoint = {
-							id: cp0Id,
-							edgeId,
-							position,
-						};
-
-						params.dispatch(
-							shapeActions.setEdgeControlPointId(edgeId, "cp0", cp0Id),
-							shapeActions.setControlPoint(cp0),
-						);
-					}
 				}
 
 				params.dispatch(
-					shapeActions.setControlPointPosition(cp1Id!, moveVector.translated.scale(-1)),
+					shapeActions.setControlPointPosition(rcp0Id, moveVector.translated),
+					shapeActions.setControlPointPosition(rcp1Id, moveVector.translated.scale(-1)),
 				);
-
-				if (rcpId) {
-					params.dispatch(
-						shapeActions.setControlPointPosition(rcpId, moveVector.translated),
-					);
-				}
 			},
 			mouseUp: (params) => {
 				params.submitAction("Close path");
@@ -796,6 +794,7 @@ export const penToolHandlers = {
 		const initialShapeState = getActionState().shapeState;
 
 		const shapeId = createMapNumberId(initialShapeState.shapes);
+		const pathId = createMapNumberId(initialShapeState.paths);
 		const nodeId = createMapNumberId(initialShapeState.nodes);
 
 		const createEdgeId = createGenMapIdFn(initialShapeState.edges);
@@ -817,12 +816,23 @@ export const penToolHandlers = {
 					compSelectionActions.addLayerToSelection(compositionId, layerId),
 				);
 
-				// Create and select shape
+				// Create and select shape + path
 				const shape: ShapeGraph = {
 					id: shapeId,
 					nodes: [],
 					edges: [],
 					moveVector: Vec2.new(0, 0),
+				};
+				const path: ShapePath = {
+					id: shapeId,
+					shapeId,
+					items: [
+						{
+							nodeId,
+							left: null,
+							right: null,
+						},
+					],
 				};
 				const node: ShapeNode = {
 					id: nodeId,
@@ -831,6 +841,7 @@ export const penToolHandlers = {
 				};
 				params.dispatch(
 					shapeActions.setShape(shape),
+					shapeActions.setPath(path),
 					shapeActions.addNode(shapeId, node),
 					shapeSelectionActions.addNodeToSelection(shape.id, node.id),
 				);
@@ -847,7 +858,7 @@ export const penToolHandlers = {
 				const contentsGroupId = layer.properties[groupIndex];
 
 				// Create Shape property group
-				const { propertyId, propertiesToAdd } = createShapeLayerShape(shapeId, {
+				const { propertyId, propertiesToAdd } = createShapeLayerShapeGroup(pathId, {
 					compositionId,
 					layerId,
 					createId: createGenMapIdFn(compositionState.properties),
@@ -896,6 +907,17 @@ export const penToolHandlers = {
 						shapeActions.addEdge(shapeId, e1),
 						shapeActions.setControlPoint(e0cp),
 						shapeActions.setControlPoint(e1cp),
+						shapeActions.setPathItem(pathId, 0, {
+							nodeId,
+							left: {
+								edgeId: e1Id,
+								controlPointId: e1cpId,
+							},
+							right: {
+								edgeId: e0Id,
+								controlPointId: e0cpId,
+							},
+						}),
 						shapeSelectionActions.addEdgeToSelection(shapeId, e0.id),
 						shapeSelectionActions.addControlPointToSelection(shapeId, e0cpId),
 					);

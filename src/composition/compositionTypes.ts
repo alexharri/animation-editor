@@ -79,7 +79,7 @@ export type CompositionProperty = {
 			value: TransformBehavior;
 	  }
 	| {
-			valueType: ValueType.ShapeReference;
+			valueType: ValueType.Path;
 			value: string;
 	  }
 );

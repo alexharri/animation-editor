@@ -1,9 +1,11 @@
 import { CompositionState } from "~/composition/compositionReducer";
+import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { ShapeEdge, ShapeGraph, ShapeSelection } from "~/shape/shapeTypes";
-import { PropertyGroupName, PropertyName } from "~/types";
+import { LayerType, PropertyGroupName, PropertyName } from "~/types";
 import { quadraticToCubicBezier } from "~/util/math";
 
 export const getShapeNodeToEdges = (
@@ -143,146 +145,58 @@ export const getShapePathFirstNodeId = (
 	}
 };
 
-export const getShapePath = (
-	shapeId: string,
+export const pathIdToPathList = (
+	pathId: string,
 	shapeState: ShapeState,
 	shapeSelectionState: ShapeSelectionState,
 	transformFn?: (vec: Vec2) => Vec2,
 ): Array<Line | CubicBezier> | null => {
-	const shape = shapeState.shapes[shapeId];
+	const pathList: Array<Line | CubicBezier> = [];
+
+	const { items, shapeId } = shapeState.paths[pathId];
+
 	const shapeSelection = getShapeSelectionFromState(shapeId, shapeSelectionState);
 
-	const nodeToEdgeIds = getShapeNodeToEdges(shapeId, shapeState);
+	for (let i = 0; i < items.length; i++) {
+		const { nodeId, right } = items[i];
 
-	if (shape.nodes.length < 2) {
-		return null;
-	}
+		const nextItem = items[i !== items.length - 1 ? i + 1 : 0];
 
-	const paths: Array<Line | CubicBezier> = [];
-	const firstNodeId = getShapePathFirstNodeId(shape, shapeState, nodeToEdgeIds);
+		if (right && nextItem && nextItem.left?.edgeId === right.edgeId) {
+			const edge = shapeState.edges[right.edgeId];
+			const path = getShapeEdgeAsPath(nodeId, edge, shapeState, shapeSelection);
 
-	let lastEdgeId: string | undefined;
-	let curr = shapeState.nodes[firstNodeId];
-
-	while (true) {
-		const edgeIds = nodeToEdgeIds[curr.id];
-
-		if (edgeIds.length > 2) {
-			throw new Error(`Expected a circular path. Node ${curr.id} has more than 2 edges.`);
-		}
-
-		let edgeId: string;
-
-		if (!lastEdgeId) {
-			edgeId = edgeIds[0];
-		} else {
-			edgeId = edgeIds[0] !== lastEdgeId ? edgeIds[0] : edgeIds[1];
-		}
-
-		if (!edgeId) {
-			break;
-		}
-
-		const edge = shapeState.edges[edgeId];
-		const nextNodeId = edge.n0 !== curr.id ? edge.n0 : edge.n1;
-
-		if (!nextNodeId) {
-			break;
-		}
-
-		// Add node -> next as path
-		const path = getShapeEdgeAsPath(curr.id, edge, shapeState, shapeSelection);
-
-		if (transformFn) {
-			for (let i = 0; i < path.length; i += 1) {
-				path[i] = transformFn(path[i]);
+			if (transformFn) {
+				for (let j = 0; j < path.length; j += 1) {
+					path[j] = transformFn(path[j]);
+				}
 			}
+
+			pathList.push(path);
 		}
-
-		paths.push(path);
-
-		if (nextNodeId === firstNodeId) {
-			break;
-		}
-
-		lastEdgeId = edgeId;
-		curr = shapeState.nodes[nextNodeId];
 	}
 
-	return paths;
+	return pathList;
 };
 
-export const getShapePathClosePathNode = (fromNodeId: string, shapeState: ShapeState) => {
-	const node = shapeState.nodes[fromNodeId];
-	const shapeId = node.shapeId;
-	const nodeToEdgeIds = getShapeNodeToEdges(shapeId, shapeState);
-
-	const initialNode = shapeState.nodes[fromNodeId];
-
-	// Check if initial node has two full edges
-	const edges = nodeToEdgeIds[initialNode.id];
-	if (edges.length > 1) {
-		let hasNonFullEdge = false;
-
-		for (const edgeId of edges) {
-			const edge = shapeState.edges[edgeId];
-			if (!edge.n0 || !edge.n1) {
-				hasNonFullEdge = true;
-				break;
-			}
-		}
-
-		if (!hasNonFullEdge) {
-			return null;
-		}
-	}
-
-	let lastEdgeId: string | undefined;
-	let curr = initialNode;
-
-	while (true) {
-		const edgeIds = nodeToEdgeIds[curr.id];
-
-		if (edgeIds.length > 2) {
-			throw new Error(`Expected a circular path. Node ${curr.id} has more than 2 edges.`);
-		}
-
-		let edgeId: string;
-
-		if (!lastEdgeId) {
-			edgeId = edgeIds[0];
-		} else {
-			edgeId = edgeIds[0] !== lastEdgeId ? edgeIds[0] : edgeIds[1];
-		}
-
-		if (!edgeId) {
-			return curr.id;
-		}
-
-		const edge = shapeState.edges[edgeId];
-		const nextNodeId = edge.n0 !== curr.id ? edge.n0 : edge.n1;
-
-		if (!nextNodeId) {
-			return curr.id;
-		}
-
-		if (nextNodeId === initialNode.id) {
-			return null;
-		}
-
-		lastEdgeId = edgeId;
-		curr = shapeState.nodes[nextNodeId];
-	}
+export const getShapePathClosePathNodeId = (
+	continueFrom: { pathId: string; direction: "left" | "right" },
+	shapeState: ShapeState,
+): string => {
+	const { pathId, direction } = continueFrom;
+	const path = shapeState.paths[pathId];
+	const { nodeId } = path.items[direction === "left" ? path.items.length - 1 : 0];
+	return nodeId;
 };
 
 /**
  * @returns `nodeId: string, preferredControlPoint: string | undefined`
  */
 export const getShapeContinuePathFrom = (
-	shapeIds: string[],
+	pathIds: string[],
 	shapeState: ShapeState,
 	shapeSelectionState: ShapeSelectionState,
-): [string, string | undefined] | undefined => {
+): null | { pathId: string; direction: "left" | "right" } => {
 	// Nothing was hit
 	//
 	// Check if:
@@ -301,124 +215,118 @@ export const getShapeContinuePathFrom = (
 	//
 	// If all of those conditions apply, we extend the path from the node
 
-	const shapeIdToNodeToEdges = shapeIds.reduce<{
-		[shapeId: string]: { [nodeId: string]: string[] };
-	}>((obj, shapeId) => {
-		obj[shapeId] = getShapeNodeToEdges(shapeId, shapeState);
-		return obj;
-	}, {});
+	let continueFrom: null | { pathId: string; direction: "left" | "right" } = null;
 
-	let selectedNode: string | undefined;
-	let selectedControlPoint: string | undefined;
+	outer: for (const pathId of pathIds) {
+		const path = shapeState.paths[pathId];
+		const selection = getShapeSelectionFromState(path.shapeId, shapeSelectionState);
 
-	for (const shapeId of shapeIds) {
-		const shape = shapeState.shapes[shapeId];
-		const selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
+		let firstValid = false;
+		let lastValid = false;
+		let isCircular = false;
 
-		for (const edgeId of shape.edges) {
-			const edge = shapeState.edges[edgeId];
+		if (path.items.length === 1) {
+			const { nodeId, left, right } = path.items[0];
 
-			for (const cpId of [edge.cp0, edge.cp1]) {
-				if (!cpId || !selection.controlPoints[cpId]) {
-					continue;
-				}
-
-				if (selectedControlPoint) {
-					// Two selected control points, break
-					return undefined;
-				}
-				selectedControlPoint = cpId;
+			if (
+				left &&
+				right &&
+				selection.controlPoints[left.controlPointId] &&
+				selection.controlPoints[right.controlPointId]
+			) {
+				continueFrom = null;
+				break outer;
 			}
-		}
 
-		for (const nodeId of shape.nodes) {
-			if (!selection.nodes[nodeId]) {
+			// Prefer to continue in the right direction
+			if (
+				selection.nodes[nodeId] ||
+				(right && selection.controlPoints[right.controlPointId])
+			) {
+				if (continueFrom) {
+					continueFrom = null;
+					break outer;
+				}
+				continueFrom = { pathId, direction: "right" };
 				continue;
 			}
 
-			if (selectedNode) {
-				// Two selected nodes points, break
-				return undefined;
-			}
-
-			selectedNode = nodeId;
-		}
-	}
-
-	if (selectedNode && selectedControlPoint) {
-		const node = shapeState.nodes[selectedNode];
-		const edgeIds = shapeIdToNodeToEdges[node.shapeId][node.id];
-
-		for (const edgeId of edgeIds) {
-			const edge = shapeState.edges[edgeId];
-
-			if (!edge.n0) {
-				if (selectedControlPoint === edge.cp1) {
-					// partial edge's control point is the selected. Valid.
-					return [selectedNode, selectedControlPoint];
+			if (left && selection.controlPoints[left.controlPointId]) {
+				if (continueFrom) {
+					continueFrom = null;
+					break outer;
 				}
-
-				// The node's partial edge control point is not the
-				// selected control point. Invalid.
-				return undefined;
+				continueFrom = { pathId, direction: "left" };
+				continue;
 			}
+		} else {
+			const firstItem = path.items[0];
+			const lastItem = path.items[path.items.length - 1];
 
-			if (!edge.n1) {
-				if (selectedControlPoint === edge.cp0) {
-					return [selectedNode, selectedControlPoint];
+			isCircular = !!(
+				firstItem.left &&
+				lastItem.right &&
+				firstItem.left.edgeId === lastItem.right.edgeId
+			);
+
+			if (
+				selection.nodes[firstItem.nodeId] ||
+				(firstItem.left && selection.controlPoints[firstItem.left.controlPointId])
+			) {
+				if (continueFrom) {
+					continueFrom = null;
+					break outer;
 				}
-
-				return undefined;
+				continueFrom = { pathId, direction: "left" };
+				firstValid = true;
 			}
 
-			// Edge is full, continue
-		}
-
-		// Node has no partial edges where `selectedControlPoint` can show up. Invalid
-		return undefined;
-	}
-
-	if (selectedControlPoint) {
-		const cp = shapeState.controlPoints[selectedControlPoint]!;
-		const edge = shapeState.edges[cp.edgeId];
-
-		const nodeId = edge.cp0 !== cp.id ? edge.n1 : edge.n0;
-		const otherNodeId = edge.cp0 !== cp.id ? edge.n0 : edge.n1;
-
-		if (otherNodeId) {
-			// Is control point of full edge. Invalid
-			return undefined;
-		}
-
-		return [nodeId, selectedControlPoint];
-	}
-
-	if (selectedNode) {
-		const node = shapeState.nodes[selectedNode];
-		const edgeIds = shapeIdToNodeToEdges[node.shapeId][node.id];
-
-		if (edgeIds.length < 2) {
-			return [selectedNode, undefined];
-		}
-
-		// Check if any of those edges are incomplete
-		for (const edgeId of edgeIds) {
-			const edge = shapeState.edges[edgeId];
-
-			if (!edge.n0) {
-				return [selectedNode, edge.cp1];
+			if (firstItem.right && selection.controlPoints[firstItem.right.controlPointId]) {
+				continueFrom = null;
+				break outer;
 			}
 
-			if (!edge.n1) {
-				return [selectedNode, edge.cp0];
+			if (
+				selection.nodes[lastItem.nodeId] ||
+				(lastItem.right && selection.controlPoints[lastItem.right.controlPointId])
+			) {
+				if (continueFrom) {
+					continueFrom = null;
+					break outer;
+				}
+				continueFrom = { pathId, direction: "right" };
+				lastValid = true;
+			}
+
+			if (lastItem.left && selection.controlPoints[lastItem.left.controlPointId]) {
+				continueFrom = null;
+				break outer;
+			}
+		}
+
+		if ((firstValid && lastValid) || (isCircular && (firstValid || lastValid))) {
+			continueFrom = null;
+			break outer;
+		}
+
+		for (let i = 1; i < path.items.length - 1; i += 1) {
+			// If any of these is selected, we break
+			const { nodeId, left, right } = path.items[i];
+
+			const leftSelected = left && selection.controlPoints[left.controlPointId];
+			const rightSelected = right && selection.controlPoints[right.controlPointId];
+
+			if (selection.nodes[nodeId] || leftSelected || rightSelected) {
+				continueFrom = null;
+				break outer;
 			}
 		}
 	}
 
-	return undefined;
+	return continueFrom;
 };
 
-export const getShapeLayerShapeIds = (
+export const getShapeLayerPathIds = (
 	layerId: string,
 	compositionState: CompositionState,
 ): string[] => {
@@ -454,4 +362,25 @@ export const getShapeLayerShapeIds = (
 	}
 
 	return shapeIds;
+};
+
+export const getSelectedShapeLayerId = (
+	compositionId: string,
+	compositionState: CompositionState,
+	compositionSelectionState: CompositionSelectionState,
+): string | null => {
+	const selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+
+	const selectedLayers = Object.keys(selection.layers);
+
+	const selectedShapeLayers = selectedLayers.filter((layerId) => {
+		const layer = compositionState.layers[layerId];
+		return layer.type === LayerType.Shape;
+	});
+
+	if (selectedShapeLayers.length === 1) {
+		return selectedShapeLayers[0];
+	}
+
+	return null;
 };

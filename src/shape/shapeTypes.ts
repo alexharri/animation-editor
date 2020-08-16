@@ -7,6 +7,24 @@ export interface ShapeGraph {
 	moveVector: Vec2;
 }
 
+export interface ShapePathItem {
+	nodeId: string;
+	left: null | {
+		edgeId: string;
+		controlPointId: string;
+	};
+	right: null | {
+		edgeId: string;
+		controlPointId: string;
+	};
+}
+
+export interface ShapePath {
+	id: string;
+	shapeId: string;
+	items: ShapePathItem[];
+}
+
 export interface ShapeNode {
 	id: string;
 	shapeId: string;
