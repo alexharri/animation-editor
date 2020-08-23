@@ -33,6 +33,10 @@ export const shapeActions = {
 		return (shape: ShapeGraph) => action({ shape });
 	}),
 
+	removeShape: createAction("shape/REMOVE_SHAPE", (action) => {
+		return (shapeId: string) => action({ shapeId });
+	}),
+
 	setPath: createAction("shape/SET_PATH", (action) => {
 		return (path: ShapePath) => action({ path });
 	}),
@@ -40,6 +44,23 @@ export const shapeActions = {
 	setPathItem: createAction("shape/SET_PATH_ITEM", (action) => {
 		return (pathId: string, itemIndex: number, item: ShapePathItem) =>
 			action({ pathId, itemIndex, item });
+	}),
+
+	setPathItemPart: createAction("shape/SET_PATH_ITEM_PART", (action) => {
+		return (
+			pathId: string,
+			itemIndex: number,
+			which: "left" | "right",
+			part: ShapePathItem["right"],
+		) => action({ pathId, itemIndex, which, part });
+	}),
+
+	removePath: createAction("shape/REMOVE_PATH", (action) => {
+		return (pathId: string) => action({ pathId });
+	}),
+
+	removePathItem: createAction("shape/REMOVE_PATH_ITEM", (action) => {
+		return (pathId: string, itemIndex: number) => action({ pathId, itemIndex });
 	}),
 
 	setPathItemControlPointId: createAction("shape/SET_PATH_ITEM_CP_ID", (action) => {
@@ -68,7 +89,7 @@ export const shapeActions = {
 		return (shapeId: string, selection: ShapeSelection) => action({ shapeId, selection });
 	}),
 
-	addEdge: createAction("shape/ADD_EDGE", (action) => {
+	setEdge: createAction("shape/ADD_EDGE", (action) => {
 		return (shapeId: string, edge: ShapeEdge) => action({ shapeId, edge });
 	}),
 
@@ -132,6 +153,26 @@ export const shapeReducer = (
 			return { ...state, shapes: { ...state.shapes, [shape.id]: shape } };
 		}
 
+		case getType(shapeActions.removeShape): {
+			const { shapeId } = action.payload;
+
+			const controlPointIds: string[] = [];
+
+			const shape = state.shapes[shapeId];
+			for (const edgeId of shape.edges) {
+				const edge = state.edges[edgeId];
+				controlPointIds.push(edge.cp0, edge.cp1);
+			}
+
+			return {
+				...state,
+				controlPoints: removeKeysFromMap(state.controlPoints, controlPointIds),
+				edges: removeKeysFromMap(state.edges, shape.edges),
+				nodes: removeKeysFromMap(state.nodes, shape.nodes),
+				shapes: removeKeysFromMap(state.shapes, [shapeId]),
+			};
+		}
+
 		case getType(shapeActions.setPath): {
 			const { path } = action.payload;
 			return { ...state, paths: { ...state.paths, [path.id]: path } };
@@ -147,6 +188,46 @@ export const shapeReducer = (
 						items: path.items.map((item, i) => (i === itemIndex ? newItem : item)),
 					};
 				}),
+			};
+		}
+
+		case getType(shapeActions.setPathItemPart): {
+			const { pathId, itemIndex, which, part } = action.payload;
+			return {
+				...state,
+				paths: modifyItemsInMap(state.paths, pathId, (path) => {
+					return {
+						...path,
+						items: path.items.map((item, i) =>
+							i === itemIndex
+								? {
+										...item,
+										[which]: part,
+								  }
+								: item,
+						),
+					};
+				}),
+			};
+		}
+
+		case getType(shapeActions.removePathItem): {
+			const { pathId, itemIndex } = action.payload;
+			return {
+				...state,
+				paths: modifyItemsInMap(state.paths, pathId, (path) => {
+					const items = [...path.items];
+					items.splice(itemIndex, 1);
+					return { ...path, items };
+				}),
+			};
+		}
+
+		case getType(shapeActions.removePath): {
+			const { pathId } = action.payload;
+			return {
+				...state,
+				paths: removeKeysFromMap(state.paths, [pathId]),
 			};
 		}
 
@@ -264,13 +345,13 @@ export const shapeReducer = (
 			return newState;
 		}
 
-		case getType(shapeActions.addEdge): {
+		case getType(shapeActions.setEdge): {
 			const { shapeId, edge } = action.payload;
 			return {
 				...state,
 				shapes: modifyItemsInMap(state.shapes, shapeId, (shape) => ({
 					...shape,
-					edges: [...shape.edges, edge.id],
+					edges: [...new Set([...shape.edges, edge.id])],
 				})),
 				edges: addListToMap(state.edges, [edge], "id"),
 			};

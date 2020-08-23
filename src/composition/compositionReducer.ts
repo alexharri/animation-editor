@@ -7,6 +7,8 @@ import {
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
 import {
+	findLayerProperty,
+	getChildPropertyIdsRecursive,
 	reduceCompPropertiesAndGroups,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
@@ -132,6 +134,10 @@ export const compositionActions = {
 
 	removeLayer: createAction("comp/DELETE_LAYER", (action) => {
 		return (layerId: string) => action({ layerId });
+	}),
+
+	removeProperty: createAction("comp/REMOVE_PROPERTY", (action) => {
+		return (propertyId: string) => action({ propertyId });
 	}),
 
 	setLayerName: createAction("comp/SET_LAYER_NAME", (action) => {
@@ -530,6 +536,47 @@ export const compositionReducer = (
 				},
 				layers: removeKeysFromMap(state.layers, [layer.id]),
 				properties: removeKeysFromMap(state.properties, layer.properties),
+			};
+		}
+
+		case getType(compositionActions.removeProperty): {
+			const { propertyId } = action.payload;
+
+			const property = state.properties[propertyId];
+			const layer = state.layers[property.layerId];
+
+			const propertyIdsToRemove = [
+				property.id,
+				...getChildPropertyIdsRecursive(propertyId, state),
+			];
+
+			if (layer.properties.indexOf(propertyId) !== -1) {
+				// Layer contains property directly, no need to find parent property
+				return {
+					...state,
+					layers: modifyItemsInMap(state.layers, [layer.id], (layer) => ({
+						...layer,
+						properties: layer.properties.filter((id) => propertyId !== id),
+					})),
+					properties: removeKeysFromMap(state.properties, propertyIdsToRemove),
+				};
+			}
+
+			// Property is not contained by layer directly, find parent property.
+			const parentProperty = findLayerProperty(layer.id, state, (group) => {
+				return group.type === "group" && group.properties.indexOf(propertyId) !== -1;
+			});
+
+			return {
+				...state,
+				properties: modifyItemInUnionMap(
+					removeKeysFromMap(state.properties, propertyIdsToRemove),
+					parentProperty!.id,
+					(group: CompositionPropertyGroup) => ({
+						...group,
+						properties: group.properties.filter((id) => propertyId !== id),
+					}),
+				),
 			};
 		}
 

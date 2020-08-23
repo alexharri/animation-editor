@@ -126,10 +126,6 @@ const singleShapeSelectionReducer = (state: ShapeSelection, action: Action): Sha
 			};
 		}
 
-		case getType(shapeSelectionActions.clearShapeSelection): {
-			return createNewShapeSelection();
-		}
-
 		default:
 			return state;
 	}
@@ -141,6 +137,16 @@ export const shapeSelectionReducer = (
 ): ShapeSelectionState => {
 	const shapeId = action.payload.shapeId;
 	const selection = state[shapeId] || createNewShapeSelection();
+
+	if (!action.type.startsWith("sh_sel/")) {
+		return state;
+	}
+
+	switch (action.type) {
+		case getType(shapeSelectionActions.clearShapeSelection): {
+			return removeKeysFromMap(state, [action.payload.shapeId]);
+		}
+	}
 
 	return {
 		...state,

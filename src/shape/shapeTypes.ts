@@ -19,6 +19,18 @@ export interface ShapePathItem {
 	};
 }
 
+export interface FullShapePathItem {
+	nodeId: string;
+	left: {
+		edgeId: string;
+		controlPointId: string;
+	};
+	right: {
+		edgeId: string;
+		controlPointId: string;
+	};
+}
+
 export interface ShapePath {
 	id: string;
 	shapeId: string;

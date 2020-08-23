@@ -1,5 +1,7 @@
 export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
 
+export type ToDispatch = Array<{ type: string; payload: any }>;
+
 export type CardinalDirection = "n" | "w" | "s" | "e";
 export type IntercardinalDirection = "ne" | "nw" | "se" | "sw";
 
