@@ -13,7 +13,7 @@ import {
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
-import { getSelectedShapeLayerId } from "~/shape/shapeUtils";
+import { getShapeLayerSelectedPathIds, getSingleSelectedShapeLayerId } from "~/shape/shapeUtils";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
@@ -37,15 +37,23 @@ export const moveToolHandlers = {
 		const actionState = getActionState();
 		const { compositionState, compositionSelectionState } = actionState;
 
-		const selectedShapeLayer = getSelectedShapeLayerId(
+		const selectedShapeLayer = getSingleSelectedShapeLayerId(
 			compositionId,
 			compositionState,
 			compositionSelectionState,
 		);
 
 		if (selectedShapeLayer) {
-			penToolHandlers.moveToolMouseDown(e, selectedShapeLayer, areaId, viewport);
-			return;
+			const selectedPathIds = getShapeLayerSelectedPathIds(
+				selectedShapeLayer,
+				compositionState,
+				compositionSelectionState,
+			);
+
+			if (selectedPathIds.length) {
+				penToolHandlers.moveToolMouseDown(e, selectedShapeLayer, areaId, viewport);
+				return;
+			}
 		}
 
 		let layerId = "";

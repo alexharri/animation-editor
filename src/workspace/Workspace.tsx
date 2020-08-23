@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Tool } from "~/constants";
-import { cssVariables } from "~/cssVariables";
+import { cssCursors, cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
@@ -37,7 +37,7 @@ const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?:
 		{ recursive: true },
 	);
 
-	const { pan, scale } = props.areaState;
+	const { pan, scale, selectionRect } = props.areaState;
 
 	const options = {
 		ctx,
@@ -51,6 +51,7 @@ const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?:
 		scale,
 		viewport: { width, height, left, top },
 		mousePosition,
+		selectionRect,
 	};
 	return options;
 };
@@ -85,7 +86,9 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 	});
 	useKeyDownEffect("Alt", (down) => {
 		if (zoomTarget.current) {
-			zoomTarget.current.style.cursor = down ? "zoom-out" : "zoom-in";
+			zoomTarget.current.style.cursor = down
+				? cssCursors.zoom.zoomOut
+				: cssCursors.zoom.zoomIn;
 		}
 	});
 

@@ -22,7 +22,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 	};
 	propertiesToAdd.push(group);
 
-	const shape: CompositionProperty = {
+	const path: CompositionProperty = {
 		type: "property",
 		name: PropertyName.ShapeLayer_Path,
 		valueType: ValueType.Path,
@@ -34,13 +34,15 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 		color: TimelineColors.Height,
 	};
 
-	group.properties.push(shape.id);
-	propertiesToAdd.push(shape);
+	group.properties.push(path.id);
+	propertiesToAdd.push(path);
 
 	const transform = createLayerTransformProperties(opts);
 
 	group.properties.push(transform.group.id);
 	propertiesToAdd.push(transform.group, ...transform.properties);
 
-	return { propertyId, propertiesToAdd };
+	const pathPropertyId = path.id;
+
+	return { propertyId, pathPropertyId, propertiesToAdd };
 };

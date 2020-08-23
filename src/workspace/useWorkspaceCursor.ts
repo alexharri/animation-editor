@@ -2,10 +2,10 @@ import { Tool } from "~/constants";
 import { cssCursors } from "~/cssVariables";
 import {
 	getPathTargetObject,
-	getSelectedShapeLayerId,
 	getShapeContinuePathFrom,
 	getShapeLayerPathIds,
 	getShapePathClosePathNodeId,
+	getSingleSelectedShapeLayerId,
 } from "~/shape/shapeUtils";
 import { getActionState } from "~/state/stateUtils";
 import { constructPenToolContext } from "~/workspace/penTool/penToolContext";
@@ -16,11 +16,40 @@ interface Options {
 	areaId: string;
 }
 
+const moveTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
+	const { compositionId, areaId, viewport } = options;
+	const { compositionState, compositionSelectionState } = getActionState();
+
+	// If we have a single selected shape layer, we want to change the cursor
+	// when hovering over objects in the selected layer's shapes.
+	const layerId = getSingleSelectedShapeLayerId(
+		compositionId,
+		compositionState,
+		compositionSelectionState,
+	);
+
+	if (layerId) {
+		const ctx = constructPenToolContext(e, layerId, areaId, viewport);
+
+		const pathIds = getShapeLayerPathIds(layerId, compositionState);
+		for (const pathId of pathIds) {
+			const { type } = getPathTargetObject(pathId, ctx);
+
+			if (type) {
+				el.style.cursor = cssCursors.moveTool.moveSelection;
+				return;
+			}
+		}
+	}
+
+	el.style.cursor = cssCursors.moveTool.default;
+};
+
 const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 	const { compositionId, areaId, viewport } = options;
 	const { compositionState, compositionSelectionState } = getActionState();
 
-	const layerId = getSelectedShapeLayerId(
+	const layerId = getSingleSelectedShapeLayerId(
 		compositionId,
 		compositionState,
 		compositionSelectionState,
@@ -28,7 +57,6 @@ const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 
 	if (!layerId) {
 		el.style.cursor = cssCursors.penTool.default;
-		console.log(cssCursors.penTool.default);
 		return;
 	}
 
@@ -85,12 +113,17 @@ export const useWorkspaceCursor = (
 
 		const tool = getActionState().tool.selected;
 
+		if (tool === Tool.move) {
+			moveTool(e, canvasEl, options);
+			return;
+		}
+
 		if (tool === Tool.pen) {
 			penTool(e, canvasEl, options);
 			return;
 		}
 
-		canvasEl.style.cursor = "";
+		canvasEl.style.cursor = cssCursors.moveTool.default;
 	};
 
 	return onMouseMove;

@@ -1,5 +1,4 @@
 import { ActionType, getType } from "typesafe-actions";
-
 import { Tool, toolGroups } from "~/constants";
 import { toolActions } from "~/toolbar/toolActions";
 
@@ -12,8 +11,8 @@ export interface ToolState {
 }
 
 export const initialToolState: ToolState = {
-	selected: Tool.selection,
-	selectedInGroup: toolGroups.map(group => group[0].tool),
+	selected: Tool.move,
+	selectedInGroup: toolGroups.map((group) => group[0].tool),
 	openGroupIndex: -1,
 };
 
@@ -25,7 +24,7 @@ export const toolReducer = (state = initialToolState, action: ToolAction): ToolS
 			let toolGroupIndex = -1;
 
 			for (let i = 0; i < toolGroups.length; i += 1) {
-				if (toolGroups[i].map(item => item.tool).indexOf(tool) !== -1) {
+				if (toolGroups[i].map((item) => item.tool).indexOf(tool) !== -1) {
 					toolGroupIndex = i;
 					break;
 				}

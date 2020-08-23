@@ -1,6 +1,10 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
+import {
+	reduceLayerProperties,
+	reduceLayerPropertiesAndGroups,
+} from "~/composition/compositionUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
@@ -183,9 +187,14 @@ export const pathIdToPathList = (
 export const getShapePathClosePathNodeId = (
 	continueFrom: { pathId: string; direction: "left" | "right" },
 	shapeState: ShapeState,
-): string => {
+): string | null => {
 	const { pathId, direction } = continueFrom;
 	const path = shapeState.paths[pathId];
+
+	if (path.items.length === 1) {
+		return null;
+	}
+
 	const { nodeId } = path.items[direction === "left" ? path.items.length - 1 : 0];
 	return nodeId;
 };
@@ -365,7 +374,10 @@ export const getShapeLayerPathIds = (
 	return shapeIds;
 };
 
-export const getSelectedShapeLayerId = (
+/**
+ * @returns null if more than one shape layers are selected
+ */
+export const getSingleSelectedShapeLayerId = (
 	compositionId: string,
 	compositionState: CompositionState,
 	compositionSelectionState: CompositionSelectionState,
@@ -384,6 +396,19 @@ export const getSelectedShapeLayerId = (
 	}
 
 	return null;
+};
+
+export const getSelectedShapeLayerIds = (
+	compositionId: string,
+	compositionState: CompositionState,
+	compositionSelectionState: CompositionSelectionState,
+): string[] => {
+	const selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+	const composition = compositionState.compositions[compositionId];
+	return composition.layers.filter((layerId) => {
+		const layer = compositionState.layers[layerId];
+		return layer.type === LayerType.Shape && selection.layers[layer.id];
+	});
 };
 
 type PathTargetObject =
@@ -434,6 +459,10 @@ export const getPathTargetObject = (pathId: string, ctx: PenToolContext): PathTa
 			const cp = shapeState.controlPoints[controlPointId]!;
 			const cpSelected = selection.controlPoints[controlPointId];
 
+			if (!cp) {
+				console.log({ part, item, path });
+			}
+
 			let cpPos = position.add(cp.position);
 
 			if (!nodeSelected && cpSelected) {
@@ -462,4 +491,84 @@ export const getPathTargetObject = (pathId: string, ctx: PenToolContext): PathTa
 	}
 
 	return { type: undefined, id: "" };
+};
+
+export const getShapeLayerDirectlySelectedPaths = (
+	layerId: string,
+	compositionState: CompositionState,
+	compositionSelectionState: CompositionSelectionState,
+): Set<string> => {
+	const layer = compositionState.layers[layerId];
+	const selection = getCompSelectionFromState(layer.compositionId, compositionSelectionState);
+
+	return reduceLayerPropertiesAndGroups<Set<string>>(
+		layer.id,
+		compositionState,
+		(set, property) => {
+			if (
+				property.name === PropertyName.ShapeLayer_Path &&
+				selection.properties[property.id]
+			) {
+				set.add(property.value);
+			}
+
+			return set;
+		},
+		new Set(),
+	);
+};
+
+export const getShapeLayerSelectedPathIds = (
+	layerId: string,
+	compositionState: CompositionState,
+	compositionSelectionState: CompositionSelectionState,
+): string[] => {
+	const layer = compositionState.layers[layerId];
+	const selection = getCompSelectionFromState(layer.compositionId, compositionSelectionState);
+
+	const pathIdSet = reduceLayerPropertiesAndGroups<Set<string>>(
+		layer.id,
+		compositionState,
+		(set, shapeGroup) => {
+			if (shapeGroup.name !== PropertyGroupName.Shape) {
+				return set;
+			}
+
+			for (const propertyId of shapeGroup.properties) {
+				const property = compositionState.properties[propertyId];
+				if (property.name === PropertyName.ShapeLayer_Path) {
+					// If either the shape group or the path property are selected
+					// the guides are rendered.
+					if (selection.properties[shapeGroup.id] || selection.properties[propertyId]) {
+						set.add(property.value);
+					}
+					break;
+				}
+			}
+			return set;
+		},
+		new Set(),
+	);
+
+	return [...pathIdSet];
+};
+
+export const getLayerPathPropertyId = (
+	layerId: string,
+	pathId: string,
+	compositionState: CompositionState,
+): string | undefined => {
+	let pathPropertyId: string | undefined;
+	reduceLayerProperties(
+		layerId,
+		compositionState,
+		(_, property) => {
+			if (property.name === PropertyName.ShapeLayer_Path && property.value === pathId) {
+				pathPropertyId = property.id;
+			}
+			return null;
+		},
+		null,
+	);
+	return pathPropertyId;
 };

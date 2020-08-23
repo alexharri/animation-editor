@@ -4,6 +4,7 @@ export const cssVariables = {
 	primary300: "#2840bb",
 	primary400: "#355dd4",
 	primary500: "#3074f3",
+	primary600: "#418dff",
 	primary700: "#4babff",
 
 	white500: "#f3f3f3",
@@ -37,10 +38,21 @@ export const cssCursors = {
 		right: `url("/static/cursors/arrow_e.png") 12 10, default`,
 		down: `url("/static/cursors/arrow_s.png") 12 10, default`,
 	},
+	moveTool: {
+		default: `url("/static/cursors/selection.png") 0 0, default`,
+		moveSelection: `url("/static/cursors/selection_move.png") 0 0, default`,
+	},
 	penTool: {
 		default: `url("/static/cursors/pen_default.png") 0 0, default`,
 		moveSelection: `url("/static/cursors/selection_move.png") 0 0, default`,
 		closePath: `url("/static/cursors/pen_select_point.png") 0 0, default`,
+	},
+	zoom: {
+		zoomIn: `url("/static/cursors/zoom_in.png") 6 6, default`,
+		zoomOut: `url("/static/cursors/zoom_out.png") 6 6, default`,
+	},
+	grab: {
+		default: `url("/static/cursors/grab.png") 8 8, default`,
 	},
 };
 

@@ -15,6 +15,7 @@ export interface PenToolContext {
 	pan: Vec2;
 	scale: number;
 	viewport: Rect;
+	areaId: string;
 	layerId: string;
 	layerTransform: AffineTransform;
 	normalToViewport: (vec: Vec2) => Vec2;
@@ -73,6 +74,7 @@ export const constructPenToolContext = (
 		shapeState: actionState.shapeState,
 		shapeSelectionState: actionState.shapeSelectionState,
 		viewport,
+		areaId,
 	};
 	return ctx;
 };

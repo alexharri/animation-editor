@@ -1,10 +1,7 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import { CompositionLayer } from "~/composition/compositionTypes";
-import {
-	reduceLayerProperties,
-	reduceLayerPropertiesAndGroups,
-} from "~/composition/compositionUtils";
+import { reduceLayerProperties } from "~/composition/compositionUtils";
 import { getLayerDimensions } from "~/composition/layer/layerUtils";
 import { applyParentTransform, transformMat2 } from "~/composition/transformUtils";
 import {
@@ -17,14 +14,13 @@ import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { ShapeControlPoint } from "~/shape/shapeTypes";
-import { getShapeSelectionFromState, pathIdToPathList } from "~/shape/shapeUtils";
 import {
-	AffineTransform,
-	CompositionRenderValues,
-	LayerType,
-	PropertyGroupName,
-	PropertyName,
-} from "~/types";
+	getShapeLayerDirectlySelectedPaths,
+	getShapeLayerSelectedPathIds,
+	getShapeSelectionFromState,
+	pathIdToPathList,
+} from "~/shape/shapeUtils";
+import { AffineTransform, CompositionRenderValues, LayerType, PropertyName } from "~/types";
 import { renderDiamond, traceCircle, traceLine, tracePath } from "~/util/canvas/renderPrimitives";
 import { isVecInPoly } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
@@ -67,6 +63,7 @@ interface Options {
 	pan: Vec2;
 	scale: number;
 	mousePosition?: Vec2;
+	selectionRect: Rect | null;
 }
 
 export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
@@ -228,7 +225,11 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		const mat2 = transformMat2(transform);
 
 		const toPos = (vec: Vec2): Vec2 => {
-			return mat2.multiplyVec2(vec).add(transform.translate).scale(scale).add(pan);
+			return mat2
+				.multiplyVec2(vec.sub(transform.anchor))
+				.add(transform.translate)
+				.scale(scale)
+				.add(pan);
 		};
 
 		for (const pathId of pathIds) {
@@ -480,49 +481,38 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 			return;
 		}
 
-		const shapeIdSet = reduceLayerPropertiesAndGroups<Set<string>>(
+		const directlySelectedPaths = getShapeLayerDirectlySelectedPaths(
 			layer.id,
 			compositionState,
-			(set, shapeGroup) => {
-				if (shapeGroup.name !== PropertyGroupName.Shape) {
-					return set;
-				}
-
-				for (const propertyId of shapeGroup.properties) {
-					const property = compositionState.properties[propertyId];
-					if (property.name === PropertyName.ShapeLayer_Path) {
-						// If either the shape group or the path property are selected
-						// the guides are rendered.
-						if (
-							selection.properties[shapeGroup.id] ||
-							selection.properties[propertyId]
-						) {
-							set.add(property.value);
-						}
-						break;
-					}
-				}
-				return set;
-			},
-			new Set(),
+			compositionSelectionState,
 		);
-
-		const shapeIds = [...shapeIdSet];
+		const pathIds = getShapeLayerSelectedPathIds(
+			layer.id,
+			compositionState,
+			compositionSelectionState,
+		);
 
 		const transform = map.transforms[layer.id].transform[0];
 		const mat2 = transformMat2(transform);
 
 		const toPos = (vec: Vec2): Vec2 => {
-			return mat2.multiplyVec2(vec).add(transform.translate).scale(scale).add(pan);
+			return mat2
+				.multiplyVec2(vec.sub(transform.anchor))
+				.add(transform.translate)
+				.scale(scale)
+				.add(pan);
 		};
 
-		for (const shapeId of shapeIds) {
+		for (const pathId of pathIds) {
+			const path = shapeState.paths[pathId];
+			const { shapeId } = path;
+
+			const isPathDirectlySelected = directlySelectedPaths.has(pathId);
+
 			const shape = shapeState.shapes[shapeId];
 			const selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
 
-			const { moveVector } = shape;
-
-			const paths = pathIdToPathList(shapeId, shapeState, shapeSelectionState, toPos);
+			const paths = pathIdToPathList(pathId, shapeState, shapeSelectionState, toPos);
 
 			if (paths) {
 				ctx.beginPath();
@@ -536,62 +526,64 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 			}
 
 			// Render edges
-			for (const edgeId of shape.edges) {
-				const edge = shapeState.edges[edgeId];
-				const cp0 = shapeState.controlPoints[edge.cp0];
-				const cp1 = shapeState.controlPoints[edge.cp1];
+			if (isPathDirectlySelected) {
+				for (const edgeId of shape.edges) {
+					const edge = shapeState.edges[edgeId];
+					const cp0 = shapeState.controlPoints[edge.cp0];
+					const cp1 = shapeState.controlPoints[edge.cp1];
 
-				const edgeParts: Array<[string, ShapeControlPoint | undefined]> = [
-					[edge.n0, cp0],
-					[edge.n1, cp1],
-				];
+					const edgeParts: Array<[string, ShapeControlPoint | undefined]> = [
+						[edge.n0, cp0],
+						[edge.n1, cp1],
+					];
 
-				// Render handles
-				for (const [nodeId, cp] of edgeParts) {
-					const node = shapeState.nodes[nodeId];
+					// Render handles
+					for (const [nodeId, cp] of edgeParts) {
+						const node = shapeState.nodes[nodeId];
 
-					if (!cp || !node) {
-						continue;
+						if (!cp || !node) {
+							continue;
+						}
+
+						let p0 = node.position;
+						if (selection.nodes[node.id]) {
+							p0 = p0.add(shape.moveVector);
+						}
+
+						let p1 = p0.add(cp.position);
+						if (selection.controlPoints[cp.id] && !selection.nodes[node.id]) {
+							p1 = p1.add(shape.moveVector);
+						}
+
+						// Render handle line
+						ctx.beginPath();
+						traceLine(ctx, [toPos(p0), toPos(p1)]);
+						ctx.lineWidth = 1;
+						ctx.strokeStyle = cssVariables.light300;
+						ctx.stroke();
+						ctx.closePath();
+
+						// Render handle diamond
+						renderDiamond(
+							ctx,
+							toPos(p1),
+							selection.controlPoints[cp.id]
+								? {
+										fillColor: cssVariables.primary600,
+										strokeColor: "white",
+										strokeWidth: 1,
+										width: 7,
+										height: 7,
+								  }
+								: {
+										fillColor: "white",
+										strokeColor: cssVariables.primary600,
+										strokeWidth: 1,
+										width: 7,
+										height: 7,
+								  },
+						);
 					}
-
-					let p0 = node.position;
-					if (selection.nodes[node.id]) {
-						p0 = p0.add(moveVector);
-					}
-
-					let p1 = p0.add(cp.position);
-					if (selection.controlPoints[cp.id] && !selection.nodes[node.id]) {
-						p1 = p1.add(moveVector);
-					}
-
-					// Render handle line
-					ctx.beginPath();
-					traceLine(ctx, [toPos(p0), toPos(p1)]);
-					ctx.lineWidth = 1;
-					ctx.strokeStyle = cssVariables.light300;
-					ctx.stroke();
-					ctx.closePath();
-
-					// Render handle diamond
-					renderDiamond(
-						ctx,
-						toPos(p1),
-						selection.controlPoints[cp.id]
-							? {
-									fillColor: cssVariables.primary500,
-									strokeColor: "white",
-									strokeWidth: 1,
-									width: 7,
-									height: 7,
-							  }
-							: {
-									fillColor: "white",
-									strokeColor: cssVariables.primary500,
-									strokeWidth: 1,
-									width: 7,
-									height: 7,
-							  },
-					);
 				}
 			}
 
@@ -605,16 +597,45 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 				let position = node.position;
 
 				if (selection.nodes[node.id]) {
-					position = position.add(moveVector);
+					position = position.add(shape.moveVector);
 				}
 
+				const selected = selection.nodes[nodeId];
+
 				ctx.beginPath();
-				traceCircle(ctx, toPos(position), 3.5);
-				ctx.lineWidth = 2.5;
-				ctx.fillStyle = selection.nodes[nodeId] ? cssVariables.primary500 : "white";
-				ctx.strokeStyle = selection.nodes[nodeId] ? "white" : cssVariables.primary500;
-				ctx.stroke();
-				ctx.fill();
+				if (selected) {
+					if (isPathDirectlySelected) {
+						traceCircle(ctx, toPos(position), 4.5);
+						ctx.lineWidth = 2.5;
+						ctx.fillStyle = cssVariables.primary600;
+						ctx.strokeStyle = "white";
+						ctx.stroke();
+						ctx.fill();
+					} else {
+						traceCircle(ctx, toPos(position), 5);
+						ctx.lineWidth = 1.5;
+						ctx.strokeStyle = "white";
+						ctx.stroke();
+
+						traceCircle(ctx, toPos(position), 3);
+						ctx.fillStyle = cssVariables.primary600;
+						ctx.fill("evenodd");
+					}
+				} else {
+					if (isPathDirectlySelected) {
+						traceCircle(ctx, toPos(position), 3.5);
+						ctx.lineWidth = 2.5;
+						ctx.fillStyle = "white";
+						ctx.strokeStyle = cssVariables.primary600;
+						ctx.stroke();
+						ctx.fill();
+					} else {
+						traceCircle(ctx, toPos(position), 4.5);
+						traceCircle(ctx, toPos(position), 2.5);
+						ctx.fillStyle = cssVariables.primary600;
+						ctx.fill("evenodd");
+					}
+				}
 				ctx.closePath();
 			}
 		}
@@ -628,5 +649,27 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 		if (layer.type === LayerType.Shape) {
 			renderShapeLayerGuides(options.map, layer);
 		}
+	}
+
+	if (options.selectionRect) {
+		const rect = options.selectionRect!;
+
+		const p0 = Vec2.new(rect.left, rect.top).scale(scale).add(pan);
+		const p1 = Vec2.new(rect.left + rect.width, rect.top + rect.height)
+			.scale(scale)
+			.add(pan);
+
+		ctx.beginPath();
+		ctx.moveTo(p0.x, p0.y);
+		ctx.lineTo(p1.x, p0.y);
+		ctx.lineTo(p1.x, p1.y);
+		ctx.lineTo(p0.x, p1.y);
+		ctx.lineTo(p0.x, p0.y);
+		ctx.fillStyle = "rgba(255, 255, 255, .2)";
+		ctx.strokeStyle = "rgba(255, 255, 255, .8)";
+		ctx.lineWidth = 1;
+		ctx.fill();
+		ctx.stroke();
+		ctx.closePath();
 	}
 }
