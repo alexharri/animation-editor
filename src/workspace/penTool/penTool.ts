@@ -529,7 +529,7 @@ export const penToolHandlers = {
 
 	removeNode: (ctx: PenToolContext, nodeId: string) => {
 		requestAction({ history: true }, (params) => {
-			const toDispatch: any[] = [];
+			const toDispatch: ToDispatch = [];
 
 			const { compositionState } = getActionState();
 			const { shapeState } = ctx;
@@ -671,78 +671,117 @@ export const penToolHandlers = {
 					);
 					break;
 				}
-				throw new Error("Not implemented");
 
-				// for (let i = 0; i < path.items.length; i += 1) {
-				// 	const item = path.items[i];
+				// More than one nodes in a non-circular path
 
-				// 	if (item.left && item.left.controlPointId === node.id) {
-				// 		// Left control point of path is being removed.
-				// 		//
-				// 		// If we are removing the left cp of the first item and the path is
-				// 		// non-circular, we want to remove firstItem's left part entirely.
-				// 		if (
-				// 			i === 0 &&
-				// 			(lastItem.right
-				// 				? firstItem.left!.edgeId !== lastItem.right.edgeId
-				// 				: true)
-				// 		) {
-				// 			// Path is non circular, remove the first item's left part.
-				// 			toDispatch.push(
-				// 				shapeActions.setPathItem(pathId, 0, {
-				// 					...firstItem,
-				// 					left: null,
-				// 				}),
-				// 			);
-				// 		} else {
-				// 			toDispatch.push(
-				// 				shapeActions.setPathItem(pathId, i, {
-				// 					...item,
-				// 					left: {
-				// 						...item.left,
-				// 						controlPointId: "",
-				// 					},
-				// 				}),
-				// 			);
-				// 		}
-				// 		break;
-				// 	}
+				if (path.items[0].nodeId === nodeId) {
+					// First item in path is selected
+					const item = path.items[0];
 
-				// 	if (item.right && item.right.controlPointId === node.id) {
-				// 		// Right control point of path is being removed.
-				// 		//
-				// 		// If we are removing the right cp of the last item and the path is
-				// 		// non-circular, we want to remove lastItem's right part entirely.
-				// 		if (
-				// 			i === path.items.length - 1 &&
-				// 			(firstItem.left
-				// 				? lastItem.right!.edgeId !== firstItem.left.edgeId
-				// 				: true)
-				// 		) {
-				// 			// Path is non circular, remove the last item's right part.
-				// 			toDispatch.push(
-				// 				shapeActions.setPathItem(pathId, path.items.length - 1, {
-				// 					...lastItem,
-				// 					right: null,
-				// 				}),
-				// 			);
-				// 		} else {
-				// 			toDispatch.push(
-				// 				shapeActions.setPathItem(pathId, i, {
-				// 					...item,
-				// 					right: {
-				// 						...item.right,
-				// 						controlPointId: "",
-				// 					},
-				// 				}),
-				// 			);
-				// 		}
-				// 		break;
-				// 	}
-				// }
+					if (item.left) {
+						toDispatch.push(
+							shapeActions.removeControlPoint(item.left.controlPointId),
+							shapeActions.removeEdge(shapeId, item.left.edgeId),
+						);
+					}
+
+					if (item.right) {
+						toDispatch.push(shapeActions.removeControlPoint(item.right.controlPointId));
+
+						const edge = shapeState.edges[item.right.edgeId];
+						const whichOtherNode = edge.n0 === item.nodeId ? "n1" : "n0";
+						const whichNode = whichOtherNode === "n0" ? "n1" : "n0";
+						const whichCp = whichOtherNode === "n0" ? "cp1" : "cp0";
+
+						if (!edge[whichOtherNode]) {
+							toDispatch.push(shapeActions.removeEdge(shapeId, edge.id));
+						} else {
+							toDispatch.push(
+								shapeActions.setEdge(shapeId, {
+									...edge,
+									[whichNode]: "",
+									[whichCp]: "",
+								}),
+							);
+						}
+					}
+
+					toDispatch.push(shapeActions.removePathItem(pathId, 0));
+				} else if (path.items[path.items.length - 1].nodeId === nodeId) {
+					// Last item in path is selected
+					const item = path.items[path.items.length - 1];
+
+					if (item.right) {
+						toDispatch.push(
+							shapeActions.removeControlPoint(item.right.controlPointId),
+							shapeActions.removeEdge(shapeId, item.right.edgeId),
+						);
+					}
+
+					if (item.left) {
+						toDispatch.push(shapeActions.removeControlPoint(item.left.controlPointId));
+
+						const edge = shapeState.edges[item.left.edgeId];
+						const whichOtherNode = edge.n0 === item.nodeId ? "n1" : "n0";
+						const whichNode = whichOtherNode === "n0" ? "n1" : "n0";
+						const whichCp = whichOtherNode === "n0" ? "cp1" : "cp0";
+
+						if (!edge[whichOtherNode]) {
+							toDispatch.push(shapeActions.removeEdge(shapeId, edge.id));
+						} else {
+							toDispatch.push(
+								shapeActions.setEdge(shapeId, {
+									...edge,
+									[whichNode]: "",
+									[whichCp]: "",
+								}),
+							);
+						}
+					}
+
+					toDispatch.push(shapeActions.removePathItem(pathId, path.items.length - 1));
+				} else {
+					// Item in a non-circular path, not first or last item.
+					//
+					// We can assume that edges exist for item.left and item.right
+
+					const itemIndex = path.items.map((item) => item.nodeId).indexOf(nodeId);
+
+					let ileft = itemIndex === 0 ? path.items.length - 1 : itemIndex - 1;
+					let iright = itemIndex === path.items.length - 1 ? 0 : itemIndex + 1;
+
+					const left = path.items[ileft] as FullShapePathItem;
+					const mid = path.items[itemIndex] as FullShapePathItem;
+					const right = path.items[iright] as FullShapePathItem;
+
+					// Reuse left edge
+					const leftEdgeId = left.right.edgeId;
+
+					// Remove right edge
+					const rightEdgeId = mid.right.edgeId;
+
+					toDispatch.push(
+						shapeActions.removeControlPoint(mid.left.controlPointId),
+						shapeActions.removeControlPoint(mid.right.controlPointId),
+						shapeActions.removeEdge(shapeId, rightEdgeId),
+						shapeActions.removeNode(shapeId, nodeId),
+
+						shapeActions.setEdgeNodeId(leftEdgeId, "n1", right.nodeId),
+						shapeActions.setEdgeControlPointId(
+							leftEdgeId,
+							"cp1",
+							right.left.controlPointId,
+						),
+
+						shapeActions.setPathItemPart(pathId, iright, "left", {
+							edgeId: leftEdgeId,
+							controlPointId: right.left.controlPointId,
+						}),
+						shapeActions.removePathItem(pathId, itemIndex),
+					);
+				}
 			}
 
-			console.log(toDispatch);
 			params.dispatch(toDispatch);
 			params.submitAction("Remove node");
 		});
