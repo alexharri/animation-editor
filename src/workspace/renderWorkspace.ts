@@ -13,7 +13,6 @@ import { DEG_TO_RAD_FAC } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
-import { ShapeControlPoint } from "~/shape/shapeTypes";
 import {
 	getShapeLayerDirectlySelectedPaths,
 	getShapeLayerSelectedPathIds,
@@ -22,7 +21,7 @@ import {
 } from "~/shape/shapeUtils";
 import { AffineTransform, CompositionRenderValues, LayerType, PropertyName } from "~/types";
 import { renderDiamond, traceCircle, traceLine, tracePath } from "~/util/canvas/renderPrimitives";
-import { isVecInPoly } from "~/util/math";
+import { getAngleRadians, getDistance, isVecInPoly } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
 
 const getNameToProperty = (
@@ -527,32 +526,58 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 
 			// Render edges
 			if (isPathDirectlySelected) {
-				for (const edgeId of shape.edges) {
-					const edge = shapeState.edges[edgeId];
-					const cp0 = shapeState.controlPoints[edge.cp0];
-					const cp1 = shapeState.controlPoints[edge.cp1];
+				for (let i = 0; i < path.items.length; i += 1) {
+					const { nodeId, left, right, reflectControlPoints } = path.items[i];
 
-					const edgeParts: Array<[string, ShapeControlPoint | undefined]> = [
-						[edge.n0, cp0],
-						[edge.n1, cp1],
-					];
+					const parts = [left, right];
 
-					// Render handles
-					for (const [nodeId, cp] of edgeParts) {
-						const node = shapeState.nodes[nodeId];
+					for (let i = 0; i < 2; i += 1) {
+						const part0 = parts[i];
 
-						if (!cp || !node) {
+						if (!part0) {
 							continue;
 						}
 
-						let p0 = node.position;
-						if (selection.nodes[node.id]) {
-							p0 = p0.add(shape.moveVector);
+						const cp = shapeState.controlPoints[part0.controlPointId];
+
+						if (!cp) {
+							continue;
 						}
 
-						let p1 = p0.add(cp.position);
-						if (selection.controlPoints[cp.id] && !selection.nodes[node.id]) {
-							p1 = p1.add(shape.moveVector);
+						const part1 = parts[(i + 1) % 2];
+						const otherCpId = part1?.controlPointId;
+
+						const node = shapeState.nodes[nodeId];
+						const nodeSelected = selection.nodes[nodeId];
+						const cpSelected = selection.controlPoints[part0.controlPointId];
+						const otherCpSelected = !!(otherCpId && selection.controlPoints[otherCpId]);
+						const reflect = reflectControlPoints;
+
+						let p0: Vec2;
+						let p1: Vec2;
+
+						if (reflect && !nodeSelected && !cpSelected && otherCpSelected) {
+							const otherCp = shapeState.controlPoints[otherCpId!]!;
+
+							p0 = node.position;
+							p1 = otherCp!.position.add(shape.moveVector);
+
+							const dist = getDistance(Vec2.new(0, 0), cp.position);
+							const angle = getAngleRadians(Vec2.new(0, 0), p1);
+							const rmat = Mat2.rotation(angle + Math.PI);
+							const cppos = rmat.multiplyVec2(Vec2.new(dist, 0));
+
+							p1 = p0.add(cppos);
+						} else {
+							p0 = node.position;
+							if (selection.nodes[node.id]) {
+								p0 = p0.add(shape.moveVector);
+							}
+
+							p1 = p0.add(cp.position);
+							if (selection.controlPoints[cp.id] && !selection.nodes[node.id]) {
+								p1 = p1.add(shape.moveVector);
+							}
 						}
 
 						// Render handle line

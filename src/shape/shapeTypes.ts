@@ -9,6 +9,7 @@ export interface ShapeGraph {
 
 export interface ShapePathItem {
 	nodeId: string;
+	reflectControlPoints: boolean;
 	left: null | {
 		edgeId: string;
 		controlPointId: string;
@@ -21,6 +22,7 @@ export interface ShapePathItem {
 
 export interface FullShapePathItem {
 	nodeId: string;
+	reflectControlPoints: boolean;
 	left: {
 		edgeId: string;
 		controlPointId: string;

@@ -8,9 +8,10 @@ import {
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
-import { ShapeEdge, ShapeGraph, ShapeSelection } from "~/shape/shapeTypes";
+import { ShapeEdge, ShapeGraph, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
 import { LayerType, PropertyGroupName, PropertyName } from "~/types";
-import { getDistance, quadraticToCubicBezier } from "~/util/math";
+import { getAngleRadians, getDistance, quadraticToCubicBezier } from "~/util/math";
+import { Mat2 } from "~/util/math/mat";
 import { PenToolContext } from "~/workspace/penTool/penToolContext";
 
 export const getShapeNodeToEdges = (
@@ -150,6 +151,64 @@ export const getShapePathFirstNodeId = (
 	}
 };
 
+export const getItemControlPointPositions = (
+	item: ShapePathItem,
+	shape: ShapeGraph,
+	shapeState: ShapeState,
+	shapeSelectionState: ShapeSelectionState,
+): [Vec2 | null, Vec2 | null] => {
+	const { nodeId, left, right, reflectControlPoints } = item;
+
+	const selection = getShapeSelectionFromState(shape.id, shapeSelectionState);
+
+	return [left, right].map<Vec2 | null>((_, i, parts) => {
+		const part0 = parts[i];
+
+		if (!part0) {
+			return null;
+		}
+
+		const cp = shapeState.controlPoints[part0.controlPointId];
+
+		if (!cp) {
+			return null;
+		}
+
+		if (shape.moveVector.x === 0 && shape.moveVector.y === 0) {
+			return cp.position;
+		}
+
+		const part1 = parts[(i + 1) % 2];
+		const otherCpId = part1?.controlPointId;
+
+		const node = shapeState.nodes[nodeId];
+		const nodeSelected = selection.nodes[nodeId];
+		const cpSelected = selection.controlPoints[part0.controlPointId];
+		const otherCpSelected = !!(otherCpId && selection.controlPoints[otherCpId]);
+		const reflect = reflectControlPoints;
+
+		let p1: Vec2;
+
+		if (reflect && !nodeSelected && !cpSelected && otherCpSelected) {
+			const otherCp = shapeState.controlPoints[otherCpId!]!;
+
+			p1 = otherCp!.position.add(shape.moveVector);
+
+			const dist = getDistance(Vec2.new(0, 0), cp.position);
+			const angle = getAngleRadians(Vec2.new(0, 0), p1);
+			const rmat = Mat2.rotation(angle + Math.PI);
+			p1 = rmat.multiplyVec2(Vec2.new(dist, 0));
+		} else {
+			p1 = cp.position;
+			if (selection.controlPoints[cp.id] && !selection.nodes[node.id]) {
+				p1 = p1.add(shape.moveVector);
+			}
+		}
+
+		return p1;
+	}) as [Vec2 | null, Vec2 | null];
+};
+
 export const pathIdToPathList = (
 	pathId: string,
 	shapeState: ShapeState,
@@ -160,25 +219,60 @@ export const pathIdToPathList = (
 
 	const { items, shapeId } = shapeState.paths[pathId];
 
-	const shapeSelection = getShapeSelectionFromState(shapeId, shapeSelectionState);
+	const selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
+
+	const shape = shapeState.shapes[shapeId];
+	const itemCpPositions = items.map((item) =>
+		getItemControlPointPositions(item, shape, shapeState, shapeSelectionState),
+	);
 
 	for (let i = 0; i < items.length; i++) {
-		const { nodeId, right } = items[i];
+		const inext = i !== items.length - 1 ? i + 1 : 0;
 
-		const nextItem = items[i !== items.length - 1 ? i + 1 : 0];
+		const item0 = items[i];
+		const item1 = items[inext];
 
-		if (right && nextItem && nextItem.left?.edgeId === right.edgeId) {
-			const edge = shapeState.edges[right.edgeId];
-			const path = getShapeEdgeAsPath(nodeId, edge, shapeState, shapeSelection);
-
-			if (transformFn) {
-				for (let j = 0; j < path.length; j += 1) {
-					path[j] = transformFn(path[j]);
-				}
-			}
-
-			pathList.push(path);
+		if (!item1) {
+			continue;
 		}
+
+		if (!item0.right || !item1.left || item0.right.edgeId !== item1.left.edgeId) {
+			continue;
+		}
+
+		let path: Line | CubicBezier;
+
+		const [, cp0] = itemCpPositions[i];
+		const [cp1] = itemCpPositions[inext];
+
+		let p0 = shapeState.nodes[item0.nodeId].position;
+		let p3 = shapeState.nodes[item1.nodeId].position;
+
+		if (selection.nodes[item0.nodeId]) {
+			p0 = p0.add(shape.moveVector);
+		}
+		if (selection.nodes[item1.nodeId]) {
+			p3 = p3.add(shape.moveVector);
+		}
+
+		let p1 = cp0 ? p0.add(cp0) : null;
+		let p2 = cp1 ? p3.add(cp1) : null;
+
+		if (p1 && p2) {
+			path = [p0, p1, p2, p3];
+		} else if (p1 || p2) {
+			path = quadraticToCubicBezier(p0, p1, p2, p3);
+		} else {
+			path = [p0, p3];
+		}
+
+		if (transformFn) {
+			for (let j = 0; j < path.length; j += 1) {
+				path[j] = transformFn(path[j]);
+			}
+		}
+
+		pathList.push(path);
 	}
 
 	return pathList;

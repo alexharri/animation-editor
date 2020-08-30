@@ -999,6 +999,7 @@ export const penToolHandlers = {
 				};
 				p1Item = {
 					nodeId: newNodeId,
+					reflectControlPoints: true,
 					left: dirLeft ? null : p1Part0,
 					right: dirLeft ? p1Part0 : null,
 				};
@@ -1043,6 +1044,7 @@ export const penToolHandlers = {
 						};
 						p1Item = {
 							nodeId: newNodeId,
+							reflectControlPoints: true,
 							left: dirLeft ? null : p1Part0,
 							right: dirLeft ? p1Part0 : null,
 						};
@@ -1087,6 +1089,7 @@ export const penToolHandlers = {
 						};
 						p1Item = {
 							nodeId: newNodeId,
+							reflectControlPoints: true,
 							left: dirLeft ? null : p1Part0,
 							right: dirLeft ? p1Part0 : null,
 						};
@@ -1122,6 +1125,7 @@ export const penToolHandlers = {
 					};
 					p1Item = {
 						nodeId: newNodeId,
+						reflectControlPoints: true,
 						left: dirLeft ? p1Part1 : p1Part0,
 						right: dirLeft ? p1Part0 : p1Part1,
 					};
@@ -1130,6 +1134,7 @@ export const penToolHandlers = {
 						shapeActions.setEdge(shapeId, nextEdge),
 						shapeActions.setControlPoint(nextcp0),
 						shapeActions.setPathItem(pathId, p1ItemIndex, p1Item),
+						shapeSelectionActions.clearShapeSelection(shapeId),
 						shapeSelectionActions.addControlPointToSelection(shapeId, nextcp0Id),
 					);
 					params.dispatch(toDispatch);
@@ -1237,7 +1242,6 @@ export const penToolHandlers = {
 
 				toDispatch.push(shapeActions.setPathItem(pathId, item0Index, item0));
 				toDispatch.push(shapeActions.setPathItem(pathId, item1Index, item1));
-				console.log(toDispatch);
 
 				// Create shared edge 'edgeId' between item0.left and item1.right
 				const edge: ShapeEdge = {
@@ -1366,6 +1370,7 @@ export const penToolHandlers = {
 					items: [
 						{
 							nodeId,
+							reflectControlPoints: true,
 							left: null,
 							right: null,
 						},
@@ -1446,6 +1451,7 @@ export const penToolHandlers = {
 						shapeActions.setControlPoint(e1cp),
 						shapeActions.setPathItem(pathId, 0, {
 							nodeId,
+							reflectControlPoints: true,
 							left: {
 								edgeId: e1Id,
 								controlPointId: e1cpId,
@@ -1455,7 +1461,7 @@ export const penToolHandlers = {
 								controlPointId: e0cpId,
 							},
 						}),
-						shapeSelectionActions.addEdgeToSelection(shapeId, e0.id),
+						shapeSelectionActions.clearShapeSelection(shapeId),
 						shapeSelectionActions.addControlPointToSelection(shapeId, e0cpId),
 					);
 				} else {
@@ -1517,6 +1523,7 @@ export const penToolHandlers = {
 					items: [
 						{
 							nodeId,
+							reflectControlPoints: true,
 							left: null,
 							right: null,
 						},
@@ -1601,6 +1608,7 @@ export const penToolHandlers = {
 						shapeActions.setControlPoint(e1cp),
 						shapeActions.setPathItem(pathId, 0, {
 							nodeId,
+							reflectControlPoints: true,
 							left: {
 								edgeId: e1Id,
 								controlPointId: e1cpId,
@@ -1610,7 +1618,7 @@ export const penToolHandlers = {
 								controlPointId: e0cpId,
 							},
 						}),
-						shapeSelectionActions.addEdgeToSelection(shapeId, e0.id),
+						shapeSelectionActions.clearShapeSelection(shapeId),
 						shapeSelectionActions.addControlPointToSelection(shapeId, e0cpId),
 					);
 				} else {
