@@ -31,7 +31,7 @@ export interface RequestActionParams {
 	addListener: typeof _addListener;
 	removeListener: typeof removeListener;
 	execOnComplete: (callback: () => void) => void;
-	cancelled: () => boolean;
+	done: () => boolean;
 }
 
 export interface RequestActionCallback {
@@ -45,8 +45,14 @@ const performRequestedAction = (
 	const actionId = (++_n).toString();
 	const cancelTokens: string[] = [];
 
+	const done = () => actionId !== getActionId();
+
 	const addListener = Object.keys(_addListener).reduce<typeof _addListener>((obj, key) => {
 		(obj as any)[key] = (...args: any[]) => {
+			if (done()) {
+				return;
+			}
+
 			const cancelToken = (_addListener as any)[key](...args);
 			cancelTokens.push(cancelToken);
 			return cancelToken;
@@ -99,7 +105,7 @@ const performRequestedAction = (
 	};
 
 	callback({
-		cancelled: () => actionId !== getActionId(),
+		done,
 
 		dispatch,
 

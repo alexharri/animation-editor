@@ -68,6 +68,11 @@ export const mouseDownMoveAction = <
 	const fn: RequestActionCallback = (params) => {
 		options.beforeMove(params, { mousePosition: initialMousePosition });
 
+		if (params.done()) {
+			// If user submitted/cancelled in `beforeMove`
+			return;
+		}
+
 		let hasMoved = false;
 		let hasCalledMove = false;
 		let lastKeyDownMap: KeyMap = {} as KeyMap;
@@ -76,7 +81,7 @@ export const mouseDownMoveAction = <
 		let lastUsedMousePosition = initialGlobalMousePosition;
 
 		const tick = () => {
-			if (params.cancelled()) {
+			if (params.done()) {
 				return;
 			}
 

@@ -19,6 +19,7 @@ interface Options {
 	areaId: string;
 	keyDown: {
 		Alt: boolean;
+		Command: boolean;
 	};
 }
 
@@ -44,6 +45,11 @@ const moveTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 			if (type) {
 				if (type === "control_point" && keyDown.Alt) {
 					el.style.cursor = cssCursors.penTool.convertAnchor;
+					return;
+				}
+
+				if (type === "node" && keyDown.Command) {
+					el.style.cursor = cssCursors.penTool.newControlPoints;
 					return;
 				}
 
@@ -81,6 +87,11 @@ const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 
 		switch (type) {
 			case "node": {
+				if (keyDown.Command) {
+					el.style.cursor = cssCursors.penTool.newControlPoints;
+					break;
+				}
+
 				// See if node is close node
 				const continueFrom = getShapeContinuePathFrom(
 					pathIds,
@@ -135,6 +146,7 @@ export const useWorkspaceCursor = (
 
 		const keyDown: Options["keyDown"] = {
 			Alt: isKeyDown("Alt"),
+			Command: isKeyDown("Command"),
 		};
 		const opts = { ...options, keyDown };
 
@@ -160,6 +172,7 @@ export const useWorkspaceCursor = (
 	};
 
 	useKeyDownEffect("Alt", () => update());
+	useKeyDownEffect("Command", () => update());
 
 	return onMouseMove;
 };

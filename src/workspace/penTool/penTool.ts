@@ -381,6 +381,8 @@ export const penToolHandlers = {
 					//
 					// Deselect the node.
 					removeCpFromSelection(params);
+					params.submitAction("Remove control point from shape selection");
+					return;
 				} else {
 					addCpToSelection(params);
 				}
@@ -398,11 +400,6 @@ export const penToolHandlers = {
 					shapeId,
 					getActionState().shapeSelectionState,
 				);
-
-				if (additiveSelection && !willBeSelected) {
-					params.submitAction("Remove control point from shape selection");
-					return;
-				}
 
 				if (hasMoved) {
 					params.dispatch(shapeActions.applyMoveVector(shapeId, selection));
@@ -784,6 +781,180 @@ export const penToolHandlers = {
 		});
 	},
 
+	nodeDragNewControlPoints: (ctx: PenToolContext, pathId: string, nodeId: string) => {
+		const { shapeState } = ctx;
+
+		const path = shapeState.paths[pathId];
+		const { shapeId } = path;
+		const itemIndex = path.items.map((item) => item.nodeId).indexOf(nodeId);
+		let item = path.items[itemIndex];
+
+		const createCpId = createGenMapIdFn(shapeState.controlPoints);
+		const createEdgeId = createGenMapIdFn(shapeState.edges);
+
+		// Reflected control point ids of the target item on mouse move
+		let rcpl: string;
+		let rcpr: string;
+
+		mouseDownMoveAction(ctx.mousePosition.global, {
+			keys: ["Shift"],
+			translate: ctx.globalToNormal,
+			beforeMove: () => {},
+			mouseMove: (params, { moveVector, firstMove }) => {
+				const toDispatch: ToDispatch = [];
+
+				if (firstMove) {
+					let leftEdge!: ShapeEdge;
+					let rightEdge!: ShapeEdge;
+
+					if (!item.left) {
+						const edgeId = createEdgeId();
+						const edge: ShapeEdge = {
+							id: edgeId,
+							cp0: "",
+							cp1: "",
+							n0: nodeId,
+							n1: "",
+							shapeId,
+						};
+						leftEdge = edge;
+						toDispatch.push(shapeActions.setEdge(shapeId, edge));
+
+						item = {
+							...item,
+							left: {
+								edgeId,
+								controlPointId: "",
+							},
+						};
+						toDispatch.push(shapeActions.setPathItem(pathId, itemIndex, item));
+					}
+
+					{
+						const { edgeId, controlPointId } = item.left!;
+						const edge = shapeState.edges[edgeId] || leftEdge;
+						const which = edge.n0 === item.nodeId ? "cp0" : "cp1";
+
+						if (controlPointId) {
+							rcpl = controlPointId;
+						} else {
+							const cp: ShapeControlPoint = {
+								edgeId,
+								position: Vec2.new(0, 0),
+								id: createCpId(),
+							};
+							rcpl = cp.id;
+							item = {
+								...item,
+								left: {
+									...item.left,
+									controlPointId: cp.id,
+									edgeId,
+								},
+							};
+							toDispatch.push(
+								shapeActions.setControlPoint(cp),
+								shapeActions.setEdgeControlPointId(edgeId, which, cp.id),
+								shapeActions.setPathItem(pathId, itemIndex, item),
+							);
+						}
+					}
+
+					if (!item.right) {
+						const edgeId = createEdgeId();
+						const edge: ShapeEdge = {
+							id: edgeId,
+							cp0: "",
+							cp1: "",
+							n0: nodeId,
+							n1: "",
+							shapeId,
+						};
+						rightEdge = edge;
+						toDispatch.push(shapeActions.setEdge(shapeId, edge));
+
+						item = {
+							...item,
+							right: {
+								edgeId,
+								controlPointId: "",
+							},
+						};
+						toDispatch.push(shapeActions.setPathItem(pathId, itemIndex, item));
+					}
+
+					{
+						const { edgeId, controlPointId } = item.right!;
+						const edge = shapeState.edges[edgeId] || rightEdge;
+						const which = edge.n0 === item.nodeId ? "cp0" : "cp1";
+
+						if (controlPointId) {
+							rcpr = controlPointId;
+						} else {
+							const cp: ShapeControlPoint = {
+								edgeId,
+								position: Vec2.new(0, 0),
+								id: createCpId(),
+							};
+							rcpr = cp.id;
+							item = {
+								...item,
+								right: {
+									...item.right,
+									controlPointId: cp.id,
+									edgeId,
+								},
+							};
+							toDispatch.push(
+								shapeActions.setControlPoint(cp),
+								shapeActions.setEdgeControlPointId(edgeId, which, cp.id),
+								shapeActions.setPathItem(pathId, itemIndex, item),
+							);
+						}
+					}
+				}
+
+				toDispatch.push(
+					shapeActions.setControlPointPosition(rcpl, moveVector.translated.scale(-1)),
+					shapeActions.setControlPointPosition(rcpr, moveVector.translated),
+				);
+				params.dispatch(toDispatch);
+			},
+			mouseUp: (params, hasMoved) => {
+				if (!hasMoved) {
+					// Remove both control points
+					for (const part of [item.left, item.right]) {
+						if (!part || !part.controlPointId) {
+							continue;
+						}
+
+						const edgeId = part.edgeId;
+						const edge = shapeState.edges[edgeId];
+						const cpId = part.controlPointId;
+						const which = edge.cp0 === cpId ? "cp0" : "cp1";
+						const direction = part === item.left ? "left" : "right";
+
+						params.dispatch(shapeActions.setEdgeControlPointId(edgeId, which, ""));
+						params.dispatch(
+							shapeActions.setPathItemControlPointId(
+								pathId,
+								direction,
+								itemIndex,
+								"",
+							),
+						);
+						params.dispatch(shapeActions.removeControlPoint(cpId));
+					}
+
+					params.submitAction("Remove node control points");
+					return;
+				}
+
+				params.submitAction("New node control points");
+			},
+		});
+	},
+
 	nodeMouseDown: (
 		ctx: PenToolContext,
 		pathId: string,
@@ -792,6 +963,11 @@ export const penToolHandlers = {
 	) => {
 		if (isKeyDown("Alt")) {
 			penToolHandlers.removeNode(ctx, nodeId);
+			return;
+		}
+
+		if (isKeyDown("Command")) {
+			penToolHandlers.nodeDragNewControlPoints(ctx, pathId, nodeId);
 			return;
 		}
 
@@ -857,6 +1033,8 @@ export const penToolHandlers = {
 					//
 					// Deselect the node.
 					removeNodeFromSelection(params);
+					params.submitAction("Remove node from shape selection");
+					return;
 				} else {
 					addNodeToSelection(params);
 				}
@@ -874,11 +1052,6 @@ export const penToolHandlers = {
 					shapeId,
 					getActionState().shapeSelectionState,
 				);
-
-				if (additiveSelection && !willBeSelected) {
-					params.submitAction("Remove node from shape selection");
-					return;
-				}
 
 				if (hasMoved) {
 					params.dispatch(shapeActions.applyMoveVector(shapeId, selection));
