@@ -46,6 +46,7 @@ export const cssCursors = {
 		default: `url("/static/cursors/pen_default.png") 0 0, default`,
 		moveSelection: `url("/static/cursors/selection_move.png") 0 0, default`,
 		closePath: `url("/static/cursors/pen_select_point.png") 0 0, default`,
+		convertAnchor: `url("/static/cursors/convert_anchor.png") 0 0, default`,
 	},
 	zoom: {
 		zoomIn: `url("/static/cursors/zoom_in.png") 6 6, default`,

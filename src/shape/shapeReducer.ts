@@ -91,6 +91,10 @@ export const shapeActions = {
 		return (shapeId: string, selection: ShapeSelection) => action({ shapeId, selection });
 	}),
 
+	toggleControlPointReflect: createAction("shape/TOGGLE_CP_REFLECT", (action) => {
+		return (shapeId: string, cpId: string) => action({ shapeId, cpId });
+	}),
+
 	setEdge: createAction("shape/ADD_EDGE", (action) => {
 		return (shapeId: string, edge: ShapeEdge) => action({ shapeId, edge });
 	}),
@@ -397,6 +401,52 @@ export const shapeReducer = (
 						...cp1,
 						position: rmat.multiplyVec2(Vec2.new(dist, 0)),
 					};
+				}
+			}
+
+			return newState;
+		}
+
+		case getType(shapeActions.toggleControlPointReflect): {
+			const { shapeId, cpId } = action.payload;
+
+			const newState: ShapeState = {
+				...state,
+				paths: { ...state.paths },
+			};
+
+			const pathIds = Object.keys(state.paths).filter(
+				(pathId) => state.paths[pathId].shapeId === shapeId,
+			);
+			for (const pathId of pathIds) {
+				let path = newState.paths[pathId];
+
+				for (let i = 0; i < path.items.length; i++) {
+					const item = path.items[i];
+					if (!item.left?.controlPointId || !item.right?.controlPointId) {
+						continue;
+					}
+
+					const cpl = item.left.controlPointId;
+					const cpr = item.right.controlPointId;
+
+					if (cpl === cpId || cpr === cpId) {
+						// Both control points were moved. Control points are no longer
+						// being reflected
+						path = {
+							...path,
+							items: path.items.map((item, index) => {
+								if (i !== index) {
+									return item;
+								}
+								return {
+									...item,
+									reflectControlPoints: !item.reflectControlPoints,
+								};
+							}),
+						};
+						newState.paths[pathId] = path;
+					}
 				}
 			}
 

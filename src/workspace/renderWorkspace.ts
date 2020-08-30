@@ -556,7 +556,13 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 						let p0: Vec2;
 						let p1: Vec2;
 
-						if (reflect && !nodeSelected && !cpSelected && otherCpSelected) {
+						if (
+							reflect &&
+							!nodeSelected &&
+							!cpSelected &&
+							otherCpSelected &&
+							(shape.moveVector.x !== 0 || shape.moveVector.y !== 0)
+						) {
 							const otherCp = shapeState.controlPoints[otherCpId!]!;
 
 							p0 = node.position;

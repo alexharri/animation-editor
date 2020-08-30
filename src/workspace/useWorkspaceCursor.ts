@@ -1,5 +1,8 @@
+import { useRef } from "react";
 import { Tool } from "~/constants";
 import { cssCursors } from "~/cssVariables";
+import { useKeyDownEffect } from "~/hook/useKeyDown";
+import { isKeyDown } from "~/listener/keyboard";
 import {
 	getPathTargetObject,
 	getShapeContinuePathFrom,
@@ -14,10 +17,13 @@ interface Options {
 	compositionId: string;
 	viewport: Rect;
 	areaId: string;
+	keyDown: {
+		Alt: boolean;
+	};
 }
 
 const moveTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
-	const { compositionId, areaId, viewport } = options;
+	const { compositionId, areaId, viewport, keyDown } = options;
 	const { compositionState, compositionSelectionState } = getActionState();
 
 	// If we have a single selected shape layer, we want to change the cursor
@@ -36,6 +42,11 @@ const moveTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 			const { type } = getPathTargetObject(pathId, ctx);
 
 			if (type) {
+				if (type === "control_point" && keyDown.Alt) {
+					el.style.cursor = cssCursors.penTool.convertAnchor;
+					return;
+				}
+
 				el.style.cursor = cssCursors.moveTool.moveSelection;
 				return;
 			}
@@ -46,7 +57,7 @@ const moveTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 };
 
 const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
-	const { compositionId, areaId, viewport } = options;
+	const { compositionId, areaId, viewport, keyDown } = options;
 	const { compositionState, compositionSelectionState } = getActionState();
 
 	const layerId = getSingleSelectedShapeLayerId(
@@ -88,6 +99,11 @@ const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 				break;
 			}
 			case "control_point": {
+				if (keyDown.Alt) {
+					el.style.cursor = cssCursors.penTool.convertAnchor;
+					break;
+				}
+
 				el.style.cursor = cssCursors.penTool.moveSelection;
 				break;
 			}
@@ -102,29 +118,48 @@ const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 
 export const useWorkspaceCursor = (
 	canvasRef: React.RefObject<HTMLCanvasElement>,
-	options: Options,
+	options: Omit<Options, "keyDown">,
 ): ((e: React.MouseEvent) => void) => {
-	const onMouseMove = (e: React.MouseEvent) => {
-		const canvasEl = canvasRef.current;
+	let lastEv = useRef<React.MouseEvent | null>(null);
 
+	const update = () => {
+		const canvasEl = canvasRef.current;
 		if (!canvasEl) {
 			return;
 		}
 
+		const e = lastEv.current;
+		if (!e) {
+			return;
+		}
+
+		const keyDown: Options["keyDown"] = {
+			Alt: isKeyDown("Alt"),
+		};
+		const opts = { ...options, keyDown };
+
 		const tool = getActionState().tool.selected;
 
 		if (tool === Tool.move) {
-			moveTool(e, canvasEl, options);
+			moveTool(e, canvasEl, opts);
 			return;
 		}
 
 		if (tool === Tool.pen) {
-			penTool(e, canvasEl, options);
+			penTool(e, canvasEl, opts);
 			return;
 		}
 
 		canvasEl.style.cursor = cssCursors.moveTool.default;
 	};
+
+	const onMouseMove = (e: React.MouseEvent) => {
+		e.persist();
+		lastEv.current = e;
+		update();
+	};
+
+	useKeyDownEffect("Alt", () => update());
 
 	return onMouseMove;
 };

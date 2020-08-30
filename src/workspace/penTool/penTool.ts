@@ -336,11 +336,6 @@ export const penToolHandlers = {
 	},
 
 	controlPointMouseDown: (ctx: PenToolContext, cpId: string) => {
-		if (isKeyDown("Alt")) {
-			penToolHandlers.removeControlPoint(ctx, cpId);
-			return;
-		}
-
 		const { shapeState, shapeSelectionState } = ctx;
 
 		const cp = shapeState.controlPoints[cpId]!;
@@ -348,6 +343,7 @@ export const penToolHandlers = {
 		const shapeId = edge.shapeId;
 
 		let selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
+		const altKeyDown = isKeyDown("Alt");
 
 		const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
 		const willBeSelected = additiveSelection ? !selection.controlPoints[cpId] : true;
@@ -366,6 +362,10 @@ export const penToolHandlers = {
 			keys: ["Shift"],
 			translate: ctx.globalToNormal,
 			beforeMove: (params) => {
+				if (altKeyDown) {
+					params.dispatch(shapeActions.toggleControlPointReflect(shapeId, cpId));
+				}
+
 				if (!additiveSelection && !selection.controlPoints[cpId]) {
 					// The selection is non-additive and the cp will be selected.
 					//
@@ -410,6 +410,11 @@ export const penToolHandlers = {
 					return;
 				}
 
+				if (altKeyDown) {
+					penToolHandlers.removeControlPoint(params, ctx, cpId);
+					return;
+				}
+
 				if (!additiveSelection) {
 					clearShapeSelection(params);
 					addCpToSelection(params);
@@ -420,111 +425,103 @@ export const penToolHandlers = {
 		});
 	},
 
-	removeControlPoint: (ctx: PenToolContext, cpId: string) => {
-		requestAction({ history: true }, (params) => {
-			const toDispatch: any[] = [];
+	removeControlPoint: (params: RequestActionParams, ctx: PenToolContext, cpId: string) => {
+		const toDispatch: any[] = [];
 
-			const { shapeState } = ctx;
-			const cp = shapeState.controlPoints[cpId]!;
-			const edge = shapeState.edges[cp.edgeId];
-			const which = edge.cp0 === cpId ? "cp0" : "cp1";
+		const { shapeState } = ctx;
+		const cp = shapeState.controlPoints[cpId]!;
+		const edge = shapeState.edges[cp.edgeId];
+		const which = edge.cp0 === cpId ? "cp0" : "cp1";
 
-			toDispatch.push(
-				shapeActions.removeControlPoint(cpId),
-				shapeActions.setEdgeControlPointId(cp!.edgeId, which, ""),
-			);
+		toDispatch.push(
+			shapeActions.removeControlPoint(cpId),
+			shapeActions.setEdgeControlPointId(cp!.edgeId, which, ""),
+		);
 
-			// Find all paths that reference the control point
-			const pathIds = Object.keys(shapeState.paths);
+		// Find all paths that reference the control point
+		const pathIds = Object.keys(shapeState.paths);
 
-			for (const pathId of pathIds) {
-				const path = shapeState.paths[pathId];
-				if (path.shapeId !== edge.shapeId) {
-					continue;
-				}
-
-				const firstItem = path.items[0];
-				const lastItem = path.items[path.items.length - 1];
-
-				for (let i = 0; i < path.items.length; i += 1) {
-					const item = path.items[i];
-
-					if (item.left && item.left.controlPointId === cp.id) {
-						// Left control point of path is being removed.
-						//
-						// If we are removing the left cp of the first item and the path is
-						// non-circular, we want to remove firstItem's left part entirely.
-						if (
-							i === 0 &&
-							(lastItem.right
-								? firstItem.left!.edgeId !== lastItem.right.edgeId
-								: true)
-						) {
-							// Path is non circular, remove the first item's left part.
-							toDispatch.push(
-								shapeActions.setPathItem(pathId, 0, {
-									...firstItem,
-									left: null,
-								}),
-							);
-						} else {
-							toDispatch.push(
-								shapeActions.setPathItem(pathId, i, {
-									...item,
-									left: {
-										...item.left,
-										controlPointId: "",
-									},
-								}),
-							);
-						}
-						break;
-					}
-
-					if (item.right && item.right.controlPointId === cp.id) {
-						// Right control point of path is being removed.
-						//
-						// If we are removing the right cp of the last item and the path is
-						// non-circular, we want to remove lastItem's right part entirely.
-						if (
-							i === path.items.length - 1 &&
-							(firstItem.left
-								? lastItem.right!.edgeId !== firstItem.left.edgeId
-								: true)
-						) {
-							// Path is non circular, remove the last item's right part.
-							toDispatch.push(
-								shapeActions.setPathItem(pathId, path.items.length - 1, {
-									...lastItem,
-									right: null,
-								}),
-							);
-						} else {
-							toDispatch.push(
-								shapeActions.setPathItem(pathId, i, {
-									...item,
-									right: {
-										...item.right,
-										controlPointId: "",
-									},
-								}),
-							);
-						}
-						break;
-					}
-				}
+		for (const pathId of pathIds) {
+			const path = shapeState.paths[pathId];
+			if (path.shapeId !== edge.shapeId) {
+				continue;
 			}
 
-			// Removing control point of stray edge. Remove edge entirely.
-			if ((which === "cp0" && !edge.n1) || (which === "cp1" && !edge.n0)) {
-				console.log("removing edge");
-				toDispatch.push(shapeActions.removeEdge(edge.shapeId, cp.edgeId));
-			}
+			const firstItem = path.items[0];
+			const lastItem = path.items[path.items.length - 1];
 
-			console.log(toDispatch);
-			params.dispatch(toDispatch);
-			params.submitAction("Remove control point");
-		});
+			for (let i = 0; i < path.items.length; i += 1) {
+				const item = path.items[i];
+
+				if (item.left && item.left.controlPointId === cp.id) {
+					// Left control point of path is being removed.
+					//
+					// If we are removing the left cp of the first item and the path is
+					// non-circular, we want to remove firstItem's left part entirely.
+					if (
+						i === 0 &&
+						(lastItem.right ? firstItem.left!.edgeId !== lastItem.right.edgeId : true)
+					) {
+						// Path is non circular, remove the first item's left part.
+						toDispatch.push(
+							shapeActions.setPathItem(pathId, 0, {
+								...firstItem,
+								left: null,
+							}),
+						);
+					} else {
+						toDispatch.push(
+							shapeActions.setPathItem(pathId, i, {
+								...item,
+								left: {
+									...item.left,
+									controlPointId: "",
+								},
+							}),
+						);
+					}
+					break;
+				}
+
+				if (item.right && item.right.controlPointId === cp.id) {
+					// Right control point of path is being removed.
+					//
+					// If we are removing the right cp of the last item and the path is
+					// non-circular, we want to remove lastItem's right part entirely.
+					if (
+						i === path.items.length - 1 &&
+						(firstItem.left ? lastItem.right!.edgeId !== firstItem.left.edgeId : true)
+					) {
+						// Path is non circular, remove the last item's right part.
+						toDispatch.push(
+							shapeActions.setPathItem(pathId, path.items.length - 1, {
+								...lastItem,
+								right: null,
+							}),
+						);
+					} else {
+						toDispatch.push(
+							shapeActions.setPathItem(pathId, i, {
+								...item,
+								right: {
+									...item.right,
+									controlPointId: "",
+								},
+							}),
+						);
+					}
+					break;
+				}
+			}
+		}
+
+		// Removing control point of stray edge. Remove edge entirely.
+		if ((which === "cp0" && !edge.n1) || (which === "cp1" && !edge.n0)) {
+			toDispatch.push(shapeActions.removeEdge(edge.shapeId, cp.edgeId));
+		}
+
+		params.dispatch(toDispatch);
+		params.submitAction("Remove control point");
 	},
 
 	removeNode: (ctx: PenToolContext, nodeId: string) => {
