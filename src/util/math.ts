@@ -48,6 +48,36 @@ export const rectOfTwoVecs = (a: Vec2, b: Vec2): Rect => {
 	};
 };
 
+export const rectOfVecs = (vecs: Vec2[]): Rect => {
+	let xMin = Infinity;
+	let xMax = -Infinity;
+	let yMin = Infinity;
+	let yMax = -Infinity;
+
+	for (const vec of vecs) {
+		if (vec.x > xMax) {
+			xMax = vec.x;
+		}
+		if (vec.x < xMin) {
+			xMin = vec.x;
+		}
+
+		if (vec.y > yMax) {
+			yMax = vec.y;
+		}
+		if (vec.y < yMin) {
+			yMin = vec.y;
+		}
+	}
+
+	return {
+		height: yMax - yMin,
+		width: xMax - xMin,
+		left: xMin,
+		top: yMin,
+	};
+};
+
 export const sortRectTopLeft = (a: Rect, b: Rect, acceptableVariance = 0): number => {
 	return Math.abs(a.top - b.top) <= acceptableVariance ? a.left - b.left : a.top - b.top;
 };
@@ -163,8 +193,7 @@ export const contractRect = (rect: Rect, contractBy: number): Rect => {
 	};
 };
 
-export const expandRect = (rect: Rect, contractBy: number): Rect =>
-	contractRect(rect, contractBy * -1);
+export const expandRect = (rect: Rect, expandBy: number): Rect => contractRect(rect, expandBy * -1);
 
 export const splitRect = (
 	type: "horizontal" | "vertical",

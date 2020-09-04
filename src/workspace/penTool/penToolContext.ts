@@ -8,7 +8,6 @@ import { AffineTransform, CompositionRenderValues, MousePosition } from "~/types
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
 export interface PenToolContext {
-	e: React.MouseEvent;
 	mousePosition: MousePosition;
 	compositionId: string;
 	map: CompositionRenderValues;
@@ -25,7 +24,7 @@ export interface PenToolContext {
 }
 
 export const constructPenToolContext = (
-	e: React.MouseEvent,
+	globalMousePosition: Vec2,
 	layerId: string,
 	areaId: string,
 	viewport: Rect,
@@ -53,7 +52,6 @@ export const constructPenToolContext = (
 	};
 	const globalToNormal = (vec: Vec2) => globalToWorkspacePosition(vec, viewport, scale, _pan);
 
-	const globalMousePosition = Vec2.fromEvent(e);
 	const mousePosition: MousePosition = {
 		global: globalMousePosition,
 		viewport: globalMousePosition.subXY(viewport.left, viewport.top),
@@ -61,7 +59,6 @@ export const constructPenToolContext = (
 	};
 
 	const ctx: PenToolContext = {
-		e,
 		mousePosition,
 		compositionId,
 		layerId,

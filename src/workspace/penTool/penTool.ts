@@ -25,7 +25,7 @@ import {
 } from "~/shape/shapeTypes";
 import {
 	getLayerPathPropertyId,
-	getPathTargetObject,
+	getPathTargetObjectFromContext,
 	getShapeContinuePathFrom,
 	getShapeLayerDirectlySelectedPaths,
 	getShapeLayerPathIds,
@@ -48,7 +48,7 @@ export const penToolHandlers = {
 	 */
 	moveToolMouseDown: (e: React.MouseEvent, layerId: string, areaId: string, viewport: Rect) => {
 		// Create selection rect if moved, otherwise move selection up.
-		const ctx = constructPenToolContext(e, layerId, areaId, viewport);
+		const ctx = constructPenToolContext(Vec2.fromEvent(e), layerId, areaId, viewport);
 
 		const { shapeState, compositionState, compositionSelectionState } = getActionState();
 
@@ -59,7 +59,7 @@ export const penToolHandlers = {
 		);
 
 		for (const pathId of selectedPathIds) {
-			const { type, id } = getPathTargetObject(pathId, ctx);
+			const { type, id } = getPathTargetObjectFromContext(pathId, ctx);
 
 			switch (type) {
 				case "node": {
@@ -180,7 +180,11 @@ export const penToolHandlers = {
 										continue;
 									}
 
-									const cp = shapeState.controlPoints[part.controlPointId]!;
+									const cp = shapeState.controlPoints[part.controlPointId];
+
+									if (!cp) {
+										continue;
+									}
 
 									if (
 										isVecInRect(
@@ -292,7 +296,12 @@ export const penToolHandlers = {
 		});
 
 		if (selectedShapeLayers.length === 1) {
-			const ctx = constructPenToolContext(e, selectedShapeLayers[0], areaId, viewport);
+			const ctx = constructPenToolContext(
+				Vec2.fromEvent(e),
+				selectedShapeLayers[0],
+				areaId,
+				viewport,
+			);
 			penToolHandlers.onShapeLayerMouseDown(ctx);
 			return;
 		}
@@ -310,7 +319,7 @@ export const penToolHandlers = {
 		const pathIds = getShapeLayerPathIds(layerId, compositionState);
 
 		for (const pathId of pathIds) {
-			const { type, id } = getPathTargetObject(pathId, ctx);
+			const { type, id } = getPathTargetObjectFromContext(pathId, ctx);
 
 			switch (type) {
 				case "node": {

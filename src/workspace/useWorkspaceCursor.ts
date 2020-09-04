@@ -4,9 +4,10 @@ import { cssCursors } from "~/cssVariables";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { isKeyDown } from "~/listener/keyboard";
 import {
-	getPathTargetObject,
+	getPathTargetObjectFromContext,
 	getShapeContinuePathFrom,
 	getShapeLayerPathIds,
+	getShapeLayerSelectedPathIds,
 	getShapePathClosePathNodeId,
 	getSingleSelectedShapeLayerId,
 } from "~/shape/shapeUtils";
@@ -36,11 +37,11 @@ const moveTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 	);
 
 	if (layerId) {
-		const ctx = constructPenToolContext(e, layerId, areaId, viewport);
+		const ctx = constructPenToolContext(Vec2.fromEvent(e), layerId, areaId, viewport);
 
 		const pathIds = getShapeLayerPathIds(layerId, compositionState);
 		for (const pathId of pathIds) {
-			const { type } = getPathTargetObject(pathId, ctx);
+			const { type } = getPathTargetObjectFromContext(pathId, ctx);
 
 			if (type) {
 				if (type === "control_point" && keyDown.Alt) {
@@ -77,13 +78,17 @@ const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 		return;
 	}
 
-	const ctx = constructPenToolContext(e, layerId, areaId, viewport);
+	const ctx = constructPenToolContext(Vec2.fromEvent(e), layerId, areaId, viewport);
 	const { shapeState, shapeSelectionState } = ctx;
 
-	const pathIds = getShapeLayerPathIds(layerId, compositionState);
+	const pathIds = getShapeLayerSelectedPathIds(
+		layerId,
+		compositionState,
+		compositionSelectionState,
+	);
 
 	for (const pathId of pathIds) {
-		const { type, id } = getPathTargetObject(pathId, ctx);
+		const { type, id } = getPathTargetObjectFromContext(pathId, ctx);
 
 		switch (type) {
 			case "node": {
@@ -116,6 +121,10 @@ const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 				}
 
 				el.style.cursor = cssCursors.penTool.moveSelection;
+				break;
+			}
+			case "point_on_edge": {
+				el.style.cursor = cssCursors.penTool.addPoint;
 				break;
 			}
 			default:

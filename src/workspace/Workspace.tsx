@@ -4,7 +4,7 @@ import { cssCursors, cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
-import { getActionState } from "~/state/stateUtils";
+import { getActionId, getActionState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -22,8 +22,15 @@ const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?:
 	const { width, height, left, top } = props;
 
 	const state = getActionState({ allowSelectionIndexShift: true });
+	const isPerformingAction = !!getActionId();
 	const compositionId = props.areaState.compositionId;
-	const { compositionState, compositionSelectionState, shapeState, shapeSelectionState } = state;
+	const {
+		compositionState,
+		compositionSelectionState,
+		shapeState,
+		shapeSelectionState,
+		tool: toolState,
+	} = state;
 
 	const composition = compositionState.compositions[compositionId];
 	const map = getCompositionRenderValues(
@@ -52,6 +59,8 @@ const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?:
 		viewport: { width, height, left, top },
 		mousePosition,
 		selectionRect,
+		tool: toolState.selected,
+		isPerformingAction,
 	};
 	return options;
 };
@@ -183,9 +192,13 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 
 	const onMouseMove = (e: React.MouseEvent) => {
 		shouldRenderGuidesRef.current = true;
-
 		mousePositionRef.current = Vec2.fromEvent(e);
+		setCursor(e);
+	};
 
+	const onMouseOut = (e: React.MouseEvent) => {
+		shouldRenderGuidesRef.current = true;
+		mousePositionRef.current = undefined;
 		setCursor(e);
 	};
 
@@ -210,6 +223,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 			style={{ background: cssVariables.gray400 }}
 			ref={containerRef}
 			onMouseMove={onMouseMove}
+			onMouseOut={onMouseOut}
 		>
 			<canvas
 				ref={canvasRef}

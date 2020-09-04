@@ -9,8 +9,16 @@ import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { ShapeEdge, ShapeGraph, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
-import { LayerType, PropertyGroupName, PropertyName } from "~/types";
-import { getAngleRadians, getDistance, quadraticToCubicBezier } from "~/util/math";
+import { AffineTransform, LayerType, PropertyGroupName, PropertyName } from "~/types";
+import {
+	expandRect,
+	getAngleRadians,
+	getDistance,
+	isVecInRect,
+	quadraticToCubicBezier,
+	rectOfVecs,
+} from "~/util/math";
+import { closestPointOnPath } from "~/util/math/closestPoint";
 import { Mat2 } from "~/util/math/mat";
 import { PenToolContext } from "~/workspace/penTool/penToolContext";
 
@@ -516,20 +524,25 @@ type PathTargetObject =
 			id: string;
 	  }
 	| {
+			type: "point_on_edge";
+			point: Vec2;
+			t: number;
+			id: string;
+	  }
+	| {
 			type: undefined;
 			id: string;
 	  };
 
-export const getPathTargetObject = (pathId: string, ctx: PenToolContext): PathTargetObject => {
+export const getPathTargetObject = (
+	pathId: string,
+	viewportMousePosition: Vec2,
+	normalToViewport: (vec: Vec2) => Vec2,
+	layerTransform: AffineTransform,
+	shapeState: ShapeState,
+	shapeSelectionState: ShapeSelectionState,
+): PathTargetObject => {
 	const DIST = 7;
-
-	const {
-		normalToViewport,
-		shapeState,
-		shapeSelectionState,
-		layerTransform,
-		mousePosition,
-	} = ctx;
 
 	const path = shapeState.paths[pathId];
 	const shape = shapeState.shapes[path.shapeId];
@@ -566,7 +579,7 @@ export const getPathTargetObject = (pathId: string, ctx: PenToolContext): PathTa
 
 			if (
 				getDistance(
-					mousePosition.viewport,
+					viewportMousePosition,
 					normalToViewport(cpPos.add(layerTransform.translate)),
 				) < DIST
 			) {
@@ -577,7 +590,7 @@ export const getPathTargetObject = (pathId: string, ctx: PenToolContext): PathTa
 			}
 		}
 
-		if (getDistance(mousePosition.viewport, normalToViewport(position)) < DIST) {
+		if (getDistance(viewportMousePosition, normalToViewport(position)) < DIST) {
 			return {
 				type: "node",
 				id: nodeId,
@@ -585,7 +598,50 @@ export const getPathTargetObject = (pathId: string, ctx: PenToolContext): PathTa
 		}
 	}
 
+	const pathList = pathIdToPathList(pathId, shapeState, shapeSelectionState, normalToViewport);
+	if (pathList) {
+		for (let i = 0; i < pathList.length; i += 1) {
+			const p = pathList[i];
+			const rect = expandRect(rectOfVecs(p), 5);
+			if (!isVecInRect(viewportMousePosition, rect)) {
+				continue;
+			}
+
+			const { point, t } = closestPointOnPath(p, viewportMousePosition);
+			if (getDistance(point, viewportMousePosition) < 5) {
+				return {
+					type: "point_on_edge",
+					point,
+					t,
+					id: path.items[i].right!.edgeId,
+				};
+			}
+		}
+	}
+
 	return { type: undefined, id: "" };
+};
+
+export const getPathTargetObjectFromContext = (
+	pathId: string,
+	ctx: PenToolContext,
+): PathTargetObject => {
+	const {
+		normalToViewport,
+		shapeState,
+		shapeSelectionState,
+		layerTransform,
+		mousePosition,
+	} = ctx;
+
+	return getPathTargetObject(
+		pathId,
+		mousePosition.viewport,
+		normalToViewport,
+		layerTransform,
+		shapeState,
+		shapeSelectionState,
+	);
 };
 
 export const getShapeLayerDirectlySelectedPaths = (

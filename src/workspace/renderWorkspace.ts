@@ -9,19 +9,29 @@ import {
 	getLayerCompositionProperties,
 } from "~/composition/util/compositionPropertyUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { DEG_TO_RAD_FAC } from "~/constants";
+import { DEG_TO_RAD_FAC, Tool } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import {
+	getPathTargetObject,
+	getShapeContinuePathFrom,
 	getShapeLayerDirectlySelectedPaths,
+	getShapeLayerPathIds,
 	getShapeLayerSelectedPathIds,
+	getShapePathClosePathNodeId,
 	getShapeSelectionFromState,
 	pathIdToPathList,
 } from "~/shape/shapeUtils";
 import { AffineTransform, CompositionRenderValues, LayerType, PropertyName } from "~/types";
-import { renderDiamond, traceCircle, traceLine, tracePath } from "~/util/canvas/renderPrimitives";
-import { getAngleRadians, getDistance, isVecInPoly } from "~/util/math";
+import {
+	renderDiamond,
+	traceCircle,
+	traceCubicBezier,
+	traceLine,
+	tracePath,
+} from "~/util/canvas/renderPrimitives";
+import { getAngleRadians, getDistance, isVecInPoly, quadraticToCubicBezier } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
 
 const getNameToProperty = (
@@ -63,6 +73,8 @@ interface Options {
 	scale: number;
 	mousePosition?: Vec2;
 	selectionRect: Rect | null;
+	tool: Tool;
+	isPerformingAction: boolean;
 }
 
 export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
@@ -502,6 +514,39 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 				.add(pan);
 		};
 
+		let continueFrom: {
+			pathId: string;
+			direction: "left" | "right";
+		} | null;
+		let closePathNodeId: string | null = null;
+
+		continueFrom: {
+			const { mousePosition, isPerformingAction } = options;
+
+			if (!mousePosition || isPerformingAction) {
+				break continueFrom;
+			}
+
+			const selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+			const selectedShapeLayers = Object.keys(selection.layers).filter((layerId) => {
+				const layer = compositionState.layers[layerId];
+				return layer.type === LayerType.Shape;
+			});
+
+			if (selectedShapeLayers.length !== 1 || selectedShapeLayers[0] !== layer.id) {
+				break continueFrom;
+			}
+
+			const pathIds = getShapeLayerPathIds(layer.id, compositionState);
+			continueFrom = getShapeContinuePathFrom(pathIds, shapeState, shapeSelectionState);
+
+			if (continueFrom) {
+				closePathNodeId = getShapePathClosePathNodeId(continueFrom, shapeState);
+			}
+		}
+
+		let hasTargetObject = false;
+
 		for (const pathId of pathIds) {
 			const path = shapeState.paths[pathId];
 			const { shapeId } = path;
@@ -522,6 +567,81 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 				ctx.lineWidth = 0.75;
 				ctx.stroke();
 				ctx.closePath();
+			}
+
+			if (!hasTargetObject && options.tool === Tool.pen && options.mousePosition) {
+				const mousePosition = options.mousePosition.sub(
+					Vec2.new(viewport.left, viewport.top),
+				);
+
+				const targetObject = getPathTargetObject(
+					pathId,
+					mousePosition,
+					toPos,
+					transform,
+					shapeState,
+					shapeSelectionState,
+				);
+
+				if (targetObject.type) {
+					hasTargetObject = true;
+				}
+
+				switch (targetObject.type) {
+					case "node": {
+						if (closePathNodeId !== targetObject.id) {
+							break;
+						}
+
+						const item0 = path.items[0];
+						const item1 = path.items[path.items.length - 1];
+
+						const n0Id = item1.nodeId;
+						const n1Id = item0.nodeId;
+						const cp0Id = item1.right?.controlPointId;
+						const cp1Id = item0.left?.controlPointId;
+
+						const p0 = shapeState.nodes[n0Id].position;
+						const p3 = shapeState.nodes[n1Id].position;
+
+						const p1 = cp0Id ? p0.add(shapeState.controlPoints[cp0Id]!.position) : null;
+						const p2 = cp1Id ? p3.add(shapeState.controlPoints[cp1Id]!.position) : null;
+
+						let p: Line | CubicBezier;
+
+						if (p1 && p2) {
+							p = [p0, p1, p2, p3];
+						} else if (p1 || p2) {
+							p = quadraticToCubicBezier(p0, p1, p2, p3);
+						} else {
+							p = [p0, p3];
+						}
+
+						for (let i = 0; i < p.length; i += 1) {
+							p[i] = toPos(p[i]);
+						}
+
+						ctx.beginPath();
+						tracePath(ctx, p);
+						ctx.strokeStyle = cssVariables.primary500;
+						ctx.lineWidth = 1;
+						ctx.stroke();
+						ctx.closePath();
+						break;
+					}
+
+					case "point_on_edge": {
+						const { point } = targetObject;
+						ctx.beginPath();
+						traceCircle(ctx, point, 3.5);
+						ctx.lineWidth = 2.5;
+						ctx.fillStyle = "white";
+						ctx.strokeStyle = cssVariables.primary600;
+						ctx.stroke();
+						ctx.fill();
+						break;
+					}
+				}
 			}
 
 			// Render edges
@@ -669,6 +789,52 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 				}
 				ctx.closePath();
 			}
+		}
+
+		const renderContinue = () => {
+			if (!continueFrom) {
+				return;
+			}
+
+			const { direction, pathId } = continueFrom;
+
+			const path = shapeState.paths[pathId];
+			const item = path.items[direction === "left" ? 0 : path.items.length - 1];
+			const nodeId = item.nodeId;
+			const part = direction === "left" ? item.left : item.right;
+
+			const node = shapeState.nodes[nodeId];
+			const p0 = toPos(node.position);
+			const p3 = options.mousePosition!.sub(Vec2.new(viewport.left, viewport.top));
+
+			ctx.beginPath();
+
+			if (!part || !part.controlPointId) {
+				traceLine(ctx, [p0, p3]);
+			} else {
+				const cp = shapeState.controlPoints[part.controlPointId]!;
+				const p1 = toPos(node.position.add(cp.position));
+				const bezier = quadraticToCubicBezier(p0, p1, null, p3);
+				traceCubicBezier(ctx, bezier);
+			}
+
+			ctx.strokeStyle = cssVariables.primary500;
+			ctx.lineWidth = 1;
+			ctx.stroke();
+			ctx.closePath();
+
+			ctx.beginPath();
+			traceCircle(ctx, p3, 3.5);
+			ctx.lineWidth = 2.5;
+			ctx.fillStyle = "white";
+			ctx.strokeStyle = cssVariables.primary600;
+			ctx.stroke();
+			ctx.fill();
+			ctx.closePath();
+		};
+
+		if (!hasTargetObject && options.tool === Tool.pen) {
+			renderContinue();
 		}
 	}
 
