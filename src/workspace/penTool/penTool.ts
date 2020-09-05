@@ -37,7 +37,7 @@ import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { LayerType, PropertyGroupName, PropertyName, ToDispatch } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
-import { isVecInRect, rectOfTwoVecs } from "~/util/math";
+import { isVecInRect, projectVecTo45DegAngle, rectOfTwoVecs } from "~/util/math";
 import { constructPenToolContext, PenToolContext } from "~/workspace/penTool/penToolContext";
 import { workspaceAreaActions } from "~/workspace/workspaceAreaReducer";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
@@ -401,8 +401,22 @@ export const penToolHandlers = {
 					getActionState().shapeSelectionState,
 				);
 			},
-			mouseMove: (params, { moveVector }) => {
-				params.dispatch(shapeActions.setMoveVector(shapeId, moveVector.translated));
+			mouseMove: (params, { moveVector, keyDown }) => {
+				const transform = ctx.layerTransform;
+				let toUse = moveVector.translated;
+
+				if (keyDown.Shift) {
+					const cpPosTranslated = cp.position
+						.scale(transform.scale)
+						.rotate(transform.rotation);
+					toUse = toUse
+						.add(cpPosTranslated)
+						.apply(projectVecTo45DegAngle)
+						.sub(cpPosTranslated);
+				}
+
+				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				params.dispatch(shapeActions.setMoveVector(shapeId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
 				selection = getShapeSelectionFromState(
@@ -809,7 +823,7 @@ export const penToolHandlers = {
 			keys: ["Shift"],
 			translate: ctx.globalToNormal,
 			beforeMove: () => {},
-			mouseMove: (params, { moveVector, firstMove }) => {
+			mouseMove: (params, { moveVector, firstMove, keyDown }) => {
 				const toDispatch: ToDispatch = [];
 
 				if (firstMove) {
@@ -921,11 +935,27 @@ export const penToolHandlers = {
 							);
 						}
 					}
+
+					if (!item.reflectControlPoints) {
+						item = {
+							...item,
+							reflectControlPoints: true,
+						};
+						toDispatch.push(shapeActions.setPathItem(pathId, itemIndex, item));
+					}
 				}
 
+				const transform = ctx.layerTransform;
+				let toUse = moveVector.translated;
+
+				if (keyDown.Shift) {
+					toUse = projectVecTo45DegAngle(toUse);
+				}
+
+				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
 				toDispatch.push(
-					shapeActions.setControlPointPosition(rcpl, moveVector.translated.scale(-1)),
-					shapeActions.setControlPointPosition(rcpr, moveVector.translated),
+					shapeActions.setControlPointPosition(rcpl, transformed.scale(-1)),
+					shapeActions.setControlPointPosition(rcpr, transformed),
 				);
 				params.dispatch(toDispatch);
 			},
@@ -1053,8 +1083,16 @@ export const penToolHandlers = {
 					getActionState().shapeSelectionState,
 				);
 			},
-			mouseMove: (params, { moveVector }) => {
-				params.dispatch(shapeActions.setMoveVector(shapeId, moveVector.translated));
+			mouseMove: (params, { moveVector, keyDown }) => {
+				const transform = ctx.layerTransform;
+				let toUse = moveVector.translated;
+
+				if (keyDown.Shift) {
+					toUse = projectVecTo45DegAngle(toUse);
+				}
+
+				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				params.dispatch(shapeActions.setMoveVector(shapeId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
 				selection = getShapeSelectionFromState(
@@ -1119,7 +1157,7 @@ export const penToolHandlers = {
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
 			translate: ctx.globalToNormal,
-			keys: [],
+			keys: ["Shift"],
 			beforeMove: (params, { mousePosition }) => {
 				const toDispatch: any[] = [];
 
@@ -1129,9 +1167,15 @@ export const penToolHandlers = {
 					compSelectionActions.addPropertyToSelection(ctx.compositionId, pathPropertyId!),
 				);
 
+				const transform = ctx.layerTransform;
+				const toUse = mousePosition.translated
+					.sub(transform.translate)
+					.scale(1 / transform.scale)
+					.rotate(-transform.rotation);
+
 				const newNode: ShapeNode = {
 					id: newNodeId,
-					position: mousePosition.translated,
+					position: toUse,
 					shapeId,
 				};
 
@@ -1197,11 +1241,20 @@ export const penToolHandlers = {
 
 				params.dispatch(toDispatch);
 			},
-			mouseMove: (params, { firstMove, moveVector }) => {
+			mouseMove: (params, { firstMove, moveVector, keyDown }) => {
 				const toDispatch: any[] = [];
 
-				const prevCpPos = moveVector.translated.scale(-1);
-				const nextCpPos = moveVector.translated;
+				const transform = ctx.layerTransform;
+				let toUse = moveVector.translated;
+
+				if (keyDown.Shift) {
+					toUse = projectVecTo45DegAngle(toUse);
+				}
+
+				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+
+				const prevCpPos = transformed.scale(-1);
+				const nextCpPos = transformed;
 
 				if (firstMove) {
 					if (p0Part1.controlPointId) {
@@ -1362,7 +1415,7 @@ export const penToolHandlers = {
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
 			translate: ctx.globalToNormal,
-			keys: [],
+			keys: ["Shift"],
 			beforeMove: (params) => {
 				const toDispatch: ToDispatch = [];
 
@@ -1435,8 +1488,17 @@ export const penToolHandlers = {
 
 				params.dispatch(toDispatch);
 			},
-			mouseMove: (params, { firstMove, moveVector }) => {
+			mouseMove: (params, { firstMove, moveVector, keyDown }) => {
 				const toDispatch: ToDispatch = [];
+
+				const transform = ctx.layerTransform;
+				let toUse = moveVector.translated;
+
+				if (keyDown.Shift) {
+					toUse = projectVecTo45DegAngle(toUse);
+				}
+
+				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
 
 				const createCpId = createGenMapIdFn(getActionState().shapeState.controlPoints);
 
@@ -1466,7 +1528,7 @@ export const penToolHandlers = {
 						const cp: ShapeControlPoint = {
 							id: rcpl,
 							edgeId,
-							position: moveVector.translated,
+							position: transformed,
 						};
 						toDispatch.push(
 							shapeActions.setControlPoint(cp),
@@ -1479,7 +1541,7 @@ export const penToolHandlers = {
 						const cp: ShapeControlPoint = {
 							id: rcpr,
 							edgeId,
-							position: moveVector.translated.scale(-1),
+							position: transformed.scale(-1),
 						};
 						toDispatch.push(
 							shapeActions.setControlPoint(cp),
@@ -1491,8 +1553,8 @@ export const penToolHandlers = {
 
 				// Set reflected control point positions
 				toDispatch.push(
-					shapeActions.setControlPointPosition(rcpl, moveVector.translated),
-					shapeActions.setControlPointPosition(rcpr, moveVector.translated.scale(-1)),
+					shapeActions.setControlPointPosition(rcpl, transformed),
+					shapeActions.setControlPointPosition(rcpr, transformed.scale(-1)),
 				);
 				params.dispatch(toDispatch);
 			},
@@ -1522,7 +1584,7 @@ export const penToolHandlers = {
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
 			translate: ctx.globalToNormal,
-			keys: [],
+			keys: ["Shift"],
 			beforeMove: (params, { mousePosition }) => {
 				// Clear selection and select layer
 				const pathIds = getShapeLayerPathIds(layerId, compositionState);
@@ -1555,10 +1617,16 @@ export const penToolHandlers = {
 						},
 					],
 				};
+				const transform = ctx.layerTransform;
+				const toUse = mousePosition.translated
+					.sub(transform.translate)
+					.scale(1 / transform.scale)
+					.rotate(-transform.rotation);
+
 				const node: ShapeNode = {
 					id: nodeId,
 					shapeId,
-					position: mousePosition.translated,
+					position: toUse,
 				};
 				params.dispatch(
 					shapeActions.setShape(shape),
@@ -1595,7 +1663,16 @@ export const penToolHandlers = {
 					compSelectionActions.addPropertyToSelection(compositionId, pathPropertyId),
 				);
 			},
-			mouseMove: (params, { firstMove, moveVector }) => {
+			mouseMove: (params, { firstMove, moveVector, keyDown }) => {
+				const transform = ctx.layerTransform;
+				let toUse = moveVector.translated;
+
+				if (keyDown.Shift) {
+					toUse = projectVecTo45DegAngle(toUse);
+				}
+
+				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+
 				if (firstMove) {
 					const e0: ShapeEdge = {
 						id: e0Id,
@@ -1616,12 +1693,12 @@ export const penToolHandlers = {
 					const e0cp: ShapeControlPoint = {
 						edgeId: e0Id,
 						id: e0cpId,
-						position: moveVector.translated,
+						position: transformed,
 					};
 					const e1cp: ShapeControlPoint = {
 						edgeId: e1Id,
 						id: e1cpId,
-						position: moveVector.translated.scale(-1),
+						position: transformed.scale(-1),
 					};
 					params.dispatch(
 						shapeActions.setEdge(shapeId, e0),
@@ -1645,11 +1722,8 @@ export const penToolHandlers = {
 					);
 				} else {
 					params.dispatch(
-						shapeActions.setControlPointPosition(e0cpId, moveVector.translated),
-						shapeActions.setControlPointPosition(
-							e1cpId,
-							moveVector.translated.scale(-1),
-						),
+						shapeActions.setControlPointPosition(e0cpId, transformed),
+						shapeActions.setControlPointPosition(e1cpId, transformed.scale(-1)),
 					);
 				}
 			},

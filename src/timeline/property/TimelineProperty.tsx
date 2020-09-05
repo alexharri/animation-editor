@@ -183,7 +183,8 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 							),
 					})}
 					style={
-						property.valueType === ValueType.Color
+						property.valueType === ValueType.RGBAColor ||
+						property.valueType === ValueType.RGBColor
 							? { pointerEvents: "none", opacity: "0" }
 							: {}
 					}

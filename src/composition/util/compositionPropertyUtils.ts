@@ -19,6 +19,8 @@ const propertyGroupNameToLabel: { [key in keyof typeof PropertyGroupName]: strin
 	Modifiers: "Modifiers",
 	ArrayModifier: "Array Modifier",
 	Shape: "Shape",
+	Fill: "Fill",
+	Stroke: "Stroke",
 };
 
 const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
@@ -43,6 +45,12 @@ const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
 	ArrayModifier_TransformBehavior: "Transform Behavior",
 
 	ShapeLayer_Path: "Path",
+	RGBAColor: "Color",
+	RGBColor: "Color",
+	FillRule: "Fill Rule",
+	LineCap: "Line Cap",
+	LineJoin: "Line Join",
+	MiterLimit: "Miter Limit",
 };
 
 export const getLayerPropertyLabel = (name: PropertyName): string => {

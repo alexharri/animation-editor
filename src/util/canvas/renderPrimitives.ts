@@ -118,9 +118,15 @@ interface RenderLineOptions {
 	lineDash?: number[];
 }
 
-export function traceLine(ctx: CanvasRenderingContext2D, line: Line): void {
+export function traceLine(
+	ctx: CanvasRenderingContext2D,
+	line: Line,
+	traceOptions: TraceOptions = {},
+): void {
 	const [a, b] = line;
-	ctx.moveTo(a.x, a.y);
+	if (traceOptions.move) {
+		ctx.moveTo(a.x, a.y);
+	}
 	ctx.lineTo(b.x, b.y);
 }
 
@@ -133,7 +139,7 @@ export function renderLine(
 	const { color, strokeWidth } = opts;
 
 	ctx.beginPath();
-	traceLine(ctx, [a, b]);
+	traceLine(ctx, [a, b], { move: true });
 	ctx.strokeStyle = color;
 	ctx.lineWidth = strokeWidth;
 	if (opts.lineDash) {
@@ -150,9 +156,19 @@ interface RenderCubicBezierOptions {
 	strokeWidth: number;
 }
 
-export function traceCubicBezier(ctx: CanvasRenderingContext2D, bezier: CubicBezier): void {
+interface TraceOptions {
+	move?: boolean;
+}
+
+export function traceCubicBezier(
+	ctx: CanvasRenderingContext2D,
+	bezier: CubicBezier,
+	traceOptions: TraceOptions = {},
+): void {
 	const [p0, p1, p2, p3] = bezier;
-	ctx.moveTo(p0.x, p0.y);
+	if (traceOptions.move) {
+		ctx.moveTo(p0.x, p0.y);
+	}
 	ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
 }
 
@@ -164,7 +180,7 @@ export function renderCubicBezier(
 	const { color, strokeWidth } = opts;
 
 	ctx.beginPath();
-	traceCubicBezier(ctx, bezier);
+	traceCubicBezier(ctx, bezier, { move: true });
 	ctx.strokeStyle = color;
 	ctx.lineWidth = strokeWidth;
 	ctx.stroke();
@@ -176,11 +192,15 @@ interface RenderPathOptions {
 	lineDash?: number[];
 }
 
-export function tracePath(ctx: Ctx, path: CubicBezier | Line): void {
+export function tracePath(
+	ctx: Ctx,
+	path: CubicBezier | Line,
+	traceOptions: TraceOptions = {},
+): void {
 	if (path.length === 2) {
-		traceLine(ctx, path);
+		traceLine(ctx, path, traceOptions);
 	} else {
-		traceCubicBezier(ctx, path);
+		traceCubicBezier(ctx, path, traceOptions);
 	}
 }
 

@@ -14,7 +14,7 @@ const s = compileStylesheetLabelled(styles);
 
 interface ColorOwnProps {
 	propertyId: string;
-	value: RGBAColor;
+	value: RGBAColor | RGBColor;
 }
 type ColorProps = ColorOwnProps;
 
@@ -41,11 +41,12 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 				const onChange = (rgbColor: RGBColor) => {
 					latestColor.current = rgbColor;
 
-					const rgbaColor = [...rgbColor, 1] as RGBAColor;
+					let value: RGBColor | RGBAColor = rgbColor;
+					if (props.value.length === 4) {
+						value = [...rgbColor, 1] as RGBAColor;
+					}
 
-					params.dispatch(
-						compositionActions.setPropertyValue(props.propertyId, rgbaColor),
-					);
+					params.dispatch(compositionActions.setPropertyValue(props.propertyId, value));
 				};
 
 				// Submit on enter

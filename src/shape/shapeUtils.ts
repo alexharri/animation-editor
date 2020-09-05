@@ -9,7 +9,15 @@ import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { ShapeEdge, ShapeGraph, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
-import { AffineTransform, LayerType, PropertyGroupName, PropertyName } from "~/types";
+import {
+	FillRule,
+	LayerType,
+	LineCap,
+	LineJoin,
+	PropertyGroupName,
+	PropertyName,
+	RGBColor,
+} from "~/types";
 import {
 	expandRect,
 	getAngleRadians,
@@ -538,7 +546,6 @@ export const getPathTargetObject = (
 	pathId: string,
 	viewportMousePosition: Vec2,
 	normalToViewport: (vec: Vec2) => Vec2,
-	layerTransform: AffineTransform,
 	shapeState: ShapeState,
 	shapeSelectionState: ShapeSelectionState,
 ): PathTargetObject => {
@@ -577,12 +584,7 @@ export const getPathTargetObject = (
 				cpPos = cpPos.add(moveVector);
 			}
 
-			if (
-				getDistance(
-					viewportMousePosition,
-					normalToViewport(cpPos.add(layerTransform.translate)),
-				) < DIST
-			) {
+			if (getDistance(viewportMousePosition, normalToViewport(cpPos)) < DIST) {
 				return {
 					type: "control_point",
 					id: controlPointId,
@@ -626,19 +628,12 @@ export const getPathTargetObjectFromContext = (
 	pathId: string,
 	ctx: PenToolContext,
 ): PathTargetObject => {
-	const {
-		normalToViewport,
-		shapeState,
-		shapeSelectionState,
-		layerTransform,
-		mousePosition,
-	} = ctx;
+	const { normalToViewport, shapeState, shapeSelectionState, mousePosition } = ctx;
 
 	return getPathTargetObject(
 		pathId,
 		mousePosition.viewport,
 		normalToViewport,
-		layerTransform,
 		shapeState,
 		shapeSelectionState,
 	);
@@ -722,4 +717,77 @@ export const getLayerPathPropertyId = (
 		null,
 	);
 	return pathPropertyId;
+};
+
+export const getShapeStrokeGroupValues = (
+	group: CompositionPropertyGroup,
+	compositionState: CompositionState,
+) => {
+	let lineWidth!: number;
+	let color!: RGBColor;
+	let opacity!: number;
+	let lineJoin!: LineJoin;
+	let lineCap!: LineCap;
+	let miterLimit!: number;
+
+	for (const propertyId of group.properties) {
+		const property = compositionState.properties[propertyId];
+		switch (property.name) {
+			case PropertyName.StrokeWidth: {
+				lineWidth = property.value;
+				break;
+			}
+			case PropertyName.RGBAColor: {
+				color = property.value;
+				break;
+			}
+			case PropertyName.Opacity: {
+				opacity = property.value;
+				break;
+			}
+			case PropertyName.LineJoin: {
+				lineJoin = property.value;
+				break;
+			}
+			case PropertyName.LineCap: {
+				lineCap = property.value;
+				break;
+			}
+			case PropertyName.MiterLimit: {
+				miterLimit = property.value;
+				break;
+			}
+		}
+	}
+
+	return { lineWidth, color, opacity, lineJoin, lineCap, miterLimit };
+};
+
+export const getShapeFillGroupValues = (
+	group: CompositionPropertyGroup,
+	compositionState: CompositionState,
+) => {
+	let color!: RGBColor;
+	let opacity!: number;
+	let fillRule!: FillRule;
+
+	for (const propertyId of group.properties) {
+		const property = compositionState.properties[propertyId];
+		switch (property.name) {
+			case PropertyName.RGBAColor: {
+				color = property.value;
+				break;
+			}
+			case PropertyName.Opacity: {
+				opacity = property.value;
+				break;
+			}
+			case PropertyName.FillRule: {
+				fillRule = property.value;
+				break;
+			}
+		}
+	}
+
+	return { color, opacity, fillRule };
 };

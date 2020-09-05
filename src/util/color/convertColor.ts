@@ -1,4 +1,4 @@
-import { RGBColor, HSLColor } from "~/types";
+import { HSLColor, RGBAColor, RGBColor } from "~/types";
 
 export const hexRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
 
@@ -9,6 +9,9 @@ export const hexToRGB = (hex: string): RGBColor => {
 
 export const hexToRGBAString = (hex: string, alpha = 1): string =>
 	`rgba(${hexToRGB(hex).join(",")},${alpha})`;
+
+export const rgbToString = (rgb: RGBColor, alpha = 1): string => `rgba(${rgb.join(",")},${alpha})`;
+export const rgbaToString = (rgba: RGBAColor): string => `rgba(${rgba.join(",")})`;
 
 export const rgbToHSL = (rgbColor: RGBColor): HSLColor => {
 	let [r, g, b] = rgbColor;

@@ -1,3 +1,4 @@
+import { intersectInfiniteLines } from "~/util/math/intersection/intersectInfiniteLines";
 import { Mat2 } from "~/util/math/mat";
 
 export const interpolate = (a: number, b: number, t: number) => a * (1 - t) + b * t;
@@ -136,6 +137,10 @@ export const translateToRange = (
  * @param anchor - `vec` is rotated around the anchor
  */
 export function rotateVec2CCW(vec: Vec2, angle: number, anchor = Vec2.new(0, 0)): Vec2 {
+	if (angle === 0) {
+		return vec;
+	}
+
 	const x = vec.x - anchor.x;
 	const y = vec.y - anchor.y;
 	return Mat2.rotation(angle).multiplyVec2(Vec2.new(x, y)).add(anchor);
@@ -164,6 +169,28 @@ export function rotateVecToAngleRadians(vec: Vec2, targetAngle: number): Vec2 {
 	const diff = Math.abs(angle - targetAngle);
 	return rotateVec2CCW(vec, diff);
 }
+
+export const projectVecToAngle = (vec: Vec2, angle: number): Vec2 => {
+	if (vec.x === 0 && vec.y === 0) {
+		return vec;
+	}
+
+	const rotmat = Mat2.rotation(angle);
+	const perpmat = Mat2.rotation(angle + Math.PI / 2);
+
+	const fromOrigin: Line = [Vec2.new(0, 0), rotmat.multiplyVec2(Vec2.new(1, 0))];
+	const fromVec: Line = [vec.add(perpmat.i()), vec.add(perpmat.i().scale(-1))];
+
+	const result = intersectInfiniteLines(fromOrigin, fromVec);
+	return Vec2.new(result.x, result.y);
+};
+
+export const projectVecTo45DegAngle = (vec: Vec2): Vec2 => {
+	const angleRad = getAngleRadians(Vec2.new(0, 0), vec);
+	const tick = (Math.PI * 2) / 8;
+	const angle = Math.round(angleRad / tick) * tick;
+	return projectVecToAngle(vec, angle);
+};
 
 export const translateRect = (rect: Rect, translationVector: Vec2): Rect => {
 	return {

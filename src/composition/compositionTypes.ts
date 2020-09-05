@@ -1,8 +1,12 @@
 import {
+	FillRule,
 	KeySelectionMap,
 	LayerType,
+	LineCap,
+	LineJoin,
 	PropertyGroupName,
 	PropertyName,
+	RGBAColor,
 	RGBColor,
 	TransformBehavior,
 	ValueFormat,
@@ -59,7 +63,11 @@ export type CompositionProperty = {
 			value: any;
 	  }
 	| {
-			valueType: ValueType.Color;
+			valueType: ValueType.RGBAColor;
+			value: RGBAColor;
+	  }
+	| {
+			valueType: ValueType.RGBColor;
 			value: RGBColor;
 	  }
 	| {
@@ -81,6 +89,18 @@ export type CompositionProperty = {
 	| {
 			valueType: ValueType.Path;
 			value: string;
+	  }
+	| {
+			valueType: ValueType.FillRule;
+			value: FillRule;
+	  }
+	| {
+			valueType: ValueType.LineCap;
+			value: LineCap;
+	  }
+	| {
+			valueType: ValueType.LineJoin;
+			value: LineJoin;
 	  }
 );
 

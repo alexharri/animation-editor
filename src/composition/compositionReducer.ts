@@ -16,7 +16,7 @@ import { createLayer } from "~/composition/layer/createLayer";
 import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
 import { getLayerModifierPropertyGroupId } from "~/composition/util/compositionPropertyUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { LayerType, PropertyGroupName, RGBAColor, TransformBehavior } from "~/types";
+import { LayerType, PropertyGroupName, RGBAColor, RGBColor, TransformBehavior } from "~/types";
 import {
 	addListToMap,
 	createGenMapIdFn,
@@ -111,7 +111,7 @@ export const compositionActions = {
 	}),
 
 	setPropertyValue: createAction("comp/SET_PROPERTY_VALUE", (action) => {
-		return (propertyId: string, value: number | RGBAColor | TransformBehavior) =>
+		return (propertyId: string, value: number | RGBColor | RGBAColor | TransformBehavior) =>
 			action({ propertyId, value });
 	}),
 
