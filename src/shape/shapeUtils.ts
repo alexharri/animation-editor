@@ -225,13 +225,14 @@ export const getItemControlPointPositions = (
 	}) as [Vec2 | null, Vec2 | null];
 };
 
-export const pathIdToPathList = (
+export const pathIdToCurves = (
 	pathId: string,
 	shapeState: ShapeState,
 	shapeSelectionState: ShapeSelectionState,
+	shapeMoveVector: Vec2,
 	transformFn?: (vec: Vec2) => Vec2,
-): Array<Line | CubicBezier> | null => {
-	const pathList: Array<Line | CubicBezier> = [];
+): Curve[] | null => {
+	const curves: Array<Line | CubicBezier> = [];
 
 	const { items, shapeId } = shapeState.paths[pathId];
 
@@ -256,13 +257,13 @@ export const pathIdToPathList = (
 			continue;
 		}
 
-		let path: Line | CubicBezier;
+		let curve: Curve;
 
 		const [, cp0] = itemCpPositions[i];
 		const [cp1] = itemCpPositions[inext];
 
-		let p0 = shapeState.nodes[item0.nodeId].position;
-		let p3 = shapeState.nodes[item1.nodeId].position;
+		let p0 = shapeState.nodes[item0.nodeId].position.add(shapeMoveVector);
+		let p3 = shapeState.nodes[item1.nodeId].position.add(shapeMoveVector);
 
 		if (selection.nodes[item0.nodeId]) {
 			p0 = p0.add(shape.moveVector);
@@ -275,23 +276,23 @@ export const pathIdToPathList = (
 		let p2 = cp1 ? p3.add(cp1) : null;
 
 		if (p1 && p2) {
-			path = [p0, p1, p2, p3];
+			curve = [p0, p1, p2, p3];
 		} else if (p1 || p2) {
-			path = quadraticToCubicBezier(p0, p1, p2, p3);
+			curve = quadraticToCubicBezier(p0, p1, p2, p3);
 		} else {
-			path = [p0, p3];
+			curve = [p0, p3];
 		}
 
 		if (transformFn) {
-			for (let j = 0; j < path.length; j += 1) {
-				path[j] = transformFn(path[j]);
+			for (let j = 0; j < curve.length; j += 1) {
+				curve[j] = transformFn(curve[j]);
 			}
 		}
 
-		pathList.push(path);
+		curves.push(curve);
 	}
 
-	return pathList;
+	return curves;
 };
 
 export const getShapePathClosePathNodeId = (
@@ -600,7 +601,13 @@ export const getPathTargetObject = (
 		}
 	}
 
-	const pathList = pathIdToPathList(pathId, shapeState, shapeSelectionState, normalToViewport);
+	const pathList = pathIdToCurves(
+		pathId,
+		shapeState,
+		shapeSelectionState,
+		Vec2.ORIGIN,
+		normalToViewport,
+	);
 	if (pathList) {
 		for (let i = 0; i < pathList.length; i += 1) {
 			const p = pathList[i];

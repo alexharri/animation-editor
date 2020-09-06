@@ -178,3 +178,5 @@ export interface MousePosition {
 	viewport: Vec2;
 	translated: Vec2;
 }
+
+export type NameToProperty = { [key in keyof typeof PropertyName]: any };

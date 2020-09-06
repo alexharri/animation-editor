@@ -34,6 +34,7 @@ export const createProjectContextMenu = (position: Vec2, { compositionId }: Opti
 						layers: [],
 						length: 5 * 60, // 5 seconds
 						frameIndex: 0,
+						shapeMoveVector: Vec2.new(0, 0),
 					};
 
 					params.dispatch(projectActions.addComposition(composition));

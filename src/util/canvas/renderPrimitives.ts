@@ -43,6 +43,10 @@ interface RenderRectOptions {
 	strokeColor?: string;
 }
 
+export function traceRect(ctx: CanvasRenderingContext2D, rect: Rect) {
+	ctx.rect(rect.left, rect.top, rect.width, rect.height);
+}
+
 export function renderRect(
 	ctx: CanvasRenderingContext2D,
 	rects: Rect | Rect[],
@@ -54,19 +58,17 @@ export function renderRect(
 
 	ctx.fillStyle = fillColor;
 	for (let i = 0; i < recArr.length; i += 1) {
-		const { left, top, width, height } = recArr[i];
-
 		ctx.beginPath();
-		ctx.rect(left, top, width, height);
+		traceRect(ctx, recArr[i]);
 		ctx.fill();
 
 		if (strokeWidth > 0 && strokeColor) {
-			ctx.beginPath();
-			ctx.rect(left, top, width, height);
 			ctx.lineWidth = strokeWidth;
 			ctx.strokeStyle = strokeColor;
 			ctx.stroke();
 		}
+
+		ctx.closePath();
 	}
 }
 
@@ -192,22 +194,18 @@ interface RenderPathOptions {
 	lineDash?: number[];
 }
 
-export function tracePath(
-	ctx: Ctx,
-	path: CubicBezier | Line,
-	traceOptions: TraceOptions = {},
-): void {
-	if (path.length === 2) {
-		traceLine(ctx, path, traceOptions);
+export function traceCurve(ctx: Ctx, curve: Curve, traceOptions: TraceOptions = {}): void {
+	if (curve.length === 2) {
+		traceLine(ctx, curve, traceOptions);
 	} else {
-		traceCubicBezier(ctx, path, traceOptions);
+		traceCubicBezier(ctx, curve, traceOptions);
 	}
 }
 
 /**
  * @todo Implement `lineDash` option
  */
-export function renderPath(ctx: Ctx, path: CubicBezier | Line, opts: RenderPathOptions): void {
+export function renderCurve(ctx: Ctx, path: CubicBezier | Line, opts: RenderPathOptions): void {
 	if (path.length === 2) {
 		renderLine(ctx, path[0], path[1], opts);
 	} else {

@@ -24,23 +24,45 @@ export class Vec2 {
 	public static fromEvent(e: MouseEvent): Vec2 {
 		return new Vec2(e.clientX, e.clientY);
 	}
+	public static ORIGIN = Vec2.new(0, 0);
 
-	public x: number;
-	public y: number;
+	private _x: number;
+	private _y: number;
+	private atOrigin: boolean;
 
 	constructor(vec: { x: number; y: number });
 	constructor(x: number, y: number);
 	constructor(vecOrX: number | { x: number; y: number }, y?: number) {
 		if (typeof vecOrX === "number") {
-			this.x = vecOrX;
-			this.y = y!;
+			this._x = vecOrX;
+			this._y = y!;
 		} else {
-			this.x = vecOrX.x;
-			this.y = vecOrX.y;
+			this._x = vecOrX.x;
+			this._y = vecOrX.y;
 		}
+		this.atOrigin = this.x === 0 && this.y === 0;
+	}
+
+	set x(value: number) {
+		this._x = value;
+		this.atOrigin = this.x === 0 && this.y === 0;
+	}
+	get x() {
+		return this._x;
+	}
+	set y(value: number) {
+		this._y = value;
+		this.atOrigin = this.x === 0 && this.y === 0;
+	}
+	get y() {
+		return this._y;
 	}
 
 	public add(vec: Vec2): Vec2 {
+		if (vec.atOrigin) {
+			return this;
+		}
+
 		return new Vec2(this.x + vec.x, this.y + vec.y);
 	}
 
@@ -53,6 +75,10 @@ export class Vec2 {
 	}
 
 	public sub(vec: Vec2): Vec2 {
+		if (vec.atOrigin) {
+			return this;
+		}
+
 		return new Vec2(this.x - vec.x, this.y - vec.y);
 	}
 
@@ -69,6 +95,10 @@ export class Vec2 {
 	}
 
 	public scale(scale: number, anchor = Vec2.new(0, 0)): Vec2 {
+		if (scale === 1) {
+			return this;
+		}
+
 		return new Vec2(
 			anchor.x + (this.x - anchor.x) * scale,
 			anchor.y + (this.y - anchor.y) * scale,
@@ -127,6 +157,7 @@ declare global {
 		public static new(vec: { x: number; y: number } | { left: number; top: number }): Vec2;
 		public static new(x: number, y: number): Vec2;
 		public static fromEvent(e: { clientX: number; clientY: number }): Vec2;
+		public static ORIGIN: Vec2;
 
 		public x: number;
 		public y: number;

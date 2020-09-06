@@ -65,3 +65,8 @@ export interface ShapeSelection {
 	edges: KeySelectionMap;
 	controlPoints: KeySelectionMap;
 }
+
+export interface ShapeContinueFrom {
+	pathId: string;
+	direction: "left" | "right";
+}

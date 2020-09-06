@@ -101,7 +101,7 @@ export const rectsIntersect = (a: Rect, b: Rect): boolean => {
 	return true;
 };
 
-export const boundingRect = (rects: Rect[]): Rect =>
+export const boundingRectOfRects = (rects: Rect[]): Rect =>
 	rects.slice(1).reduce<Rect>((a, b) => {
 		const xMin = Math.min(a.left, b.left);
 		const yMin = Math.min(a.top, b.top);
@@ -199,6 +199,13 @@ export const translateRect = (rect: Rect, translationVector: Vec2): Rect => {
 		left: rect.left + translationVector.x,
 		top: rect.top + translationVector.y,
 	};
+};
+
+export const reflectVectorAngle = (reflectionOf: Vec2, vecToReflect: Vec2): Vec2 => {
+	const origin = Vec2.new(0, 0);
+	const dist = getDistance(origin, vecToReflect);
+	const angle = getAngleRadians(origin, reflectionOf);
+	return rotateVec2CCW(Vec2.new(dist, 0), angle + Math.PI);
 };
 
 export const translateRectAsVec = (rect: Rect, transformFn: (vec: Vec2) => Vec2): Rect => {

@@ -1,6 +1,6 @@
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import {
 	findLayerProperty,
 	getChildPropertyIdsRecursive,
@@ -32,12 +32,14 @@ import {
 	getShapeLayerSelectedPathIds,
 	getShapePathClosePathNodeId,
 	getShapeSelectionFromState,
+	pathIdToCurves,
 } from "~/shape/shapeUtils";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { LayerType, PropertyGroupName, PropertyName, ToDispatch } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
 import { isVecInRect, projectVecTo45DegAngle, rectOfTwoVecs } from "~/util/math";
+import { pathBoundingRect, pathControlPointsBoundingRect } from "~/util/math/boundingRect";
 import { constructPenToolContext, PenToolContext } from "~/workspace/penTool/penToolContext";
 import { workspaceAreaActions } from "~/workspace/workspaceAreaReducer";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
@@ -50,9 +52,15 @@ export const penToolHandlers = {
 		// Create selection rect if moved, otherwise move selection up.
 		const ctx = constructPenToolContext(Vec2.fromEvent(e), layerId, areaId, viewport);
 
-		const { shapeState, compositionState, compositionSelectionState } = getActionState();
+		const { compositionState, compositionSelectionState } = getActionState();
 
 		const selectedPathIds = getShapeLayerSelectedPathIds(
+			layerId,
+			compositionState,
+			compositionSelectionState,
+		);
+
+		const directlySelectedPathIds = getShapeLayerDirectlySelectedPaths(
 			layerId,
 			compositionState,
 			compositionSelectionState,
@@ -67,16 +75,325 @@ export const penToolHandlers = {
 					return;
 				}
 				case "control_point": {
-					penToolHandlers.controlPointMouseDown(ctx, id);
-					return;
+					if (directlySelectedPathIds.has(pathId)) {
+						penToolHandlers.controlPointMouseDown(ctx, id);
+						return;
+					}
+					break;
 				}
 			}
 		}
 
 		// Mouse did not hit any eligible target.
-		//
-		// Create a selection rect if the mouse moves, otherwise "lift" the
-		// shape property selection up one level.
+
+		if (directlySelectedPathIds.size === 0) {
+			penToolHandlers.moveToolMouseDownShapeSelection(ctx);
+		} else {
+			penToolHandlers.moveToolMouseDownPathSelection(ctx);
+		}
+	},
+
+	moveToolMouseDownShapeSelection: (ctx: PenToolContext) => {
+		const {
+			compositionState,
+			compositionSelectionState,
+			shapeState,
+			shapeSelectionState,
+		} = getActionState();
+
+		const { layerId, compositionId } = ctx;
+		const compositionSelection = getCompSelectionFromState(
+			compositionId,
+			compositionSelectionState,
+		);
+
+		const pathIds = getShapeLayerPathIds(layerId, compositionState);
+		let pathId: string | undefined;
+
+		for (const id of pathIds) {
+			const curves = pathIdToCurves(
+				id,
+				shapeState,
+				shapeSelectionState,
+				Vec2.ORIGIN,
+				ctx.normalToViewport,
+			);
+			if (!curves) {
+				continue;
+			}
+
+			const controlPointRect = pathControlPointsBoundingRect(curves);
+			if (!isVecInRect(ctx.mousePosition.viewport, controlPointRect)) {
+				continue;
+			}
+
+			const rect = pathBoundingRect(curves);
+			if (!isVecInRect(ctx.mousePosition.viewport, rect)) {
+				continue;
+			}
+
+			pathId = id;
+			break;
+		}
+
+		if (!pathId) {
+			const selectedPathIds = getShapeLayerSelectedPathIds(
+				layerId,
+				compositionState,
+				compositionSelectionState,
+			);
+
+			const layer = compositionState.layers[layerId];
+			const composition = compositionState.compositions[layer.compositionId];
+			if (selectedPathIds.length === 0) {
+				// No selected paths in path layer, clear the composition selection.
+				//
+				// In the future we will probably do a select rect here to select
+				// multiple shapes here on mousedown + drag.
+				requestAction({ history: true }, (params) => {
+					params.dispatch(compSelectionActions.clearCompositionSelection(composition.id));
+					params.submitAction("Clear composition selection");
+				});
+				return;
+			}
+
+			// Lift state up
+
+			requestAction({ history: true }, (params) => {
+				const toDispatch: any[] = [];
+
+				for (const pathId of pathIds) {
+					const { shapeId } = shapeState.paths[pathId];
+					toDispatch.push(shapeSelectionActions.clearShapeSelection(shapeId));
+				}
+
+				const shapeGroupIds = reduceLayerPropertiesAndGroups<string[]>(
+					layerId,
+					compositionState,
+					(arr, property) => {
+						if (property.name === PropertyGroupName.Shape) {
+							arr.push(property.id);
+						}
+						return arr;
+					},
+					[],
+				);
+
+				for (const shapeGroupId of shapeGroupIds) {
+					const group = compositionState.properties[
+						shapeGroupId
+					] as CompositionPropertyGroup;
+
+					const propertyNames = group.properties.map(
+						(id) => compositionState.properties[id].name,
+					);
+
+					const pathIndex = propertyNames.indexOf(PropertyName.ShapeLayer_Path);
+
+					if (pathIndex === -1) {
+						continue;
+					}
+
+					const pathPropertyId = group.properties[pathIndex];
+					if (compositionSelection.properties[pathPropertyId]) {
+						toDispatch.push(
+							compSelectionActions.removePropertiesFromSelection(compositionId, [
+								pathPropertyId,
+							]),
+							compSelectionActions.addPropertyToSelection(
+								compositionId,
+								shapeGroupId,
+							),
+						);
+					} else {
+						toDispatch.push(
+							compSelectionActions.removePropertiesFromSelection(compositionId, [
+								shapeGroupId,
+							]),
+						);
+					}
+				}
+
+				params.dispatch(toDispatch);
+				params.submitAction("Modify selection");
+			});
+			return;
+		}
+
+		// Path was hit, select and move shape
+
+		penToolHandlers.moveToolMouseDownShape(ctx, layerId, pathId);
+	},
+
+	moveToolMouseDownShape: (ctx: PenToolContext, layerId: string, pathId: string) => {
+		const { shapeState, compositionId } = ctx;
+		const { compositionState, compositionSelectionState } = getActionState();
+
+		let selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+
+		let shapeGroupId!: string;
+
+		const shapeGroupIds = reduceLayerPropertiesAndGroups<string[]>(
+			layerId,
+			compositionState,
+			(arr, property) => {
+				if (property.name === PropertyGroupName.Shape) {
+					arr.push(property.id);
+				}
+				return arr;
+			},
+			[],
+		);
+
+		for (const groupId of shapeGroupIds) {
+			const group = compositionState.properties[groupId] as CompositionPropertyGroup;
+
+			const propertyNames = group.properties.map(
+				(id) => compositionState.properties[id].name,
+			);
+
+			const pathIndex = propertyNames.indexOf(PropertyName.ShapeLayer_Path);
+
+			if (pathIndex === -1) {
+				continue;
+			}
+
+			const pathPropertyId = group.properties[pathIndex];
+			const property = compositionState.properties[pathPropertyId] as CompositionProperty;
+			if (property.value === pathId) {
+				shapeGroupId = group.id;
+			}
+		}
+
+		const additiveSelection = isKeyDown("Shift");
+		const willBeSelected = additiveSelection ? !selection.properties[shapeGroupId] : true;
+
+		const clearSelection = (params: RequestActionParams) => {
+			params.dispatch(
+				compSelectionActions.removePropertiesFromSelection(
+					compositionId,
+					shapeGroupIds.filter((id) => id !== shapeGroupId),
+				),
+			);
+		};
+		const addShapeToSelection = (params: RequestActionParams) => {
+			params.dispatch(
+				compSelectionActions.addPropertyToSelection(compositionId, shapeGroupId),
+			);
+		};
+		const removeShapeFromSelection = (params: RequestActionParams) => {
+			params.dispatch(
+				compSelectionActions.removePropertiesFromSelection(compositionId, [shapeGroupId]),
+			);
+		};
+
+		mouseDownMoveAction(ctx.mousePosition.global, {
+			keys: ["Shift"],
+			translate: ctx.globalToNormal,
+			beforeMove: (params) => {
+				if (!additiveSelection && !selection.properties[shapeGroupId]) {
+					// The selection is non-additive and the shape will be selected.
+					//
+					// Clear the selection of all shapes within the composition and then
+					// add the shape to the selection.
+					clearSelection(params);
+					addShapeToSelection(params);
+					return;
+				}
+
+				if (additiveSelection && !willBeSelected) {
+					// The selection is additive and the shape will NOT be selected.
+					//
+					// Deselect the shape.
+					removeShapeFromSelection(params);
+					params.submitAction("Remove shape from selection");
+					return;
+				} else {
+					addShapeToSelection(params);
+				}
+
+				selection = getCompSelectionFromState(
+					compositionId,
+					getActionState().compositionSelectionState,
+				);
+			},
+			mouseMove: (params, { moveVector, keyDown }) => {
+				const transform = ctx.layerTransform;
+				let toUse = moveVector.translated;
+
+				if (keyDown.Shift) {
+					toUse = projectVecTo45DegAngle(toUse);
+				}
+
+				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				params.dispatch(compositionActions.setShapeMoveVector(compositionId, transformed));
+			},
+			mouseUp: (params, hasMoved) => {
+				selection = getCompSelectionFromState(
+					compositionId,
+					getActionState().compositionSelectionState,
+				);
+
+				if (hasMoved) {
+					const composition = getActionState().compositionState.compositions[
+						compositionId
+					];
+					const { shapeMoveVector } = composition;
+
+					const shapeIds = reduceLayerPropertiesAndGroups<string[]>(
+						layerId,
+						compositionState,
+						(acc, group) => {
+							if (
+								group.name !== PropertyGroupName.Shape ||
+								!selection.properties[group.id]
+							) {
+								return acc;
+							}
+							// Find path within shape group
+							const propertyNames = group.properties.map(
+								(id) => compositionState.properties[id].name,
+							);
+
+							const pathIndex = propertyNames.indexOf(PropertyName.ShapeLayer_Path);
+
+							if (pathIndex === -1) {
+								return acc;
+							}
+
+							const pathPropertyId = group.properties[pathIndex];
+							const property = compositionState.properties[
+								pathPropertyId
+							] as CompositionProperty;
+							const pathId = property.value;
+							const { shapeId } = shapeState.paths[pathId];
+							acc.push(shapeId);
+							return acc;
+						},
+						[],
+					);
+
+					params.dispatch(
+						compositionActions.setShapeMoveVector(compositionId, Vec2.ORIGIN),
+						shapeActions.applyShapeMoveVector(shapeIds, shapeMoveVector),
+					);
+					params.submitAction("Move selected shapes");
+					return;
+				}
+
+				if (!additiveSelection) {
+					clearSelection(params);
+					addShapeToSelection(params);
+				}
+
+				params.submitAction("Add shape to selection");
+			},
+		});
+	},
+
+	moveToolMouseDownPathSelection: (ctx: PenToolContext) => {
+		const { shapeState, compositionState, compositionSelectionState } = getActionState();
+		const { layerId } = ctx;
 
 		const layer = compositionState.layers[layerId];
 		const compositionId = layer.compositionId;

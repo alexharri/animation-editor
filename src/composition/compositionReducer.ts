@@ -179,6 +179,11 @@ export const compositionActions = {
 	moveModifier: createAction("comp/MOVE_MODIFIER", (action) => {
 		return (modifierId: string, moveBy: -1 | 1) => action({ modifierId, moveBy });
 	}),
+
+	setShapeMoveVector: createAction("comp/SET_SHAPE_MOVE_VECTOR", (action) => {
+		return (compositionId: string, shapeMoveVector: Vec2) =>
+			action({ compositionId, shapeMoveVector });
+	}),
 };
 
 type Action = ActionType<typeof compositionActions>;
@@ -737,6 +742,21 @@ export const compositionReducer = (
 					(item: CompositionPropertyGroup) => ({
 						...item,
 						properties,
+					}),
+				),
+			};
+		}
+
+		case getType(compositionActions.setShapeMoveVector): {
+			const { compositionId, shapeMoveVector } = action.payload;
+			return {
+				...state,
+				compositions: modifyItemsInMap(
+					state.compositions,
+					compositionId,
+					(composition) => ({
+						...composition,
+						shapeMoveVector,
 					}),
 				),
 			};
