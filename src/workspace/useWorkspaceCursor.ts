@@ -54,6 +54,13 @@ const moveTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 					return;
 				}
 
+				if (type === "point_on_edge") {
+					// For now we don't support edge selection.
+					//
+					// I expect it to be added in the near future.
+					continue;
+				}
+
 				el.style.cursor = cssCursors.moveTool.moveSelection;
 				return;
 			}

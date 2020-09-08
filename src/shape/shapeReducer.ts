@@ -75,6 +75,11 @@ export const shapeActions = {
 	}),
 
 	insertPathItem: createAction("shape/INSERT_PATH_ITEM", (action) => {
+		return (pathId: string, insertIndex: number, item: ShapePathItem) =>
+			action({ pathId, insertIndex, item });
+	}),
+
+	appendPathItem: createAction("shape/APPEND_PATH_ITEM", (action) => {
 		return (pathId: string, item: ShapePathItem, direction: "left" | "right") =>
 			action({ pathId, item, direction });
 	}),
@@ -201,6 +206,18 @@ export const shapeReducer = (
 			};
 		}
 
+		case getType(shapeActions.insertPathItem): {
+			const { pathId, item, insertIndex } = action.payload;
+			return {
+				...state,
+				paths: modifyItemsInMap(state.paths, pathId, (path) => {
+					const items = [...path.items];
+					items.splice(insertIndex, 0, item);
+					return { ...path, items };
+				}),
+			};
+		}
+
 		case getType(shapeActions.setPathItemPart): {
 			const { pathId, itemIndex, which, part } = action.payload;
 			return {
@@ -274,7 +291,7 @@ export const shapeReducer = (
 			};
 		}
 
-		case getType(shapeActions.insertPathItem): {
+		case getType(shapeActions.appendPathItem): {
 			const { pathId, item, direction } = action.payload;
 
 			return {

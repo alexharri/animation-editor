@@ -38,8 +38,16 @@ import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { LayerType, PropertyGroupName, PropertyName, ToDispatch } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
-import { isVecInRect, projectVecTo45DegAngle, rectOfTwoVecs } from "~/util/math";
+import {
+	interpolateCubicBezier,
+	isVecInRect,
+	projectVecTo45DegAngle,
+	quadraticToCubicBezier,
+	rectOfTwoVecs,
+	splitLine,
+} from "~/util/math";
 import { pathBoundingRect, pathControlPointsBoundingRect } from "~/util/math/boundingRect";
+import { splitCubicBezier } from "~/util/math/splitCubicBezier";
 import { constructPenToolContext, PenToolContext } from "~/workspace/penTool/penToolContext";
 import { workspaceAreaActions } from "~/workspace/workspaceAreaReducer";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
@@ -635,15 +643,20 @@ export const penToolHandlers = {
 		const pathIds = getShapeLayerPathIds(layerId, compositionState);
 
 		for (const pathId of pathIds) {
-			const { type, id } = getPathTargetObjectFromContext(pathId, ctx);
+			const target = getPathTargetObjectFromContext(pathId, ctx);
 
-			switch (type) {
+			switch (target.type) {
 				case "node": {
-					penToolHandlers.nodeMouseDown(ctx, pathId, id, { fromMoveTool: false });
+					penToolHandlers.nodeMouseDown(ctx, pathId, target.id, { fromMoveTool: false });
 					return;
 				}
 				case "control_point": {
-					penToolHandlers.controlPointMouseDown(ctx, id);
+					penToolHandlers.controlPointMouseDown(ctx, target.id);
+					return;
+				}
+				case "point_on_edge": {
+					const { id, t } = target;
+					penToolHandlers.splitEdge(ctx, id, t);
 					return;
 				}
 			}
@@ -660,7 +673,209 @@ export const penToolHandlers = {
 		penToolHandlers.continuePath(ctx, continueFrom);
 	},
 
+	splitEdge: (ctx: PenToolContext, edgeId: string, t: number) => {
+		requestAction({ history: true }, (params) => {
+			const { shapeState } = ctx;
+			const edge = shapeState.edges[edgeId];
+			console.log(edge, edgeId, shapeState);
+			const { shapeId } = edge;
+			const shape = shapeState.shapes[shapeId];
+
+			const nmidId = createMapNumberId(shapeState.nodes);
+			const createEdgeId = createGenMapIdFn(shapeState.edges);
+			const createCpId = createGenMapIdFn(shapeState.controlPoints);
+
+			const e0Id = createEdgeId();
+			const e1Id = createEdgeId();
+
+			const n0Id = edge.n0;
+			const n1Id = edge.n1;
+
+			const cp0 = shapeState.controlPoints[edge.cp0];
+			const cp1 = shapeState.controlPoints[edge.cp1];
+			const p0 = shapeState.nodes[n0Id].position;
+			const p3 = shapeState.nodes[n1Id].position;
+
+			const p1 = cp0 ? p0.add(cp0.position) : null;
+			const p2 = cp1 ? p3.add(cp1.position) : null;
+
+			let curve0: Curve;
+			let curve1: Curve;
+			let position: Vec2;
+
+			if (p1 && p2) {
+				const cubicBezier: CubicBezier = [p0, p1, p2, p3];
+				[curve0, curve1] = splitCubicBezier(cubicBezier, t);
+				position = interpolateCubicBezier(cubicBezier, t);
+			} else if (p1 || p2) {
+				const cubicBezier = quadraticToCubicBezier(p0, p1, p2, p3);
+				[curve0, curve1] = splitCubicBezier(cubicBezier, t);
+				position = interpolateCubicBezier(cubicBezier, t);
+			} else {
+				[curve0, curve1] = splitLine([p0, p3], t);
+				position = p0.lerp(p3, t);
+			}
+
+			const toDispatch: ToDispatch = [];
+
+			const nmid: ShapeNode = {
+				shapeId,
+				position,
+				id: nmidId,
+			};
+
+			toDispatch.push(
+				shapeActions.removeEdge(shapeId, edgeId),
+				shapeActions.addNode(shapeId, nmid),
+			);
+
+			// These will only be used if we are splitting a cubic/quad bezier
+			const e0cp0Id = createCpId();
+			const e0cp1Id = createCpId();
+			const e1cp0Id = createCpId();
+			const e1cp1Id = createCpId();
+
+			const areCurves = curve0.length === 4;
+
+			if (!areCurves) {
+				// We don't need to consider the curves, only the point in the middle.
+				const e0: ShapeEdge = {
+					shapeId,
+					n0: edge.n0,
+					cp0: "",
+					cp1: "",
+					n1: nmidId,
+					id: e0Id,
+				};
+				const e1: ShapeEdge = {
+					shapeId,
+					n0: nmidId,
+					cp0: "",
+					cp1: "",
+					n1: edge.n1,
+					id: e1Id,
+				};
+				toDispatch.push(
+					shapeActions.setEdge(shapeId, e0),
+					shapeActions.setEdge(shapeId, e1),
+				);
+			} else {
+				const c0 = curve0 as CubicBezier;
+				const c1 = curve1 as CubicBezier;
+
+				const e0cp0: ShapeControlPoint = {
+					id: e0cp0Id,
+					edgeId: e0Id,
+					position: c0[1].sub(c0[0]),
+				};
+				const e0cp1: ShapeControlPoint = {
+					id: e0cp1Id,
+					edgeId: e0Id,
+					position: c0[2].sub(c0[3]),
+				};
+				const e1cp0: ShapeControlPoint = {
+					id: e1cp0Id,
+					edgeId: e1Id,
+					position: c1[1].sub(c1[0]),
+				};
+				const e1cp1: ShapeControlPoint = {
+					id: e1cp1Id,
+					edgeId: e1Id,
+					position: c1[2].sub(c1[3]),
+				};
+
+				const e0: ShapeEdge = {
+					shapeId,
+					n0: edge.n0,
+					cp0: e0cp0Id,
+					cp1: e0cp1Id,
+					n1: nmidId,
+					id: e0Id,
+				};
+				const e1: ShapeEdge = {
+					shapeId,
+					n0: nmidId,
+					cp0: e1cp0Id,
+					cp1: e1cp1Id,
+					n1: edge.n1,
+					id: e1Id,
+				};
+
+				toDispatch.push(
+					shapeActions.setEdge(shapeId, e0),
+					shapeActions.setEdge(shapeId, e1),
+					shapeActions.setControlPoint(e0cp0),
+					shapeActions.setControlPoint(e0cp1),
+					shapeActions.setControlPoint(e1cp0),
+					shapeActions.setControlPoint(e1cp1),
+				);
+			}
+
+			const pathIds = Object.keys(shapeState.paths);
+			for (const pathId of pathIds) {
+				const path = shapeState.paths[pathId];
+
+				if (path.shapeId !== shape.id) {
+					continue;
+				}
+
+				for (let i = 0; i < path.items.length; i++) {
+					const item0 = path.items[i];
+
+					// We can find the split edge by only checking the right edge of
+					// each part since we can't select a point on a stray edge.
+
+					if (!item0.right || item0.right.edgeId !== edgeId) {
+						continue;
+					}
+
+					const item0Index = i;
+					const item1Index = i === path.items.length - 1 ? 0 : i + 1;
+					const item1 = path.items[item1Index] as FullShapePathItem;
+
+					const inew0: ShapePathItem = {
+						...item0,
+						right: {
+							edgeId: e0Id,
+							controlPointId: areCurves ? e0cp0Id : "",
+						},
+					};
+					const inew1: ShapePathItem = {
+						nodeId: nmidId,
+						left: {
+							edgeId: e0Id,
+							controlPointId: areCurves ? e0cp1Id : "",
+						},
+						right: {
+							edgeId: e1Id,
+							controlPointId: areCurves ? e1cp0Id : "",
+						},
+						reflectControlPoints: true,
+					};
+					const inew2: ShapePathItem = {
+						...item1,
+						left: {
+							edgeId: e1Id,
+							controlPointId: areCurves ? e1cp1Id : "",
+						},
+					};
+
+					toDispatch.push(
+						shapeActions.setPathItem(pathId, item0Index, inew0),
+						shapeActions.setPathItem(pathId, item1Index, inew2),
+						shapeActions.insertPathItem(pathId, item1Index, inew1),
+					);
+					break;
+				}
+			}
+
+			params.dispatch(toDispatch);
+			params.submitAction("Split path");
+		});
+	},
+
 	controlPointMouseDown: (ctx: PenToolContext, cpId: string) => {
+		console.log(cpId);
 		const { shapeState, shapeSelectionState } = ctx;
 
 		const cp = shapeState.controlPoints[cpId]!;
@@ -933,6 +1148,13 @@ export const penToolHandlers = {
 					// Remove right edge
 					const rightEdgeId = mid.right.edgeId;
 
+					const cp1Id = right.left.controlPointId;
+					const cp1 = shapeState.controlPoints[cp1Id];
+					if (cp1) {
+						const cp1New = { ...cp1, edgeId: left.right.edgeId };
+						toDispatch.push(shapeActions.setControlPoint(cp1New));
+					}
+
 					toDispatch.push(
 						shapeActions.removeControlPoint(mid.left.controlPointId),
 						shapeActions.removeControlPoint(mid.right.controlPointId),
@@ -1092,6 +1314,13 @@ export const penToolHandlers = {
 
 					// Remove right edge
 					const rightEdgeId = mid.right.edgeId;
+
+					const cp1Id = right.left.controlPointId;
+					const cp1 = shapeState.controlPoints[cp1Id];
+					if (cp1) {
+						const cp1New = { ...cp1, edgeId: left.right.edgeId };
+						toDispatch.push(shapeActions.setControlPoint(cp1New));
+					}
 
 					toDispatch.push(
 						shapeActions.removeControlPoint(mid.left.controlPointId),
@@ -1542,7 +1771,7 @@ export const penToolHandlers = {
 					left: dirLeft ? null : p1Part0,
 					right: dirLeft ? p1Part0 : null,
 				};
-				toDispatch.push(shapeActions.insertPathItem(pathId, p1Item, direction));
+				toDispatch.push(shapeActions.appendPathItem(pathId, p1Item, direction));
 
 				// If we're inserting item1 before item0, increment itemIndex
 				if (direction === "left") {

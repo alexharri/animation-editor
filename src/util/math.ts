@@ -340,3 +340,28 @@ export const rectCorners = (rect: Rect): Vec2[] => {
 		[0, 0],
 	].map(([x, y]) => Vec2.new(rect.left + x * rect.width, rect.top + y * rect.height));
 };
+
+export const splitLine = (line: Line, t: number): [Line, Line] => {
+	const p = line[0].lerp(line[1], t);
+	return [
+		[line[0], p],
+		[p, line[1]],
+	];
+};
+
+export function interpolateCubicBezier(cubicBezier: CubicBezier, t: number) {
+	const [p0, p1, p2, p3] = cubicBezier;
+
+	const u = 1 - t;
+
+	let x = Math.pow(u, 3) * p0.x;
+	x += 3 * t * Math.pow(u, 2) * p1.x;
+	x += 3 * u * Math.pow(t, 2) * p2.x;
+	x += Math.pow(t, 3) * p3.x;
+	let y = Math.pow(u, 3) * p0.y;
+	y += 3 * t * Math.pow(u, 2) * p1.y;
+	y += 3 * u * Math.pow(t, 2) * p2.y;
+	y += Math.pow(t, 3) * p3.y;
+
+	return Vec2.new(x, y);
+}
