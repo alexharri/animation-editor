@@ -677,7 +677,6 @@ export const penToolHandlers = {
 		requestAction({ history: true }, (params) => {
 			const { shapeState } = ctx;
 			const edge = shapeState.edges[edgeId];
-			console.log(edge, edgeId, shapeState);
 			const { shapeId } = edge;
 			const shape = shapeState.shapes[shapeId];
 
@@ -875,7 +874,6 @@ export const penToolHandlers = {
 	},
 
 	controlPointMouseDown: (ctx: PenToolContext, cpId: string) => {
-		console.log(cpId);
 		const { shapeState, shapeSelectionState } = ctx;
 
 		const cp = shapeState.controlPoints[cpId]!;
