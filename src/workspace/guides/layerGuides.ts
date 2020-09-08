@@ -2,8 +2,15 @@ import { CompositionLayer } from "~/composition/compositionTypes";
 import { getLayerDimensions, getLayerNameToProperty } from "~/composition/layer/layerUtils";
 import { transformMat2 } from "~/composition/transformUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
+import {
+	getPathIdToShapeGroupId,
+	getShapeLayerPathIds,
+	getShapeLayerSelectedPathIds,
+	pathIdToCurves,
+} from "~/shape/shapeUtils";
 import { AffineTransform, CompositionRenderValues, LayerType, NameToProperty } from "~/types";
-import { isVecInPoly } from "~/util/math";
+import { boundingRectOfRects, isVecInPoly, rectCorners } from "~/util/math";
+import { pathBoundingRect } from "~/util/math/boundingRect";
 import { Mat2 } from "~/util/math/mat";
 import { RenderGuidesContext } from "~/workspace/renderTypes";
 
@@ -14,14 +21,45 @@ const LW = 1.5;
 const SLW = 3;
 const SOFF = 1;
 
+const getShapeLayerRect = (opts: RenderGuidesContext, layer: CompositionLayer) => {
+	const {
+		composition,
+		compositionState,
+		compositionSelection,
+		shapeState,
+		shapeSelectionState,
+	} = opts;
+	const pathIds = getShapeLayerPathIds(layer.id, compositionState);
+	const pathIdToShapeGroupId = getPathIdToShapeGroupId(layer.id, compositionState);
+	const rects = pathIds
+		.map((pathId) => {
+			const shapeGroupId = pathIdToShapeGroupId[pathId];
+			const shapeSelected = compositionSelection.properties[shapeGroupId];
+			const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
+			return pathIdToCurves(pathId, shapeState, shapeSelectionState, shapeMoveVector);
+		})
+		.filter(Boolean)
+		.map((curves) => pathBoundingRect(curves!));
+	return boundingRectOfRects(rects);
+};
+
 const getCorners = (
-	layerType: LayerType,
+	opts: RenderGuidesContext,
+	layer: CompositionLayer,
 	nameToProperty: NameToProperty,
 	scale: number,
 	pan: Vec2,
 	transform: AffineTransform,
 ) => {
-	const [width, height] = getLayerDimensions(layerType, nameToProperty);
+	if (layer.type === LayerType.Shape) {
+		const rect = getShapeLayerRect(opts, layer);
+		const mat2 = transformMat2(transform);
+		return rectCorners(rect).map((p) =>
+			mat2.multiply(p).add(transform.translate).scale(scale).add(pan),
+		);
+	}
+
+	const [width, height] = getLayerDimensions(layer.type, nameToProperty);
 	const mat2 = transformMat2(transform);
 	return [
 		[1, 0],
@@ -32,7 +70,7 @@ const getCorners = (
 		let x = tx * width - transform.anchor.x;
 		let y = ty * height - transform.anchor.y;
 
-		if (layerType === LayerType.Ellipse) {
+		if (layer.type === LayerType.Ellipse) {
 			const r = nameToProperty.OuterRadius;
 			x -= r;
 			y -= r;
@@ -55,7 +93,7 @@ const drawRectOutline = (ctx: Ctx, corners: Vec2[]) => {
 	ctx.closePath();
 };
 
-const drawRectsAtCorners = (ctx: Ctx, corners: Vec2[]) => {
+const renderRectsAtCorners = (ctx: Ctx, corners: Vec2[]) => {
 	for (const c of corners) {
 		const x = c.x - W / 2;
 		const y = c.y - W / 2;
@@ -74,7 +112,7 @@ const drawRectsAtCorners = (ctx: Ctx, corners: Vec2[]) => {
 	}
 };
 
-const drawAnchorGuide = (ctx: Ctx, position: Vec2, rotation: number) => {
+const renderAnchorGuide = (ctx: Ctx, position: Vec2, rotation: number) => {
 	ctx.strokeStyle = "black";
 	ctx.lineWidth = SLW;
 
@@ -142,6 +180,7 @@ export function renderLayerGuides(
 	const {
 		compositionSelection: selection,
 		compositionState,
+		compositionSelectionState,
 		scale,
 		pan,
 		viewport,
@@ -155,9 +194,22 @@ export function renderLayerGuides(
 		return;
 	}
 
+	const shouldRenderRectOutline = () => {
+		if (layer.type === LayerType.Shape) {
+			const selectedPathIds = getShapeLayerSelectedPathIds(
+				layer.id,
+				compositionState,
+				compositionSelectionState,
+			);
+			return selectedPathIds.length === 0;
+		}
+
+		return true;
+	};
+
 	const nameToProperty = getLayerNameToProperty(map, compositionState, layer.id);
 	const transform = map.transforms[layer.id].transform[index];
-	const corners = getCorners(layer.type, nameToProperty, scale, pan, transform);
+	const corners = getCorners(opts, layer, nameToProperty, scale, pan, transform);
 
 	if (mousePosition && !opts.hasHoveredLayer) {
 		const viewportMousePosition = mousePosition.sub(Vec2.new(viewport.left, viewport.top));
@@ -165,7 +217,10 @@ export function renderLayerGuides(
 		const isMouseOverLayer = isVecInPoly(viewportMousePosition, corners);
 		if (isMouseOverLayer) {
 			opts.hasHoveredLayer = true;
-			drawRectOutline(ctx, corners);
+
+			if (shouldRenderRectOutline()) {
+				drawRectOutline(ctx, corners);
+			}
 		}
 	}
 
@@ -173,9 +228,9 @@ export function renderLayerGuides(
 		return;
 	}
 
-	drawRectsAtCorners(ctx, corners);
+	renderRectsAtCorners(ctx, corners);
 
 	const anchorPosition = transform.translate.scale(scale).add(pan);
 	const rotation = nameToProperty.Rotation * DEG_TO_RAD_FAC;
-	drawAnchorGuide(ctx, anchorPosition, rotation);
+	renderAnchorGuide(ctx, anchorPosition, rotation);
 }

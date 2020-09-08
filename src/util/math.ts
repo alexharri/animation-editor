@@ -331,3 +331,12 @@ export function quadraticToCubicBezier(
 		return [p0, p1, newP2, p3];
 	}
 }
+
+export const rectCorners = (rect: Rect): Vec2[] => {
+	return [
+		[1, 0],
+		[1, 1],
+		[0, 1],
+		[0, 0],
+	].map(([x, y]) => Vec2.new(rect.left + x * rect.width, rect.top + y * rect.height));
+};

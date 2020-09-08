@@ -798,3 +798,34 @@ export const getShapeFillGroupValues = (
 
 	return { color, opacity, fillRule };
 };
+
+export const getPathIdToShapeGroupId = (layerId: string, compositionState: CompositionState) => {
+	return reduceLayerPropertiesAndGroups<{ [pathId: string]: string }>(
+		layerId,
+		compositionState,
+		(obj, group) => {
+			if (group.name !== PropertyGroupName.Shape) {
+				return obj;
+			}
+			let pathIndex = -1;
+			for (let i = 0; i < group.properties.length; i++) {
+				if (
+					compositionState.properties[group.properties[i]].name ===
+					PropertyName.ShapeLayer_Path
+				) {
+					pathIndex = i;
+					break;
+				}
+			}
+			if (pathIndex === -1) {
+				return obj;
+			}
+			const pathPropertyId = group.properties[pathIndex];
+			const property = compositionState.properties[pathPropertyId] as CompositionProperty;
+			const pathId = property.value;
+			obj[pathId] = group.id;
+			return obj;
+		},
+		{},
+	);
+};

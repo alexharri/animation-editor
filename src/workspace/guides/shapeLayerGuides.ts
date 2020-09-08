@@ -1,11 +1,11 @@
-import { CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
-import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
+import { CompositionLayer } from "~/composition/compositionTypes";
 import { transformMat2 } from "~/composition/transformUtils";
 import { Tool } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeContinueFrom } from "~/shape/shapeTypes";
 import {
+	getPathIdToShapeGroupId,
 	getPathTargetObject,
 	getShapeContinuePathFrom,
 	getShapeLayerDirectlySelectedPaths,
@@ -15,7 +15,7 @@ import {
 	getShapeSelectionFromState,
 	pathIdToCurves,
 } from "~/shape/shapeUtils";
-import { CompositionRenderValues, LayerType, PropertyGroupName, PropertyName } from "~/types";
+import { CompositionRenderValues, LayerType } from "~/types";
 import {
 	renderDiamond,
 	traceCircle,
@@ -96,38 +96,6 @@ const renderCurves = (ctx: Ctx, curves: Curve[]) => {
 	ctx.lineWidth = 0.75;
 	ctx.stroke();
 	ctx.closePath();
-};
-
-const getPathIdToShapeGroupId = (opts: RenderGuidesContext, layerId: string) => {
-	const { compositionState } = opts;
-	return reduceLayerPropertiesAndGroups<{ [pathId: string]: string }>(
-		layerId,
-		compositionState,
-		(obj, group) => {
-			if (group.name !== PropertyGroupName.Shape) {
-				return obj;
-			}
-			let pathIndex = -1;
-			for (let i = 0; i < group.properties.length; i++) {
-				if (
-					compositionState.properties[group.properties[i]].name ===
-					PropertyName.ShapeLayer_Path
-				) {
-					pathIndex = i;
-					break;
-				}
-			}
-			if (pathIndex === -1) {
-				return obj;
-			}
-			const pathPropertyId = group.properties[pathIndex];
-			const property = compositionState.properties[pathPropertyId] as CompositionProperty;
-			const pathId = property.value;
-			obj[pathId] = group.id;
-			return obj;
-		},
-		{},
-	);
 };
 
 const getShapeMoveVector = (
@@ -569,7 +537,7 @@ export function renderShapeLayerGuides(
 			.add(pan);
 	};
 
-	const pathIdToShapeGroupId = getPathIdToShapeGroupId(opts, layer.id);
+	const pathIdToShapeGroupId = getPathIdToShapeGroupId(layer.id, opts.compositionState);
 
 	const pathCtx: RenderPathContext = {
 		closePathNodeId,

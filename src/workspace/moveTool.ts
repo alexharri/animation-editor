@@ -13,7 +13,7 @@ import {
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
-import { getSingleSelectedShapeLayerId } from "~/shape/shapeUtils";
+import { getShapeLayerSelectedPathIds, getSingleSelectedShapeLayerId } from "~/shape/shapeUtils";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
@@ -44,8 +44,17 @@ export const moveToolHandlers = {
 		);
 
 		if (selectedShapeLayer) {
-			penToolHandlers.moveToolMouseDown(e, selectedShapeLayer, areaId, viewport);
-			return;
+			const layerId = selectedShapeLayer;
+			const selectedPathIds = getShapeLayerSelectedPathIds(
+				layerId,
+				compositionState,
+				compositionSelectionState,
+			);
+
+			if (selectedPathIds.length > 0 || isKeyDown("Command")) {
+				penToolHandlers.moveToolMouseDown(e, selectedShapeLayer, areaId, viewport);
+				return;
+			}
 		}
 
 		let layerId = "";
@@ -68,7 +77,7 @@ export const moveToolHandlers = {
 			const corners = workspaceLayerBoundingBoxCorners(
 				currLayerId,
 				map,
-				compositionState,
+				actionState,
 				pan,
 				scale,
 			);

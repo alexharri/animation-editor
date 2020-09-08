@@ -49,7 +49,6 @@ export const penToolHandlers = {
 	 * Move tool mouse down with a single selected shape layer
 	 */
 	moveToolMouseDown: (e: React.MouseEvent, layerId: string, areaId: string, viewport: Rect) => {
-		// Create selection rect if moved, otherwise move selection up.
 		const ctx = constructPenToolContext(Vec2.fromEvent(e), layerId, areaId, viewport);
 
 		const { compositionState, compositionSelectionState } = getActionState();
