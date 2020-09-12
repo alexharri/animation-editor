@@ -1,4 +1,4 @@
-import { cssCursors, cssVariables } from "~/cssVariables";
+import { cssVariables } from "~/cssVariables";
 import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
@@ -16,7 +16,7 @@ export default ({ css }: StyleParams) => ({
 		height: 16px;
 		width: 16px;
 		position: relative;
-		cursor: ${cssCursors.grab.default};
+		cursor: grab;
 
 		&:active {
 			cursor: grabbing;
