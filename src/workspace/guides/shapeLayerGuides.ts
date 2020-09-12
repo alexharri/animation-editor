@@ -193,7 +193,7 @@ const renderContinueClosePath = (
 	}
 
 	ctx.beginPath();
-	traceCurve(ctx, curve);
+	traceCurve(ctx, curve, { move: true });
 	ctx.strokeStyle = cssVariables.primary500;
 	ctx.lineWidth = 1;
 	ctx.stroke();
