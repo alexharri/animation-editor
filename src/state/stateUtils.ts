@@ -20,7 +20,16 @@ const getCurrentStateFromApplicationState = (_state: ApplicationState): ActionSt
 	return actionState;
 };
 
-export const getActionStateFromApplicationState = (_state: ApplicationState): ActionState => {
+interface GetActionStateOptions {
+	allowSelectionIndexShift: boolean;
+}
+
+export const getActionStateFromApplicationState = (
+	_state: ApplicationState,
+	options: Partial<GetActionStateOptions> = {},
+): ActionState => {
+	const { allowSelectionIndexShift = false } = options;
+
 	const state: any = _state;
 	const keys = Object.keys(state) as Array<keyof ApplicationState>;
 	const actionState = keys.reduce<ActionState>((obj, key) => {
@@ -29,9 +38,11 @@ export const getActionStateFromApplicationState = (_state: ApplicationState): Ac
 		} else if (state[key].list) {
 			const s = state[key] as HistoryState<any>;
 			const shiftForward =
+				allowSelectionIndexShift &&
 				s.type === "selection" &&
 				s.indexDirection === -1 &&
 				s.list[s.index + 1].modifiedRelated;
+
 			obj[key] = s.list[s.index + (shiftForward ? 1 : 0)].state;
 		} else {
 			obj[key] = state[key].state;
@@ -70,6 +81,8 @@ export const createApplicationStateFromActionState = (
 		contextMenu: toActionBasedState(actionState.contextMenu),
 		nodeEditor: toHistoryBasedState(actionState.nodeEditor),
 		project: toHistoryBasedState(actionState.project),
+		shapeState: toHistoryBasedState(actionState.shapeState),
+		shapeSelectionState: toHistoryBasedState(actionState.shapeSelectionState),
 		timelines: toHistoryBasedState(actionState.timelines),
 		timelineSelection: toHistoryBasedState(actionState.timelineSelection, "selection"),
 		tool: toActionBasedState(actionState.tool),
@@ -83,7 +96,9 @@ export function connectActionState<TStateProps = {}, TOwnProps = {}>(
 ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps> {
 	return connect((state: ApplicationState, ownProps: TOwnProps) => {
 		try {
-			const actionState = getActionStateFromApplicationState(state);
+			const actionState = getActionStateFromApplicationState(state, {
+				allowSelectionIndexShift: true,
+			});
 			return mapStateToProps!(actionState, ownProps);
 		} catch (e) {
 			console.error(e);
@@ -92,7 +107,8 @@ export function connectActionState<TStateProps = {}, TOwnProps = {}>(
 	});
 }
 
-export const getActionState = () => getActionStateFromApplicationState(store.getState());
+export const getActionState = (options: Partial<GetActionStateOptions> = {}) =>
+	getActionStateFromApplicationState(store.getState(), options);
 export const getCurrentState = () => getCurrentStateFromApplicationState(store.getState());
 
 export const getAreaActionState = <T extends AreaType>(areaId: string): AreaState<T> => {

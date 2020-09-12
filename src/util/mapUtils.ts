@@ -7,7 +7,7 @@ export const removeKeysFromMap = <T extends { [key: string]: any }>(obj: T, keys
 	}, {} as T);
 };
 
-export const addListToMap = <M extends { [key: string]: T }, T, U extends T = T>(
+export const addListToMap = <M extends Partial<{ [key: string]: T }>, T, U extends T = T>(
 	map: M,
 	items: U[],
 	idField: keyof T & keyof U,

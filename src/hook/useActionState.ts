@@ -8,7 +8,9 @@ type Selector<T> = (actionState: ActionState) => T;
 export const useActionState = <T>(selector: Selector<T>, { shallow = true } = {}): T => {
 	const result = useSelector<ApplicationState, T>(
 		(state) => {
-			const actionState = getActionStateFromApplicationState(state);
+			const actionState = getActionStateFromApplicationState(state, {
+				allowSelectionIndexShift: true,
+			});
 			return selector(actionState);
 		},
 		shallow ? shallowEqual : undefined,
@@ -21,7 +23,9 @@ export const useMemoActionState = <T>(selector: Selector<T>, deps: React.Depende
 	selectorRef.current = selector;
 
 	return useMemo(() => {
-		const actionState = getActionStateFromApplicationState(store.getState());
+		const actionState = getActionStateFromApplicationState(store.getState(), {
+			allowSelectionIndexShift: true,
+		});
 		return selectorRef.current(actionState);
 	}, deps);
 };

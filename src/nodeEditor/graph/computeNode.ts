@@ -45,7 +45,7 @@ const parseNum = (arg: ComputeNodeArg): number => {
 
 const parseColor = (arg: ComputeNodeArg): RGBAColor => {
 	switch (arg.type) {
-		case ValueType.Color:
+		case ValueType.RGBAColor:
 			return arg.value;
 		case ValueType.Any: {
 			if (Array.isArray(arg.value)) {
@@ -187,7 +187,7 @@ const toArg = {
 	),
 	color: createArgFn(
 		(value: RGBAColor) => ({
-			type: ValueType.Color,
+			type: ValueType.RGBAColor,
 			value,
 		}),
 		(_) => {},

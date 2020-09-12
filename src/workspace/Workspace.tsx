@@ -1,25 +1,44 @@
 import React, { useEffect, useRef } from "react";
-import { cssVariables } from "~/cssVariables";
+import { Tool } from "~/constants";
+import { cssCursors, cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
-import { getActionState } from "~/state/stateUtils";
+import { getActionId, getActionState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { renderCompositionWorkspaceGuides, renderWorkspace } from "~/workspace/renderWorkspace";
+import { moveToolHandlers } from "~/workspace/moveTool";
+import { penToolHandlers } from "~/workspace/penTool/penTool";
+import {
+	renderCompositionWorkspaceGuides as renderWorkspaceGuides,
+	renderWorkspace,
+} from "~/workspace/renderWorkspace";
+import { useWorkspaceCursor } from "~/workspace/useWorkspaceCursor";
 import WorkspaceStyles from "~/workspace/Workspace.styles";
 import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 import { WorkspaceFooter } from "~/workspace/WorkspaceFooter";
 import { workspaceHandlers } from "~/workspace/workspaceHandlers";
 
-const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?: Vec2) => {
+const getOptions = (
+	props: Props,
+	ctx: CanvasRenderingContext2D,
+	mousePosition: Vec2 | undefined,
+	keyDown: { Shift: boolean; Command: boolean },
+) => {
 	const { width, height, left, top } = props;
 
-	const state = getActionState();
+	const state = getActionState({ allowSelectionIndexShift: true });
+	const isPerformingAction = !!getActionId();
 	const compositionId = props.areaState.compositionId;
-	const { compositionState, compositionSelectionState } = state;
+	const {
+		compositionState,
+		compositionSelectionState,
+		shapeState,
+		shapeSelectionState,
+		tool: toolState,
+	} = state;
 
 	const composition = compositionState.compositions[compositionId];
 	const map = getCompositionRenderValues(
@@ -33,18 +52,24 @@ const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?:
 		{ recursive: true },
 	);
 
-	const { pan, scale } = props.areaState;
+	const { pan, scale, selectionRect } = props.areaState;
 
 	const options = {
 		ctx,
 		compositionId,
 		compositionState,
 		compositionSelectionState,
+		shapeState,
+		shapeSelectionState,
 		map,
 		pan,
 		scale,
 		viewport: { width, height, left, top },
 		mousePosition,
+		selectionRect,
+		tool: toolState.selected,
+		isPerformingAction,
+		keyDown,
 	};
 	return options;
 };
@@ -79,7 +104,9 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 	});
 	useKeyDownEffect("Alt", (down) => {
 		if (zoomTarget.current) {
-			zoomTarget.current.style.cursor = down ? "zoom-out" : "zoom-in";
+			zoomTarget.current.style.cursor = down
+				? cssCursors.zoom.zoomOut
+				: cssCursors.zoom.zoomIn;
 		}
 	});
 
@@ -123,6 +150,8 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 		return unsub;
 	}, []);
 
+	const keyDownRef = useRef({ Shift: false, Command: false });
+
 	useEffect(() => {
 		let mounted = true;
 
@@ -143,13 +172,20 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 
 			if (render) {
 				shouldRenderRef.current = false;
-				renderWorkspace(getOptions(propsRef.current, mainCtx));
+				renderWorkspace(
+					getOptions(propsRef.current, mainCtx, undefined, keyDownRef.current),
+				);
 			}
 
 			if (renderGuides) {
 				shouldRenderGuidesRef.current = false;
-				renderCompositionWorkspaceGuides(
-					getOptions(propsRef.current, guidesCtx, mousePositionRef.current),
+				renderWorkspaceGuides(
+					getOptions(
+						propsRef.current,
+						guidesCtx,
+						mousePositionRef.current,
+						keyDownRef.current,
+					),
 				);
 			}
 		};
@@ -164,19 +200,57 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 		shouldRenderRef.current = true;
 	}, [props]);
 
-	const onMouseMove = (e: React.MouseEvent) => {
-		shouldRenderGuidesRef.current = true;
-
-		mousePositionRef.current = Vec2.fromEvent(e);
-	};
+	useKeyDownEffect("Command", (keyDown) => {
+		keyDownRef.current.Command = keyDown;
+		shouldRenderRef.current = true;
+	});
+	useKeyDownEffect("Shift", (keyDown) => {
+		keyDownRef.current.Shift = keyDown;
+		shouldRenderRef.current = true;
+	});
 
 	const { left, top, width, height } = props;
+
+	const setCursor = useWorkspaceCursor(guideCanvasRef, {
+		compositionId: props.areaState.compositionId,
+		viewport: { width, left, top, height },
+		areaId: props.areaId,
+	});
+
+	const onMouseMove = (e: React.MouseEvent) => {
+		shouldRenderGuidesRef.current = true;
+		mousePositionRef.current = Vec2.fromEvent(e);
+		setCursor(e);
+	};
+
+	const onMouseOut = (e: React.MouseEvent) => {
+		shouldRenderGuidesRef.current = true;
+		mousePositionRef.current = undefined;
+		setCursor(e);
+	};
+
+	const onMouseDown = (e: React.MouseEvent) => {
+		const { tool } = getActionState();
+
+		const viewport = { left, top, width, height };
+
+		switch (tool.selected) {
+			case Tool.pen: {
+				penToolHandlers.onMouseDown(e, props.areaId, viewport);
+				break;
+			}
+			default: {
+				moveToolHandlers.onMouseDown(e, props.areaId, viewport);
+			}
+		}
+	};
 
 	return (
 		<div
 			style={{ background: cssVariables.gray400 }}
 			ref={containerRef}
 			onMouseMove={onMouseMove}
+			onMouseOut={onMouseOut}
 		>
 			<canvas
 				ref={canvasRef}
@@ -190,13 +264,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				width={width}
 				style={{ position: "absolute", top: 0, left: 0 }}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) =>
-						workspaceHandlers.onMouseDown(e, props.areaId, {
-							left,
-							top,
-							width,
-							height,
-						}),
+					left: onMouseDown,
 					middle: (e) => workspaceHandlers.onPanStart(props.areaId, e),
 				})}
 			/>

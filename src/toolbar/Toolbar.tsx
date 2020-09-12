@@ -1,29 +1,26 @@
-import React, { useRef, useEffect } from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
+import React, { useEffect, useRef } from "react";
+import { ConvertAnchorIcon } from "~/components/icons/ConvertAnchorIcon";
+import { EllipseIcon } from "~/components/icons/EllipseIcon";
+import { FillIcon } from "~/components/icons/FillIcon";
+import { IntersectionIcon } from "~/components/icons/IntersectionIcon";
+import { PenIcon } from "~/components/icons/PenIcon";
+import { PolygonIcon } from "~/components/icons/PolygonIcon";
+import { RectangleIcon } from "~/components/icons/RectangleIcon";
+import { SelectionIcon } from "~/components/icons/SelectionIcon";
+import { keyToToolMap, Tool, toolGroups, toolToKey, toolToLabel } from "~/constants";
+import { addListener, removeListener } from "~/listener/addListener";
+import { getKeyFromKeyCode, isAnyModifierKeyDown } from "~/listener/keyboard";
+import { requestAction } from "~/listener/requestAction";
+import { connectActionState } from "~/state/stateUtils";
+import { toolActions } from "~/toolbar/toolActions";
 import styles from "~/toolbar/Toolbar.styles";
 import { ToolState } from "~/toolbar/toolReducer";
-import { toolGroups, keyToToolMap, toolToLabel, toolToKey } from "~/constants";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
-import { Tool } from "~/constants";
-
-import { SelectionIcon } from "~/components/icons/SelectionIcon";
-import { PenIcon } from "~/components/icons/PenIcon";
-import { ConvertAnchorIcon } from "~/components/icons/ConvertAnchorIcon";
-import { RectangleIcon } from "~/components/icons/RectangleIcon";
-import { EllipseIcon } from "~/components/icons/EllipseIcon";
-import { PolygonIcon } from "~/components/icons/PolygonIcon";
-import { IntersectionIcon } from "~/components/icons/IntersectionIcon";
-import { FillIcon } from "~/components/icons/FillIcon";
-import { connectActionState } from "~/state/stateUtils";
-import { requestAction } from "~/listener/requestAction";
-import { toolActions } from "~/toolbar/toolActions";
-import { addListener, removeListener } from "~/listener/addListener";
-import { getKeyFromKeyCode, isAnyModifierKeyDown } from "~/listener/keyboard";
-
 export const toolToIconMap = {
-	[Tool.selection]: SelectionIcon,
+	[Tool.move]: SelectionIcon,
 	[Tool.pen]: PenIcon,
 	[Tool.editVertex]: ConvertAnchorIcon,
 	[Tool.rectangle]: RectangleIcon,
@@ -38,10 +35,10 @@ interface StateProps {
 }
 type Props = StateProps;
 
-const ToolbarComponent: React.FC<Props> = props => {
+const ToolbarComponent: React.FC<Props> = (props) => {
 	// Tool keyboard shortcut listener
 	useEffect(() => {
-		const token = addListener.repeated("keydown", e => {
+		const token = addListener.repeated("keydown", (e) => {
 			const key = getKeyFromKeyCode(e.keyCode);
 			if (key && typeof keyToToolMap[key] !== "undefined") {
 				if (isAnyModifierKeyDown()) {
@@ -81,7 +78,7 @@ const ToolbarComponent: React.FC<Props> = props => {
 				};
 
 				setTimeout(() => {
-					addListener.repeated("mousedown", e => {
+					addListener.repeated("mousedown", (e) => {
 						if (
 							group.current !== e.target &&
 							!group.current?.contains(e.target as HTMLDivElement)

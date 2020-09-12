@@ -1,5 +1,5 @@
+import { cssCursors, cssVariables, cssZIndex } from "~/cssVariables";
 import { StyleParams } from "~/util/stylesheets";
-import { cssVariables, cssZIndex } from "~/cssVariables";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
@@ -18,7 +18,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		right: 0;
 		bottom: 0;
-		cursor: grab;
+		cursor: ${cssCursors.grab.default};
 		z-index: ${cssZIndex.nodeEditor.panTarget};
 	`,
 
@@ -29,7 +29,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		right: 0;
 		bottom: 0;
-		cursor: zoom-in;
+		cursor: ${cssCursors.zoom.zoomIn};
 		z-index: ${cssZIndex.nodeEditor.zoomTarget};
 	`,
 

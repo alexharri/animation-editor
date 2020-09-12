@@ -5,6 +5,10 @@ interface RenderCircleOptions {
 	strokeColor?: string;
 }
 
+export function traceCircle(ctx: Ctx, position: Vec2, radius: number): void {
+	ctx.arc(position.x, position.y, radius, 0, 2 * Math.PI, false);
+}
+
 export function renderCircle(
 	ctx: CanvasRenderingContext2D,
 	vectors: Vec2 | Vec2[],
@@ -39,6 +43,10 @@ interface RenderRectOptions {
 	strokeColor?: string;
 }
 
+export function traceRect(ctx: CanvasRenderingContext2D, rect: Rect) {
+	ctx.rect(rect.left, rect.top, rect.width, rect.height);
+}
+
 export function renderRect(
 	ctx: CanvasRenderingContext2D,
 	rects: Rect | Rect[],
@@ -50,19 +58,17 @@ export function renderRect(
 
 	ctx.fillStyle = fillColor;
 	for (let i = 0; i < recArr.length; i += 1) {
-		const { left, top, width, height } = recArr[i];
-
 		ctx.beginPath();
-		ctx.rect(left, top, width, height);
+		traceRect(ctx, recArr[i]);
 		ctx.fill();
 
 		if (strokeWidth > 0 && strokeColor) {
-			ctx.beginPath();
-			ctx.rect(left, top, width, height);
 			ctx.lineWidth = strokeWidth;
 			ctx.strokeStyle = strokeColor;
 			ctx.stroke();
 		}
+
+		ctx.closePath();
 	}
 }
 
@@ -114,6 +120,18 @@ interface RenderLineOptions {
 	lineDash?: number[];
 }
 
+export function traceLine(
+	ctx: CanvasRenderingContext2D,
+	line: Line,
+	traceOptions: TraceOptions = {},
+): void {
+	const [a, b] = line;
+	if (traceOptions.move) {
+		ctx.moveTo(a.x, a.y);
+	}
+	ctx.lineTo(b.x, b.y);
+}
+
 export function renderLine(
 	ctx: CanvasRenderingContext2D,
 	a: Vec2,
@@ -123,8 +141,7 @@ export function renderLine(
 	const { color, strokeWidth } = opts;
 
 	ctx.beginPath();
-	ctx.moveTo(a.x, a.y);
-	ctx.lineTo(b.x, b.y);
+	traceLine(ctx, [a, b], { move: true });
 	ctx.strokeStyle = color;
 	ctx.lineWidth = strokeWidth;
 	if (opts.lineDash) {
@@ -141,17 +158,31 @@ interface RenderCubicBezierOptions {
 	strokeWidth: number;
 }
 
+interface TraceOptions {
+	move?: boolean;
+}
+
+export function traceCubicBezier(
+	ctx: CanvasRenderingContext2D,
+	bezier: CubicBezier,
+	traceOptions: TraceOptions = {},
+): void {
+	const [p0, p1, p2, p3] = bezier;
+	if (traceOptions.move) {
+		ctx.moveTo(p0.x, p0.y);
+	}
+	ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+}
+
 export function renderCubicBezier(
 	ctx: CanvasRenderingContext2D,
 	bezier: CubicBezier,
 	opts: RenderCubicBezierOptions,
 ): void {
 	const { color, strokeWidth } = opts;
-	const [p0, p1, p2, p3] = bezier;
 
 	ctx.beginPath();
-	ctx.moveTo(p0.x, p0.y);
-	ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+	traceCubicBezier(ctx, bezier, { move: true });
 	ctx.strokeStyle = color;
 	ctx.lineWidth = strokeWidth;
 	ctx.stroke();
@@ -160,13 +191,21 @@ export function renderCubicBezier(
 interface RenderPathOptions {
 	color: string;
 	strokeWidth: number;
-	lineDash: number[];
+	lineDash?: number[];
+}
+
+export function traceCurve(ctx: Ctx, curve: Curve, traceOptions: TraceOptions = {}): void {
+	if (curve.length === 2) {
+		traceLine(ctx, curve, traceOptions);
+	} else {
+		traceCubicBezier(ctx, curve, traceOptions);
+	}
 }
 
 /**
  * @todo Implement `lineDash` option
  */
-export function renderPath(ctx: Ctx, path: CubicBezier | Line, opts: RenderPathOptions): void {
+export function renderCurve(ctx: Ctx, path: CubicBezier | Line, opts: RenderPathOptions): void {
 	if (path.length === 2) {
 		renderLine(ctx, path[0], path[1], opts);
 	} else {

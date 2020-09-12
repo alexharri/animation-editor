@@ -3,7 +3,7 @@ import { areaActions } from "~/area/state/areaActions";
 import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
-import { connectActionState, getActionState } from "~/state/stateUtils";
+import { connectActionState } from "~/state/stateUtils";
 import { TimelineScrubber } from "~/timeline/scrubber/TimelineScrubber";
 import styles from "~/timeline/Timeline.styles";
 import { timelineAreaActions, TimelineAreaState } from "~/timeline/timelineAreaReducer";
@@ -12,7 +12,6 @@ import { timelineHandlers } from "~/timeline/timelineHandlers";
 import { TimelineLayerList } from "~/timeline/TimelineLayerList";
 import { TimelineViewBounds } from "~/timeline/TimelineViewBounds";
 import { TrackEditor } from "~/trackEditor/TrackEditor";
-import { capTimelinePanY } from "~/trackEditor/trackEditorUtils";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { capToRange, isVecInRect, splitRect } from "~/util/math";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -69,12 +68,6 @@ const TimelineComponent: React.FC<Props> = (props) => {
 	const outRef = useRef<HTMLDivElement>(null);
 
 	const panY = props.areaState.panY;
-	// const panY = capPanY(
-	// 	props.areaState.panY,
-	// 	composition.id,
-	// 	props.height - 32,
-	// 	props.compositionState,
-	// );
 
 	const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -91,14 +84,7 @@ const TimelineComponent: React.FC<Props> = (props) => {
 
 			e.preventDefault();
 
-			const { compositionState } = getActionState();
-
-			const panY = capTimelinePanY(
-				props.areaState.panY,
-				compositionId,
-				props.height,
-				compositionState,
-			);
+			const { panY } = props.areaState;
 
 			let [viewportLeft, viewportRight] = splitRect(
 				"horizontal",

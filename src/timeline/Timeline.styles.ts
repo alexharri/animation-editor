@@ -1,5 +1,5 @@
 import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
-import { cssVariables, cssZIndex } from "~/cssVariables";
+import { cssCursors, cssVariables, cssZIndex } from "~/cssVariables";
 import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
@@ -70,7 +70,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		right: 0;
 		bottom: 0;
-		cursor: zoom-in;
+		cursor: ${cssCursors.zoom.zoomIn};
 		z-index: ${cssZIndex.graphEditor.zoomTarget};
 	`,
 
@@ -81,7 +81,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		right: 0;
 		bottom: 0;
-		cursor: grab;
+		cursor: ${cssCursors.grab.default};
 		z-index: ${cssZIndex.graphEditor.panTarget};
 	`,
 });

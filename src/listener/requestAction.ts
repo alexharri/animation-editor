@@ -31,7 +31,7 @@ export interface RequestActionParams {
 	addListener: typeof _addListener;
 	removeListener: typeof removeListener;
 	execOnComplete: (callback: () => void) => void;
-	cancelled: () => boolean;
+	done: () => boolean;
 }
 
 export interface RequestActionCallback {
@@ -45,8 +45,14 @@ const performRequestedAction = (
 	const actionId = (++_n).toString();
 	const cancelTokens: string[] = [];
 
+	const done = () => actionId !== getActionId();
+
 	const addListener = Object.keys(_addListener).reduce<typeof _addListener>((obj, key) => {
 		(obj as any)[key] = (...args: any[]) => {
+			if (done()) {
+				return;
+			}
+
 			const cancelToken = (_addListener as any)[key](...args);
 			cancelTokens.push(cancelToken);
 			return cancelToken;
@@ -77,34 +83,29 @@ const performRequestedAction = (
 	store.dispatch(historyActions.startAction(actionId));
 
 	const dispatch: RequestActionParams["dispatch"] = (action, ...args) => {
-		try {
-			if (Array.isArray(action)) {
-				if (args.length) {
-					console.warn(
-						"Dispatch received an array as the first argument AND received additional arguments.",
-					);
-				}
-
-				store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
-				return;
-			}
-
+		if (Array.isArray(action)) {
 			if (args.length) {
-				store.dispatch(
-					historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
+				console.warn(
+					"Dispatch received an array as the first argument AND received additional arguments.",
 				);
-				return;
 			}
 
-			store.dispatch(historyActions.dispatchToAction(actionId, action, history));
-		} catch (e) {
-			// We don't want thrown errors to interfere with the rest of the handler.
-			console.dir(e);
+			store.dispatch(historyActions.dispatchBatchToAction(actionId, action, history));
+			return;
 		}
+
+		if (args.length) {
+			store.dispatch(
+				historyActions.dispatchBatchToAction(actionId, [action, ...args], history),
+			);
+			return;
+		}
+
+		store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 	};
 
 	callback({
-		cancelled: () => actionId !== getActionId(),
+		done,
 
 		dispatch,
 

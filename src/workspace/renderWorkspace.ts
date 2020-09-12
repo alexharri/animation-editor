@@ -1,17 +1,40 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
-import { CompositionLayer } from "~/composition/compositionTypes";
+import {
+	CompositionLayer,
+	CompositionProperty,
+	CompositionPropertyGroup,
+} from "~/composition/compositionTypes";
+import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
 import { applyParentTransform, transformMat2 } from "~/composition/transformUtils";
 import {
 	getLayerArrayModifiers,
 	getLayerCompositionProperties,
 } from "~/composition/util/compositionPropertyUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { DEG_TO_RAD_FAC } from "~/constants";
+import { Tool } from "~/constants";
 import { cssVariables } from "~/cssVariables";
-import { AffineTransform, CompositionRenderValues, LayerType, PropertyName } from "~/types";
-import { isVecInPoly } from "~/util/math";
-import { Mat2 } from "~/util/math/mat";
+import { ShapeState } from "~/shape/shapeReducer";
+import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
+import {
+	getCompositionSelectedPathsSet,
+	getShapeFillGroupValues,
+	getShapeLayerDirectlySelectedPaths,
+	getShapeStrokeGroupValues,
+	pathIdToCurves,
+} from "~/shape/shapeUtils";
+import {
+	AffineTransform,
+	CompositionRenderValues,
+	LayerType,
+	PropertyGroupName,
+	PropertyName,
+} from "~/types";
+import { traceCurve } from "~/util/canvas/renderPrimitives";
+import { rgbToString } from "~/util/color/convertColor";
+import { renderLayerGuides } from "~/workspace/guides/layerGuides";
+import { renderShapeLayerGuides } from "~/workspace/guides/shapeLayerGuides";
+import { RenderGuidesContext } from "~/workspace/renderTypes";
 
 const getNameToProperty = (
 	map: CompositionRenderValues,
@@ -32,29 +55,45 @@ const getNameToProperty = (
 	return nameToProperty;
 };
 
-const W = 8;
-const R = 5;
-const A = 4;
-const LW = 1.5;
-const SLW = 3;
-const SOFF = 1;
-
 interface Options {
 	ctx: Ctx;
 	viewport: Rect;
 	compositionId: string;
 	compositionState: CompositionState;
 	compositionSelectionState: CompositionSelectionState;
+	shapeState: ShapeState;
+	shapeSelectionState: ShapeSelectionState;
 	map: CompositionRenderValues;
 	pan: Vec2;
 	scale: number;
 	mousePosition?: Vec2;
+	selectionRect: Rect | null;
+	tool: Tool;
+	isPerformingAction: boolean;
+	keyDown: {
+		Shift: boolean;
+		Command: boolean;
+	};
 }
 
 export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
-	const { ctx, compositionId, compositionState, viewport, pan: _pan, scale } = options;
+	const {
+		ctx,
+		compositionId,
+		compositionState,
+		compositionSelectionState,
+		shapeState,
+		shapeSelectionState,
+		viewport,
+		pan: _pan,
+		scale,
+	} = options;
 
 	const composition = compositionState.compositions[compositionId];
+	const compositionSelection = getCompSelectionFromState(
+		compositionId,
+		compositionSelectionState,
+	);
 
 	ctx.clearRect(0, 0, viewport.width, viewport.height);
 
@@ -73,15 +112,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
-		const {
-			Width,
-			Height,
-			// Opacity,
-			Fill,
-			StrokeWidth,
-			StrokeColor,
-			// BorderRadius,
-		} = nameToProperty;
+		const { Width, Height, Fill, StrokeWidth, StrokeColor } = nameToProperty;
 
 		const fillColor = `rgba(${Fill.join(",")})`;
 		const strokeColor = `rgba(${StrokeColor.join(",")})`;
@@ -91,11 +122,6 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
 			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
 		}
-
-		// let { indexTransforms } = map.transforms[layer.id];
-		// if (indexTransforms[index]) {
-		// 	transform = _applyIndexTransform(indexTransforms[index], transform);
-		// }
 
 		const mat2 = transformMat2(transform);
 
@@ -123,6 +149,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			ctx.lineWidth = StrokeWidth;
 			ctx.stroke();
 		}
+		ctx.closePath();
 	}
 
 	function renderEllipse(
@@ -143,11 +170,6 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
 			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
 		}
-
-		// const { indexTransforms } = map.transforms[layer.id];
-		// if (indexTransforms[index]) {
-		// 	transform = _applyIndexTransform(indexTransforms[index], transform);
-		// }
 
 		const [[ix, iy], [jx, jy]] = transformMat2(transform).matrix;
 
@@ -174,6 +196,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		ctx.fillStyle = fillColor;
 		ctx.fill("evenodd");
+		ctx.closePath();
 
 		if (StrokeWidth) {
 			ctx.strokeStyle = strokeColor;
@@ -187,6 +210,139 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			ctx.beginPath();
 			ctx.arc(c.x, c.y, ir, 0, 2 * Math.PI, false);
 			ctx.stroke();
+			ctx.closePath();
+		}
+	}
+
+	function renderShapeLayer(
+		map: CompositionRenderValues,
+		layer: CompositionLayer,
+		index: number,
+		parentIndexTransforms: AffineTransform[] = [],
+	) {
+		const shapeGroups = reduceLayerPropertiesAndGroups<CompositionPropertyGroup[]>(
+			layer.id,
+			compositionState,
+			(acc, property) => {
+				if (property.name === PropertyGroupName.Shape) {
+					acc.push(property);
+				}
+				return acc;
+			},
+			[],
+		).reverse();
+
+		let transform = map.transforms[layer.id].transform[index];
+		for (const parentTransform of parentIndexTransforms) {
+			transform = applyParentTransform(parentTransform, transform, true);
+		}
+		const mat2 = transformMat2(transform);
+
+		const toPos = (vec: Vec2): Vec2 => {
+			return mat2
+				.multiplyVec2(vec.sub(transform.anchor))
+				.add(transform.translate)
+				.scale(scale)
+				.add(pan);
+		};
+
+		const pathIdToShapeGroupId = reduceLayerPropertiesAndGroups<{ [pathId: string]: string }>(
+			layer.id,
+			compositionState,
+			(obj, group) => {
+				if (group.name !== PropertyGroupName.Shape) {
+					return obj;
+				}
+				let pathIndex = -1;
+				for (let i = 0; i < group.properties.length; i++) {
+					if (
+						compositionState.properties[group.properties[i]].name ===
+						PropertyName.ShapeLayer_Path
+					) {
+						pathIndex = i;
+						break;
+					}
+				}
+				if (pathIndex === -1) {
+					return obj;
+				}
+				const pathPropertyId = group.properties[pathIndex];
+				const property = compositionState.properties[pathPropertyId] as CompositionProperty;
+				const pathId = property.value;
+				obj[pathId] = group.id;
+				return obj;
+			},
+			{},
+		);
+
+		const onPath = (property: CompositionProperty) => {
+			const pathId = property.value;
+			const shapeGroupId = pathIdToShapeGroupId[pathId];
+			const shapeSelected = compositionSelection.properties[shapeGroupId];
+			const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
+			const pathList = pathIdToCurves(
+				pathId,
+				shapeState,
+				shapeSelectionState,
+				shapeMoveVector,
+				toPos,
+			);
+
+			if (!pathList) {
+				return;
+			}
+
+			for (let i = 0; i < pathList.length; i++) {
+				traceCurve(ctx, pathList[i], { move: i === 0 });
+			}
+		};
+
+		const onFill = (group: CompositionPropertyGroup) => {
+			const { color, opacity, fillRule } = getShapeFillGroupValues(group, compositionState);
+			ctx.fillStyle = rgbToString(color, opacity);
+			ctx.fill(fillRule);
+		};
+
+		const onStroke = (group: CompositionPropertyGroup) => {
+			const {
+				color,
+				opacity,
+				lineCap,
+				lineJoin,
+				lineWidth,
+				miterLimit,
+			} = getShapeStrokeGroupValues(group, compositionState);
+
+			ctx.strokeStyle = rgbToString(color, opacity);
+			ctx.lineWidth = lineWidth * scale;
+			ctx.miterLimit = miterLimit;
+			ctx.lineCap = lineCap;
+			ctx.lineJoin = lineJoin;
+			ctx.stroke();
+		};
+
+		for (const group of shapeGroups) {
+			ctx.beginPath();
+			for (const propertyId of group.properties) {
+				const property = compositionState.properties[propertyId];
+
+				switch (property.name) {
+					case PropertyName.ShapeLayer_Path: {
+						onPath(property);
+						break;
+					}
+
+					case PropertyGroupName.Fill: {
+						onFill(property);
+						break;
+					}
+
+					case PropertyGroupName.Stroke: {
+						onStroke(property);
+						break;
+					}
+				}
+			}
 			ctx.closePath();
 		}
 	}
@@ -210,6 +366,11 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 					break;
 				}
 
+				case LayerType.Shape: {
+					renderShapeLayer(map, layer, 0, transformList);
+					break;
+				}
+
 				case LayerType.Rect: {
 					renderRectLayer(map, layer, 0, transformList);
 					break;
@@ -229,7 +390,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 			if (!arrayModifiers.length) {
 				renderLayer(layer, []);
-				return;
+				continue;
 			}
 
 			function dimension(dimensionIndex: number, transforms: AffineTransform[] = []) {
@@ -260,7 +421,17 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 };
 
 export function renderCompositionWorkspaceGuides(options: Options) {
-	const { ctx, compositionId, compositionState, viewport, pan: _pan, scale } = options;
+	const {
+		ctx,
+		compositionId,
+		compositionState,
+		compositionSelectionState,
+		shapeState,
+		shapeSelectionState,
+		viewport,
+		pan: _pan,
+		scale,
+	} = options;
 
 	const composition = compositionState.compositions[compositionId];
 
@@ -268,174 +439,76 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 
 	const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
 
-	const selection = getCompSelectionFromState(composition.id, options.compositionSelectionState);
-	let hasHoveredLayer = false;
+	const selection = getCompSelectionFromState(composition.id, compositionSelectionState);
+	const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
-	function renderGuides(map: CompositionRenderValues, layer: CompositionLayer) {
-		const index = 0;
+	const renderContext: RenderGuidesContext = {
+		compositionState,
+		hasHoveredLayer: false,
+		pan,
+		scale,
+		composition,
+		compositionSelection: selection,
+		viewport,
+		mousePosition: options.mousePosition,
+		compositionSelectionState,
+		isPerformingAction: options.isPerformingAction,
+		shapeSelectionState,
+		shapeState,
+		tool: options.tool,
+		keyDown: options.keyDown,
+		nSelectedShapeLayers: composition.layers.filter((layerId) => {
+			const layer = compositionState.layers[layerId];
+			if (layer.type !== LayerType.Shape) {
+				return false;
+			}
+			return selection.layers[layerId];
+		}).length,
+	};
 
-		const selected = selection.layers[layer.id];
+	const hasSelectedPath =
+		getCompositionSelectedPathsSet(compositionId, compositionState, compositionSelectionState)
+			.size > 0 && renderContext.nSelectedShapeLayers === 1;
 
-		if (hasHoveredLayer && !selected) {
-			return;
+	for (const layer of layers) {
+		if (layer.type === LayerType.Shape && renderContext.nSelectedShapeLayers === 1) {
+			const directlySelectedPathIds = getShapeLayerDirectlySelectedPaths(
+				layer.id,
+				compositionState,
+				compositionSelectionState,
+			);
+
+			if (!hasSelectedPath && directlySelectedPathIds.size === 0) {
+				renderLayerGuides(renderContext, ctx, options.map, layer);
+			}
+			renderShapeLayerGuides(renderContext, ctx, options.map, layer);
+			continue;
 		}
 
-		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
-
-		let width: number;
-		let height: number;
-
-		switch (layer.type) {
-			case LayerType.Composition: {
-				width = nameToProperty.Width;
-				height = nameToProperty.Height;
-				break;
-			}
-
-			/**
-			 * @todo find bounding box of shape layer
-			 */
-			case LayerType.Shape: {
-				width = 100;
-				height = 100;
-				break;
-			}
-
-			case LayerType.Rect: {
-				width = nameToProperty.Width;
-				height = nameToProperty.Height;
-				break;
-			}
-
-			case LayerType.Ellipse: {
-				width = nameToProperty.OuterRadius * 2;
-				height = nameToProperty.OuterRadius * 2;
-				break;
-			}
-		}
-
-		let transform = map.transforms[layer.id].transform[index];
-
-		const mat2 = transformMat2(transform);
-		const corners = [
-			[1, 0],
-			[1, 1],
-			[0, 1],
-			[0, 0],
-		].map(([tx, ty]) => {
-			let x = tx * width - transform.anchor.x;
-			let y = ty * height - transform.anchor.y;
-
-			if (layer.type === LayerType.Ellipse) {
-				const r = nameToProperty.OuterRadius;
-				x -= r;
-				y -= r;
-			}
-
-			return mat2.multiply(Vec2.new(x, y)).add(transform.translate).scale(scale).add(pan);
-		});
-
-		if (options.mousePosition && !hasHoveredLayer) {
-			const mousePosition = options.mousePosition.sub(Vec2.new(viewport.left, viewport.top));
-
-			if (isVecInPoly(mousePosition, corners)) {
-				ctx.beginPath();
-				ctx.moveTo(corners[corners.length - 1].x, corners[corners.length - 1].y);
-				for (const p of corners) {
-					ctx.lineTo(p.x, p.y);
-				}
-				ctx.strokeStyle = "cyan";
-				ctx.lineWidth = LW;
-				ctx.stroke();
-
-				hasHoveredLayer = true;
-			}
-		}
-
-		if (!selected) {
-			return;
-		}
-
-		for (const c of corners) {
-			const x = c.x - W / 2;
-			const y = c.y - W / 2;
-
-			// Render shadow
-			ctx.beginPath();
-			ctx.fillStyle = "black";
-			ctx.rect(x + SOFF, y + SOFF, W, W);
-			ctx.fill();
-
-			// Render square
-			ctx.beginPath();
-			ctx.fillStyle = "cyan";
-			ctx.rect(x, y, W, W);
-			ctx.fill();
-		}
-
-		const c = transform.translate.scale(scale).add(pan);
-
-		ctx.strokeStyle = "black";
-		ctx.lineWidth = SLW;
-
-		// Circle shadow
-		ctx.beginPath();
-		ctx.arc(c.x, c.y, R, 0, 2 * Math.PI, false);
-		ctx.stroke();
-
-		const rmat = Mat2.rotation(nameToProperty.Rotation * DEG_TO_RAD_FAC);
-		const ri = rmat.i();
-		const rj = rmat.j();
-
-		for (const fac of [1, -1]) {
-			// Line shadows
-			const l0 = c.sub(ri.scale(fac * (R + A + 1)));
-			const l1 = c.sub(ri.scale(fac * R));
-
-			const l2 = c.add(rj.scale(fac * (R + A + 1)));
-			const l3 = c.add(rj.scale(fac * R));
-
-			ctx.beginPath();
-			ctx.moveTo(l0.x, l0.y);
-			ctx.lineTo(l1.x, l1.y);
-			ctx.stroke();
-
-			ctx.beginPath();
-			ctx.moveTo(l2.x, l2.y);
-			ctx.lineTo(l3.x, l3.y);
-			ctx.stroke();
-		}
-
-		ctx.strokeStyle = "cyan";
-		ctx.lineWidth = LW;
-
-		// Circle
-		ctx.beginPath();
-		ctx.arc(c.x, c.y, R, 0, 2 * Math.PI, false);
-		ctx.stroke();
-
-		for (const fac of [1, -1]) {
-			const l0 = c.sub(ri.scale(fac * (R + A)));
-			const l1 = c.sub(ri.scale(fac * R));
-
-			const l2 = c.add(rj.scale(fac * (R + A)));
-			const l3 = c.add(rj.scale(fac * R));
-
-			ctx.beginPath();
-			ctx.moveTo(l0.x, l0.y);
-			ctx.lineTo(l1.x, l1.y);
-			ctx.stroke();
-
-			ctx.beginPath();
-			ctx.moveTo(l2.x, l2.y);
-			ctx.lineTo(l3.x, l3.y);
-			ctx.stroke();
+		if (!hasSelectedPath && options.tool !== Tool.pen) {
+			renderLayerGuides(renderContext, ctx, options.map, layer);
 		}
 	}
 
-	const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
+	if (options.selectionRect) {
+		const rect = options.selectionRect!;
 
-	for (const layer of layers) {
-		renderGuides(options.map, layer);
+		const p0 = Vec2.new(rect.left, rect.top).scale(scale).add(pan);
+		const p1 = Vec2.new(rect.left + rect.width, rect.top + rect.height)
+			.scale(scale)
+			.add(pan);
+
+		ctx.beginPath();
+		ctx.moveTo(p0.x, p0.y);
+		ctx.lineTo(p1.x, p0.y);
+		ctx.lineTo(p1.x, p1.y);
+		ctx.lineTo(p0.x, p1.y);
+		ctx.lineTo(p0.x, p0.y);
+		ctx.fillStyle = "rgba(255, 255, 255, .2)";
+		ctx.strokeStyle = "rgba(255, 255, 255, .8)";
+		ctx.lineWidth = 1;
+		ctx.fill();
+		ctx.stroke();
+		ctx.closePath();
 	}
 }

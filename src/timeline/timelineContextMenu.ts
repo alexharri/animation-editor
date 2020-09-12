@@ -1,4 +1,6 @@
 import { compositionActions } from "~/composition/compositionReducer";
+import { compSelectionActions } from "~/composition/compositionSelectionReducer";
+import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
 import { createArrayModifier } from "~/composition/modifiers/arrayModifier";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
@@ -6,9 +8,12 @@ import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
 import { requestAction } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
+import { shapeActions } from "~/shape/shapeReducer";
+import { shapeSelectionActions } from "~/shape/shapeSelectionReducer";
+import { getShapeLayerPathIds } from "~/shape/shapeUtils";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
-import { LayerType, NodeEditorNodeType } from "~/types";
+import { LayerType, NodeEditorNodeType, ToDispatch } from "~/types";
 import { createGenMapIdFn } from "~/util/mapUtils";
 
 interface Options {
@@ -74,13 +79,32 @@ export const createTimelineContextMenu = (
 		// Remove layer
 		if (layerId) {
 			const removeLayer = () => {
-				const { compositionState, nodeEditor: nodeEditorState } = getActionState();
+				const {
+					compositionState,
+					nodeEditor: nodeEditorState,
+					shapeState,
+				} = getActionState();
 				const layer = compositionState.layers[layerId];
 
-				const toDispatch: any[] = [
+				const toDispatch: ToDispatch = [
 					compositionActions.removeLayer(layer.id),
 					contextMenuActions.closeContextMenu(),
 				];
+
+				// Clear layer selection and property selection
+				const propertyIds = reduceLayerPropertiesAndGroups<string[]>(
+					layerId,
+					compositionState,
+					(acc, property) => {
+						acc.push(property.id);
+						return acc;
+					},
+					[],
+				);
+				toDispatch.push(
+					compSelectionActions.removeLayersFromSelection(compositionId, [layerId]),
+					compSelectionActions.removePropertiesFromSelection(compositionId, propertyIds),
+				);
 
 				// Remove all timelines referenced by properties of the deleted layer.
 				//
@@ -105,6 +129,7 @@ export const createTimelineContextMenu = (
 
 				timelineIdsToRemove.forEach((id) => {
 					toDispatch.push(timelineActions.removeTimeline(id));
+					toDispatch.push(timelineActions.clearSelection(id));
 				});
 
 				// Remove layer graph if it exists
@@ -155,6 +180,17 @@ export const createTimelineContextMenu = (
 								{ layerId: "", propertyId: "" },
 							),
 						);
+					}
+				}
+
+				// If shape layer, remove all shapes and paths referenced by layer
+				if (layer.type === LayerType.Shape) {
+					const pathIds = getShapeLayerPathIds(layerId, compositionState);
+					for (const pathId of pathIds) {
+						const { shapeId } = shapeState.paths[pathId];
+						toDispatch.push(shapeActions.removePath(pathId));
+						toDispatch.push(shapeActions.removeShape(shapeId));
+						toDispatch.push(shapeSelectionActions.clearShapeSelection(shapeId));
 					}
 				}
 

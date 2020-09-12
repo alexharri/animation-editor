@@ -42,7 +42,7 @@ export const AREA_MIN_CONTENT_WIDTH = 32;
 export const TOOLBAR_HEIGHT = 32;
 
 export enum Tool {
-	selection,
+	move,
 	pen,
 	editVertex,
 	rectangle,
@@ -54,7 +54,7 @@ export enum Tool {
 
 export const keyToToolMap: Partial<{ [key in keyof typeof keys]: Tool }> = {
 	P: Tool.pen,
-	V: Tool.selection,
+	V: Tool.move,
 	O: Tool.ellipse,
 	R: Tool.rectangle,
 	I: Tool.intersection,
@@ -70,7 +70,7 @@ export const toolToKey = Object.keys(keyToToolMap).reduce<Partial<{ [key: string
 );
 
 export const toolToLabel = {
-	[Tool.selection]: "Selection",
+	[Tool.move]: "Selection",
 	[Tool.rectangle]: "Rectangle",
 	[Tool.polygon]: "Polygon",
 	[Tool.pen]: "Pen",
@@ -81,7 +81,7 @@ export const toolToLabel = {
 };
 
 export const toolGroups: Array<Array<{ tool: Tool }>> = [
-	[{ tool: Tool.selection }],
+	[{ tool: Tool.move }],
 	[{ tool: Tool.pen }, { tool: Tool.editVertex }],
 	[{ tool: Tool.rectangle }, { tool: Tool.ellipse }, { tool: Tool.polygon }],
 	[{ tool: Tool.fill }, { tool: Tool.intersection }],
@@ -128,6 +128,7 @@ export const COMP_TIME_TRACK_START_END_X_MARGIN = 4;
 
 export const COMP_TIME_LAYER_HEIGHT = 16;
 export const COMP_TIME_BETWEEN_LAYERS = 1;
+export const COMP_TIME_ITEM_HEIGHT = COMP_TIME_LAYER_HEIGHT + COMP_TIME_BETWEEN_LAYERS;
 export const COMP_TIME_SEPARATOR_WIDTH = 2;
 
 export const TRACKPAD_ZOOM_DELTA_FAC = 1 / 7;

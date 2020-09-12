@@ -1,5 +1,9 @@
 import { CompositionState } from "~/composition/compositionReducer";
-import { COMP_TIME_BETWEEN_LAYERS, COMP_TIME_LAYER_HEIGHT } from "~/constants";
+import {
+	COMP_TIME_BETWEEN_LAYERS,
+	COMP_TIME_ITEM_HEIGHT,
+	COMP_TIME_LAYER_HEIGHT,
+} from "~/constants";
 
 type TrackYPositions = {
 	timeline: { [timelineId: string]: number };
@@ -64,50 +68,32 @@ export const getTimelineLayerListHeight = (
 	compositionId: string,
 	compositionState: CompositionState,
 ): number => {
+	let n = 0;
+
 	const composition = compositionState.compositions[compositionId];
 
-	let yIndex = 0;
+	for (const layerId of composition.layers) {
+		n++; // Layer is one item
 
-	for (let i = 0; i < composition.layers.length; i += 1) {
-		const layerId = composition.layers[i];
-		const layer = compositionState.layers[layerId];
-
-		// Render layer properties
-		const renderProperty = (propertyId: string) => {
-			yIndex++;
+		const crawl = (propertyId: string) => {
+			n++; // Each property is one item, collapsed or not
 
 			const property = compositionState.properties[propertyId];
 
 			if (property.type === "group" && !property.collapsed) {
-				for (let j = 0; j < property.properties.length; j += 1) {
-					renderProperty(property.properties[j]);
+				for (const propertyId of property.properties) {
+					crawl(propertyId);
 				}
 			}
 		};
 
+		const layer = compositionState.layers[layerId];
 		if (!layer.collapsed) {
 			for (let j = 0; j < layer.properties.length; j += 1) {
-				renderProperty(layer.properties[j]);
+				crawl(layer.properties[j]);
 			}
 		}
-
-		yIndex++;
 	}
 
-	return (yIndex + 1) * (COMP_TIME_LAYER_HEIGHT + COMP_TIME_BETWEEN_LAYERS) + 2;
-};
-
-export const capTimelinePanY = (
-	yPan: number,
-	compositionId: string,
-	viewportHeight: number,
-	compositionState: CompositionState,
-) => {
-	let y = yPan;
-
-	const height = getTimelineLayerListHeight(compositionId, compositionState);
-
-	y = Math.max(0, Math.min(y, height - viewportHeight));
-
-	return y;
+	return (n + 2) * COMP_TIME_ITEM_HEIGHT;
 };

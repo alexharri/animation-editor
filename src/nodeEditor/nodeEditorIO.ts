@@ -188,7 +188,7 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 		case NodeEditorNodeType.color_to_rgba_factors:
 			return [
 				{
-					type: ValueType.Color,
+					type: ValueType.RGBAColor,
 					name: "Color",
 					value: 0,
 					pointer: null,
@@ -306,14 +306,14 @@ export const getNodeEditorNodeDefaultOutputs = (
 		case NodeEditorNodeType.color_input:
 			return [
 				{
-					type: ValueType.Color,
+					type: ValueType.RGBAColor,
 					name: "Color",
 				},
 			];
 		case NodeEditorNodeType.color_from_rgba_factors:
 			return [
 				{
-					type: ValueType.Color,
+					type: ValueType.RGBAColor,
 					name: "Color",
 				},
 			];
@@ -453,6 +453,11 @@ export const nodeValidInputToOutputsMap: { [key in ValueType]: ValueType[] } = {
 	[ValueType.Number]: [ValueType.Any, ValueType.Number],
 	[ValueType.Rect]: [ValueType.Any, ValueType.Rect],
 	[ValueType.Vec2]: [ValueType.Any, ValueType.Vec2],
-	[ValueType.Color]: [ValueType.Any, ValueType.Color],
+	[ValueType.RGBAColor]: [ValueType.Any, ValueType.RGBAColor, ValueType.RGBColor],
+	[ValueType.RGBColor]: [ValueType.Any, ValueType.RGBColor, ValueType.RGBAColor],
 	[ValueType.TransformBehavior]: [ValueType.TransformBehavior],
+	[ValueType.LineCap]: [ValueType.LineCap],
+	[ValueType.LineJoin]: [ValueType.LineJoin],
+	[ValueType.FillRule]: [ValueType.FillRule],
+	[ValueType.Path]: [ValueType.Path],
 };

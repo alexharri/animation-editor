@@ -172,3 +172,87 @@ export const getTimelineIdsReferencedByComposition = (
 		[],
 	);
 };
+
+export const getPropertyIdsRecursive = (
+	propertyId: string,
+	compositionState: CompositionState,
+): string[] => {
+	const propertyIds: string[] = [];
+	function crawl(propertyId: string) {
+		propertyIds.push(propertyId);
+		const property = compositionState.properties[propertyId];
+		if (property.type === "group") {
+			property.properties.forEach(crawl);
+		}
+	}
+	crawl(propertyId);
+	return propertyIds;
+};
+
+export const findLayerProperty = <T extends CompositionProperty | CompositionPropertyGroup>(
+	layerId: string,
+	compositionState: CompositionState,
+	fn: (property: CompositionProperty | CompositionPropertyGroup) => boolean,
+): T | null => {
+	const layer = compositionState.layers[layerId];
+
+	function crawl(propertyId: string): T | null {
+		const property = compositionState.properties[propertyId];
+
+		if (fn(property)) {
+			return property as T;
+		}
+
+		if (property.type === "group") {
+			for (const propertyId of property.properties) {
+				const property = crawl(propertyId);
+				if (property) {
+					return property;
+				}
+			}
+		}
+
+		return null;
+	}
+
+	for (const propertyId of layer.properties) {
+		const property = crawl(propertyId);
+		if (property) {
+			return property;
+		}
+	}
+
+	return null;
+};
+
+export const getChildPropertyIdsRecursive = (
+	propertyId: string,
+	compositionState: CompositionState,
+): string[] => {
+	const propertyIds: string[] = [];
+
+	function crawl(propertyId: string, add = true) {
+		if (add) {
+			propertyIds.push(propertyId);
+		}
+
+		const property = compositionState.properties[propertyId];
+		if (property.type === "group") {
+			property.properties.forEach((propertyId) => crawl(propertyId));
+		}
+	}
+
+	crawl(propertyId, false);
+
+	return propertyIds;
+};
+
+export const getParentPropertyInLayer = (
+	layerId: string,
+	propertyId: string,
+	compositionState: CompositionState,
+): CompositionPropertyGroup | null => {
+	return findLayerProperty(layerId, compositionState, (group) => {
+		return group.type === "group" && group.properties.indexOf(propertyId) !== -1;
+	});
+};

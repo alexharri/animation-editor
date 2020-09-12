@@ -35,7 +35,7 @@ export const getSavedActionState = (): ActionState | null => {
 
 	try {
 		const parsedJson = JSON.parse(json);
-		const parsed = parseItem(parsedJson) as ActionState | null;
+		const parsed = parseItem(parsedJson) as ActionState;
 		return parsed;
 	} catch (e) {
 		return null;

@@ -1,5 +1,7 @@
 export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
 
+export type ToDispatch = Array<{ type: string; payload: any }>;
+
 export type CardinalDirection = "n" | "w" | "s" | "e";
 export type IntercardinalDirection = "ne" | "nw" | "se" | "sw";
 
@@ -49,8 +51,13 @@ export enum ValueType {
 	Number = "number",
 	Vec2 = "vec2",
 	Rect = "rect",
-	Color = "color",
+	RGBAColor = "rgba",
+	RGBColor = "rgb",
 	TransformBehavior = "transform_behavior",
+	Path = "path",
+	FillRule = "fill_rule",
+	LineCap = "line_cap",
+	LineJoin = "line_join",
 	Any = "any",
 }
 
@@ -59,22 +66,31 @@ export enum ValueFormat {
 	Rotation,
 }
 
-export enum PropertyGroupName {
-	Transform = 0,
-	Dimensions = 1,
-	Content = 2,
-	Structure = 3,
-	Modifiers = 4,
-
-	// Modifiers
-	ArrayModifier = 5,
-}
-
 export enum LayerType {
 	Rect = 0,
 	Ellipse = 1,
 	Composition = 2,
 	Shape = 3,
+}
+
+// Property group names start at 5000 so they don't overlap with property names.
+// This allows us to find certain groups/properties like so:
+//
+//		property.name === PropertyName.X
+//
+// when the `property` may be either a Property or a PropertyGroup
+export enum PropertyGroupName {
+	Transform = 5000,
+	Dimensions = 5001,
+	Content = 5002,
+	Structure = 5003,
+	Modifiers = 5004,
+	Shape = 5006,
+	Fill = 5007,
+	Stroke = 5008,
+
+	// Modifiers
+	ArrayModifier = 5005,
 }
 
 export enum PropertyName {
@@ -96,6 +112,8 @@ export enum PropertyName {
 	StrokeColor = 10,
 	StrokeWidth = 11,
 	BorderRadius = 12,
+	RGBAColor = 18,
+	RGBColor = 23,
 
 	// Ellipse properties
 	OuterRadius = 13,
@@ -104,6 +122,13 @@ export enum PropertyName {
 	// Array Modifier
 	ArrayModifier_Count = 15,
 	ArrayModifier_TransformBehavior = 16,
+
+	// Shape Layer
+	ShapeLayer_Path = 17,
+	FillRule = 19,
+	LineCap = 20,
+	LineJoin = 21,
+	MiterLimit = 22,
 }
 
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
@@ -144,3 +169,14 @@ export interface CompositionRenderValues {
 }
 
 export type TransformBehavior = "recursive" | "absolute_for_computed";
+export type FillRule = "evenodd" | "nonzero";
+export type LineCap = "butt" | "round" | "square";
+export type LineJoin = "miter" | "round" | "bevel";
+
+export interface MousePosition {
+	global: Vec2;
+	viewport: Vec2;
+	translated: Vec2;
+}
+
+export type NameToProperty = { [key in keyof typeof PropertyName]: any };

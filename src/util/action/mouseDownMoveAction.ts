@@ -1,12 +1,13 @@
 import { keys } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
-import { requestAction, RequestActionParams, ShouldAddToStackFn } from "~/listener/requestAction";
+import {
+	requestAction,
+	RequestActionCallback,
+	RequestActionParams,
+	ShouldAddToStackFn,
+} from "~/listener/requestAction";
+import { MousePosition } from "~/types";
 import { getDistance } from "~/util/math";
-
-interface MousePosition {
-	global: Vec2;
-	translated: Vec2;
-}
 
 type Key = keyof typeof keys;
 
@@ -19,8 +20,9 @@ interface MouseMoveOptions<KeyMap> {
 }
 
 interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
+	params?: RequestActionParams;
 	keys: K[];
-	beforeMove: (params: RequestActionParams) => void;
+	beforeMove: (params: RequestActionParams, options: { mousePosition: MousePosition }) => void;
 	mouseMove: (params: RequestActionParams, options: MouseMoveOptions<KeyMap>) => void;
 	mouseUp: (params: RequestActionParams, hasMoved: boolean) => void;
 	translate?: (vec: Vec2) => Vec2;
@@ -29,6 +31,7 @@ interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
 	moveTreshold?: number;
 	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 	tickShouldUpdate?: (options: MouseMoveOptions<KeyMap>) => boolean;
+	viewport?: Rect;
 }
 
 export const mouseDownMoveAction = <
@@ -56,11 +59,19 @@ export const mouseDownMoveAction = <
 		eOrInitialPos instanceof Vec2 ? eOrInitialPos : Vec2.fromEvent(eOrInitialPos);
 	const initialMousePosition: MousePosition = {
 		global: initialGlobalMousePosition,
+		viewport: options.viewport
+			? initialGlobalMousePosition.sub(Vec2.new(options.viewport.left, options.viewport.top))
+			: initialGlobalMousePosition,
 		translated: translate(initialGlobalMousePosition),
 	};
 
-	requestAction({ history: true, shouldAddToStack: options.shouldAddToStack }, (params) => {
-		options.beforeMove(params);
+	const fn: RequestActionCallback = (params) => {
+		options.beforeMove(params, { mousePosition: initialMousePosition });
+
+		if (params.done()) {
+			// If user submitted/cancelled in `beforeMove`
+			return;
+		}
 
 		let hasMoved = false;
 		let hasCalledMove = false;
@@ -70,7 +81,7 @@ export const mouseDownMoveAction = <
 		let lastUsedMousePosition = initialGlobalMousePosition;
 
 		const tick = () => {
-			if (params.cancelled()) {
+			if (params.done()) {
 				return;
 			}
 
@@ -102,10 +113,16 @@ export const mouseDownMoveAction = <
 				const globalMousePosition = currentMousePosition;
 				const mousePosition: MousePosition = {
 					global: globalMousePosition,
+					viewport: options.viewport
+						? globalMousePosition.sub(
+								Vec2.new(options.viewport.left, options.viewport.top),
+						  )
+						: globalMousePosition,
 					translated: translate(globalMousePosition),
 				};
 				const moveVector: MousePosition = {
 					global: mousePosition.global.sub(initialMousePosition.global),
+					viewport: mousePosition.viewport.sub(initialMousePosition.viewport),
 					translated: mousePosition.translated.sub(initialMousePosition.translated),
 				};
 				_options = {
@@ -128,8 +145,9 @@ export const mouseDownMoveAction = <
 
 			lastUsedMousePosition = currentMousePosition;
 
-			options.mouseMove(params, getOptions());
+			const callOpts = getOptions();
 			hasCalledMove = true;
+			options.mouseMove(params, callOpts);
 		};
 		requestAnimationFrame(tick);
 
@@ -150,5 +168,12 @@ export const mouseDownMoveAction = <
 		params.addListener.once("mouseup", () => {
 			options.mouseUp(params, hasMoved);
 		});
-	});
+	};
+
+	if (options.params) {
+		fn(options.params);
+		return;
+	}
+
+	requestAction({ history: true, shouldAddToStack: options.shouldAddToStack }, fn);
 };

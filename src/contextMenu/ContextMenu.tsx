@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { CONTEXT_MENU_OPTION_HEIGHT, DEFAULT_CONTEXT_MENU_WIDTH } from "~/constants";
+import styles from "~/contextMenu/ContextMenu.styles";
 import {
-	ContextMenuState,
-	ContextMenuOption,
-	ContextMenuListOption,
 	ContextMenuActionOption,
+	ContextMenuListOption,
+	ContextMenuOption,
+	ContextMenuState,
 } from "~/contextMenu/contextMenuReducer";
 import { connectActionState } from "~/state/stateUtils";
+import { boundingRectOfRects, isVecInRect } from "~/util/math";
 import { compileStylesheet } from "~/util/stylesheets";
-import { boundingRect, isVecInRect } from "~/util/math";
-import styles from "~/contextMenu/ContextMenu.styles";
-import { DEFAULT_CONTEXT_MENU_WIDTH, CONTEXT_MENU_OPTION_HEIGHT } from "~/constants";
 
 const s = compileStylesheet(styles);
 
@@ -55,7 +55,7 @@ const ContextMenuComponent: React.FC<Props> = (props) => {
 			const els = document.querySelectorAll("[data-option-list]");
 			const rects: Rect[] = [];
 			els.forEach((el) => rects.push(el.getBoundingClientRect()));
-			setRect(boundingRect(rects));
+			setRect(boundingRectOfRects(rects));
 
 			if (rects.length > 1) {
 				let rect = rects[rects.length - 1];

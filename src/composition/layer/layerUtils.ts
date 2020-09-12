@@ -1,6 +1,6 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
-import { CompositionRenderValues, LayerType, PropertyName } from "~/types";
+import { CompositionRenderValues, LayerType, NameToProperty, PropertyName } from "~/types";
 
 const layerTypeToName: { [key in keyof typeof LayerType]: string } = {
 	Ellipse: "Ellipse layer",
@@ -60,14 +60,11 @@ export const getLayerNameToProperty = (
 ) => {
 	const properties = getLayerCompositionProperties(layerId, compositionState);
 
-	const nameToProperty = properties.reduce<{ [key in keyof typeof PropertyName]: any }>(
-		(obj, p) => {
-			const value = map.properties[p.id];
-			(obj as any)[PropertyName[p.name]] = value.computedValue;
-			return obj;
-		},
-		{} as any,
-	);
+	const nameToProperty = properties.reduce<NameToProperty>((obj, p) => {
+		const value = map.properties[p.id];
+		(obj as any)[PropertyName[p.name]] = value.computedValue;
+		return obj;
+	}, {} as any);
 
 	return nameToProperty;
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { cssCursors } from "~/cssVariables";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { NodeEditorDragSelect } from "~/nodeEditor/dragSelect/NodeEditorDragSelect";
 import styles from "~/nodeEditor/NodeEditor.styles";
@@ -51,7 +52,9 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 	});
 	useKeyDownEffect("Alt", (down) => {
 		if (zoomTarget.current) {
-			zoomTarget.current.style.cursor = down ? "zoom-out" : "zoom-in";
+			zoomTarget.current.style.cursor = down
+				? cssCursors.zoom.zoomOut
+				: cssCursors.zoom.zoomIn;
 		}
 	});
 
