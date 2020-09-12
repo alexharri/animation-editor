@@ -676,6 +676,8 @@ export const penToolHandlers = {
 	splitEdge: (ctx: PenToolContext, edgeId: string, t: number) => {
 		requestAction({ history: true }, (params) => {
 			const { shapeState } = ctx;
+			const { compositionState } = getActionState();
+
 			const edge = shapeState.edges[edgeId];
 			const { shapeId } = edge;
 			const shape = shapeState.shapes[shapeId];
@@ -864,9 +866,25 @@ export const penToolHandlers = {
 						shapeActions.setPathItem(pathId, item1Index, inew2),
 						shapeActions.insertPathItem(pathId, item1Index, inew1),
 					);
+
+					// Add path to direct selection
+					const propertyId = getLayerPathPropertyId(
+						ctx.layerId,
+						pathId,
+						compositionState,
+					)!;
+					toDispatch.push(
+						compSelectionActions.addPropertyToSelection(ctx.compositionId, propertyId),
+					);
+
 					break;
 				}
 			}
+
+			toDispatch.push(
+				shapeSelectionActions.clearShapeSelection(shapeId),
+				shapeSelectionActions.addNodeToSelection(shapeId, nmidId),
+			);
 
 			params.dispatch(toDispatch);
 			params.submitAction("Split path");

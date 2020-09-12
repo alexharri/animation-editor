@@ -706,6 +706,54 @@ export const getShapeLayerSelectedPathIds = (
 	return [...pathIdSet];
 };
 
+export const getCompositionSelectedPathsSet = (
+	compositionId: string,
+	compositionState: CompositionState,
+	compositionSelectionState: CompositionSelectionState,
+): Set<string> => {
+	let set = new Set<string>();
+
+	const composition = compositionState.compositions[compositionId];
+	const selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+
+	for (const layerId of composition.layers) {
+		const layer = compositionState.layers[layerId];
+
+		if (layer.type !== LayerType.Shape) {
+			continue;
+		}
+
+		set = reduceLayerPropertiesAndGroups<Set<string>>(
+			layer.id,
+			compositionState,
+			(set, shapeGroup) => {
+				if (shapeGroup.name !== PropertyGroupName.Shape) {
+					return set;
+				}
+
+				for (const propertyId of shapeGroup.properties) {
+					const property = compositionState.properties[propertyId];
+					if (property.name === PropertyName.ShapeLayer_Path) {
+						// If either the shape group or the path property are selected
+						// the guides are rendered.
+						if (
+							selection.properties[shapeGroup.id] ||
+							selection.properties[propertyId]
+						) {
+							set.add(property.value);
+						}
+						break;
+					}
+				}
+				return set;
+			},
+			set,
+		);
+	}
+
+	return set;
+};
+
 export const getLayerPathPropertyId = (
 	layerId: string,
 	pathId: string,

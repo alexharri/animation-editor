@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
+import { keys } from "~/constants";
 import {
 	addKeyDownChangeListener,
-	removeKeyDownChangeListener,
 	isKeyDown,
+	removeKeyDownChangeListener,
 } from "~/listener/keyboard";
-import { keys } from "~/constants";
 
 export const useKeyDownEffect = (
 	key: keyof typeof keys,
 	callback: (isKeyDown: boolean) => void,
-	dependencies?: React.DependencyList,
 ): void => {
 	useEffect(() => {
 		addKeyDownChangeListener(key, { allowRepeated: false }, callback);
 		return () => removeKeyDownChangeListener(key, callback);
-	}, dependencies ?? []);
+	}, []);
 };
 
 export const useKeyDown = (key: keyof typeof keys): boolean => {

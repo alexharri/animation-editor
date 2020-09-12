@@ -19,4 +19,9 @@ export interface RenderGuidesContext {
 	tool: Tool;
 	mousePosition?: Vec2;
 	isPerformingAction: boolean;
+	keyDown: {
+		Shift: boolean;
+		Command: boolean;
+	};
+	nSelectedShapeLayers: number;
 }

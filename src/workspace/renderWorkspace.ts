@@ -17,6 +17,7 @@ import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import {
+	getCompositionSelectedPathsSet,
 	getShapeFillGroupValues,
 	getShapeLayerDirectlySelectedPaths,
 	getShapeStrokeGroupValues,
@@ -69,6 +70,10 @@ interface Options {
 	selectionRect: Rect | null;
 	tool: Tool;
 	isPerformingAction: boolean;
+	keyDown: {
+		Shift: boolean;
+		Command: boolean;
+	};
 }
 
 export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
@@ -451,7 +456,19 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 		shapeSelectionState,
 		shapeState,
 		tool: options.tool,
+		keyDown: options.keyDown,
+		nSelectedShapeLayers: composition.layers.filter((layerId) => {
+			const layer = compositionState.layers[layerId];
+			if (layer.type !== LayerType.Shape) {
+				return false;
+			}
+			return selection.layers[layerId];
+		}).length,
 	};
+
+	const hasSelectedPath =
+		getCompositionSelectedPathsSet(compositionId, compositionState, compositionSelectionState)
+			.size > 0;
 
 	for (const layer of layers) {
 		if (layer.type === LayerType.Shape) {
@@ -461,14 +478,14 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 				compositionSelectionState,
 			);
 
-			if (directlySelectedPathIds.size === 0) {
+			if (!hasSelectedPath && directlySelectedPathIds.size === 0) {
 				renderLayerGuides(renderContext, ctx, options.map, layer);
 			}
 			renderShapeLayerGuides(renderContext, ctx, options.map, layer);
 			continue;
 		}
 
-		if (options.tool !== Tool.pen) {
+		if (!hasSelectedPath && options.tool !== Tool.pen) {
 			renderLayerGuides(renderContext, ctx, options.map, layer);
 		}
 	}

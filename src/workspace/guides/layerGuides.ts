@@ -196,6 +196,16 @@ export function renderLayerGuides(
 
 	const shouldRenderRectOutline = () => {
 		if (layer.type === LayerType.Shape) {
+			if (opts.nSelectedShapeLayers === 1 && opts.keyDown.Command) {
+				// If there is only a single selected shape layer and Command
+				// is selected, then we are attempting to select a shape within
+				// the selected shape layer.
+				//
+				// Do not render layer outline. Instead we render the outline
+				// of the individual shape being hovered whilst Command is down.
+				return false;
+			}
+
 			const selectedPathIds = getShapeLayerSelectedPathIds(
 				layer.id,
 				compositionState,

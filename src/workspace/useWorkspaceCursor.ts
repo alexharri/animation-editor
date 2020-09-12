@@ -54,6 +54,11 @@ const moveTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 					return;
 				}
 
+				if (type === "node" && keyDown.Alt) {
+					el.style.cursor = cssCursors.penTool.removePoint;
+					return;
+				}
+
 				if (type === "point_on_edge") {
 					// For now we don't support edge selection.
 					//
@@ -101,6 +106,11 @@ const penTool = (e: React.MouseEvent, el: HTMLElement, options: Options) => {
 			case "node": {
 				if (keyDown.Command) {
 					el.style.cursor = cssCursors.penTool.newControlPoints;
+					break;
+				}
+
+				if (keyDown.Alt) {
+					el.style.cursor = cssCursors.penTool.removePoint;
 					break;
 				}
 

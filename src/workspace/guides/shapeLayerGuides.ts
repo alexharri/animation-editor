@@ -483,7 +483,13 @@ const renderPath = (
 
 			if (isVecInRect(viewportMousePosition, boundingRect)) {
 				pathCtx.hasHoveredShape = true;
-				if (!selected) {
+				const canClickToSelect = opts.keyDown.Command || selectedPathIds.size;
+				if (
+					opts.nSelectedShapeLayers === 1 &&
+					!selected &&
+					opts.tool === Tool.move &&
+					canClickToSelect
+				) {
 					renderPathBoundingRect(ctx, boundingRect, "hovered");
 				}
 			}

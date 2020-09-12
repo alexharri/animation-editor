@@ -11,14 +11,22 @@ import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { moveToolHandlers } from "~/workspace/moveTool";
 import { penToolHandlers } from "~/workspace/penTool/penTool";
-import { renderCompositionWorkspaceGuides, renderWorkspace } from "~/workspace/renderWorkspace";
+import {
+	renderCompositionWorkspaceGuides as renderWorkspaceGuides,
+	renderWorkspace,
+} from "~/workspace/renderWorkspace";
 import { useWorkspaceCursor } from "~/workspace/useWorkspaceCursor";
 import WorkspaceStyles from "~/workspace/Workspace.styles";
 import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 import { WorkspaceFooter } from "~/workspace/WorkspaceFooter";
 import { workspaceHandlers } from "~/workspace/workspaceHandlers";
 
-const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?: Vec2) => {
+const getOptions = (
+	props: Props,
+	ctx: CanvasRenderingContext2D,
+	mousePosition: Vec2 | undefined,
+	keyDown: { Shift: boolean; Command: boolean },
+) => {
 	const { width, height, left, top } = props;
 
 	const state = getActionState({ allowSelectionIndexShift: true });
@@ -61,6 +69,7 @@ const getOptions = (props: Props, ctx: CanvasRenderingContext2D, mousePosition?:
 		selectionRect,
 		tool: toolState.selected,
 		isPerformingAction,
+		keyDown,
 	};
 	return options;
 };
@@ -141,6 +150,8 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 		return unsub;
 	}, []);
 
+	const keyDownRef = useRef({ Shift: false, Command: false });
+
 	useEffect(() => {
 		let mounted = true;
 
@@ -161,13 +172,20 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 
 			if (render) {
 				shouldRenderRef.current = false;
-				renderWorkspace(getOptions(propsRef.current, mainCtx));
+				renderWorkspace(
+					getOptions(propsRef.current, mainCtx, undefined, keyDownRef.current),
+				);
 			}
 
 			if (renderGuides) {
 				shouldRenderGuidesRef.current = false;
-				renderCompositionWorkspaceGuides(
-					getOptions(propsRef.current, guidesCtx, mousePositionRef.current),
+				renderWorkspaceGuides(
+					getOptions(
+						propsRef.current,
+						guidesCtx,
+						mousePositionRef.current,
+						keyDownRef.current,
+					),
 				);
 			}
 		};
@@ -181,6 +199,15 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 	useEffect(() => {
 		shouldRenderRef.current = true;
 	}, [props]);
+
+	useKeyDownEffect("Command", (keyDown) => {
+		keyDownRef.current.Command = keyDown;
+		shouldRenderRef.current = true;
+	});
+	useKeyDownEffect("Shift", (keyDown) => {
+		keyDownRef.current.Shift = keyDown;
+		shouldRenderRef.current = true;
+	});
 
 	const { left, top, width, height } = props;
 
