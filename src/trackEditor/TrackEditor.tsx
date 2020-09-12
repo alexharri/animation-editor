@@ -9,7 +9,6 @@ import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
 import { renderTracks } from "~/trackEditor/renderTrackEditor";
-import { capTimelinePanY } from "~/trackEditor/trackEditorUtils";
 import { trackHandlers } from "~/trackEditor/trackHandlers";
 import { useTrackEditorCanvasCursor } from "~/trackEditor/useTrackEditorCanvasCursor";
 
@@ -35,12 +34,7 @@ type Props = OwnProps & StateProps;
 const TrackEditorComponent: React.FC<Props> = (props) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
-	const panY = capTimelinePanY(
-		props.panY,
-		props.compositionId,
-		props.viewport.height,
-		props.compositionState,
-	);
+	const { panY } = props;
 
 	useLayoutEffect(() => {
 		const ctx = canvasRef.current?.getContext("2d");

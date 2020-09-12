@@ -14,7 +14,12 @@ import {
 	didCompSelectionChange,
 	getCompSelectionFromState,
 } from "~/composition/util/compSelectionUtils";
-import { AreaType, COMP_TIME_BETWEEN_LAYERS, COMP_TIME_LAYER_HEIGHT } from "~/constants";
+import {
+	AreaType,
+	COMP_TIME_BETWEEN_LAYERS,
+	COMP_TIME_ITEM_HEIGHT,
+	COMP_TIME_LAYER_HEIGHT,
+} from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import {
 	requestAction,
@@ -178,7 +183,7 @@ export const timelineHandlers = {
 				yPan = Math.min(
 					yPan,
 					getTimelineLayerListHeight(compositionId, compositionState) -
-						options.viewport.height,
+						(COMP_TIME_ITEM_HEIGHT + 32 + 2),
 				);
 				yPan = Math.max(0, yPan);
 
@@ -207,7 +212,7 @@ export const timelineHandlers = {
 			lockY: boolean;
 		},
 	): void => {
-		const { viewBounds, compositionLength, viewport, compositionId } = options;
+		const { viewBounds, compositionLength, compositionId } = options;
 
 		const initialMousePosition = Vec2.fromEvent(e);
 		const initialPos = transformGlobalToTimelineX(initialMousePosition.x, options);
@@ -254,7 +259,7 @@ export const timelineHandlers = {
 					yPan = Math.min(
 						yPan,
 						getTimelineLayerListHeight(compositionId, compositionState) -
-							viewport.height,
+							(COMP_TIME_ITEM_HEIGHT + 32 + 2),
 					);
 					yPan = Math.max(0, yPan);
 
