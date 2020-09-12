@@ -468,10 +468,10 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 
 	const hasSelectedPath =
 		getCompositionSelectedPathsSet(compositionId, compositionState, compositionSelectionState)
-			.size > 0;
+			.size > 0 && renderContext.nSelectedShapeLayers === 1;
 
 	for (const layer of layers) {
-		if (layer.type === LayerType.Shape) {
+		if (layer.type === LayerType.Shape && renderContext.nSelectedShapeLayers === 1) {
 			const directlySelectedPathIds = getShapeLayerDirectlySelectedPaths(
 				layer.id,
 				compositionState,
