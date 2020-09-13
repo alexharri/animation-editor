@@ -197,6 +197,53 @@ export const timelineHandlers = {
 		});
 	},
 
+	onWheelZoom: (
+		e: WheelEvent,
+		areaId: string,
+		impact = 1,
+		options: { viewBounds: [number, number]; width: number; left: number },
+	): void => {
+		const { deltaY } = e;
+
+		const fac = interpolate(1, -deltaY < 0 ? 1.15 : 0.85, capToRange(0, 2, impact));
+
+		const { viewBounds, width, left } = options;
+
+		const mousePos = Vec2.fromEvent(e).subX(left);
+		const t = mousePos.x / width;
+
+		if (t < 0) {
+			console.log(t);
+			return;
+		}
+
+		const remove = Math.abs(viewBounds[0] - viewBounds[1]) * (1 - fac);
+		let newBounds: [number, number] = [
+			viewBounds[0] + remove * t,
+			viewBounds[1] - remove * (1 - t),
+		];
+
+		if (newBounds[0] < 0 && newBounds[1] > 1) {
+			newBounds = [0, 1];
+		} else if (newBounds[0] < 0) {
+			newBounds[1] = Math.min(1, newBounds[1] + Math.abs(newBounds[0]));
+			newBounds[0] = 0;
+		} else if (newBounds[1] > 1) {
+			newBounds[0] = Math.max(0, newBounds[0] - (newBounds[1] - 1));
+			newBounds[1] = 1;
+		}
+
+		requestAction({ history: false }, ({ dispatch, submitAction }) => {
+			dispatch(
+				areaActions.dispatchToAreaState(
+					areaId,
+					timelineAreaActions.setViewBounds(newBounds),
+				),
+			);
+			submitAction();
+		});
+	},
+
 	/**
 	 * When the user Space + Mouse drags the timeline around
 	 */

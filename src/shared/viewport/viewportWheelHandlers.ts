@@ -4,7 +4,7 @@ import { AreaType, TRACKPAD_ZOOM_DELTA_FAC } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction } from "~/listener/requestAction";
 import { getAreaActionState } from "~/state/stateUtils";
-import { interpolate } from "~/util/math";
+import { capToRange, interpolate } from "~/util/math";
 import { parseWheelEvent } from "~/util/wheelEvent";
 
 type PossibleAreaTypes = AreaType.NodeEditor | AreaType.Workspace;
@@ -83,7 +83,7 @@ export const createViewportWheelHandlers = <T extends PossibleAreaTypes>(
 			const areaState = getAreaActionState<T>(areaId);
 			const viewport = getAreaViewport(areaId, areaType);
 
-			const fac = interpolate(1, -deltaY < 0 ? 0.85 : 1.15, impact);
+			const fac = interpolate(1, -deltaY < 0 ? 0.85 : 1.15, capToRange(0, 2, impact));
 
 			requestAction({ history: false }, (params) => {
 				const pos = mousePos

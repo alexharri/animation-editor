@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { CompositionProperty } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
@@ -70,14 +70,6 @@ const TimelineGraphEditorWrapperComponent: React.FC<Props> = (props) => {
 		setIdsAndColors({ timelineIds: newTimelineIds, colors });
 	});
 
-	const viewport = useMemo(() => {
-		return {
-			...props.viewport,
-			height: props.viewport.height - 32,
-			top: props.viewport.top + 32,
-		};
-	}, [props.viewport]);
-
 	if (timelineIds.length < 1) {
 		return null;
 	}
@@ -86,11 +78,7 @@ const TimelineGraphEditorWrapperComponent: React.FC<Props> = (props) => {
 		<GraphEditor
 			timelineAreaId={props.areaId}
 			ids={timelineIds}
-			viewport={{
-				...viewport,
-				height: viewport.height - 32,
-				top: viewport.top + 32,
-			}}
+			viewport={props.viewport}
 			colors={colors}
 			viewBounds={props.viewBounds}
 			length={props.compositionLength}

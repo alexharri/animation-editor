@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { areaActions } from "~/area/state/areaActions";
-import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
+import { COMP_TIME_SEPARATOR_WIDTH, TRACKPAD_ZOOM_DELTA_FAC } from "~/constants";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
@@ -16,6 +16,7 @@ import { AreaComponentProps } from "~/types/areaTypes";
 import { capToRange, isVecInRect, splitRect } from "~/util/math";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
+import { parseWheelEvent } from "~/util/wheelEvent";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -26,9 +27,6 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const TimelineComponent: React.FC<Props> = (props) => {
-	const { compositionId, viewBounds } = props.areaState;
-	const { compositionLength } = props;
-
 	const [t, setT] = useState(0.3);
 
 	let [viewportLeft, viewportRight] = splitRect(
@@ -67,8 +65,6 @@ const TimelineComponent: React.FC<Props> = (props) => {
 
 	const outRef = useRef<HTMLDivElement>(null);
 
-	const panY = props.areaState.panY;
-
 	const wrapperRef = useRef<HTMLDivElement>(null);
 
 	const propsRef = useRef<Props>(props);
@@ -80,30 +76,60 @@ const TimelineComponent: React.FC<Props> = (props) => {
 		}
 
 		const listener = (e: WheelEvent) => {
-			const props = propsRef.current;
-
 			e.preventDefault();
 
-			const { panY } = props.areaState;
+			const props = propsRef.current;
 
+			const parsed = parseWheelEvent(e);
+			const { compositionLength } = props;
+			const { panY, viewBounds } = props.areaState;
 			let [viewportLeft, viewportRight] = splitRect(
 				"horizontal",
 				props,
 				t,
 				COMP_TIME_SEPARATOR_WIDTH,
 			);
-			const lockY = props.areaState.graphEditorOpen
-				? !isVecInRect(Vec2.fromEvent(e), viewportLeft)
-				: false;
 
-			timelineHandlers.onWheelPan(e as any, props.areaId, {
-				compositionId,
-				viewport: viewportRight,
-				compositionLength,
-				viewBounds,
-				lockY,
-				panY,
-			});
+			const onPan = () => {
+				const lockY = props.areaState.graphEditorOpen
+					? !isVecInRect(Vec2.fromEvent(e), viewportLeft)
+					: false;
+
+				timelineHandlers.onWheelPan(e as any, props.areaId, {
+					compositionId,
+					viewport: viewportRight,
+					compositionLength,
+					viewBounds,
+					lockY,
+					panY,
+				});
+			};
+
+			switch (parsed.type) {
+				case "pinch_zoom": {
+					timelineHandlers.onWheelZoom(
+						e,
+						props.areaId,
+						Math.abs(e.deltaY) * TRACKPAD_ZOOM_DELTA_FAC,
+						{
+							viewBounds,
+							width: viewportRight.width,
+							left: viewportRight.left,
+						},
+					);
+					break;
+				}
+
+				case "pan": {
+					onPan();
+					break;
+				}
+
+				case "mouse_wheel": {
+					onPan();
+					break;
+				}
+			}
 		};
 
 		const el = wrapperRef.current;
@@ -112,7 +138,10 @@ const TimelineComponent: React.FC<Props> = (props) => {
 		return () => {
 			el.removeEventListener("wheel", listener);
 		};
-	}, [wrapperRef.current]);
+	}, [wrapperRef.current, t]);
+
+	const { compositionId, viewBounds, panY } = props.areaState;
+	const { compositionLength } = props;
 
 	return (
 		<div className={s("wrapper")} ref={wrapperRef}>
@@ -240,7 +269,12 @@ const TimelineComponent: React.FC<Props> = (props) => {
 							compositionId={props.areaState.compositionId}
 							dragSelectRect={props.areaState.dragSelectRect}
 							viewBounds={props.areaState.viewBounds}
-							viewport={viewportRight}
+							viewport={{
+								width: viewportRight.width,
+								height: viewportRight.height - 32,
+								left: viewportRight.left,
+								top: viewportRight.top + 32,
+							}}
 						/>
 					)}
 				</div>
