@@ -24,7 +24,7 @@ interface RenderOptions {
 	length: number;
 	timelines: Timeline[];
 	colors: Partial<{ [timelineId: string]: string }>;
-	selection: TimelineSelectionState;
+	timelineSelectionState: TimelineSelectionState;
 	dragSelectRect: Rect | null;
 }
 
@@ -74,7 +74,7 @@ export const createToGraphEditorViewportY = (
 };
 
 export const renderGraphEditor = (options: RenderOptions): void => {
-	const { ctx, timelines, width, height, selection, viewBounds } = options;
+	const { ctx, timelines, width, height, timelineSelectionState, viewBounds } = options;
 
 	const timelinePaths = timelines.map((timeline) =>
 		timelineKeyframesToPathList(timeline.keyframes),
@@ -213,7 +213,7 @@ export const renderGraphEditor = (options: RenderOptions): void => {
 		 */
 		keyframes.forEach((k) => {
 			const vec = toViewport(Vec2.new(k.index, k.value));
-			const timelineSelection = selection[timeline.id];
+			const timelineSelection = timelineSelectionState[timeline.id];
 			const selected = timelineSelection && timelineSelection.keyframes[k.id];
 			renderDiamond(ctx, vec, {
 				fillColor: selected ? "#2f9eff" : "#333",

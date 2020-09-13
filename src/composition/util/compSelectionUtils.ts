@@ -34,7 +34,7 @@ export const didCompSelectionChange: (
 	}
 
 	// Check whether any timeline selections referenced by the composition changed
-	if (!mapKeysEqual(prevState.timelineSelection, nextState.timelineSelection)) {
+	if (!mapKeysEqual(prevState.timelineSelectionState, nextState.timelineSelectionState)) {
 		return true;
 	}
 
@@ -43,8 +43,8 @@ export const didCompSelectionChange: (
 		prevState.compositionState,
 	);
 	for (let i = 0; i < timelineIds.length; i += 1) {
-		const a = prevState.timelineSelection[timelineIds[i]];
-		const b = nextState.timelineSelection[timelineIds[i]];
+		const a = prevState.timelineSelectionState[timelineIds[i]];
+		const b = nextState.timelineSelectionState[timelineIds[i]];
 
 		// We checked for map key equality earlier, so if one does not exist
 		// the other shouldn't exist either

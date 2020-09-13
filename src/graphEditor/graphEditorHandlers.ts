@@ -225,7 +225,7 @@ export const timelineHandlers = {
 		const shouldReflect = k.reflectControlPoints;
 		let reflect = isKeyDown("Alt") ? !shouldReflect : shouldReflect;
 
-		const timelineSelectionState = getActionState().timelineSelection;
+		const timelineSelectionState = getActionState().timelineSelectionState;
 		const timelineSelectedKeyframes = timelines.map<
 			Array<{ index: number; keyframe: TimelineKeyframe }>
 		>((timeline) => {
@@ -265,7 +265,7 @@ export const timelineHandlers = {
 				//
 				// If not part of current selection and shift key was not down, the current
 				// timeline selection is cleared.
-				const timelineSelectionState = getActionState().timelineSelection;
+				const timelineSelectionState = getActionState().timelineSelectionState;
 				const selected = timelineSelectionState[timeline.id]?.keyframes[k.id];
 				if (!selected) {
 					if (!isKeyDown("Shift")) {
@@ -368,7 +368,7 @@ export const timelineHandlers = {
 					params.submitAction("Remove control point");
 					return;
 				} else {
-					const timelineSelectionState = getActionState().timelineSelection;
+					const timelineSelectionState = getActionState().timelineSelectionState;
 
 					params.dispatch(
 						timelines.map(({ id }) =>
@@ -487,7 +487,7 @@ export const timelineHandlers = {
 					toDispatch.push(timelineActions.setYPan(id, 0));
 				});
 
-				const timelineSelectionState = getActionState().timelineSelection;
+				const timelineSelectionState = getActionState().timelineSelectionState;
 				timelines.forEach(({ id }) => {
 					const selection = timelineSelectionState[id];
 					toDispatch.push(timelineActions.applyControlPointShift(id, selection));

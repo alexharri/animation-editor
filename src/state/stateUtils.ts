@@ -74,8 +74,11 @@ export const createApplicationStateFromActionState = (
 		project: toHistoryBasedState(actionState.project),
 		shapeState: toHistoryBasedState(actionState.shapeState),
 		shapeSelectionState: toHistoryBasedState(actionState.shapeSelectionState, "selection"),
-		timelines: toHistoryBasedState(actionState.timelines),
-		timelineSelection: toHistoryBasedState(actionState.timelineSelection, "selection"),
+		timelineState: toHistoryBasedState(actionState.timelineState),
+		timelineSelectionState: toHistoryBasedState(
+			actionState.timelineSelectionState,
+			"selection",
+		),
 		tool: toActionBasedState(actionState.tool),
 	};
 

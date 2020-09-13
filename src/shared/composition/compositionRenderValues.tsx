@@ -421,8 +421,8 @@ export const getCompositionRenderValues = (
 		compositionId,
 		compositionState: state.compositionState,
 		graphs: state.nodeEditor.graphs,
-		timelineSelectionState: state.timelineSelection,
-		timelineState: state.timelines,
+		timelineSelectionState: state.timelineSelectionState,
+		timelineState: state.timelineState,
 		container,
 		frameIndex,
 	};

@@ -39,7 +39,7 @@ const actions = {
 			viewport: Rect;
 		},
 	) => {
-		const { compositionState, timelines: timelineState } = getActionState();
+		const { compositionState, timelineState } = getActionState();
 
 		const timelineIds = getTimelineIdsReferencedByComposition(
 			options.compositionId,
@@ -354,7 +354,7 @@ export const trackHandlers = {
 	): void => {
 		const posTranslated = transformGlobalToTrackPosition(Vec2.fromEvent(e), options);
 
-		const { compositionState, timelines: timelineState } = getActionState();
+		const { compositionState, timelineState } = getActionState();
 		const composition = compositionState.compositions[options.compositionId];
 
 		const yPosMap = getTimelineTrackYPositions(composition.id, compositionState, options.panY);

@@ -105,8 +105,8 @@ export const moveToolHandlers = {
 		const {
 			compositionState,
 			compositionSelectionState,
-			timelines,
-			timelineSelection,
+			timelineState,
+			timelineSelectionState,
 		} = actionState;
 
 		const layer = compositionState.layers[layerId];
@@ -189,8 +189,8 @@ export const moveToolHandlers = {
 					? getTimelineValueAtIndex({
 							frameIndex: composition.frameIndex,
 							layerIndex: layer.index,
-							timeline: timelines[timelineId],
-							selection: timelineSelection[timelineId],
+							timeline: timelineState[timelineId],
+							selection: timelineSelectionState[timelineId],
 					  })
 					: property.value;
 
@@ -269,7 +269,11 @@ export const moveToolHandlers = {
 					didMove = true;
 				}
 
-				const { timelines, compositionState, compositionSelectionState } = getActionState();
+				const {
+					timelineState: timelines,
+					compositionState,
+					compositionSelectionState,
+				} = getActionState();
 				const compositionSelection = getCompSelectionFromState(
 					compositionId,
 					compositionSelectionState,

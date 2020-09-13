@@ -27,8 +27,8 @@ interface StateProps {
 	composition: Composition;
 	compositionSelectionState: CompositionSelectionState;
 	compositionState: CompositionState;
-	timelines: TimelineState;
-	timelineSelection: TimelineSelectionState;
+	timelineState: TimelineState;
+	timelineSelectionState: TimelineSelectionState;
 }
 type Props = OwnProps & StateProps;
 
@@ -50,7 +50,7 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 			compositionSelectionState,
 			viewBounds,
 			composition,
-			timelineSelection,
+			timelineSelectionState,
 			viewport,
 			layerIndexShift,
 			layerLengthShift,
@@ -59,7 +59,10 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 		const timelineIds = getTimelineIdsReferencedByComposition(composition.id, compositionState);
 		const timelines = timelineIds
 			.map((id) =>
-				applyTimelineIndexAndValueShifts(props.timelines[id], timelineSelection[id]),
+				applyTimelineIndexAndValueShifts(
+					props.timelineState[id],
+					timelineSelectionState[id],
+				),
 			)
 			.reduce<TimelineState>((obj, timeline) => {
 				obj[timeline.id] = timeline;
@@ -74,7 +77,7 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 			trackDragSelectRect,
 			timelines,
 			panY,
-			timelineSelection,
+			timelineSelection: timelineSelectionState,
 			viewBounds,
 			viewportHeight: viewport.height,
 			viewportWidth: viewport.width,
@@ -118,7 +121,7 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ compositionState, compositionSelectionState, timelines, timelineSelection },
+	{ compositionState, compositionSelectionState, timelineState, timelineSelectionState },
 	{ compositionId },
 ) => {
 	const composition = compositionState.compositions[compositionId];
@@ -126,8 +129,8 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 		composition,
 		compositionSelectionState,
 		compositionState,
-		timelines,
-		timelineSelection,
+		timelineState,
+		timelineSelectionState,
 	};
 };
 

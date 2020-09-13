@@ -29,7 +29,7 @@ const getOptions = (
 ) => {
 	const { width, height, left, top } = props;
 
-	const state = getActionState({ allowSelectionIndexShift: true });
+	const state = getActionState();
 	const isPerformingAction = !!getActionId();
 	const compositionId = props.areaState.compositionId;
 	const {

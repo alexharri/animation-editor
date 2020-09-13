@@ -331,7 +331,11 @@ export const timelineHandlers = {
 	): void => {
 		e.stopPropagation();
 
-		const { compositionState, timelines, timelineSelection } = getActionState();
+		const {
+			compositionState,
+			timelineState,
+			timelineSelectionState: timelineSelection,
+		} = getActionState();
 		const composition = compositionState.compositions[compositionId];
 		const property = compositionState.properties[propertyId] as CompositionProperty;
 		const layer = compositionState.layers[property.layerId];
@@ -339,7 +343,7 @@ export const timelineHandlers = {
 		if (timelineId) {
 			// Delete timeline and make the value of the timeline at the current time
 			// the value of the property
-			const timeline = timelines[timelineId];
+			const timeline = timelineState[timelineId];
 			const value = getTimelineValueAtIndex({
 				timeline,
 				frameIndex: composition.frameIndex,
@@ -760,7 +764,7 @@ export const timelineHandlers = {
 	): void => {
 		e.stopPropagation();
 
-		const { compositionState, compositionSelectionState, timelines } = getActionState();
+		const { compositionState, compositionSelectionState, timelineState } = getActionState();
 		const compositionSelection = getCompSelectionFromState(
 			compositionId,
 			compositionSelectionState,
@@ -829,7 +833,7 @@ export const timelineHandlers = {
 					);
 
 					if (property.type === "property" && property.timelineId) {
-						const timeline = timelines[property.timelineId];
+						const timeline = timelineState[property.timelineId];
 						const keyframeIds = timeline.keyframes.map((k) => k.id);
 						params.dispatch(
 							timelineActions.addKeyframesToSelection(timeline.id, keyframeIds),

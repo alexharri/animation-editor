@@ -162,7 +162,7 @@ const TimelineNumberValueComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ timelines, compositionState, compositionSelectionState },
+	{ timelineState, compositionState, compositionSelectionState },
 	{ propertyId },
 ) => {
 	const property = compositionState.properties[propertyId] as CompositionProperty;
@@ -173,7 +173,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	);
 	const isSelected = !!compositionSelection.properties[propertyId];
 
-	const timeline = property.timelineId ? timelines[property.timelineId] : undefined;
+	const timeline = property.timelineId ? timelineState[property.timelineId] : undefined;
 
 	return {
 		composition,

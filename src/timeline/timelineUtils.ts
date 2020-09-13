@@ -477,7 +477,7 @@ export const applyTimelineIndexAndValueShifts = (
 };
 
 export function getTimelineSelection(timelineId: string): TimelineSelection {
-	const selection = getActionState().timelineSelection;
+	const selection = getActionState().timelineSelectionState;
 	return selection[timelineId] || { timelineId, keyframes: {} };
 }
 

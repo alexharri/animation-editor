@@ -47,8 +47,8 @@ declare global {
 		project: HistoryState<ProjectState>;
 		shapeState: HistoryState<ShapeState>;
 		shapeSelectionState: HistoryState<ShapeSelectionState>;
-		timelines: HistoryState<TimelineState>;
-		timelineSelection: HistoryState<TimelineSelectionState>;
+		timelineState: HistoryState<TimelineState>;
+		timelineSelectionState: HistoryState<TimelineSelectionState>;
 		tool: ActionBasedState<ToolState>;
 	}
 
@@ -61,8 +61,8 @@ declare global {
 		project: ProjectState;
 		shapeState: ShapeState;
 		shapeSelectionState: ShapeSelectionState;
-		timelines: TimelineState;
-		timelineSelection: TimelineSelectionState;
+		timelineState: TimelineState;
+		timelineSelectionState: TimelineSelectionState;
 		tool: ToolState;
 	}
 
@@ -99,8 +99,8 @@ const reducers = {
 		{ selectionForKey: "shapeState" },
 	),
 
-	timelines: createReducerWithHistory(initialTimelineState, timelineReducer),
-	timelineSelection: createReducerWithHistory(
+	timelineState: createReducerWithHistory(initialTimelineState, timelineReducer),
+	timelineSelectionState: createReducerWithHistory(
 		initialTimelineSelectionState,
 		timelineSelectionReducer,
 		{ selectionForKey: "timelines" },

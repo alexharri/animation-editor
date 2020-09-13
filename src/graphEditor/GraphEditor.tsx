@@ -19,12 +19,18 @@ interface OwnProps {
 }
 interface StateProps {
 	timelines: Timeline[];
-	selection: TimelineSelectionState;
+	timelineSelectionState: TimelineSelectionState;
 }
 type Props = OwnProps & StateProps;
 
 const GraphEditorComponent: React.FC<Props> = (props) => {
-	const { viewport, length, selection, colors, dragSelectRect } = props;
+	const {
+		viewport,
+		length,
+		timelineSelectionState: timelineSelectionState,
+		colors,
+		dragSelectRect,
+	} = props;
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -38,7 +44,7 @@ const GraphEditorComponent: React.FC<Props> = (props) => {
 		const { width, height } = viewport;
 
 		const timelines = props.timelines.map((timeline) =>
-			applyTimelineIndexAndValueShifts(timeline, props.selection[timeline.id]),
+			applyTimelineIndexAndValueShifts(timeline, props.timelineSelectionState[timeline.id]),
 		);
 
 		renderGraphEditor({
@@ -49,7 +55,7 @@ const GraphEditorComponent: React.FC<Props> = (props) => {
 			timelines,
 			colors,
 			viewBounds,
-			selection,
+			timelineSelectionState: timelineSelectionState,
 			dragSelectRect,
 		});
 	}, [props]);
@@ -79,11 +85,11 @@ const GraphEditorComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ timelines, timelineSelection },
+	{ timelineState, timelineSelectionState },
 	ownProps,
 ) => ({
-	timelines: ownProps.ids.map((id) => timelines[id]),
-	selection: timelineSelection,
+	timelines: ownProps.ids.map((id) => timelineState[id]),
+	timelineSelectionState: timelineSelectionState,
 });
 
 export const GraphEditor = connectActionState(mapStateToProps)(GraphEditorComponent);
