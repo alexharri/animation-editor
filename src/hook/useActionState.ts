@@ -36,6 +36,8 @@ export const useActionStateEffect = (
 	useEffect(() => {
 		let prevState: ActionState = getActionStateFromApplicationState(store.getState());
 
+		callback(prevState, prevState);
+
 		const unsub = store.subscribe(() => {
 			const state = getActionStateFromApplicationState(store.getState());
 

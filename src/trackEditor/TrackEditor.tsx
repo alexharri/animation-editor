@@ -11,6 +11,7 @@ import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
 import { renderTracks } from "~/trackEditor/renderTrackEditor";
 import { trackHandlers } from "~/trackEditor/trackHandlers";
 import { useTrackEditorCanvasCursor } from "~/trackEditor/useTrackEditorCanvasCursor";
+import { separateLeftRightMouse } from "~/util/mouse";
 
 interface OwnProps {
 	compositionId: string;
@@ -98,16 +99,18 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 				ref={canvasRef}
 				height={height}
 				width={width}
-				onMouseDown={(e) => {
-					trackHandlers.onMouseDown(e, {
-						compositionId,
-						timelineAreaId: props.timelineAreaId,
-						compositionLength: composition.length,
-						panY,
-						viewBounds,
-						viewport,
-					});
-				}}
+				onMouseDown={separateLeftRightMouse({
+					left: (e) => {
+						trackHandlers.onMouseDown(e, {
+							compositionId,
+							timelineAreaId: props.timelineAreaId,
+							compositionLength: composition.length,
+							panY,
+							viewBounds,
+							viewport,
+						});
+					},
+				})}
 				onMouseMove={onMouseMove}
 			/>
 		</div>
