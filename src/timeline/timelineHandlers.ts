@@ -213,7 +213,7 @@ export const timelineHandlers = {
 		const t = mousePos.x / width;
 
 		if (t < 0) {
-			console.log(t);
+			// User is pinch zooming on layer list. We just ignore this.
 			return;
 		}
 
