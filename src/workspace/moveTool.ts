@@ -400,7 +400,7 @@ export const moveToolHandlers = {
 				}
 
 				if (didMove) {
-					params.submitAction("Move selected layers");
+					params.submitAction("Move selected layers", { allowIndexShift: true });
 					return;
 				}
 

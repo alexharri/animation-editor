@@ -384,7 +384,7 @@ export const penToolHandlers = {
 						compositionActions.setShapeMoveVector(compositionId, Vec2.ORIGIN),
 						shapeActions.applyShapeMoveVector(shapeIds, shapeMoveVector),
 					);
-					params.submitAction("Move selected shapes");
+					params.submitAction("Move selected shapes", { allowIndexShift: true });
 					return;
 				}
 
@@ -973,7 +973,9 @@ export const penToolHandlers = {
 
 				if (hasMoved) {
 					params.dispatch(shapeActions.applyMoveVector(shapeId, selection));
-					params.submitAction("Move selected objects in shape");
+					params.submitAction("Move selected objects in shape", {
+						allowIndexShift: true,
+					});
 					return;
 				}
 
@@ -1663,7 +1665,9 @@ export const penToolHandlers = {
 
 				if (hasMoved) {
 					params.dispatch(shapeActions.applyMoveVector(shapeId, selection));
-					params.submitAction("Move selected objects in shape");
+					params.submitAction("Move selected objects in shape", {
+						allowIndexShift: true,
+					});
 					return;
 				}
 
@@ -1946,7 +1950,7 @@ export const penToolHandlers = {
 				params.dispatch(toDispatch);
 			},
 			mouseUp: (params) => {
-				params.submitAction("Do a thing");
+				params.submitAction("Continue path");
 			},
 		});
 	},

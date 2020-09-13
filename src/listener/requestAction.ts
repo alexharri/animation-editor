@@ -23,11 +23,15 @@ export interface RequestActionOptions {
 	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 }
 
+interface SubmitOptions {
+	allowIndexShift: boolean;
+}
+
 export interface RequestActionParams {
 	dispatch: (action: any | any[], ...otherActions: any[]) => void;
 	dispatchToAreaState: (areaId: string, action: any) => void;
 	cancelAction: () => void;
-	submitAction: (name?: string) => void;
+	submitAction: (name?: string, options?: Partial<SubmitOptions>) => void;
 	addListener: typeof _addListener;
 	removeListener: typeof removeListener;
 	execOnComplete: (callback: () => void) => void;
@@ -113,7 +117,7 @@ const performRequestedAction = (
 			dispatch(areaActions.dispatchToAreaState(areaId, action));
 		},
 
-		submitAction: (name = "Unknown action") => {
+		submitAction: (name = "Unknown action", { allowIndexShift = false } = {}) => {
 			if (!getActionId()) {
 				console.warn("Attempted to submit an action that does not exist.");
 				return;
@@ -163,7 +167,9 @@ const performRequestedAction = (
 				}
 			}
 
-			store.dispatch(historyActions.submitAction(actionId, name, history, modifiedKeys));
+			store.dispatch(
+				historyActions.submitAction(actionId, name, history, modifiedKeys, allowIndexShift),
+			);
 			onComplete();
 		},
 

@@ -5,7 +5,7 @@ type HistoryAction = ActionType<typeof historyActions>;
 
 export interface HistoryState<S> {
 	type: "normal" | "selection";
-	list: Array<{ state: S; name: string; modifiedRelated: boolean }>;
+	list: Array<{ state: S; name: string; modifiedRelated: boolean; allowIndexShift: boolean }>;
 	index: number;
 	indexDirection: -1 | 1;
 	action: null | {
@@ -27,7 +27,14 @@ export function createReducerWithHistory<S>(
 
 	const initState: HistoryState<S> = {
 		type: selectionForKey ? "selection" : "normal",
-		list: [{ state: initialState, name: "Initial state", modifiedRelated: false }],
+		list: [
+			{
+				state: initialState,
+				name: "Initial state",
+				modifiedRelated: false,
+				allowIndexShift: false,
+			},
+		],
 		index: 0,
 		indexDirection: 1,
 		action: null,
@@ -143,7 +150,13 @@ export function createReducerWithHistory<S>(
 			}
 
 			case "history/SUBMIT_ACTION": {
-				const { actionId, name, modifiesHistory, modifiedKeys } = action.payload;
+				const {
+					actionId,
+					name,
+					modifiesHistory,
+					modifiedKeys,
+					allowIndexShift,
+				} = action.payload;
 
 				if (!modifiesHistory) {
 					return {
@@ -170,6 +183,7 @@ export function createReducerWithHistory<S>(
 							state: state.action.state,
 							name,
 							modifiedRelated: modifiedKeys.indexOf(selectionForKey) !== -1,
+							allowIndexShift,
 						},
 					],
 					index: state.index + 1,

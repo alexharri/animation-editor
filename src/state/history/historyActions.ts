@@ -28,8 +28,15 @@ export const historyActions = {
 		name: string,
 		modifiesHistory: boolean,
 		modifiedKeys: string[],
+		allowIndexShift: boolean,
 	) => {
-		return action("history/SUBMIT_ACTION", { actionId, name, modifiesHistory, modifiedKeys });
+		return action("history/SUBMIT_ACTION", {
+			actionId,
+			name,
+			modifiesHistory,
+			modifiedKeys,
+			allowIndexShift,
+		});
 	},
 
 	cancelAction: (actionId: string) => {

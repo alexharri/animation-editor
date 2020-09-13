@@ -610,7 +610,7 @@ export const timelineHandlers = {
 							compositionSelectionState,
 						),
 					);
-					params.submitAction("Move layers");
+					params.submitAction("Move layers", { allowIndexShift: true });
 					return;
 				}
 

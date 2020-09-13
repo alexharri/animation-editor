@@ -95,7 +95,7 @@ const actions = {
 						return arr;
 					}, []),
 				);
-				params.submitAction("Move selected keyframes");
+				params.submitAction("Move selected keyframes", { allowIndexShift: true });
 			},
 			moveTreshold: 5,
 		});
@@ -196,7 +196,7 @@ const actions = {
 					),
 				);
 
-				params.submitAction("Move layer(s)");
+				params.submitAction("Move layer(s)", { allowIndexShift: true });
 			},
 		});
 	},
@@ -334,7 +334,7 @@ const actions = {
 					params.dispatch(toDispatch);
 				}
 
-				params.submitAction("Resize layer(s)");
+				params.submitAction("Resize layer(s)", { allowIndexShift: true });
 			},
 		});
 	},

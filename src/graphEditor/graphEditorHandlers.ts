@@ -611,7 +611,7 @@ export const timelineHandlers = {
 				}
 
 				params.dispatch(toDispatch);
-				params.submitAction("Move selected keyframes");
+				params.submitAction("Move selected keyframes", { allowIndexShift: true });
 			},
 		});
 	},

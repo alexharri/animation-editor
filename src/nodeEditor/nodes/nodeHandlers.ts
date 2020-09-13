@@ -1,18 +1,18 @@
-import { requestAction, RequestActionCallback } from "~/listener/requestAction";
+import { getAreaViewport } from "~/area/util/getAreaViewport";
+import { AreaType, NODE_EDITOR_MIN_NODE_WIDTH } from "~/constants";
+import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { isKeyDown } from "~/listener/keyboard";
+import { requestAction, RequestActionCallback } from "~/listener/requestAction";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
+import { nodeValidInputToOutputsMap } from "~/nodeEditor/nodeEditorIO";
+import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
+import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
+import {
+	calculateNodeInputPosition,
+	calculateNodeOutputPosition,
+} from "~/nodeEditor/util/calculateNodeHeight";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { getDistance } from "~/util/math";
-import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { contextMenuActions } from "~/contextMenu/contextMenuActions";
-import {
-	calculateNodeOutputPosition,
-	calculateNodeInputPosition,
-} from "~/nodeEditor/util/calculateNodeHeight";
-import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { NODE_EDITOR_MIN_NODE_WIDTH, AreaType } from "~/constants";
-import { getAreaViewport } from "~/area/util/getAreaViewport";
-import { nodeValidInputToOutputsMap } from "~/nodeEditor/nodeEditorIO";
 
 const getAllValidInputsForType = (
 	graph: NodeEditorGraphState,
@@ -177,7 +177,7 @@ export const nodeHandlers = {
 				addListener.once("mouseup", () => {
 					if (hasMoved) {
 						dispatch(nodeEditorActions.applyMoveVector(graphId));
-						submitAction("Move selection");
+						submitAction("Move selection", { allowIndexShift: true });
 					} else {
 						if (!shiftKeyDownAtMouseDown) {
 							dispatch(nodeEditorActions.clearNodeSelection(graphId));
