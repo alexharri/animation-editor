@@ -5,7 +5,6 @@ import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionId, getActionState } from "~/state/stateUtils";
-import { store } from "~/state/store";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -144,11 +143,6 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 			return false;
 		})();
 	});
-	useEffect(() => {
-		const unsub = store.subscribe(() => {});
-
-		return unsub;
-	}, []);
 
 	const keyDownRef = useRef({ Shift: false, Command: false });
 

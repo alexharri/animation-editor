@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { areaActions } from "~/area/state/areaActions";
 import { COMP_TIME_SEPARATOR_WIDTH, TRACKPAD_ZOOM_DELTA_FAC } from "~/constants";
+import { GraphEditor } from "~/graphEditor/GraphEditor";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
 import { TimelineScrubber } from "~/timeline/scrubber/TimelineScrubber";
 import styles from "~/timeline/Timeline.styles";
 import { timelineAreaActions, TimelineAreaState } from "~/timeline/timelineAreaReducer";
-import { TimelineGraphEditorWrapper } from "~/timeline/TimelineGraphEditorWrapper";
 import { timelineHandlers } from "~/timeline/timelineHandlers";
 import { TimelineLayerList } from "~/timeline/TimelineLayerList";
 import { TimelineViewBounds } from "~/timeline/TimelineViewBounds";
@@ -264,11 +264,11 @@ const TimelineComponent: React.FC<Props> = (props) => {
 						/>
 					)}
 					{props.areaState.graphEditorOpen && (
-						<TimelineGraphEditorWrapper
+						<GraphEditor
 							areaId={props.areaId}
-							compositionId={props.areaState.compositionId}
+							compositionId={compositionId}
 							dragSelectRect={props.areaState.dragSelectRect}
-							viewBounds={props.areaState.viewBounds}
+							viewBounds={viewBounds}
 							viewport={{
 								width: viewportRight.width,
 								height: viewportRight.height - 32,

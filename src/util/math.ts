@@ -146,7 +146,7 @@ export function rotateVec2CCW(vec: Vec2, angle: number, anchor = Vec2.new(0, 0))
 	return Mat2.rotation(angle).multiplyVec2(Vec2.new(x, y)).add(anchor);
 }
 
-export const positiveAngleRadians = (angle: number) => {
+const positiveAngleRadians = (angle: number) => {
 	if (angle >= 0) {
 		return angle;
 	}

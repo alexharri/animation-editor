@@ -2,6 +2,7 @@ import React from "react";
 import { areaComponentRegistry, _areaReactKeyRegistry } from "~/area/areaRegistry";
 import styles from "~/area/components/Area.styles";
 import { AreaErrorBoundary } from "~/area/components/AreaErrorBoundary";
+import { useAreaKeyboardShortcuts } from "~/area/components/useAreaKeyboardShortcuts";
 import { handleAreaDragFromCorner } from "~/area/handlers/areaDragFromCorner";
 import { areaActions } from "~/area/state/areaActions";
 import { AreaIdContext } from "~/area/util/AreaIdContext";
@@ -111,6 +112,8 @@ export const AreaComponent: React.FC<Props> = (props) => {
 
 	const areaStateKey = _areaReactKeyRegistry[props.type];
 	const key = areaStateKey ? props.state[areaStateKey] : props.id;
+
+	useAreaKeyboardShortcuts(id, type, viewport);
 
 	return (
 		<div data-areaid={id} className={s("area", { raised })} style={viewport}>

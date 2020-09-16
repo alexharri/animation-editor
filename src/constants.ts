@@ -7,6 +7,7 @@ export const keys = {
 	Alt: 18,
 	Esc: 27,
 	Space: 32,
+	Delete: 46,
 	B: 66,
 	C: 67,
 	F: 70,

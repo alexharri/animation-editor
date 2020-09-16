@@ -6,7 +6,7 @@ import {
 	TIMELINE_CP_TX_MIN,
 } from "~/constants";
 import { getActionState } from "~/state/stateUtils";
-import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
+import { TimelineSelection, TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { Timeline, TimelineKeyframe, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
 import { capToRange, getDistance, interpolate, translateToRange } from "~/util/math";
 import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
@@ -476,10 +476,18 @@ export const applyTimelineIndexAndValueShifts = (
 	};
 };
 
+const _emptyTimelineSelection: TimelineSelection = { keyframes: {} };
 export function getTimelineSelection(timelineId: string): TimelineSelection {
 	const selection = getActionState().timelineSelectionState;
-	return selection[timelineId] || { timelineId, keyframes: {} };
+	return selection[timelineId] || _emptyTimelineSelection;
 }
+
+export const timelineSelectionFromState = (
+	timelineId: string,
+	timelineSelectionState: TimelineSelectionState,
+): TimelineSelection => {
+	return timelineSelectionState[timelineId] || _emptyTimelineSelection;
+};
 
 export const splitTimelinePathAtIndex = <T extends Line | CubicBezier>(
 	path: T,

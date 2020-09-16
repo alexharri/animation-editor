@@ -1,6 +1,15 @@
+import { keys } from "~/constants";
+import { RequestActionParams } from "~/listener/requestAction";
+
 export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
 
-export type ToDispatch = Array<{ type: string; payload: any }>;
+export type Action = { type: string; payload: any };
+export type ToDispatch = Action[];
+
+export interface Operation {
+	actions: Action[];
+	add: (...actions: Action[]) => void;
+}
 
 export type CardinalDirection = "n" | "w" | "s" | "e";
 export type IntercardinalDirection = "ne" | "nw" | "se" | "sw";
@@ -180,3 +189,17 @@ export interface MousePosition {
 }
 
 export type NameToProperty = { [key in keyof typeof PropertyName]: any };
+
+export type ShortcutFn = (areaId: string, params: RequestActionParams) => void;
+export type ShouldAddShortcutToStackFn = (
+	areaId: string,
+	prevState: ActionState,
+	nextState: ActionState,
+) => boolean;
+export interface KeyboardShortcut {
+	name: string;
+	key: keyof typeof keys;
+	modifierKeys?: Array<"Command" | "Alt" | "Shift">;
+	fn: ShortcutFn;
+	shouldAddToStack?: ShouldAddShortcutToStackFn;
+}

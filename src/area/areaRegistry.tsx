@@ -5,6 +5,8 @@ import { nodeEditorAreaReducer } from "~/nodeEditor/nodeEditorAreaReducer";
 import { Project } from "~/project/Project";
 import { Timeline } from "~/timeline/Timeline";
 import { timelineAreaReducer } from "~/timeline/timelineAreaReducer";
+import { timelineKeyboardShortcuts } from "~/timeline/timelineShortcuts";
+import { KeyboardShortcut } from "~/types";
 import { AreaComponentProps, AreaState } from "~/types/areaTypes";
 import { Workspace } from "~/workspace/Workspace";
 import { compositionWorkspaceAreaReducer } from "~/workspace/workspaceAreaReducer";
@@ -37,4 +39,12 @@ export const _areaReactKeyRegistry: Partial<
 	[AreaType.Timeline]: "compositionId",
 	[AreaType.Workspace]: "compositionId",
 	[AreaType.NodeEditor]: "graphId",
+};
+
+export const areaKeyboardShortcutRegistry: Partial<
+	{
+		[T in AreaType]: KeyboardShortcut[];
+	}
+> = {
+	[AreaType.Timeline]: timelineKeyboardShortcuts,
 };

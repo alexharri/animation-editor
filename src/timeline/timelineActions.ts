@@ -16,6 +16,10 @@ export const timelineActions = {
 			resolve({ timelineId, keyframe });
 	}),
 
+	removeKeyframes: createAction("timeline/REMOVE_KEYFRAMES", (action) => {
+		return (timelineId: string, keyframeIds: string[]) => action({ timelineId, keyframeIds });
+	}),
+
 	setDragSelectRect: createAction("timeline/SET_DRAG_SELECT_RECT", (resolve) => {
 		return (timelineId: string, rect: Rect) => resolve({ timelineId, rect });
 	}),
@@ -63,18 +67,6 @@ export const timelineActions = {
 		return (timelineId: string, yPan: number) => resolve({ timelineId, yPan });
 	}),
 
-	addKeyframesToSelection: createAction("timeline/ADD_KEYFRAMES_TO_SELECTION", (action) => {
-		return (timelineId: string, keyframeIds: string[]) => action({ timelineId, keyframeIds });
-	}),
-
-	clearSelection: createAction("timeline/CLEAR_SELECTION", (resolve) => {
-		return (timelineId: string) => resolve({ timelineId });
-	}),
-
-	toggleKeyframeSelection: createAction("timeline/TOGGLE_KEYFRAME_SELECTION", (resolve) => {
-		return (timelineId: string, keyframeId: string) => resolve({ timelineId, keyframeId });
-	}),
-
 	setKeyframeReflectControlPoints: createAction(
 		"timeline/SET_KEYFRAME_REFLECT_CONTROL_POINTS",
 		(resolve) => {
@@ -90,5 +82,19 @@ export const timelineActions = {
 			direction: "left" | "right",
 			controlPoint: TimelineKeyframeControlPoint | null,
 		) => resolve({ timelineId, controlPoint, keyframeIndex, direction });
+	}),
+};
+
+export const timelineSelectionActions = {
+	addKeyframes: createAction("timeline_selection/ADD_KEYFRAMES", (action) => {
+		return (timelineId: string, keyframeIds: string[]) => action({ timelineId, keyframeIds });
+	}),
+
+	toggleKeyframe: createAction("timeline_selection/TOGGLE_KEYFRAME_SELECTION", (resolve) => {
+		return (timelineId: string, keyframeId: string) => resolve({ timelineId, keyframeId });
+	}),
+
+	clear: createAction("timeline_selection/CLEAR_SELECTION", (resolve) => {
+		return (timelineId: string) => resolve({ timelineId });
 	}),
 };

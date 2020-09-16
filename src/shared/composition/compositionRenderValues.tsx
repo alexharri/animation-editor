@@ -467,17 +467,21 @@ export const CompositionPropertyValuesProvider: React.FC<{
 				return;
 			}
 
-			const lastState = lastStateRef.current;
-			const state = getActionStateFromApplicationState(store.getState());
+			const prevState = lastStateRef.current;
+			const nextState = getActionStateFromApplicationState(store.getState());
 
-			lastStateRef.current = state;
+			lastStateRef.current = nextState;
 
 			shouldRenderRef.current = (() => {
-				if (!lastState) {
+				if (!prevState) {
 					return true;
 				}
 
-				if (state.compositionState !== lastState.compositionState) {
+				if (prevState.compositionState !== nextState.compositionState) {
+					return true;
+				}
+
+				if (prevState.timelineState !== nextState.timelineState) {
 					return true;
 				}
 

@@ -11,7 +11,7 @@ import {
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction } from "~/listener/requestAction";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
 import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
 import {
@@ -171,13 +171,13 @@ export const timelineHandlers = {
 
 			addListener.once("mouseup", () => {
 				if (!hasMoved) {
-					timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
+					timelines.forEach(({ id }) => dispatch(timelineSelectionActions.clear(id)));
 					submitAction("Clear timeline selection");
 					return;
 				}
 
 				if (!wasShiftDown) {
-					timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
+					timelines.forEach(({ id }) => dispatch(timelineSelectionActions.clear(id)));
 				}
 
 				const { dragSelectRect } = getAreaActionState<AreaType.Timeline>(
@@ -190,7 +190,7 @@ export const timelineHandlers = {
 							return isVecInRect(Vec2.new(k.index, k.value), dragSelectRect!);
 						})
 						.map((k) => k.id);
-					dispatch(timelineActions.addKeyframesToSelection(timeline.id, keyframes));
+					dispatch(timelineSelectionActions.addKeyframes(timeline.id, keyframes));
 				});
 				dispatch(
 					areaActions.dispatchToAreaState(
@@ -270,10 +270,10 @@ export const timelineHandlers = {
 				if (!selected) {
 					if (!isKeyDown("Shift")) {
 						timelines.forEach((timeline) => {
-							params.dispatch(timelineActions.clearSelection(timeline.id));
+							params.dispatch(timelineSelectionActions.clear(timeline.id));
 						});
 					}
-					params.dispatch(timelineActions.toggleKeyframeSelection(timeline.id, k.id));
+					params.dispatch(timelineSelectionActions.toggleKeyframe(timeline.id, k.id));
 				}
 
 				if (altDownAtMouseDown) {
@@ -419,9 +419,9 @@ export const timelineHandlers = {
 				// Clear timeline selection and select only the keyframe we are
 				// operating on.
 				params.dispatch(
-					timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
+					timelines.map((timeline) => timelineSelectionActions.clear(timeline.id)),
 				);
-				params.dispatch(timelineActions.toggleKeyframeSelection(timeline.id, k.id));
+				params.dispatch(timelineSelectionActions.toggleKeyframe(timeline.id, k.id));
 
 				// Lock yBounds and init pan for all timelines.
 				//
@@ -539,14 +539,14 @@ export const timelineHandlers = {
 			beforeMove: (params) => {
 				if (additiveSelection) {
 					params.dispatch(
-						timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id),
+						timelineSelectionActions.toggleKeyframe(timeline.id, keyframe.id),
 					);
 				} else if (!selection.keyframes[keyframe.id]) {
 					// If the current node is not selected, we clear the selections of all timelines
 					// we are operating on.
-					params.dispatch(timelines.map(({ id }) => timelineActions.clearSelection(id)));
+					params.dispatch(timelines.map(({ id }) => timelineSelectionActions.clear(id)));
 					params.dispatch(
-						timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id),
+						timelineSelectionActions.toggleKeyframe(timeline.id, keyframe.id),
 					);
 				}
 			},

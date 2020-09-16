@@ -30,7 +30,7 @@ import {
 import { createArrayModifierGraph, createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
 import { createTimelineContextMenu } from "~/timeline/timelineContextMenu";
 import {
@@ -386,7 +386,7 @@ export const timelineHandlers = {
 					compositionState,
 				);
 				params.dispatch(
-					timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+					timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 				);
 
 				params.submitAction("Clear timeline selection");
@@ -504,7 +504,7 @@ export const timelineHandlers = {
 				compositionState,
 			);
 			params.dispatch(
-				timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+				timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 			);
 		};
 
@@ -534,7 +534,7 @@ export const timelineHandlers = {
 				compSelectionActions.removePropertiesFromSelection(compositionId, propertyIds),
 			);
 			params.dispatch(
-				timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+				timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 			);
 		};
 
@@ -784,7 +784,7 @@ export const timelineHandlers = {
 						compositionId,
 						compositionState,
 					);
-					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
+					params.dispatch(timelineIds.map((id) => timelineSelectionActions.clear(id)));
 				}
 
 				const willBeSelected = !compositionSelection.properties[propertyId];
@@ -821,7 +821,7 @@ export const timelineHandlers = {
 					);
 
 					if (property.type === "property" && property.timelineId) {
-						params.dispatch(timelineActions.clearSelection(property.timelineId));
+						params.dispatch(timelineSelectionActions.clear(property.timelineId));
 					}
 				} else {
 					// Add property and timeline keyframes to selection
@@ -836,7 +836,7 @@ export const timelineHandlers = {
 						const timeline = timelineState[property.timelineId];
 						const keyframeIds = timeline.keyframes.map((k) => k.id);
 						params.dispatch(
-							timelineActions.addKeyframesToSelection(timeline.id, keyframeIds),
+							timelineSelectionActions.addKeyframes(timeline.id, keyframeIds),
 						);
 					}
 				}

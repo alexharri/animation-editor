@@ -16,7 +16,7 @@ import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { getShapeLayerSelectedPathIds, getSingleSelectedShapeLayerId } from "~/shape/shapeUtils";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import {
 	createTimelineKeyframe,
 	getTimelineValueAtIndex,
@@ -141,7 +141,7 @@ export const moveToolHandlers = {
 				compositionState,
 			);
 			params.dispatch(
-				timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+				timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 			);
 		};
 
@@ -171,7 +171,7 @@ export const moveToolHandlers = {
 				compSelectionActions.removePropertiesFromSelection(compositionId, propertyIds),
 			);
 			params.dispatch(
-				timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+				timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 			);
 		};
 
@@ -431,7 +431,7 @@ export const moveToolHandlers = {
 					compositionState,
 				);
 				params.dispatch(
-					timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+					timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 				);
 
 				params.submitAction("Clear composition selection");

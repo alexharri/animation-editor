@@ -109,6 +109,43 @@ export function reduceCompProperties<T>(
 	return acc;
 }
 
+export function findCompProperty(
+	compositionId: string,
+	compositionState: CompositionState,
+	fn: (property: CompositionProperty) => boolean,
+): CompositionProperty | null {
+	const composition = compositionState.compositions[compositionId];
+
+	function crawl(propertyId: string): CompositionProperty | null {
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "group") {
+			for (const propertyId of property.properties) {
+				const property = crawl(propertyId);
+				if (property) {
+					return property;
+				}
+			}
+
+			return null;
+		}
+
+		return fn(property) ? property : null;
+	}
+
+	for (const layerId of composition.layers) {
+		const propertyIds = compositionState.layers[layerId].properties;
+		for (const propertyId of propertyIds) {
+			const property = crawl(propertyId);
+			if (property) {
+				return property;
+			}
+		}
+	}
+
+	return null;
+}
+
 export function reduceCompPropertiesAndGroups<T>(
 	compositionId: string,
 	compositionState: CompositionState,

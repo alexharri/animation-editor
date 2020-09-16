@@ -3,6 +3,7 @@ import { timelineActions } from "~/timeline/timelineActions";
 import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
 import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
 import { getInsertIndex } from "~/util/alg/getInsertIndex";
+import { modifyItemsInMap } from "~/util/mapUtils";
 
 type Action = ActionType<typeof timelineActions>;
 
@@ -59,6 +60,15 @@ export function timelineReducer(state: TimelineState, action: Action): TimelineS
 					keyframes,
 				},
 			};
+		}
+
+		case getType(timelineActions.removeKeyframes): {
+			const { timelineId, keyframeIds } = action.payload;
+			const set = new Set(keyframeIds);
+			return modifyItemsInMap(state, timelineId, (timeline) => ({
+				...timeline,
+				keyframes: timeline.keyframes.filter((k) => !set.has(k.id)),
+			}));
 		}
 
 		case getType(timelineActions.setYPan): {

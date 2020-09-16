@@ -76,6 +76,12 @@ export const createToGraphEditorViewportY = (
 export const renderGraphEditor = (options: RenderOptions): void => {
 	const { ctx, timelines, width, height, timelineSelectionState, viewBounds } = options;
 
+	ctx.clearRect(0, 0, width, height);
+
+	if (timelines.length === 0) {
+		return;
+	}
+
 	const timelinePaths = timelines.map((timeline) =>
 		timelineKeyframesToPathList(timeline.keyframes),
 	);
@@ -83,8 +89,6 @@ export const renderGraphEditor = (options: RenderOptions): void => {
 	const toViewportY = createToGraphEditorViewportY(timelinePaths, options);
 	const toViewportX = createToGraphEditorViewportX(options);
 	const toViewport = (vec: Vec2) => Vec2.new(toViewportX(vec.x), toViewportY(vec.y));
-
-	ctx.clearRect(0, 0, width, height);
 
 	const atZero = toViewportX(0);
 	const atEnd = toViewportX(options.length);
