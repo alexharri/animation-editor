@@ -476,7 +476,12 @@ export const timelineHandlers = {
 			},
 			mouseUp: (params, hasMoved) => {
 				if (!hasMoved) {
-					params.cancelAction();
+					// Alt click on keyframe. Remove current control points.
+					params.dispatch(
+						timelineActions.setKeyframeControlPoint(timeline.id, index, "left", null),
+						timelineActions.setKeyframeControlPoint(timeline.id, index, "right", null),
+					);
+					params.submitAction("Remove keyframe control points");
 					return;
 				}
 
