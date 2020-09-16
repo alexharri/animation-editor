@@ -2,6 +2,7 @@ import { compositionActions } from "~/composition/compositionReducer";
 import { findCompProperty } from "~/composition/compositionUtils";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
+import { TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
 import { getTimelineValueAtIndex, timelineSelectionFromState } from "~/timeline/timelineUtils";
 import { Operation } from "~/types";
 
@@ -66,7 +67,37 @@ const removeSelectedKeyframes = (
 	}
 };
 
+const easyEaseSelectedKeyframes = (op: Operation, timelineIds: string[]): void => {
+	const { timelineState, timelineSelectionState } = getActionState();
+
+	for (const timelineId of timelineIds) {
+		const timeline = timelineState[timelineId];
+		const selection = timelineSelectionFromState(timelineId, timelineSelectionState);
+
+		for (let i = 0; i < timeline.keyframes.length; i++) {
+			const k = timeline.keyframes[i];
+
+			if (!selection.keyframes[k.id]) {
+				continue;
+			}
+
+			const t = 0.33;
+			const cp = (tx: number): TimelineKeyframeControlPoint => ({
+				value: 0,
+				relativeToDistance: 1,
+				tx,
+			});
+			op.add(
+				timelineActions.setKeyframeControlPoint(timelineId, i, "left", cp(1 - t)),
+				timelineActions.setKeyframeControlPoint(timelineId, i, "right", cp(t)),
+				timelineActions.setKeyframeReflectControlPoints(timelineId, i, true),
+			);
+		}
+	}
+};
+
 export const timelineOperations = {
 	removeTimeline,
 	removeSelectedKeyframes,
+	easyEaseSelectedKeyframes,
 };

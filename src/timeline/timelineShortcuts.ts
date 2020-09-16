@@ -44,6 +44,15 @@ export const timelineShortcuts = {
 
 		params.dispatch(op.actions);
 	},
+
+	easeEaseSelectedKeyframes: (areaId: string, params: RequestActionParams) => {
+		const timelineIds = getSelectedTimelineIds(areaId);
+
+		const op = createOperation();
+		timelineOperations.easyEaseSelectedKeyframes(op, timelineIds);
+
+		params.dispatch(op.actions);
+	},
 };
 
 const wereKeyframesRemoved: ShouldAddShortcutToStackFn = (areaId, prevState, nextState) => {
@@ -78,5 +87,10 @@ export const timelineKeyboardShortcuts: KeyboardShortcut[] = [
 		key: "Delete",
 		fn: timelineShortcuts.removeSelectedKeyframes,
 		shouldAddToStack: wereKeyframesRemoved,
+	},
+	{
+		name: "Easy ease selected keyframes",
+		key: "F9",
+		fn: timelineShortcuts.easeEaseSelectedKeyframes,
 	},
 ];

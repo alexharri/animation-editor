@@ -8,9 +8,25 @@ import {
 import { getActionState } from "~/state/stateUtils";
 import { TimelineSelection, TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { Timeline, TimelineKeyframe, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
-import { capToRange, getDistance, interpolate, translateToRange } from "~/util/math";
+import {
+	capToRange,
+	getDistance,
+	interpolate,
+	interpolateCubicBezier,
+	translateToRange,
+} from "~/util/math";
 import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
+
+const isFlatBezier = (bezier: CubicBezier) => {
+	const y = bezier[0].y;
+	for (let i = 1; i < bezier.length; i++) {
+		if (y !== bezier[i].y) {
+			return false;
+		}
+	}
+	return true;
+};
 
 const calcP2 = (p3: Vec2, p1: Vec2): Vec2 => {
 	return Vec2.new(p1.x + (p3.x - p1.x) * 0.4, p1.y + (p3.y - p1.y) * 0.4);
@@ -132,6 +148,40 @@ export function getTimelineValueAtIndex(options: GetTimelineValueAtIndexOptions)
 
 		const xDiff = path[3].x - path[0].x;
 		const yDiff = path[3].y - path[0].y;
+
+		if (yDiff === 0) {
+			// The keyframes have the same value, we can't use Bezier to
+			// get the Y value.
+			//
+			// Find intersection with vertical line at index.
+			let yMax = -Infinity;
+			let yMin = Infinity;
+
+			for (const p of path) {
+				if (yMax < p.y) {
+					yMax = p.y;
+				}
+				if (yMin > p.y) {
+					yMin = p.y;
+				}
+			}
+
+			if (yMax === yMin) {
+				// Bezier is flat, Y value of all control points is the same.
+				return yMax;
+			}
+
+			const intersectionLine: Line = [Vec2.new(index, yMin - 1), Vec2.new(index, yMax + 1)];
+			const results = intersectCubicBezierLine(path, intersectionLine);
+
+			if (results.length === 0) {
+				console.log({ path });
+				throw new Error("No intersection found for cubic bezier between two keyframes.");
+			}
+
+			const { t } = results[0];
+			return interpolateCubicBezier(path, t).y;
+		}
 
 		const x1 = (path[1].x - path[0].x) / xDiff;
 		const y1 = (path[1].y - path[0].y) / yDiff;
@@ -506,6 +556,13 @@ export const splitTimelinePathAtIndex = <T extends Line | CubicBezier>(
 
 	const intersectionLine: Line = [Vec2.new(index, maxY), Vec2.new(index, minY)];
 
+	if (isFlatBezier(bezier)) {
+		return splitCubicBezier(bezier, 0.5) as [T, T];
+	}
+
+	/**
+	 * @todo handle flat bezier case
+	 */
 	const results = intersectCubicBezierLine(bezier, intersectionLine);
 
 	if (results.length === 0) {
@@ -564,6 +621,9 @@ export function splitKeyframesAtIndex(
 
 	const line: Line = [Vec2.new(index, maxY), Vec2.new(index, minY)];
 
+	/**
+	 * @todo handle flat bezier case
+	 */
 	const results = intersectCubicBezierLine(path, line);
 
 	if (results.length === 0) {
