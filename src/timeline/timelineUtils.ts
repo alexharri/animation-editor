@@ -639,7 +639,7 @@ export function splitKeyframesAtIndex(
 			...k0,
 			controlPointRight: {
 				relativeToDistance: index - k0.index,
-				tx: 1 - (a[3].x - a[1].x) / (a[3].x - a[0].x),
+				tx: capToRange(0, 1, 1 - (a[3].x - a[1].x) / (a[3].x - a[0].x)),
 				value: a[1].y - a[0].y,
 			},
 		},
@@ -650,12 +650,12 @@ export function splitKeyframesAtIndex(
 			reflectControlPoints: true,
 			controlPointLeft: {
 				relativeToDistance: index - k0.index,
-				tx: 1 - (a[3].x - a[2].x) / (a[3].x - a[0].x),
+				tx: capToRange(0, 1, 1 - (a[3].x - a[2].x) / (a[3].x - a[0].x)),
 				value: a[2].y - a[3].y,
 			},
 			controlPointRight: {
 				relativeToDistance: k1.index - index,
-				tx: 1 - (b[3].x - b[1].x) / (b[3].x - b[0].x),
+				tx: capToRange(0, 1, 1 - (b[3].x - b[1].x) / (b[3].x - b[0].x)),
 				value: b[1].y - b[0].y,
 			},
 		},
@@ -663,7 +663,7 @@ export function splitKeyframesAtIndex(
 			...k1,
 			controlPointLeft: {
 				relativeToDistance: k1.index - index,
-				tx: 1 - (b[3].x - b[2].x) / (b[3].x - b[0].x),
+				tx: capToRange(0, 1, 1 - (b[3].x - b[2].x) / (b[3].x - b[0].x)),
 				value: b[2].y - b[3].y,
 			},
 		},
