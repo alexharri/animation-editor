@@ -379,10 +379,14 @@ export const moveToolHandlers = {
 						}
 
 						for (let j = 0; j < keyframes.length; j += 1) {
-							if (frameIndex < keyframes[j].index) {
+							if (keyframes[j].index > frameIndex) {
+								continue;
+							}
+							if (frameIndex > keyframes[j + 1].index) {
 								continue;
 							}
 
+							// console.log(keyframes, keyframes[j], keyframes[j + 1], frameIndex);
 							const [k0, k, k1] = splitKeyframesAtIndex(
 								keyframes[j],
 								keyframes[j + 1],
