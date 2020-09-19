@@ -16,9 +16,9 @@ import {
 } from "~/composition/util/compSelectionUtils";
 import {
 	AreaType,
-	COMP_TIME_BETWEEN_LAYERS,
-	COMP_TIME_ITEM_HEIGHT,
-	COMP_TIME_LAYER_HEIGHT,
+	TIMELINE_BETWEEN_LAYERS,
+	TIMELINE_ITEM_HEIGHT,
+	TIMELINE_LAYER_HEIGHT,
 } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import {
@@ -183,7 +183,7 @@ export const timelineHandlers = {
 				yPan = Math.min(
 					yPan,
 					getTimelineLayerListHeight(compositionId, compositionState) -
-						(COMP_TIME_ITEM_HEIGHT + 32 + 2),
+						(TIMELINE_ITEM_HEIGHT + 32 + 2),
 				);
 				yPan = Math.max(0, yPan);
 
@@ -306,7 +306,7 @@ export const timelineHandlers = {
 					yPan = Math.min(
 						yPan,
 						getTimelineLayerListHeight(compositionId, compositionState) -
-							(COMP_TIME_ITEM_HEIGHT + 32 + 2),
+							(TIMELINE_ITEM_HEIGHT + 32 + 2),
 					);
 					yPan = Math.max(0, yPan);
 
@@ -446,7 +446,7 @@ export const timelineHandlers = {
 				const l0y = yPosMap.layer[composition.layers[i]];
 				const l1y = yPosMap.layer[composition.layers[i + 1]] ?? Infinity;
 
-				if (mousePos.y < l0y || mousePos.y > l1y + COMP_TIME_BETWEEN_LAYERS) {
+				if (mousePos.y < l0y || mousePos.y > l1y + TIMELINE_BETWEEN_LAYERS) {
 					continue;
 				}
 
@@ -460,7 +460,7 @@ export const timelineHandlers = {
 					const l0y = yPosMap.layer[layerId];
 					const l1y = yPosMap.layer[composition.layers[j + 1]] ?? Infinity;
 
-					if (l0y < mousePos.y && mousePos.y < l1y + COMP_TIME_BETWEEN_LAYERS) {
+					if (l0y < mousePos.y && mousePos.y < l1y + TIMELINE_BETWEEN_LAYERS) {
 						if (compositionSelection.layers[layerId]) {
 							return {
 								layerId,
@@ -471,7 +471,7 @@ export const timelineHandlers = {
 						const distl0 = mousePos.y - l0y;
 						const distl1 = yPosMap.layer[composition.layers[j + 1]]
 							? l1y - mousePos.y
-							: l0y + COMP_TIME_LAYER_HEIGHT - mousePos.y;
+							: l0y + TIMELINE_LAYER_HEIGHT - mousePos.y;
 
 						return {
 							layerId,

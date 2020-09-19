@@ -203,3 +203,5 @@ export interface KeyboardShortcut {
 	fn: ShortcutFn;
 	shouldAddToStack?: ShouldAddShortcutToStackFn;
 }
+
+export type LayerParentPickWhip = { fromId: string; to: Vec2 };

@@ -1,4 +1,4 @@
-import { COMP_TIME_SCRUBBER_HEIGHT } from "~/constants";
+import { TIMELINE_SCRUBBER_HEIGHT } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { renderLine } from "~/util/canvas/renderPrimitives";
@@ -18,7 +18,7 @@ export const renderTimelineScrubber = (ctx: Ctx, options: Options): void => {
 		width,
 	});
 
-	const h = COMP_TIME_SCRUBBER_HEIGHT;
+	const h = TIMELINE_SCRUBBER_HEIGHT;
 
 	const MIN_DIST = 46;
 

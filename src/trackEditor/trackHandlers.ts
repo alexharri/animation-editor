@@ -11,7 +11,7 @@ import {
 	didCompSelectionChange,
 	getCompSelectionFromState,
 } from "~/composition/util/compSelectionUtils";
-import { AreaType, COMP_TIME_LAYER_HEIGHT, COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
+import { AreaType, TIMELINE_LAYER_HEIGHT, TIMELINE_TRACK_START_END_X_MARGIN } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
@@ -381,7 +381,7 @@ export const trackHandlers = {
 			for (const propertyId in yPosMap.property) {
 				const y = yPosMap.property[propertyId];
 
-				if (valueWithinRange(posTranslated.y, y, y + COMP_TIME_LAYER_HEIGHT)) {
+				if (valueWithinRange(posTranslated.y, y, y + TIMELINE_LAYER_HEIGHT)) {
 					// Mouse landed on this property track. Check whether a keyframe was hit.
 					const property = compositionState.properties[propertyId];
 
@@ -410,10 +410,10 @@ export const trackHandlers = {
 			for (const layerId in yPosMap.layer) {
 				const y = yPosMap.layer[layerId];
 
-				if (valueWithinRange(posTranslated.y, y, y + COMP_TIME_LAYER_HEIGHT)) {
+				if (valueWithinRange(posTranslated.y, y, y + TIMELINE_LAYER_HEIGHT)) {
 					const layer = compositionState.layers[layerId];
 
-					const MARGIN = COMP_TIME_TRACK_START_END_X_MARGIN;
+					const MARGIN = TIMELINE_TRACK_START_END_X_MARGIN;
 
 					if (globalXDistance(posTranslated.x, layer.index) < MARGIN) {
 						actions.layerStartOrEndMouseDown("start", e, layerId, options);
@@ -502,8 +502,7 @@ export const trackHandlers = {
 						const keyframes = timeline.keyframes
 							.filter((k) => {
 								const x = k.index + layer.index;
-								const y =
-									yPosMap.timeline[timeline.id] + COMP_TIME_LAYER_HEIGHT / 2;
+								const y = yPosMap.timeline[timeline.id] + TIMELINE_LAYER_HEIGHT / 2;
 
 								return isVecInRect(Vec2.new(x, y), trackDragSelectRect!);
 							})

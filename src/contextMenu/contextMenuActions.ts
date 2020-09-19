@@ -1,6 +1,14 @@
 import { createAction } from "typesafe-actions";
 import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
-import { OpenCustomContextMenuOptions } from "~/contextMenu/contextMenuTypes";
+import { ContextMenuBaseProps, OpenCustomContextMenuOptions } from "~/contextMenu/contextMenuTypes";
+
+const openCustomContextMenu = createAction("contextMenu/OPEN_CUSTOM", (action) => {
+	return (options: OpenCustomContextMenuOptions<any>) => action({ options });
+});
+
+type OpenCustomContextMenuFn = <P extends ContextMenuBaseProps>(
+	options: OpenCustomContextMenuOptions<P>,
+) => ReturnType<typeof openCustomContextMenu>;
 
 export const contextMenuActions = {
 	openContextMenu: createAction("contextMenu/OPEN", (action) => {
@@ -8,9 +16,7 @@ export const contextMenuActions = {
 			action({ name, options, position, close });
 	}),
 
-	openCustomContextMenu: createAction("contextMenu/OPEN_CUSTOM", (action) => {
-		return (options: OpenCustomContextMenuOptions) => action({ options });
-	}),
+	openCustomContextMenu: openCustomContextMenu as OpenCustomContextMenuFn,
 
 	closeContextMenu: createAction("contextMenu/CLOSE", (action) => {
 		return () => action({});

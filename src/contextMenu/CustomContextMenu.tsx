@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { OpenCustomContextMenuOptions } from "~/contextMenu/contextMenuTypes";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { cssZIndex } from "~/cssVariables";
-import { useState } from "react";
 import { connectActionState } from "~/state/stateUtils";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const DEFAULT_CLOSE_MENU_BUFFER = 100;
 

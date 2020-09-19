@@ -8,6 +8,7 @@ export default ({ css }: StyleParams) => ({
 		margin-left: 0;
 		border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 		background: ${cssVariables.dark600};
+		min-width: 320px;
 
 		&:last-of-type {
 			height: 16px;

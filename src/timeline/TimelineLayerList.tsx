@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { COMP_TIME_LAYER_HEIGHT } from "~/constants";
+import { TIMELINE_LAYER_HEIGHT } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { useMemoActionState } from "~/hook/useActionState";
 import { CompositionPropertyValuesProvider } from "~/shared/composition/compositionRenderValues";
@@ -65,14 +65,14 @@ const TimelineLayerListComponent: React.FC<Props> = (props) => {
 			const layer = compositionState.layers[layerId];
 
 			if (layer.collapsed) {
-				return yPosMap.layer[layerId] + COMP_TIME_LAYER_HEIGHT;
+				return yPosMap.layer[layerId] + TIMELINE_LAYER_HEIGHT;
 			}
 
 			// Find last property
 			function crawl(propertyId: string): number {
 				const property = compositionState.properties[propertyId];
 				if (property.type === "property" || property.collapsed) {
-					return yPosMap.property[property.id] + COMP_TIME_LAYER_HEIGHT;
+					return yPosMap.property[property.id] + TIMELINE_LAYER_HEIGHT;
 				}
 				return crawl(property.properties[property.properties.length - 1]);
 			}

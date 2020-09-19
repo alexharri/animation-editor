@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import { hot } from "react-hot-loader/root";
 import { AreaRoot } from "~/area/components/AreaRoot";
-import { ContextMenu } from "~/contextMenu/ContextMenu";
 import { CustomContextMenu } from "~/contextMenu/CustomContextMenu";
+import { NormalContextMenu } from "~/contextMenu/normal/NormalContextMenu";
 import { addListener, removeListener } from "~/listener/addListener";
 import { isKeyCodeOf } from "~/listener/keyboard";
 import { DragCompositionPreview } from "~/project/DragCompositionPreview";
@@ -24,7 +24,7 @@ export const AppComponent: React.FC = () => {
 
 	return (
 		<>
-			<ContextMenu />
+			<NormalContextMenu />
 			<CustomContextMenu />
 			<Toolbar />
 			<AreaRoot />

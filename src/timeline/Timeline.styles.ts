@@ -1,28 +1,8 @@
-import { COMP_TIME_SEPARATOR_WIDTH } from "~/constants";
+import { TIMELINE_SEPARATOR_WIDTH } from "~/constants";
 import { cssCursors, cssVariables, cssZIndex } from "~/cssVariables";
 import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
-	header: css`
-		min-height: 32px;
-		max-height: 32px;
-		display: flex;
-		justify-content: flex-end;
-		align-items: center;
-		padding: 0 8px;
-	`,
-
-	graphEditorToggle: css`
-		color: ${cssVariables.light500};
-		background: ${cssVariables.gray400};
-		border-radius: 4px;
-		font-size: 11px;
-		padding: 0 8px;
-		height: 24px;
-		border: none;
-		cursor: pointer;
-	`,
-
 	wrapper: css`
 		display: flex;
 	`,
@@ -34,7 +14,7 @@ export default ({ css }: StyleParams) => ({
 
 	left: css`
 		background: ${cssVariables.dark600};
-		margin-right: ${COMP_TIME_SEPARATOR_WIDTH}px;
+		margin-right: ${TIMELINE_SEPARATOR_WIDTH}px;
 		display: flex;
 		flex-direction: column;
 	`,
@@ -48,7 +28,7 @@ export default ({ css }: StyleParams) => ({
 		position: absolute;
 		top: 0;
 		bottom: 0;
-		width: ${COMP_TIME_SEPARATOR_WIDTH}px;
+		width: ${TIMELINE_SEPARATOR_WIDTH}px;
 		background: ${cssVariables.dark300};
 		cursor: ew-resize;
 

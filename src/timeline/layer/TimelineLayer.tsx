@@ -54,27 +54,29 @@ const TimelineLayerComponent: React.FC<Props> = (props) => {
 					}}
 				/>
 				<TimelineLayerName layerId={props.id} layerWrapper={props.layerWrapper} />
-				<div
-					title={layer.graphId ? "Delete Layer Graph" : "Create Layer Graph"}
-					className={s("graph", { active: !!layer.graphId })}
-					onMouseDown={separateLeftRightMouse({
-						left: (e) => timelineHandlers.onLayerGraphMouseDown(e, layer.id),
-					})}
-				>
-					<GraphIcon />
-				</div>
-				{!!layer.graphId && (
+				<div className={s("graphWrapper")}>
 					<div
-						title="Open Graph in area"
-						className={s("openGraphInArea", { active: true })}
+						title={layer.graphId ? "Delete Layer Graph" : "Create Layer Graph"}
+						className={s("graph", { active: !!layer.graphId })}
 						onMouseDown={separateLeftRightMouse({
-							left: (e) =>
-								timelineHandlers.onOpenGraphInAreaMouseDown(e, layer.graphId),
+							left: (e) => timelineHandlers.onLayerGraphMouseDown(e, layer.id),
 						})}
 					>
-						<OpenInAreaIcon />
+						<GraphIcon />
 					</div>
-				)}
+					{!!layer.graphId && (
+						<div
+							title="Open Graph in area"
+							className={s("openGraphInArea", { active: true })}
+							onMouseDown={separateLeftRightMouse({
+								left: (e) =>
+									timelineHandlers.onOpenGraphInAreaMouseDown(e, layer.graphId),
+							})}
+						>
+							<OpenInAreaIcon />
+						</div>
+					)}
+				</div>
 				<TimelineLayerParent layerId={props.id} />
 			</div>
 			{!layer.collapsed && (

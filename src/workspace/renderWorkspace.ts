@@ -141,6 +141,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		for (const p of corners) {
 			ctx.lineTo(p.x, p.y);
 		}
+		ctx.closePath();
 		ctx.fillStyle = fillColor;
 		ctx.fill();
 
@@ -149,7 +150,6 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			ctx.lineWidth = StrokeWidth;
 			ctx.stroke();
 		}
-		ctx.closePath();
 	}
 
 	function renderEllipse(

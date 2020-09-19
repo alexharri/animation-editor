@@ -46,7 +46,7 @@ type Props = OwnProps & StateProps;
 const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 	const { property } = props;
 
-	const marginLeft = 24 + props.depth * 20;
+	const marginLeft = 32 + props.depth * 20;
 	const nameWidth = 180 - props.depth * 20;
 
 	if (property.type === "group") {

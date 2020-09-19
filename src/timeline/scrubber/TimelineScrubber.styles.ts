@@ -1,11 +1,11 @@
-import { COMP_TIME_SCRUBBER_HEIGHT } from "~/constants";
+import { TIMELINE_SCRUBBER_HEIGHT } from "~/constants";
 import { cssVariables, cssZIndex } from "~/cssVariables";
 import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	wrapper: css`
 		position: relative;
-		height: ${COMP_TIME_SCRUBBER_HEIGHT}px;
+		height: ${TIMELINE_SCRUBBER_HEIGHT}px;
 	`,
 
 	canvas: css`
@@ -17,7 +17,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	interactionArea: css`
-		height: ${COMP_TIME_SCRUBBER_HEIGHT}px;
+		height: ${TIMELINE_SCRUBBER_HEIGHT}px;
 		position: relative;
 		z-index: 1;
 		background: ${cssVariables.dark500};
