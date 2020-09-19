@@ -30,13 +30,13 @@ import {
 import { createArrayModifierGraph, createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
 import { createTimelineContextMenu } from "~/timeline/timelineContextMenu";
 import {
 	createTimelineForLayerProperty,
 	getTimelineValueAtIndex,
-	transformGlobalToTimelineX,
+	graphEditorGlobalToNormal,
 } from "~/timeline/timelineUtils";
 import {
 	getTimelineLayerListHeight,
@@ -70,7 +70,7 @@ export const timelineHandlers = {
 
 			const onMove = (e?: MouseEvent) => {
 				const pos = e ? Vec2.fromEvent(e) : initialPosition;
-				const x = transformGlobalToTimelineX(pos.x, options);
+				const x = graphEditorGlobalToNormal(pos.x, options);
 				dispatch(
 					compositionActions.setFrameIndex(
 						composition.id,
@@ -147,7 +147,7 @@ export const timelineHandlers = {
 		requestAction({ history: false }, ({ submitAction, dispatch }) => {
 			const compositionState = getActionState().compositionState;
 
-			const [x0, x1] = [0, e.deltaX].map((x) => transformGlobalToTimelineX(x, options));
+			const [x0, x1] = [0, e.deltaX].map((x) => graphEditorGlobalToNormal(x, options));
 
 			const xt0 = x0 / compositionLength;
 			const xt1 = x1 / compositionLength;
@@ -262,7 +262,7 @@ export const timelineHandlers = {
 		const { viewBounds, compositionLength, compositionId } = options;
 
 		const initialMousePosition = Vec2.fromEvent(e);
-		const initialPos = transformGlobalToTimelineX(initialMousePosition.x, options);
+		const initialPos = graphEditorGlobalToNormal(initialMousePosition.x, options);
 
 		const fn: RequestActionCallback = ({ addListener, submitAction, dispatch }) => {
 			const compositionState = getActionState().compositionState;
@@ -271,7 +271,7 @@ export const timelineHandlers = {
 
 			addListener.repeated("mousemove", (e) => {
 				const mousePosition = Vec2.fromEvent(e);
-				const pos = transformGlobalToTimelineX(mousePosition.x, options);
+				const pos = graphEditorGlobalToNormal(mousePosition.x, options);
 
 				const t = pos / compositionLength;
 
@@ -386,7 +386,7 @@ export const timelineHandlers = {
 					compositionState,
 				);
 				params.dispatch(
-					timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+					timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 				);
 
 				params.submitAction("Clear timeline selection");
@@ -504,7 +504,7 @@ export const timelineHandlers = {
 				compositionState,
 			);
 			params.dispatch(
-				timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+				timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 			);
 		};
 
@@ -534,7 +534,7 @@ export const timelineHandlers = {
 				compSelectionActions.removePropertiesFromSelection(compositionId, propertyIds),
 			);
 			params.dispatch(
-				timelineIds.map((timelineId) => timelineActions.clearSelection(timelineId)),
+				timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 			);
 		};
 
@@ -784,7 +784,7 @@ export const timelineHandlers = {
 						compositionId,
 						compositionState,
 					);
-					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
+					params.dispatch(timelineIds.map((id) => timelineSelectionActions.clear(id)));
 				}
 
 				const willBeSelected = !compositionSelection.properties[propertyId];
@@ -821,7 +821,7 @@ export const timelineHandlers = {
 					);
 
 					if (property.type === "property" && property.timelineId) {
-						params.dispatch(timelineActions.clearSelection(property.timelineId));
+						params.dispatch(timelineSelectionActions.clear(property.timelineId));
 					}
 				} else {
 					// Add property and timeline keyframes to selection
@@ -836,7 +836,7 @@ export const timelineHandlers = {
 						const timeline = timelineState[property.timelineId];
 						const keyframeIds = timeline.keyframes.map((k) => k.id);
 						params.dispatch(
-							timelineActions.addKeyframesToSelection(timeline.id, keyframeIds),
+							timelineSelectionActions.addKeyframes(timeline.id, keyframeIds),
 						);
 					}
 				}

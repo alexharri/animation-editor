@@ -1,26 +1,16 @@
 import { areaActions } from "~/area/state/areaActions";
 import { AreaType } from "~/constants";
-import {
-	getGraphEditorYBoundsFromPaths,
-	transformGlobalToGraphEditorPosition,
-} from "~/graphEditor/graphEditorUtils";
-import {
-	createToGraphEditorViewportX,
-	createToGraphEditorViewportY,
-} from "~/graphEditor/renderGraphEditor";
+import { constructGraphEditorContext, GraphEditorContext } from "~/graphEditor/graphEditorContext";
+import { getGraphEditorTimelineTargetObject } from "~/graphEditor/graphEditorUtils";
 import { isKeyDown } from "~/listener/keyboard";
-import { requestAction } from "~/listener/requestAction";
+import { createOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
 import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
-import {
-	getControlPointAsVector,
-	getTimelineSelection,
-	timelineKeyframesToPathList,
-} from "~/timeline/timelineUtils";
+import { getTimelineSelection } from "~/timeline/timelineUtils";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
-import { getDistance, getDistance as _getDistance, isVecInRect, rectOfTwoVecs } from "~/util/math";
+import { isVecInRect, rectOfTwoVecs } from "~/util/math";
 
 const getYUpperLower = (viewport: Rect, mousePositionGlobal: Vec2): [number, number] => {
 	const { y } = mousePositionGlobal;
@@ -30,105 +20,52 @@ const getYUpperLower = (viewport: Rect, mousePositionGlobal: Vec2): [number, num
 	return [yUpper, yLower];
 };
 
-const getYFac = (
-	viewport: Rect,
-	options: {
-		length: number;
-		timelines: Timeline[];
-		viewBounds: [number, number];
-		viewport: Rect;
-	},
-) => {
-	const timelinePaths = options.timelines.map((timeline) =>
-		timelineKeyframesToPathList(timeline.keyframes),
-	);
-
-	const renderOptions = {
-		timelines: options.timelines,
-		length: options.length,
-		viewBounds: options.viewBounds,
-		width: viewport.width,
-		height: viewport.height,
-	};
-	const toViewportY = createToGraphEditorViewportY(timelinePaths, renderOptions);
-	const toViewportX = createToGraphEditorViewportX(renderOptions);
-	return (toViewportX(1) - toViewportX(0)) / (toViewportY(1) - toViewportY(0));
-};
-
 const PAN_FAC = 0.0004;
-const MIN_DIST = 6;
 
-export const timelineHandlers = {
+export const graphEditorHandlers = {
 	onMouseDown: (
 		e: React.MouseEvent,
 		options: {
-			timelineAreaId: string;
-			length: number;
-			timelines: Timeline[];
-			viewBounds: [number, number];
+			areaId: string;
 			viewport: Rect;
 		},
 	): void => {
-		const { timelines } = options;
+		const { areaId, viewport } = options;
+		const ctx = constructGraphEditorContext(Vec2.fromEvent(e), areaId, viewport);
 
-		const initialPos = Vec2.fromEvent(e);
-
-		const mousePos = transformGlobalToGraphEditorPosition(initialPos, options);
-		let getDistanceInPx: (a: Vec2, b: Vec2) => number;
-		{
-			const p0 = transformGlobalToGraphEditorPosition(Vec2.new(0, 0), options);
-			const p1 = transformGlobalToGraphEditorPosition(Vec2.new(1, 1), options);
-
-			const xt = p1.x - p0.x;
-			const yt = p1.y - p0.y;
-
-			getDistanceInPx = (a, b) => {
-				const aScaled = a.scaleX(yt / xt).scale(1 / yt);
-				const bScaled = b.scaleX(yt / xt).scale(1 / yt);
-				return _getDistance(aScaled, bScaled);
-			};
-		}
+		const { timelines } = ctx;
 
 		for (let ti = 0; ti < timelines.length; ti += 1) {
 			const timeline = timelines[ti];
-			const { keyframes } = timeline;
 
-			// Check whether a control point was clicked
-			for (let i = 0; i < keyframes.length - 1; i += 1) {
-				const k0 = keyframes[i];
-				const k1 = keyframes[i + 1];
+			const target = getGraphEditorTimelineTargetObject(
+				timeline,
+				ctx.mousePosition.viewport,
+				ctx.normalToViewport,
+			);
 
-				const cp0 = getControlPointAsVector("cp0", k0, k1);
-				const cp1 = getControlPointAsVector("cp1", k0, k1);
-
-				if (cp0 && getDistanceInPx(cp0, mousePos) < MIN_DIST) {
-					timelineHandlers.onControlPointMouseDown(initialPos, ti, i, "right", options);
-					return;
-				}
-
-				if (cp1 && getDistanceInPx(cp1, mousePos) < MIN_DIST) {
-					timelineHandlers.onControlPointMouseDown(
-						initialPos,
-						ti,
-						i + 1,
-						"left",
-						options,
-					);
-					return;
-				}
-			}
-
-			// Check whether a keyframe was clicked
-			for (let i = 0; i < keyframes.length; i += 1) {
-				const keyframe = keyframes[i];
-				const keyframePos = Vec2.new(keyframe.index, keyframe.value);
-				if (getDistanceInPx(keyframePos, mousePos) < MIN_DIST) {
+			switch (target.type) {
+				case "keyframe": {
 					if (isKeyDown("Alt")) {
-						timelineHandlers.onKeyframeAltMouseDown(initialPos, ti, i, options);
+						graphEditorHandlers.onKeyframeAltMouseDown(
+							ctx,
+							timeline,
+							target.keyframeIndex,
+						);
 						return;
 					}
 
-					timelineHandlers.onKeyframeMouseDown(initialPos, ti, i, options);
+					graphEditorHandlers.onKeyframeMouseDown(ctx, timeline, target.keyframeIndex);
+					return;
+				}
+
+				case "control_point": {
+					graphEditorHandlers.onControlPointMouseDown(
+						ctx,
+						timeline,
+						target.keyframeIndex,
+						target.which,
+					);
 					return;
 				}
 			}
@@ -141,48 +78,42 @@ export const timelineHandlers = {
 		 *
 		 * If mouseup is fired without moving, clear selection.
 		 */
-		requestAction({ history: true }, ({ dispatch, submitAction, addListener }) => {
-			let hasMoved = false;
-			const wasShiftDown = isKeyDown("Shift");
-
-			addListener.repeated("mousemove", (e) => {
-				const mousePos = Vec2.fromEvent(e);
-
-				if (!hasMoved) {
-					if (getDistance(initialPos, mousePos) < 5) {
-						return;
-					}
-
-					hasMoved = true;
-				}
-
+		const wasShiftDown = isKeyDown("Shift");
+		mouseDownMoveAction(ctx.mousePosition.global, {
+			translate: ctx.globalToNormal,
+			keys: [],
+			beforeMove: () => {},
+			mouseMove: (params, { mousePosition, initialMousePosition }) => {
 				const dragSelectRect = rectOfTwoVecs(
-					transformGlobalToGraphEditorPosition(initialPos, options),
-					transformGlobalToGraphEditorPosition(mousePos, options),
+					initialMousePosition.normal,
+					mousePosition.normal,
 				);
 
-				dispatch(
+				params.dispatch(
 					areaActions.dispatchToAreaState(
-						options.timelineAreaId,
+						options.areaId,
 						timelineAreaActions.setFields({ dragSelectRect }),
 					),
 				);
-			});
-
-			addListener.once("mouseup", () => {
+			},
+			mouseUp: (params, hasMoved) => {
 				if (!hasMoved) {
-					timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
-					submitAction("Clear timeline selection");
+					params.dispatch(
+						timelines.map((timeline) => timelineSelectionActions.clear(timeline.id)),
+					);
+					params.submitAction("Clear timeline selection");
 					return;
 				}
 
+				const op = createOperation();
+
 				if (!wasShiftDown) {
-					timelines.forEach(({ id }) => dispatch(timelineActions.clearSelection(id)));
+					params.dispatch(
+						timelines.map((timeline) => timelineSelectionActions.clear(timeline.id)),
+					);
 				}
 
-				const { dragSelectRect } = getAreaActionState<AreaType.Timeline>(
-					options.timelineAreaId,
-				);
+				const { dragSelectRect } = getAreaActionState<AreaType.Timeline>(ctx.areaId);
 
 				timelines.forEach((timeline) => {
 					const keyframes = timeline.keyframes
@@ -190,35 +121,29 @@ export const timelineHandlers = {
 							return isVecInRect(Vec2.new(k.index, k.value), dragSelectRect!);
 						})
 						.map((k) => k.id);
-					dispatch(timelineActions.addKeyframesToSelection(timeline.id, keyframes));
+					op.add(timelineSelectionActions.addKeyframes(timeline.id, keyframes));
 				});
-				dispatch(
+				op.add(
 					areaActions.dispatchToAreaState(
-						options.timelineAreaId,
+						options.areaId,
 						timelineAreaActions.setFields({ dragSelectRect: null }),
 					),
 				);
-				submitAction("Select keyframes");
-			});
+				params.dispatch(op.actions);
+				params.submitAction("Select keyframes");
+			},
 		});
 	},
 
 	onControlPointMouseDown: (
-		initialMousePosition: Vec2,
-		timelineIndex: number,
-		index: number,
+		ctx: GraphEditorContext,
+		timeline: Timeline,
+		keyframeIndex: number,
 		direction: "left" | "right",
-		options: {
-			length: number;
-			timelines: Timeline[];
-			viewBounds: [number, number];
-			viewport: Rect;
-		},
 	) => {
-		const { timelines, viewport, viewBounds } = options;
+		const { timelines, viewport, yBounds, yFac } = ctx;
 
-		const timeline = timelines[timelineIndex];
-		const k = timeline.keyframes[index];
+		const k = timeline.keyframes[keyframeIndex];
 
 		// Whether or not the angle of the other control point of the keyframe should
 		// be reflected according the the control point being moved.
@@ -242,24 +167,13 @@ export const timelineHandlers = {
 
 		const altDownAtMouseDown = isKeyDown("Alt");
 
-		const timelinePaths = timelines.map((timeline) =>
-			timelineKeyframesToPathList(timeline.keyframes),
-		);
-		const yBounds = getGraphEditorYBoundsFromPaths(
-			viewBounds,
-			options.length,
-			timelines,
-			timelinePaths,
-		);
 		const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
-
-		const yFac = getYFac(viewport, options);
 
 		let yPan = 0;
 
-		mouseDownMoveAction(initialMousePosition, {
+		mouseDownMoveAction(ctx.mousePosition.global, {
 			keys: ["Shift"],
-			translate: (vec) => transformGlobalToGraphEditorPosition(vec, options).addY(yPan),
+			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {
 				// Add keyframe to selection if not part of current selection.
 				//
@@ -270,10 +184,10 @@ export const timelineHandlers = {
 				if (!selected) {
 					if (!isKeyDown("Shift")) {
 						timelines.forEach((timeline) => {
-							params.dispatch(timelineActions.clearSelection(timeline.id));
+							params.dispatch(timelineSelectionActions.clear(timeline.id));
 						});
 					}
-					params.dispatch(timelineActions.toggleKeyframeSelection(timeline.id, k.id));
+					params.dispatch(timelineSelectionActions.toggleKeyframe(timeline.id, k.id));
 				}
 
 				if (altDownAtMouseDown) {
@@ -296,7 +210,11 @@ export const timelineHandlers = {
 				// Set mousedown keyframe specifically because `options.reflect` may
 				// Have been provided.
 				params.dispatch(
-					timelineActions.setKeyframeReflectControlPoints(timeline.id, index, reflect),
+					timelineActions.setKeyframeReflectControlPoints(
+						timeline.id,
+						keyframeIndex,
+						reflect,
+					),
 				);
 			},
 			tickShouldUpdate: ({ mousePosition }) => {
@@ -323,14 +241,16 @@ export const timelineHandlers = {
 					params.dispatch(timelines.map((t) => timelineActions.setYPan(t.id, yPan)));
 				}
 
-				const moveVector = _moveVector.translated.copy();
+				const moveVector = _moveVector.normal.copy();
 
 				const { x: indexShift, y: valueShift } = moveVector;
 
 				const indexDiff =
 					direction === "left"
-						? timeline.keyframes[index].index - timeline.keyframes[index - 1].index
-						: timeline.keyframes[index + 1].index - timeline.keyframes[index].index;
+						? timeline.keyframes[keyframeIndex].index -
+						  timeline.keyframes[keyframeIndex - 1].index
+						: timeline.keyframes[keyframeIndex + 1].index -
+						  timeline.keyframes[keyframeIndex].index;
 
 				params.dispatch(
 					timelines.map((t) =>
@@ -346,9 +266,10 @@ export const timelineHandlers = {
 				);
 			},
 			mouseUp: (params, hasMoved) => {
+				const op = createOperation();
+
 				timelines.forEach(({ id }) => {
-					params.dispatch(timelineActions.setYBounds(id, null));
-					params.dispatch(timelineActions.setYPan(id, 0));
+					op.add(timelineActions.setYBounds(id, null), timelineActions.setYPan(id, 0));
 				});
 
 				if (!hasMoved) {
@@ -357,91 +278,84 @@ export const timelineHandlers = {
 						return;
 					}
 
-					params.dispatch(
+					op.add(
 						timelineActions.setKeyframeControlPoint(
 							timeline.id,
-							index,
+							keyframeIndex,
 							direction,
 							null,
 						),
 					);
+					params.dispatch(op.actions);
 					params.submitAction("Remove control point");
 					return;
 				} else {
-					const timelineSelectionState = getActionState().timelineSelectionState;
+					const { timelineSelectionState } = getActionState();
 
-					params.dispatch(
-						timelines.map(({ id }) =>
+					op.add(
+						...timelines.map(({ id }) =>
 							timelineActions.applyControlPointShift(id, timelineSelectionState[id]),
 						),
 					);
 				}
 
+				params.dispatch(op.actions);
 				params.submitAction("Move control point");
 			},
 		});
 	},
 
 	onKeyframeAltMouseDown: (
-		initialMousePosition: Vec2,
-		timelineIndex: number,
-		index: number,
-		options: {
-			length: number;
-			timelines: Timeline[];
-			viewBounds: [number, number];
-			viewport: Rect;
-		},
+		ctx: GraphEditorContext,
+		timeline: Timeline,
+		keyframeIndex: number,
 	) => {
-		const { timelines, viewport, viewBounds } = options;
+		const { timelines, viewport, yBounds } = ctx;
 
-		const timeline = timelines[timelineIndex];
-		const k = timeline.keyframes[index];
+		const k = timeline.keyframes[keyframeIndex];
 
-		const timelinePaths = timelines.map((timeline) =>
-			timelineKeyframesToPathList(timeline.keyframes),
-		);
-		const yBounds = getGraphEditorYBoundsFromPaths(
-			viewBounds,
-			options.length,
-			timelines,
-			timelinePaths,
-		);
 		const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
 
 		let yPan = 0;
 		let direction!: "left" | "right";
 
-		mouseDownMoveAction(initialMousePosition, {
+		mouseDownMoveAction(ctx.mousePosition.global, {
 			keys: ["Shift"],
-			translate: (vec) => transformGlobalToGraphEditorPosition(vec, options).addY(yPan),
+			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {
+				const op = createOperation();
+
 				// Clear timeline selection and select only the keyframe we are
 				// operating on.
-				params.dispatch(
-					timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
-				);
-				params.dispatch(timelineActions.toggleKeyframeSelection(timeline.id, k.id));
+				op.add(...timelines.map((timeline) => timelineSelectionActions.clear(timeline.id)));
+				op.add(timelineSelectionActions.toggleKeyframe(timeline.id, k.id));
 
 				// Lock yBounds and init pan for all timelines.
 				//
 				// In the future the yBound should be controll via Timeline's
 				// area state.
 				timelines.forEach(({ id }) => {
-					params.dispatch(timelineActions.setYBounds(id, yBounds));
-					params.dispatch(timelineActions.setYPan(id, 0));
+					op.add(timelineActions.setYBounds(id, yBounds), timelineActions.setYPan(id, 0));
 				});
 
 				// When creating control points, they are always initialized to reflect
-				params.dispatch(
-					timelineActions.setKeyframeReflectControlPoints(timeline.id, index, true),
+				op.add(
+					timelineActions.setKeyframeReflectControlPoints(
+						timeline.id,
+						keyframeIndex,
+						true,
+					),
 				);
+
+				params.dispatch(op.actions);
 			},
 			tickShouldUpdate: ({ mousePosition }) => {
 				const [yUpper, yLower] = getYUpperLower(viewport, mousePosition.global);
 				return !!(yUpper || yLower);
 			},
 			mouseMove: (params, { moveVector: _moveVector, mousePosition, keyDown, firstMove }) => {
+				const op = createOperation();
+
 				if (firstMove) {
 					direction = _moveVector.global.x > 0 ? "right" : "left";
 				}
@@ -455,103 +369,99 @@ export const timelineHandlers = {
 				}
 
 				if (yLower || yUpper) {
-					params.dispatch(timelines.map((t) => timelineActions.setYPan(t.id, yPan)));
+					op.add(...timelines.map((t) => timelineActions.setYPan(t.id, yPan)));
 				}
 
-				const moveVector = _moveVector.translated.copy();
+				const moveVector = _moveVector.normal.copy();
 				let { x: indexShift, y: valueShift } = moveVector;
 
 				if (keyDown.Shift) {
 					valueShift = 0;
 				}
 
-				params.dispatch(
+				op.add(
 					timelineActions.setNewControlPointShift(timeline.id, {
-						keyframeIndex: index,
+						keyframeIndex: keyframeIndex,
 						direction,
 						indexShift,
 						valueShift,
 					}),
 				);
+				params.dispatch(op.actions);
 			},
 			mouseUp: (params, hasMoved) => {
+				const op = createOperation();
+
 				if (!hasMoved) {
-					params.cancelAction();
+					// Alt click on keyframe. Remove current control points.
+					op.add(
+						timelineActions.setKeyframeControlPoint(
+							timeline.id,
+							keyframeIndex,
+							"left",
+							null,
+						),
+						timelineActions.setKeyframeControlPoint(
+							timeline.id,
+							keyframeIndex,
+							"right",
+							null,
+						),
+					);
+					params.dispatch(op.actions);
+					params.submitAction("Remove keyframe control points");
 					return;
 				}
 
-				const toDispatch: any[] = [];
-
 				timelines.forEach(({ id }) => {
-					toDispatch.push(timelineActions.setYBounds(id, null));
-					toDispatch.push(timelineActions.setYPan(id, 0));
+					op.add(timelineActions.setYBounds(id, null), timelineActions.setYPan(id, 0));
 				});
 
 				const timelineSelectionState = getActionState().timelineSelectionState;
 				timelines.forEach(({ id }) => {
 					const selection = timelineSelectionState[id];
-					toDispatch.push(timelineActions.applyControlPointShift(id, selection));
+					op.add(timelineActions.applyControlPointShift(id, selection));
 				});
 
-				params.dispatch(toDispatch);
+				params.dispatch(op.actions);
 				params.submitAction("Create control points");
 			},
 		});
 	},
 
 	onKeyframeMouseDown: (
-		initialMousePos: Vec2,
-		timelineIndex: number,
-		index: number,
-		options: {
-			length: number;
-			timelines: Timeline[];
-			viewBounds: [number, number];
-			viewport: Rect;
-		},
+		ctx: GraphEditorContext,
+		timeline: Timeline,
+		keyframeIndex: number,
 	): void => {
-		const { timelines, viewport, viewBounds } = options;
-		const timeline = timelines[timelineIndex];
+		const { timelines, yBounds, yFac } = ctx;
 
 		const selection = getTimelineSelection(timeline.id);
-		const keyframe = timeline.keyframes[index];
-
+		const keyframe = timeline.keyframes[keyframeIndex];
 		const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
 
-		const timelinePaths = timelines.map((timeline) =>
-			timelineKeyframesToPathList(timeline.keyframes),
-		);
-		const yBounds = getGraphEditorYBoundsFromPaths(
-			viewBounds,
-			options.length,
-			timelines,
-			timelinePaths,
-		);
 		const boundsDiff = Math.abs(yBounds[0] - yBounds[1]);
-
-		const yFac = getYFac(viewport, options);
-
 		let yPan = 0;
 
-		mouseDownMoveAction(initialMousePos, {
+		mouseDownMoveAction(ctx.mousePosition.global, {
 			keys: ["Shift"],
-			translate: (vec) => transformGlobalToGraphEditorPosition(vec, options).addY(yPan),
+			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {
 				if (additiveSelection) {
 					params.dispatch(
-						timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id),
+						timelineSelectionActions.toggleKeyframe(timeline.id, keyframe.id),
 					);
 				} else if (!selection.keyframes[keyframe.id]) {
 					// If the current node is not selected, we clear the selections of all timelines
 					// we are operating on.
-					params.dispatch(timelines.map(({ id }) => timelineActions.clearSelection(id)));
+					params.dispatch(timelines.map(({ id }) => timelineSelectionActions.clear(id)));
 					params.dispatch(
-						timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id),
+						timelineSelectionActions.toggleKeyframe(timeline.id, keyframe.id),
 					);
 				}
 			},
 			tickShouldUpdate: ({ mousePosition }) => {
-				const [yUpper, yLower] = getYUpperLower(viewport, mousePosition.global);
+				const [yUpper, yLower] = getYUpperLower(ctx.viewport, mousePosition.global);
 				return !!(yUpper || yLower);
 			},
 			mouseMove: (params, { moveVector: _moveVector, mousePosition, keyDown, firstMove }) => {
@@ -562,7 +472,7 @@ export const timelineHandlers = {
 					params.dispatch(timelines.map((t) => timelineActions.setYPan(t.id, 0)));
 				}
 
-				const [yUpper, yLower] = getYUpperLower(viewport, mousePosition.global);
+				const [yUpper, yLower] = getYUpperLower(ctx.viewport, mousePosition.global);
 
 				if (yLower) {
 					yPan -= yLower * boundsDiff * PAN_FAC;
@@ -574,7 +484,7 @@ export const timelineHandlers = {
 					params.dispatch(timelines.map((t) => timelineActions.setYPan(t.id, yPan)));
 				}
 
-				const moveVector = _moveVector.translated.copy();
+				const moveVector = _moveVector.normal.copy();
 
 				if (keyDown.Shift) {
 					if (Math.abs(moveVector.x * yFac) > Math.abs(moveVector.y)) {
@@ -603,9 +513,9 @@ export const timelineHandlers = {
 				const toDispatch: any[] = [];
 
 				for (const { id } of timelines) {
-					toDispatch.push(timelineActions.setYBounds(id, null));
-					toDispatch.push(timelineActions.setYPan(id, 0));
 					toDispatch.push(
+						timelineActions.setYBounds(id, null),
+						timelineActions.setYPan(id, 0),
 						timelineActions.submitIndexAndValueShift(id, getTimelineSelection(id)),
 					);
 				}

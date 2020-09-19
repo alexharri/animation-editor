@@ -4,6 +4,7 @@ import { historyActions } from "~/state/history/historyActions";
 import { HistoryState } from "~/state/history/historyReducer";
 import { getActionId, getActionState, getCurrentState } from "~/state/stateUtils";
 import { store } from "~/state/store";
+import { Action } from "~/types";
 
 let _n = 0;
 let _activeRequestToken: null | string = null;
@@ -21,6 +22,7 @@ export type ShouldAddToStackFn = (prevState: ActionState, nextState: ActionState
 export interface RequestActionOptions {
 	history?: boolean;
 	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
+	beforeSubmit?: (params: RequestActionParams) => void;
 }
 
 interface SubmitOptions {
@@ -28,8 +30,8 @@ interface SubmitOptions {
 }
 
 export interface RequestActionParams {
-	dispatch: (action: any | any[], ...otherActions: any[]) => void;
-	dispatchToAreaState: (areaId: string, action: any) => void;
+	dispatch: (action: Action | Action[], ...otherActions: Action[]) => void;
+	dispatchToAreaState: (areaId: string, action: Action) => void;
 	cancelAction: () => void;
 	submitAction: (name?: string, options?: Partial<SubmitOptions>) => void;
 	addListener: typeof _addListener;
@@ -43,7 +45,7 @@ export interface RequestActionCallback {
 }
 
 const performRequestedAction = (
-	{ history = false, shouldAddToStack }: RequestActionOptions,
+	{ history = false, shouldAddToStack, beforeSubmit }: RequestActionOptions,
 	callback: RequestActionCallback,
 ): void => {
 	const actionId = (++_n).toString();
@@ -108,7 +110,7 @@ const performRequestedAction = (
 		store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 	};
 
-	callback({
+	const params: RequestActionParams = {
 		done,
 
 		dispatch,
@@ -150,6 +152,10 @@ const performRequestedAction = (
 				return;
 			}
 
+			if (beforeSubmit) {
+				beforeSubmit(params);
+			}
+
 			const modifiedKeys: string[] = [];
 			{
 				const state: any = store.getState();
@@ -182,7 +188,9 @@ const performRequestedAction = (
 		execOnComplete: (cb) => {
 			onCompleteCallback = cb;
 		},
-	});
+	};
+
+	callback(params);
 };
 
 export const requestAction = (

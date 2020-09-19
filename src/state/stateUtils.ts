@@ -102,9 +102,15 @@ export function connectActionState<TStateProps = {}, TOwnProps = {}>(
 export const getActionState = () => getActionStateFromApplicationState(store.getState());
 export const getCurrentState = () => getCurrentStateFromApplicationState(store.getState());
 
+export const areaActionStateFromState = <T extends AreaType>(
+	areaId: string,
+	actionState: ActionState,
+): AreaState<T> => {
+	return actionState.area.areas[areaId].state as AreaState<T>;
+};
 export const getAreaActionState = <T extends AreaType>(areaId: string): AreaState<T> => {
 	const actionState = getActionState();
-	return actionState.area.areas[areaId].state as AreaState<T>;
+	return areaActionStateFromState<T>(areaId, actionState);
 };
 
 export const getActionId = () => store.getState().area.action?.id || null;

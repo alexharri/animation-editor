@@ -31,3 +31,11 @@ export const separateLeftRightMouse = ({
 		}
 	};
 };
+
+let mousePosition = Vec2.new(0, 0);
+
+window.addEventListener("mousemove", (e) => {
+	mousePosition = Vec2.fromEvent(e);
+});
+
+export const getMousePosition = () => mousePosition;

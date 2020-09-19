@@ -1,6 +1,6 @@
 import { COMP_TIME_SCRUBBER_HEIGHT } from "~/constants";
 import { cssVariables } from "~/cssVariables";
-import { createToGraphEditorViewportX } from "~/graphEditor/renderGraphEditor";
+import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { renderLine } from "~/util/canvas/renderPrimitives";
 
 interface Options {
@@ -12,8 +12,8 @@ interface Options {
 export const renderTimelineScrubber = (ctx: Ctx, options: Options): void => {
 	const { length, viewBounds, width } = options;
 
-	const toTimelineX = createToGraphEditorViewportX({
-		length,
+	const toTimelineX = createGraphEditorNormalToViewportX({
+		compositionLength: length,
 		viewBounds,
 		width,
 	});

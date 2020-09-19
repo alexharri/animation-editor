@@ -62,7 +62,7 @@ export const mouseDownMoveAction = <
 		viewport: options.viewport
 			? initialGlobalMousePosition.sub(Vec2.new(options.viewport.left, options.viewport.top))
 			: initialGlobalMousePosition,
-		translated: translate(initialGlobalMousePosition),
+		normal: translate(initialGlobalMousePosition),
 	};
 
 	const fn: RequestActionCallback = (params) => {
@@ -118,12 +118,12 @@ export const mouseDownMoveAction = <
 								Vec2.new(options.viewport.left, options.viewport.top),
 						  )
 						: globalMousePosition,
-					translated: translate(globalMousePosition),
+					normal: translate(globalMousePosition),
 				};
 				const moveVector: MousePosition = {
 					global: mousePosition.global.sub(initialMousePosition.global),
 					viewport: mousePosition.viewport.sub(initialMousePosition.viewport),
-					translated: mousePosition.translated.sub(initialMousePosition.translated),
+					normal: mousePosition.normal.sub(initialMousePosition.normal),
 				};
 				_options = {
 					initialMousePosition,

@@ -1,16 +1,36 @@
 import Bezier from "bezier-easing";
 import uuid from "uuid/v4";
+import { CompositionState } from "~/composition/compositionReducer";
+import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
+import { reduceCompProperties } from "~/composition/compositionUtils";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
 	TIMELINE_CANVAS_END_START_BUFFER,
 	TIMELINE_CP_TX_MAX,
 	TIMELINE_CP_TX_MIN,
 } from "~/constants";
 import { getActionState } from "~/state/stateUtils";
-import { TimelineSelection } from "~/timeline/timelineSelectionReducer";
+import { TimelineSelection, TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { Timeline, TimelineKeyframe, TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
-import { capToRange, getDistance, interpolate, translateToRange } from "~/util/math";
+import {
+	capToRange,
+	getDistance,
+	interpolate,
+	interpolateCubicBezier,
+	translateToRange,
+} from "~/util/math";
 import { intersectCubicBezierLine } from "~/util/math/intersection/intersectBezier3Line";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
+
+const isFlatBezier = (bezier: CubicBezier) => {
+	const y = bezier[0].y;
+	for (let i = 1; i < bezier.length; i++) {
+		if (y !== bezier[i].y) {
+			return false;
+		}
+	}
+	return true;
+};
 
 const calcP2 = (p3: Vec2, p1: Vec2): Vec2 => {
 	return Vec2.new(p1.x + (p3.x - p1.x) * 0.4, p1.y + (p3.y - p1.y) * 0.4);
@@ -133,6 +153,40 @@ export function getTimelineValueAtIndex(options: GetTimelineValueAtIndexOptions)
 		const xDiff = path[3].x - path[0].x;
 		const yDiff = path[3].y - path[0].y;
 
+		if (yDiff === 0) {
+			// The keyframes have the same value, we can't use Bezier to
+			// get the Y value.
+			//
+			// Find intersection with vertical line at index.
+			let yMax = -Infinity;
+			let yMin = Infinity;
+
+			for (const p of path) {
+				if (yMax < p.y) {
+					yMax = p.y;
+				}
+				if (yMin > p.y) {
+					yMin = p.y;
+				}
+			}
+
+			if (yMax === yMin) {
+				// Bezier is flat, Y value of all control points is the same.
+				return yMax;
+			}
+
+			const intersectionLine: Line = [Vec2.new(index, yMin - 1), Vec2.new(index, yMax + 1)];
+			const results = intersectCubicBezierLine(path, intersectionLine);
+
+			if (results.length === 0) {
+				console.log({ path });
+				throw new Error("No intersection found for cubic bezier between two keyframes.");
+			}
+
+			const { t } = results[0];
+			return interpolateCubicBezier(path, t).y;
+		}
+
 		const x1 = (path[1].x - path[0].x) / xDiff;
 		const y1 = (path[1].y - path[0].y) / yDiff;
 		const x2 = (path[2].x - path[0].x) / xDiff;
@@ -144,7 +198,7 @@ export function getTimelineValueAtIndex(options: GetTimelineValueAtIndexOptions)
 	return 0 as never;
 }
 
-export const transformTimelineXToGlobalX = (
+export const timelineNormalToGlobalX = (
 	timelineX: number,
 	viewBounds: [number, number],
 	viewport: Rect,
@@ -163,7 +217,7 @@ export const transformTimelineXToGlobalX = (
 	);
 };
 
-export const transformGlobalToTimelineX = (
+export const graphEditorGlobalToNormal = (
 	value: number,
 	options: {
 		viewBounds: [number, number];
@@ -182,7 +236,7 @@ export const transformGlobalToTimelineX = (
 	return x;
 };
 
-export const transformGlobalToTrackPosition = (
+export const trackEditorGlobalToNormal = (
 	vec: Vec2,
 	options: {
 		compositionLength: number;
@@ -476,10 +530,18 @@ export const applyTimelineIndexAndValueShifts = (
 	};
 };
 
+const _emptyTimelineSelection: TimelineSelection = { keyframes: {} };
 export function getTimelineSelection(timelineId: string): TimelineSelection {
 	const selection = getActionState().timelineSelectionState;
-	return selection[timelineId] || { timelineId, keyframes: {} };
+	return selection[timelineId] || _emptyTimelineSelection;
 }
+
+export const timelineSelectionFromState = (
+	timelineId: string,
+	timelineSelectionState: TimelineSelectionState,
+): TimelineSelection => {
+	return timelineSelectionState[timelineId] || _emptyTimelineSelection;
+};
 
 export const splitTimelinePathAtIndex = <T extends Line | CubicBezier>(
 	path: T,
@@ -498,6 +560,13 @@ export const splitTimelinePathAtIndex = <T extends Line | CubicBezier>(
 
 	const intersectionLine: Line = [Vec2.new(index, maxY), Vec2.new(index, minY)];
 
+	if (isFlatBezier(bezier)) {
+		return splitCubicBezier(bezier, 0.5) as [T, T];
+	}
+
+	/**
+	 * @todo handle flat bezier case
+	 */
 	const results = intersectCubicBezierLine(bezier, intersectionLine);
 
 	if (results.length === 0) {
@@ -556,6 +625,9 @@ export function splitKeyframesAtIndex(
 
 	const line: Line = [Vec2.new(index, maxY), Vec2.new(index, minY)];
 
+	/**
+	 * @todo handle flat bezier case
+	 */
 	const results = intersectCubicBezierLine(path, line);
 
 	if (results.length === 0) {
@@ -571,7 +643,7 @@ export function splitKeyframesAtIndex(
 			...k0,
 			controlPointRight: {
 				relativeToDistance: index - k0.index,
-				tx: 1 - (a[3].x - a[1].x) / (a[3].x - a[0].x),
+				tx: capToRange(0, 1, 1 - (a[3].x - a[1].x) / (a[3].x - a[0].x)),
 				value: a[1].y - a[0].y,
 			},
 		},
@@ -582,12 +654,12 @@ export function splitKeyframesAtIndex(
 			reflectControlPoints: true,
 			controlPointLeft: {
 				relativeToDistance: index - k0.index,
-				tx: 1 - (a[3].x - a[2].x) / (a[3].x - a[0].x),
+				tx: capToRange(0, 1, 1 - (a[3].x - a[2].x) / (a[3].x - a[0].x)),
 				value: a[2].y - a[3].y,
 			},
 			controlPointRight: {
 				relativeToDistance: k1.index - index,
-				tx: 1 - (b[3].x - b[1].x) / (b[3].x - b[0].x),
+				tx: capToRange(0, 1, 1 - (b[3].x - b[1].x) / (b[3].x - b[0].x)),
 				value: b[1].y - b[0].y,
 			},
 		},
@@ -595,7 +667,7 @@ export function splitKeyframesAtIndex(
 			...k1,
 			controlPointLeft: {
 				relativeToDistance: k1.index - index,
-				tx: 1 - (b[3].x - b[2].x) / (b[3].x - b[0].x),
+				tx: capToRange(0, 1, 1 - (b[3].x - b[2].x) / (b[3].x - b[0].x)),
 				value: b[2].y - b[3].y,
 			},
 		},
@@ -634,4 +706,26 @@ export const createTimelineForLayerProperty = (value: number, index: number): Ti
 		_newControlPointShift: null,
 		_dragSelectRect: null,
 	};
+};
+
+export const getSelectedTimelineIdsInComposition = (
+	compositionId: string,
+	compositionState: CompositionState,
+	compositionSelectionState: CompositionSelectionState,
+) => {
+	const compositionSelection = getCompSelectionFromState(
+		compositionId,
+		compositionSelectionState,
+	);
+	return reduceCompProperties<string[]>(
+		compositionId,
+		compositionState,
+		(acc, property) => {
+			if (property.timelineId && compositionSelection.properties[property.id]) {
+				acc.push(property.timelineId);
+			}
+			return acc;
+		},
+		[],
+	);
 };

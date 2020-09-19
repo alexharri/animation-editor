@@ -12,7 +12,7 @@ import { shapeActions } from "~/shape/shapeReducer";
 import { shapeSelectionActions } from "~/shape/shapeSelectionReducer";
 import { getShapeLayerPathIds } from "~/shape/shapeUtils";
 import { getActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { LayerType, NodeEditorNodeType, ToDispatch } from "~/types";
 import { createGenMapIdFn } from "~/util/mapUtils";
 
@@ -129,7 +129,7 @@ export const createTimelineContextMenu = (
 
 				timelineIdsToRemove.forEach((id) => {
 					toDispatch.push(timelineActions.removeTimeline(id));
-					toDispatch.push(timelineActions.clearSelection(id));
+					toDispatch.push(timelineSelectionActions.clear(id));
 				});
 
 				// Remove layer graph if it exists

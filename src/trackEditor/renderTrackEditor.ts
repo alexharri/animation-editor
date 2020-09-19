@@ -8,7 +8,7 @@ import {
 	COMP_TIME_TRACK_KEYFRAME_HEIGHT,
 } from "~/constants";
 import { cssVariables } from "~/cssVariables";
-import { createToGraphEditorViewportX } from "~/graphEditor/renderGraphEditor";
+import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { renderDiamond, renderRect } from "~/util/canvas/renderPrimitives";
@@ -74,8 +74,8 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		{ fillColor: cssVariables.dark500 },
 	);
 
-	const toTimelineX = createToGraphEditorViewportX({
-		length: composition.length,
+	const toTimelineX = createGraphEditorNormalToViewportX({
+		compositionLength: composition.length,
 		viewBounds,
 		width: viewportWidth,
 	});

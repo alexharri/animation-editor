@@ -188,49 +188,10 @@ export function renderCubicBezier(
 	ctx.stroke();
 }
 
-interface RenderPathOptions {
-	color: string;
-	strokeWidth: number;
-	lineDash?: number[];
-}
-
 export function traceCurve(ctx: Ctx, curve: Curve, traceOptions: TraceOptions = {}): void {
 	if (curve.length === 2) {
 		traceLine(ctx, curve, traceOptions);
 	} else {
 		traceCubicBezier(ctx, curve, traceOptions);
 	}
-}
-
-/**
- * @todo Implement `lineDash` option
- */
-export function renderCurve(ctx: Ctx, path: CubicBezier | Line, opts: RenderPathOptions): void {
-	if (path.length === 2) {
-		renderLine(ctx, path[0], path[1], opts);
-	} else {
-		renderCubicBezier(ctx, path, opts);
-	}
-}
-
-interface RenderQuadraticBezierOptions {
-	color: string;
-	strokeWidth: number;
-}
-
-export function renderQuadraticBezier(
-	ctx: CanvasRenderingContext2D,
-	vectors: [Vec2, Vec2, Vec2],
-	opts: RenderQuadraticBezierOptions,
-): void {
-	const [p0, p1, p2] = vectors;
-	const { color, strokeWidth } = opts;
-
-	ctx.beginPath();
-	ctx.moveTo(p0.x, p0.y);
-	ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
-	ctx.strokeStyle = color;
-	ctx.lineWidth = strokeWidth;
-
-	ctx.stroke();
 }

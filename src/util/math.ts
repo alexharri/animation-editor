@@ -3,31 +3,11 @@ import { Mat2 } from "~/util/math/mat";
 
 export const interpolate = (a: number, b: number, t: number) => a * (1 - t) + b * t;
 
-export const addVec2 = (a: { x: number; y: number }, b: { x: number; y: number }): Vec2 =>
-	Vec2.new(a.x + b.x, a.y + b.y);
-
-export const subVec2 = (a: { x: number; y: number }, b: { x: number; y: number }): Vec2 =>
-	Vec2.new(a.x - b.x, a.y - b.y);
-
 export const isVecInRect = (vec: Vec2, rect: Rect) =>
 	vec.x >= rect.left &&
 	vec.x <= rect.left + rect.width &&
 	vec.y >= rect.top &&
 	vec.y <= rect.top + rect.height;
-
-export const panRect = (rect: Rect, vec: Vec2): Rect => ({
-	left: rect.left + vec.x,
-	top: rect.top + vec.y,
-	width: rect.width,
-	height: rect.height,
-});
-
-export const scaleRect = (rect: Rect, scale: number): Rect => ({
-	left: rect.left,
-	top: rect.top,
-	width: rect.width * scale,
-	height: rect.height * scale,
-});
 
 export const capToRange = (low: number, high: number, value: number) =>
 	Math.min(high, Math.max(low, value));
@@ -146,7 +126,7 @@ export function rotateVec2CCW(vec: Vec2, angle: number, anchor = Vec2.new(0, 0))
 	return Mat2.rotation(angle).multiplyVec2(Vec2.new(x, y)).add(anchor);
 }
 
-export const positiveAngleRadians = (angle: number) => {
+const positiveAngleRadians = (angle: number) => {
 	if (angle >= 0) {
 		return angle;
 	}

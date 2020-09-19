@@ -14,12 +14,12 @@ import {
 import { AreaType, COMP_TIME_LAYER_HEIGHT, COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { timelineActions } from "~/timeline/timelineActions";
+import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
 import {
 	getTimelineSelection,
-	transformGlobalToTimelineX,
-	transformGlobalToTrackPosition,
+	graphEditorGlobalToNormal,
+	trackEditorGlobalToNormal,
 } from "~/timeline/timelineUtils";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
@@ -48,7 +48,7 @@ const actions = {
 
 		mouseDownMoveAction(e, {
 			keys: [],
-			translateX: (value) => transformGlobalToTimelineX(value, options),
+			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
 				const timeline = timelineState[timelineId];
 				const keyframe = timeline.keyframes[index];
@@ -61,19 +61,19 @@ const actions = {
 
 				if (additiveSelection) {
 					params.dispatch(
-						timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id),
+						timelineSelectionActions.toggleKeyframe(timeline.id, keyframe.id),
 					);
 				} else if (!selection.keyframes[keyframe.id]) {
 					// If the current node is not selected, we clear the selections of all timelines
 					// we are operating on.
-					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
+					params.dispatch(timelineIds.map((id) => timelineSelectionActions.clear(id)));
 					params.dispatch(
-						timelineActions.toggleKeyframeSelection(timeline.id, keyframe.id),
+						timelineSelectionActions.toggleKeyframe(timeline.id, keyframe.id),
 					);
 				}
 			},
 			mouseMove: (params, { moveVector }) => {
-				const moveX = Math.round(moveVector.translated.x);
+				const moveX = Math.round(moveVector.normal.x);
 
 				params.dispatch(
 					timelineIds.map((id) => timelineActions.setIndexAndValueShift(id, moveX, 0)),
@@ -115,7 +115,7 @@ const actions = {
 	) => {
 		mouseDownMoveAction(e, {
 			keys: [],
-			translateX: (value) => transformGlobalToTimelineX(value, options),
+			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
 				const { compositionState, compositionSelectionState } = getActionState();
 				const composition = compositionState.compositions[options.compositionId];
@@ -147,13 +147,13 @@ const actions = {
 							compositionState,
 						);
 						params.dispatch(
-							layerTimelineIds.map((id) => timelineActions.clearSelection(id)),
+							layerTimelineIds.map((id) => timelineSelectionActions.clear(id)),
 						);
 					}
 				} else if (!compositionSelection.layers[layerId]) {
 					// If the current layer is not selected, we clear the selections of all timelines
 					// in the composition
-					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
+					params.dispatch(timelineIds.map((id) => timelineSelectionActions.clear(id)));
 					params.dispatch(
 						compSelectionActions.toggleLayerSelection(composition.id, layerId),
 					);
@@ -166,7 +166,7 @@ const actions = {
 				}
 			},
 			mouseMove: (params, { moveVector }) => {
-				const moveX = Math.round(moveVector.translated.x);
+				const moveX = Math.round(moveVector.normal.x);
 
 				params.dispatchToAreaState(
 					options.timelineAreaId,
@@ -223,7 +223,7 @@ const actions = {
 
 		mouseDownMoveAction(e, {
 			keys: [],
-			translateX: (value) => transformGlobalToTimelineX(value, options),
+			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
 				const timelineIds = getTimelineIdsReferencedByComposition(
 					options.compositionId,
@@ -246,7 +246,7 @@ const actions = {
 						);
 					}
 				} else if (!compositionSelection.layers[layerId]) {
-					params.dispatch(timelineIds.map((id) => timelineActions.clearSelection(id)));
+					params.dispatch(timelineIds.map((id) => timelineSelectionActions.clear(id)));
 					params.dispatch(
 						compSelectionActions.toggleLayerSelection(composition.id, layerId),
 					);
@@ -259,7 +259,7 @@ const actions = {
 				}
 			},
 			mouseMove: (params, { moveVector }) => {
-				const moveX = Math.round(moveVector.translated.x);
+				const moveX = Math.round(moveVector.normal.x);
 
 				const layerLengthShift: [number, number] =
 					which === "start" ? [moveX, 0] : [0, moveX];
@@ -352,7 +352,7 @@ export const trackHandlers = {
 			viewport: Rect;
 		},
 	): void => {
-		const posTranslated = transformGlobalToTrackPosition(Vec2.fromEvent(e), options);
+		const posTranslated = trackEditorGlobalToNormal(Vec2.fromEvent(e), options);
 
 		const { compositionState, timelineState } = getActionState();
 		const composition = compositionState.compositions[options.compositionId];
@@ -374,7 +374,7 @@ export const trackHandlers = {
 		hitTest: {
 			const globalXDistance = (a: number, b: number): number => {
 				return distanceFromTranslatedX(a, b, (value) =>
-					transformGlobalToTimelineX(value, options),
+					graphEditorGlobalToNormal(value, options),
 				);
 			};
 
@@ -447,12 +447,12 @@ export const trackHandlers = {
 		mouseDownMoveAction(e, {
 			keys: [],
 			shouldAddToStack: didCompSelectionChange(options.compositionId),
-			translate: (vec) => transformGlobalToTrackPosition(vec, options),
+			translate: (vec) => trackEditorGlobalToNormal(vec, options),
 			beforeMove: () => {},
 			mouseMove: (params, { mousePosition, initialMousePosition }) => {
 				const trackDragSelectRect = rectOfTwoVecs(
-					mousePosition.translated,
-					initialMousePosition.translated,
+					mousePosition.normal,
+					initialMousePosition.normal,
 				);
 
 				params.dispatchToAreaState(
@@ -469,7 +469,7 @@ export const trackHandlers = {
 				if (!hasMoved) {
 					params.dispatch(compSelectionActions.clearCompositionSelection(composition.id));
 					params.dispatch(
-						timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
+						timelines.map((timeline) => timelineSelectionActions.clear(timeline.id)),
 					);
 					params.submitAction("Clear timeline selection");
 					return;
@@ -519,7 +519,7 @@ export const trackHandlers = {
 				// Clear first if selection is not additive
 				if (!additiveSelection) {
 					params.dispatch(
-						timelines.map((timeline) => timelineActions.clearSelection(timeline.id)),
+						timelines.map((timeline) => timelineSelectionActions.clear(timeline.id)),
 					);
 					params.dispatch(compSelectionActions.clearCompositionSelection(composition.id));
 				}
@@ -527,7 +527,7 @@ export const trackHandlers = {
 				// Add keyframes to selection
 				params.dispatch(
 					affectedTimelines.map(({ timelineId, keyframeIds }) => {
-						return timelineActions.addKeyframesToSelection(timelineId, keyframeIds);
+						return timelineSelectionActions.addKeyframes(timelineId, keyframeIds);
 					}),
 				);
 

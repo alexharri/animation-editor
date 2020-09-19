@@ -9,6 +9,10 @@ const dotvec2 = (a: Vec2, b: Vec2): number => a.x * b.x + a.y * b.y;
 const lerp = (a: Vec2, b: Vec2, t: number) =>
 	Vec2.new(a.x * (1 - t) + b.x * t, a.y * (1 - t) + b.y * t);
 
+/**
+ * @todo If the bezier is flat (all control points are on the same axis) this
+ * fn returns no results.
+ */
 export function intersectCubicBezierLine(bezier: CubicBezier, line: Line) {
 	const [p1, p2, p3, p4] = bezier;
 	const [a1, a2] = line;

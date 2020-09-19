@@ -7,6 +7,7 @@ export const keys = {
 	Alt: 18,
 	Esc: 27,
 	Space: 32,
+	Delete: 46,
 	B: 66,
 	C: 67,
 	F: 70,
@@ -132,4 +133,3 @@ export const COMP_TIME_ITEM_HEIGHT = COMP_TIME_LAYER_HEIGHT + COMP_TIME_BETWEEN_
 export const COMP_TIME_SEPARATOR_WIDTH = 2;
 
 export const TRACKPAD_ZOOM_DELTA_FAC = 1 / 7;
-export const MOUSE_WHEEL_DELTA_INCR = 120;

@@ -1,67 +1,150 @@
-import React, { useLayoutEffect, useRef } from "react";
+import React, { useRef } from "react";
+import { reduceCompProperties } from "~/composition/compositionUtils";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { AreaType, TimelineColors } from "~/constants";
 import { cssVariables } from "~/cssVariables";
-import { timelineHandlers } from "~/graphEditor/graphEditorHandlers";
+import { openGraphEditorContextMenu } from "~/graphEditor/graphEditorContextMenu";
+import { graphEditorHandlers } from "~/graphEditor/graphEditorHandlers";
 import { renderGraphEditor } from "~/graphEditor/renderGraphEditor";
-import { connectActionState } from "~/state/stateUtils";
-import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
-import { Timeline } from "~/timeline/timelineTypes";
-import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
+import { useGraphEditorCursor } from "~/graphEditor/useGraphEditorCursor";
+import { useTickedRendering } from "~/hook/useTickedRendering";
+import { getActionState, getAreaActionState } from "~/state/stateUtils";
+import {
+	applyTimelineIndexAndValueShifts,
+	getSelectedTimelineIdsInComposition,
+} from "~/timeline/timelineUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 
 interface OwnProps {
-	ids: string[];
-	colors: Partial<{ [timelineId: string]: string }>;
-	length: number;
-	viewBounds: [number, number];
+	compositionId: string;
 	viewport: Rect;
-	dragSelectRect: Rect | null;
-	timelineAreaId: string;
+	areaId: string;
 }
-interface StateProps {
-	timelines: Timeline[];
-	timelineSelectionState: TimelineSelectionState;
-}
-type Props = OwnProps & StateProps;
+type Props = OwnProps;
 
-const GraphEditorComponent: React.FC<Props> = (props) => {
-	const {
-		viewport,
-		length,
-		timelineSelectionState: timelineSelectionState,
-		colors,
-		dragSelectRect,
-	} = props;
-
+export const GraphEditor: React.FC<Props> = (props) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
-	useLayoutEffect(() => {
-		const ctx = canvasRef.current?.getContext("2d");
+	const propsRef = useRef(props);
+	propsRef.current = props;
 
-		if (!ctx) {
+	useTickedRendering(
+		{
+			keyDown: {},
+			shouldUpdate: (prevState, nextState) => {
+				if (prevState.timelineState !== nextState.timelineState) {
+					return true;
+				}
+
+				if (prevState.timelineSelectionState !== nextState.timelineSelectionState) {
+					return true;
+				}
+
+				return false;
+			},
+			render: () => {
+				const { compositionId, viewport } = propsRef.current;
+				const ctx = canvasRef.current?.getContext("2d");
+
+				if (!ctx) {
+					return;
+				}
+
+				const {
+					compositionState,
+					compositionSelectionState,
+					timelineState,
+					timelineSelectionState,
+				} = getActionState();
+
+				const composition = compositionState.compositions[compositionId];
+
+				const compositionSelection = getCompSelectionFromState(
+					compositionId,
+					compositionSelectionState,
+				);
+				const { timelineIds, colors } = reduceCompProperties<{
+					timelineIds: string[];
+					colors: { [propertyId: string]: string };
+				}>(
+					compositionId,
+					compositionState,
+					(acc, property) => {
+						if (property.timelineId && compositionSelection.properties[property.id]) {
+							acc.timelineIds.push(property.timelineId);
+							acc.colors[property.timelineId] =
+								property.color || TimelineColors.XPosition;
+						}
+						return acc;
+					},
+					{ timelineIds: [], colors: {} },
+				);
+
+				const timelines = timelineIds.map((timelineId) => {
+					const timeline = timelineState[timelineId];
+					return applyTimelineIndexAndValueShifts(
+						timeline,
+						timelineSelectionState[timelineId],
+					);
+				});
+
+				const { dragSelectRect, viewBounds } = getAreaActionState<AreaType.Timeline>(
+					props.areaId,
+				);
+
+				renderGraphEditor({
+					ctx,
+					compositionLength: composition.length,
+					width: viewport.width,
+					height: viewport.height,
+					timelines,
+					colors,
+					viewBounds,
+					timelineSelectionState,
+					dragSelectRect,
+				});
+			},
+		},
+		[props],
+	);
+
+	const { viewport, areaId } = props;
+	const { width, height } = viewport;
+
+	const renderCursor = useGraphEditorCursor(canvasRef, { viewport, areaId });
+
+	const onLeftMouseDown = (e: React.MouseEvent) => {
+		const { compositionState, compositionSelectionState } = getActionState();
+		const timelineIds = getSelectedTimelineIdsInComposition(
+			props.compositionId,
+			compositionState,
+			compositionSelectionState,
+		);
+
+		if (timelineIds.length === 0) {
 			return;
 		}
 
-		const { width, height } = viewport;
-
-		const timelines = props.timelines.map((timeline) =>
-			applyTimelineIndexAndValueShifts(timeline, props.timelineSelectionState[timeline.id]),
-		);
-
-		renderGraphEditor({
-			ctx,
-			length,
-			width,
-			height,
-			timelines,
-			colors,
-			viewBounds,
-			timelineSelectionState: timelineSelectionState,
-			dragSelectRect,
+		graphEditorHandlers.onMouseDown(e, {
+			areaId: props.areaId,
+			viewport,
 		});
-	}, [props]);
+	};
 
-	const { viewBounds } = props;
-	const { width, height } = viewport;
+	const onRightMouseDown = (e: React.MouseEvent) => {
+		const { compositionState, compositionSelectionState } = getActionState();
+		const { compositionId } = props;
+		const timelineIds = getSelectedTimelineIdsInComposition(
+			compositionId,
+			compositionState,
+			compositionSelectionState,
+		);
+		openGraphEditorContextMenu(Vec2.fromEvent(e), { timelineIds, compositionId });
+	};
+
+	const onMouseMove = (e: React.MouseEvent) => {
+		renderCursor(e);
+	};
 
 	return (
 		<div style={{ background: cssVariables.gray400 }}>
@@ -70,26 +153,11 @@ const GraphEditorComponent: React.FC<Props> = (props) => {
 				height={height}
 				width={width}
 				onMouseDown={separateLeftRightMouse({
-					left: (e) =>
-						timelineHandlers.onMouseDown(e, {
-							timelineAreaId: props.timelineAreaId,
-							timelines: props.timelines,
-							length,
-							viewBounds,
-							viewport,
-						}),
+					left: onLeftMouseDown,
+					right: onRightMouseDown,
 				})}
+				onMouseMove={onMouseMove}
 			/>
 		</div>
 	);
 };
-
-const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ timelineState, timelineSelectionState },
-	ownProps,
-) => ({
-	timelines: ownProps.ids.map((id) => timelineState[id]),
-	timelineSelectionState: timelineSelectionState,
-});
-
-export const GraphEditor = connectActionState(mapStateToProps)(GraphEditorComponent);

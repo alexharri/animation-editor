@@ -9,10 +9,11 @@ import { Timeline } from "~/timeline/timelineTypes";
 import { timelineKeyframesToPathList } from "~/timeline/timelineUtils";
 import {
 	renderCircle,
-	renderCubicBezier,
 	renderDiamond,
 	renderLine,
 	renderRect,
+	traceCubicBezier,
+	traceLine,
 } from "~/util/canvas/renderPrimitives";
 import { interpolate, translateRectAsVec, translateToRange } from "~/util/math";
 
@@ -21,15 +22,15 @@ interface RenderOptions {
 	width: number;
 	height: number;
 	viewBounds: [number, number];
-	length: number;
+	compositionLength: number;
 	timelines: Timeline[];
 	colors: Partial<{ [timelineId: string]: string }>;
 	timelineSelectionState: TimelineSelectionState;
 	dragSelectRect: Rect | null;
 }
 
-export const createToGraphEditorViewportX = (options: {
-	length: number;
+export const createGraphEditorNormalToViewportX = (options: {
+	compositionLength: number;
 	viewBounds: [number, number];
 	width: number;
 }): ((value: number) => number) => {
@@ -41,7 +42,7 @@ export const createToGraphEditorViewportX = (options: {
 	const [tMin, tMax] = viewBounds;
 
 	return (index: number) => {
-		const length = options.length;
+		const length = options.compositionLength;
 		const t = index / length;
 		return (
 			translateToRange(t * renderWidth, tMin * renderWidth, tMax * renderWidth, canvasWidth) +
@@ -50,16 +51,16 @@ export const createToGraphEditorViewportX = (options: {
 	};
 };
 
-export const createToGraphEditorViewportY = (
+export const createGraphEditorNormalViewportY = (
 	timelinePaths: (CubicBezier | Line)[][],
 	options: {
 		viewBounds: [number, number];
-		length: number;
+		compositionLength: number;
 		timelines: Timeline[];
 		height: number;
 	},
 ): ((value: number) => number) => {
-	const { timelines, height, viewBounds, length } = options;
+	const { timelines, height, viewBounds, compositionLength: length } = options;
 
 	const [yUpper, yLower] =
 		timelines[0]._yBounds ||
@@ -73,21 +74,41 @@ export const createToGraphEditorViewportY = (
 	};
 };
 
+export const createGraphEditorNormalToViewport = (
+	timelinePaths: (CubicBezier | Line)[][],
+	options: {
+		viewBounds: [number, number];
+		compositionLength: number;
+		timelines: Timeline[];
+		width: number;
+		height: number;
+	},
+) => {
+	const toX = createGraphEditorNormalToViewportX(options);
+	const toY = createGraphEditorNormalViewportY(timelinePaths, options);
+
+	return (vec: Vec2) => Vec2.new(toX(vec.x), toY(vec.y));
+};
+
 export const renderGraphEditor = (options: RenderOptions): void => {
 	const { ctx, timelines, width, height, timelineSelectionState, viewBounds } = options;
+
+	ctx.clearRect(0, 0, width, height);
+
+	if (timelines.length === 0) {
+		return;
+	}
 
 	const timelinePaths = timelines.map((timeline) =>
 		timelineKeyframesToPathList(timeline.keyframes),
 	);
 
-	const toViewportY = createToGraphEditorViewportY(timelinePaths, options);
-	const toViewportX = createToGraphEditorViewportX(options);
+	const toViewportY = createGraphEditorNormalViewportY(timelinePaths, options);
+	const toViewportX = createGraphEditorNormalToViewportX(options);
 	const toViewport = (vec: Vec2) => Vec2.new(toViewportX(vec.x), toViewportY(vec.y));
 
-	ctx.clearRect(0, 0, width, height);
-
 	const atZero = toViewportX(0);
-	const atEnd = toViewportX(options.length);
+	const atEnd = toViewportX(options.compositionLength);
 
 	if (atZero > 0) {
 		renderRect(
@@ -119,7 +140,12 @@ export const renderGraphEditor = (options: RenderOptions): void => {
 
 	const [yUpper, yLower] =
 		_yBounds ||
-		getGraphEditorYBoundsFromPaths(viewBounds, options.length, timelines, timelinePaths);
+		getGraphEditorYBoundsFromPaths(
+			viewBounds,
+			options.compositionLength,
+			timelines,
+			timelinePaths,
+		);
 
 	const ticks = generateGraphEditorTicksFromBounds([yUpper + _yPan, yLower + _yPan]);
 
@@ -144,15 +170,22 @@ export const renderGraphEditor = (options: RenderOptions): void => {
 		>;
 
 		const color = options.colors[timeline.id] || "red";
+
+		ctx.beginPath();
 		for (let i = 0; i < paths.length; i += 1) {
 			const path = transformedPaths[i];
 			if (path.length === 4) {
-				renderCubicBezier(ctx, path, { color, strokeWidth: 1 });
+				traceCubicBezier(ctx, path, { move: i === 0 });
 			} else {
-				renderLine(ctx, path[0], path[1], { color, strokeWidth: 1 });
+				traceLine(ctx, path, { move: i === 0 });
 			}
 		}
+		ctx.strokeStyle = color;
+		ctx.lineWidth = 1;
+		ctx.stroke();
+		ctx.closePath();
 
+		ctx.beginPath();
 		{
 			const { value: startValue, index: startIndex } = keyframes[0];
 			const { value: endValue, index: endIndex } = keyframes[keyframes.length - 1];
@@ -164,25 +197,22 @@ export const renderGraphEditor = (options: RenderOptions): void => {
 			const endY = toViewportY(endValue);
 
 			if (startX > 0) {
-				renderLine(ctx, Vec2.new(startX, startY), Vec2.new(0, startY), {
-					color,
-					strokeWidth: 1,
-					lineDash: [8, 8],
-				});
+				traceLine(ctx, [Vec2.new(startX, startY), Vec2.new(0, startY)], { move: true });
 			}
 
 			if (endX < width) {
-				renderLine(ctx, Vec2.new(endX, endY), Vec2.new(width, endY), {
-					color,
-					strokeWidth: 1,
-					lineDash: [8, 8],
-				});
+				traceLine(ctx, [Vec2.new(endX, endY), Vec2.new(width, endY)], { move: true });
 			}
 		}
+		ctx.setLineDash([8, 8]);
+		ctx.stroke();
+		ctx.closePath();
+		ctx.setLineDash([]);
 
 		/**
 		 * Control point lines
 		 */
+		ctx.beginPath();
 		for (let i = 0; i < keyframes.length - 1; i += 1) {
 			const path = transformedPaths[i];
 
@@ -194,19 +224,18 @@ export const renderGraphEditor = (options: RenderOptions): void => {
 			const k1 = keyframes[i + 1];
 
 			if (k0.controlPointRight) {
-				renderLine(ctx, path[0], path[1], {
-					color: "yellow",
-					strokeWidth: 1,
-				});
+				traceLine(ctx, [path[0], path[1]], { move: true });
 			}
 
 			if (k1.controlPointLeft) {
-				renderLine(ctx, path[2], path[3], {
-					color: "yellow",
-					strokeWidth: 1,
-				});
+				traceLine(ctx, [path[2], path[3]], { move: true });
 			}
 		}
+		ctx.setLineDash([]);
+		ctx.strokeStyle = "yellow";
+		ctx.lineWidth = 1;
+		ctx.stroke();
+		ctx.closePath();
 
 		/**
 		 * Keyframes

@@ -55,7 +55,7 @@ export const constructPenToolContext = (
 	const mousePosition: MousePosition = {
 		global: globalMousePosition,
 		viewport: globalMousePosition.subXY(viewport.left, viewport.top),
-		translated: globalToWorkspacePosition(globalMousePosition, viewport, scale, pan),
+		normal: globalToWorkspacePosition(globalMousePosition, viewport, scale, pan),
 	};
 
 	const ctx: PenToolContext = {
