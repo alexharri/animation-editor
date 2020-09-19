@@ -1,4 +1,4 @@
-import { COMP_TIME_LAYER_HEIGHT, COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
+import { TIMELINE_LAYER_HEIGHT, TIMELINE_TRACK_START_END_X_MARGIN } from "~/constants";
 import { getActionState } from "~/state/stateUtils";
 import { timelineNormalToGlobalX } from "~/timeline/timelineUtils";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
@@ -34,7 +34,7 @@ export const useTrackEditorCanvasCursor = (
 			const layerId = composition.layers[i];
 			const yPos = yPosMap.layer[layerId];
 
-			if (!valueWithinRange(mousePos.y - viewport.top, yPos, yPos + COMP_TIME_LAYER_HEIGHT)) {
+			if (!valueWithinRange(mousePos.y - viewport.top, yPos, yPos + TIMELINE_LAYER_HEIGHT)) {
 				continue;
 			}
 
@@ -46,7 +46,7 @@ export const useTrackEditorCanvasCursor = (
 				viewport,
 				composition.length,
 			);
-			if (valueWithinMargin(mousePos.x, startX, COMP_TIME_TRACK_START_END_X_MARGIN)) {
+			if (valueWithinMargin(mousePos.x, startX, TIMELINE_TRACK_START_END_X_MARGIN)) {
 				canvasEl.style.cursor = "ew-resize";
 				return;
 			}
@@ -57,7 +57,7 @@ export const useTrackEditorCanvasCursor = (
 				viewport,
 				composition.length,
 			);
-			if (valueWithinMargin(mousePos.x, endX, COMP_TIME_TRACK_START_END_X_MARGIN)) {
+			if (valueWithinMargin(mousePos.x, endX, TIMELINE_TRACK_START_END_X_MARGIN)) {
 				canvasEl.style.cursor = "ew-resize";
 				return;
 			}

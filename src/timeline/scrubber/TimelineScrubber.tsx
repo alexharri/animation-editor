@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { COMP_TIME_SCRUBBER_HEIGHT } from "~/constants";
+import { TIMELINE_SCRUBBER_HEIGHT } from "~/constants";
 import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { connectActionState } from "~/state/stateUtils";
 import { renderTimelineScrubber } from "~/timeline/scrubber/renderTimelineScrubber";
@@ -49,7 +49,7 @@ const TimelineScrubberComponent: React.FC<Props> = (props) => {
 			<canvas
 				className={s("canvas")}
 				width={props.viewportRight.width}
-				height={COMP_TIME_SCRUBBER_HEIGHT}
+				height={TIMELINE_SCRUBBER_HEIGHT}
 				ref={canvasRef}
 			/>
 			<div

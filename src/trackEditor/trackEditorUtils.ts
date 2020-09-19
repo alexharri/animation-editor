@@ -1,9 +1,5 @@
 import { CompositionState } from "~/composition/compositionReducer";
-import {
-	COMP_TIME_BETWEEN_LAYERS,
-	COMP_TIME_ITEM_HEIGHT,
-	COMP_TIME_LAYER_HEIGHT,
-} from "~/constants";
+import { TIMELINE_BETWEEN_LAYERS, TIMELINE_ITEM_HEIGHT, TIMELINE_LAYER_HEIGHT } from "~/constants";
 
 type TrackYPositions = {
 	timeline: { [timelineId: string]: number };
@@ -23,7 +19,7 @@ export const getTimelineTrackYPositions = (
 	let yIndex = 0;
 
 	const getY = (): number =>
-		yIndex * (COMP_TIME_LAYER_HEIGHT + COMP_TIME_BETWEEN_LAYERS) + 1 - panY;
+		yIndex * (TIMELINE_LAYER_HEIGHT + TIMELINE_BETWEEN_LAYERS) + 1 - panY;
 
 	for (let i = 0; i < composition.layers.length; i += 1) {
 		const layerId = composition.layers[i];
@@ -95,5 +91,5 @@ export const getTimelineLayerListHeight = (
 		}
 	}
 
-	return (n + 2) * COMP_TIME_ITEM_HEIGHT;
+	return (n + 2) * TIMELINE_ITEM_HEIGHT;
 };

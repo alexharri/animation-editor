@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { areaActions } from "~/area/state/areaActions";
-import { COMP_TIME_SEPARATOR_WIDTH, TRACKPAD_ZOOM_DELTA_FAC } from "~/constants";
+import { TIMELINE_SEPARATOR_WIDTH, TRACKPAD_ZOOM_DELTA_FAC } from "~/constants";
 import { GraphEditor } from "~/graphEditor/GraphEditor";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
@@ -9,6 +9,7 @@ import { TimelineScrubber } from "~/timeline/scrubber/TimelineScrubber";
 import styles from "~/timeline/Timeline.styles";
 import { timelineAreaActions, TimelineAreaState } from "~/timeline/timelineAreaReducer";
 import { timelineHandlers } from "~/timeline/timelineHandlers";
+import { TimelineHeader } from "~/timeline/TimelineHeader";
 import { TimelineLayerList } from "~/timeline/TimelineLayerList";
 import { TimelineViewBounds } from "~/timeline/TimelineViewBounds";
 import { TrackEditor } from "~/trackEditor/TrackEditor";
@@ -29,12 +30,7 @@ type Props = OwnProps & StateProps;
 const TimelineComponent: React.FC<Props> = (props) => {
 	const [t, setT] = useState(0.3);
 
-	let [viewportLeft, viewportRight] = splitRect(
-		"horizontal",
-		props,
-		t,
-		COMP_TIME_SEPARATOR_WIDTH,
-	);
+	let [viewportLeft, viewportRight] = splitRect("horizontal", props, t, TIMELINE_SEPARATOR_WIDTH);
 
 	const zoomTarget = useRef<HTMLDivElement>(null);
 	const panTarget = useRef<HTMLDivElement>(null);
@@ -87,7 +83,7 @@ const TimelineComponent: React.FC<Props> = (props) => {
 				"horizontal",
 				props,
 				t,
-				COMP_TIME_SEPARATOR_WIDTH,
+				TIMELINE_SEPARATOR_WIDTH,
 			);
 
 			const onPan = () => {
@@ -173,25 +169,7 @@ const TimelineComponent: React.FC<Props> = (props) => {
 					right: (e) => timelineHandlers.onRightClickOut(e, compositionId),
 				})}
 			>
-				<div className={s("header")}>
-					<button
-						className={s("graphEditorToggle")}
-						onMouseDown={(e) => e.stopPropagation()}
-						onClick={() => {
-							requestAction({ history: false }, (params) => {
-								params.dispatch(
-									areaActions.dispatchToAreaState(
-										props.areaId,
-										timelineAreaActions.toggleGraphEditorOpen(),
-									),
-								);
-								params.submitAction();
-							});
-						}}
-					>
-						Graph Editor
-					</button>
-				</div>
+				<TimelineHeader areaId={props.areaId} />
 				<TimelineLayerList
 					compositionId={compositionId}
 					moveLayers={props.areaState.moveLayers}

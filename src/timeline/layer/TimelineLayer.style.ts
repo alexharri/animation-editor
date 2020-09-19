@@ -4,11 +4,12 @@ import { StyleParams } from "~/util/stylesheets";
 export default ({ css }: StyleParams) => ({
 	container: css`
 		display: flex;
-		padding-left: 8px;
+		padding-left: 16px;
 		background: ${cssVariables.dark700};
 		border-radius: 2px;
 		margin-bottom: 1px;
 		margin-top: 1px;
+		min-width: 320px;
 	`,
 
 	property: css`
@@ -19,10 +20,15 @@ export default ({ css }: StyleParams) => ({
 		color: ${cssVariables.white500};
 	`,
 
+	graphWrapper: css`
+		width: 48px;
+		display: flex;
+	`,
+
 	graph: css`
-		margin-left: 2px;
 		height: 16px;
 		width: 16px;
+		margin-right: 2px;
 		position: relative;
 		cursor: pointer;
 
@@ -44,7 +50,6 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	openGraphInArea: css`
-		margin-left: 2px;
 		height: 16px;
 		width: 16px;
 		position: relative;

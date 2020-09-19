@@ -3,9 +3,9 @@ import { CompositionSelectionState } from "~/composition/compositionSelectionRed
 import { Composition } from "~/composition/compositionTypes";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
-	COMP_TIME_BETWEEN_LAYERS,
-	COMP_TIME_LAYER_HEIGHT,
-	COMP_TIME_TRACK_KEYFRAME_HEIGHT,
+	TIMELINE_BETWEEN_LAYERS,
+	TIMELINE_LAYER_HEIGHT,
+	TIMELINE_TRACK_KEYFRAME_HEIGHT,
 } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
@@ -83,7 +83,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 	let yIndex = 0;
 
 	const getY = (): number =>
-		yIndex * (COMP_TIME_LAYER_HEIGHT + COMP_TIME_BETWEEN_LAYERS) + 1 - panY;
+		yIndex * (TIMELINE_LAYER_HEIGHT + TIMELINE_BETWEEN_LAYERS) + 1 - panY;
 
 	const renderEdge = (fillColor: string) => {
 		const x0 = toTimelineX(0);
@@ -92,7 +92,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		if (x0 > 0) {
 			renderRect(
 				ctx,
-				{ left: 0, width: x0, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
+				{ left: 0, width: x0, top: getY(), height: TIMELINE_LAYER_HEIGHT },
 				{ fillColor },
 			);
 		}
@@ -103,7 +103,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 					left: x1,
 					width: viewportWidth - x1,
 					top: getY(),
-					height: COMP_TIME_LAYER_HEIGHT,
+					height: TIMELINE_LAYER_HEIGHT,
 				},
 				{ fillColor },
 			);
@@ -127,14 +127,14 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 		renderRect(
 			ctx,
-			{ left: 0, width: viewportWidth, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
+			{ left: 0, width: viewportWidth, top: getY(), height: TIMELINE_LAYER_HEIGHT },
 			{ fillColor: cssVariables.gray500 },
 		);
 		renderEdge(selected ? cssVariables.dark700 : cssVariables.dark600);
 
 		renderRect(
 			ctx,
-			{ left, width, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
+			{ left, width, top: getY(), height: TIMELINE_LAYER_HEIGHT },
 			{ fillColor: selected ? cssVariables.light300 : cssVariables.gray700 },
 		);
 
@@ -147,7 +147,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 			renderRect(
 				ctx,
-				{ left: 0, width: viewportWidth, top: getY(), height: COMP_TIME_LAYER_HEIGHT },
+				{ left: 0, width: viewportWidth, top: getY(), height: TIMELINE_LAYER_HEIGHT },
 				{ fillColor: cssVariables.dark800 },
 			);
 			renderEdge(selected ? cssVariables.dark700 : cssVariables.dark600);
@@ -171,13 +171,13 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 				const k = timeline.keyframes[j];
 
 				const left = toTimelineX(layerIndex + k.index + keyframeIndexShift);
-				const top = getY() + COMP_TIME_LAYER_HEIGHT / 2;
+				const top = getY() + TIMELINE_LAYER_HEIGHT / 2;
 
 				const selected = options.timelineSelection[timeline.id]?.keyframes[k.id];
 
 				renderDiamond(ctx, Vec2.new(left, top), {
-					width: COMP_TIME_TRACK_KEYFRAME_HEIGHT,
-					height: COMP_TIME_TRACK_KEYFRAME_HEIGHT,
+					width: TIMELINE_TRACK_KEYFRAME_HEIGHT,
+					height: TIMELINE_TRACK_KEYFRAME_HEIGHT,
 					fillColor: selected ? cssVariables.primary500 : cssVariables.light500,
 				});
 			}
