@@ -1,6 +1,6 @@
 import { COMP_TIME_LAYER_HEIGHT, COMP_TIME_TRACK_START_END_X_MARGIN } from "~/constants";
 import { getActionState } from "~/state/stateUtils";
-import { transformTimelineXToGlobalX } from "~/timeline/timelineUtils";
+import { timelineNormalToGlobalX } from "~/timeline/timelineUtils";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
 import { valueWithinMargin, valueWithinRange } from "~/util/math";
 
@@ -40,7 +40,7 @@ export const useTrackEditorCanvasCursor = (
 
 			const layer = compositionState.layers[layerId];
 
-			const startX = transformTimelineXToGlobalX(
+			const startX = timelineNormalToGlobalX(
 				layer.index,
 				viewBounds,
 				viewport,
@@ -51,7 +51,7 @@ export const useTrackEditorCanvasCursor = (
 				return;
 			}
 
-			const endX = transformTimelineXToGlobalX(
+			const endX = timelineNormalToGlobalX(
 				layer.index + layer.length,
 				viewBounds,
 				viewport,

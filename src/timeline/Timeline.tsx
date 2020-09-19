@@ -267,8 +267,6 @@ const TimelineComponent: React.FC<Props> = (props) => {
 						<GraphEditor
 							areaId={props.areaId}
 							compositionId={compositionId}
-							dragSelectRect={props.areaState.dragSelectRect}
-							viewBounds={viewBounds}
 							viewport={{
 								width: viewportRight.width,
 								height: viewportRight.height - 32,

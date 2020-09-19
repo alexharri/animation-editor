@@ -1,7 +1,6 @@
-import { TIMELINE_CANVAS_END_START_BUFFER } from "~/constants";
 import { Timeline } from "~/timeline/timelineTypes";
-import { splitTimelinePathAtIndex, timelineKeyframesToPathList } from "~/timeline/timelineUtils";
-import { interpolate } from "~/util/math";
+import { getControlPointAsVector, splitTimelinePathAtIndex } from "~/timeline/timelineUtils";
+import { getDistance } from "~/util/math";
 
 export const getGraphEditorYBoundsFromPaths = (
 	viewBounds: [number, number],
@@ -119,46 +118,6 @@ export const getGraphEditorYBoundsFromPaths = (
 	return [yUpper + diff * 0.1, yLower - diff * 0.1];
 };
 
-export const transformGlobalToGraphEditorPosition = (
-	vec: Vec2,
-	options: {
-		length: number;
-		timelines: Timeline[];
-		viewBounds: [number, number];
-		viewport: Rect;
-	},
-): Vec2 => {
-	const { timelines, viewBounds, viewport } = options;
-
-	const canvasWidth = viewport.width - TIMELINE_CANVAS_END_START_BUFFER * 2;
-	const canvasLeft = viewport.left + TIMELINE_CANVAS_END_START_BUFFER;
-
-	const pos = vec.subY(viewport.top).subX(canvasLeft);
-
-	const xt = pos.x / canvasWidth;
-	const yt = pos.y / viewport.height;
-
-	const timelinePaths = timelines.map((timeline) =>
-		timelineKeyframesToPathList(timeline.keyframes),
-	);
-
-	const [yUp, yLow] = getGraphEditorYBoundsFromPaths(
-		viewBounds,
-		options.length,
-		timelines,
-		timelinePaths,
-	);
-	const [xMin, xMax] = viewBounds;
-
-	const x = (xMin + (xMax - xMin) * xt) * options.length;
-	pos.x = x;
-
-	const y = interpolate(yUp, yLow, yt);
-	pos.y = y;
-
-	return pos;
-};
-
 /**
  * @returns ticks from lower to upper
  */
@@ -192,4 +151,67 @@ export const generateGraphEditorTicksFromBounds = ([a, b]: [number, number]): nu
 	} while (ticks[ticks.length - 1] < upper);
 
 	return ticks.map((tick) => Number(tick.toFixed(10)));
+};
+
+type GraphEditorTargetObject =
+	| {
+			type: "keyframe";
+			keyframeIndex: number;
+	  }
+	| {
+			type: "control_point";
+			keyframeIndex: number;
+			which: "left" | "right";
+	  }
+	| {
+			type: undefined;
+	  };
+
+export const getGraphEditorTimelineTargetObject = (
+	timeline: Timeline,
+	viewportMousePosition: Vec2,
+	normalToViewport: (vec: Vec2) => Vec2,
+): GraphEditorTargetObject => {
+	const { keyframes } = timeline;
+
+	// Check whether a control point was clicked
+	for (let i = 0; i < keyframes.length - 1; i += 1) {
+		const k0 = keyframes[i];
+		const k1 = keyframes[i + 1];
+
+		const cp0 = getControlPointAsVector("cp0", k0, k1);
+		const cp1 = getControlPointAsVector("cp1", k0, k1);
+
+		if (cp0 && getDistance(normalToViewport(cp0), viewportMousePosition) < 6) {
+			return {
+				type: "control_point",
+				keyframeIndex: i,
+				which: "right",
+			};
+		}
+
+		if (cp1 && getDistance(normalToViewport(cp1), viewportMousePosition) < 6) {
+			return {
+				type: "control_point",
+				keyframeIndex: i + 1,
+				which: "left",
+			};
+		}
+	}
+
+	// Check whether a keyframe was clicked
+	for (let i = 0; i < keyframes.length; i += 1) {
+		const keyframe = keyframes[i];
+		const keyframePos = Vec2.new(keyframe.index, keyframe.value);
+		if (getDistance(normalToViewport(keyframePos), viewportMousePosition) < 6) {
+			return {
+				type: "keyframe",
+				keyframeIndex: i,
+			};
+		}
+	}
+
+	return {
+		type: undefined,
+	};
 };

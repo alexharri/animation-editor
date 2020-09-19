@@ -185,7 +185,7 @@ export type LineJoin = "miter" | "round" | "bevel";
 export interface MousePosition {
 	global: Vec2;
 	viewport: Vec2;
-	translated: Vec2;
+	normal: Vec2;
 }
 
 export type NameToProperty = { [key in keyof typeof PropertyName]: any };

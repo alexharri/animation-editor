@@ -36,7 +36,7 @@ import { createTimelineContextMenu } from "~/timeline/timelineContextMenu";
 import {
 	createTimelineForLayerProperty,
 	getTimelineValueAtIndex,
-	transformGlobalToTimelineX,
+	graphEditorGlobalToNormal,
 } from "~/timeline/timelineUtils";
 import {
 	getTimelineLayerListHeight,
@@ -70,7 +70,7 @@ export const timelineHandlers = {
 
 			const onMove = (e?: MouseEvent) => {
 				const pos = e ? Vec2.fromEvent(e) : initialPosition;
-				const x = transformGlobalToTimelineX(pos.x, options);
+				const x = graphEditorGlobalToNormal(pos.x, options);
 				dispatch(
 					compositionActions.setFrameIndex(
 						composition.id,
@@ -147,7 +147,7 @@ export const timelineHandlers = {
 		requestAction({ history: false }, ({ submitAction, dispatch }) => {
 			const compositionState = getActionState().compositionState;
 
-			const [x0, x1] = [0, e.deltaX].map((x) => transformGlobalToTimelineX(x, options));
+			const [x0, x1] = [0, e.deltaX].map((x) => graphEditorGlobalToNormal(x, options));
 
 			const xt0 = x0 / compositionLength;
 			const xt1 = x1 / compositionLength;
@@ -262,7 +262,7 @@ export const timelineHandlers = {
 		const { viewBounds, compositionLength, compositionId } = options;
 
 		const initialMousePosition = Vec2.fromEvent(e);
-		const initialPos = transformGlobalToTimelineX(initialMousePosition.x, options);
+		const initialPos = graphEditorGlobalToNormal(initialMousePosition.x, options);
 
 		const fn: RequestActionCallback = ({ addListener, submitAction, dispatch }) => {
 			const compositionState = getActionState().compositionState;
@@ -271,7 +271,7 @@ export const timelineHandlers = {
 
 			addListener.repeated("mousemove", (e) => {
 				const mousePosition = Vec2.fromEvent(e);
-				const pos = transformGlobalToTimelineX(mousePosition.x, options);
+				const pos = graphEditorGlobalToNormal(mousePosition.x, options);
 
 				const t = pos / compositionLength;
 

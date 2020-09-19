@@ -18,8 +18,8 @@ import { timelineActions, timelineSelectionActions } from "~/timeline/timelineAc
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
 import {
 	getTimelineSelection,
-	transformGlobalToTimelineX,
-	transformGlobalToTrackPosition,
+	graphEditorGlobalToNormal,
+	trackEditorGlobalToNormal,
 } from "~/timeline/timelineUtils";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
@@ -48,7 +48,7 @@ const actions = {
 
 		mouseDownMoveAction(e, {
 			keys: [],
-			translateX: (value) => transformGlobalToTimelineX(value, options),
+			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
 				const timeline = timelineState[timelineId];
 				const keyframe = timeline.keyframes[index];
@@ -73,7 +73,7 @@ const actions = {
 				}
 			},
 			mouseMove: (params, { moveVector }) => {
-				const moveX = Math.round(moveVector.translated.x);
+				const moveX = Math.round(moveVector.normal.x);
 
 				params.dispatch(
 					timelineIds.map((id) => timelineActions.setIndexAndValueShift(id, moveX, 0)),
@@ -115,7 +115,7 @@ const actions = {
 	) => {
 		mouseDownMoveAction(e, {
 			keys: [],
-			translateX: (value) => transformGlobalToTimelineX(value, options),
+			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
 				const { compositionState, compositionSelectionState } = getActionState();
 				const composition = compositionState.compositions[options.compositionId];
@@ -166,7 +166,7 @@ const actions = {
 				}
 			},
 			mouseMove: (params, { moveVector }) => {
-				const moveX = Math.round(moveVector.translated.x);
+				const moveX = Math.round(moveVector.normal.x);
 
 				params.dispatchToAreaState(
 					options.timelineAreaId,
@@ -223,7 +223,7 @@ const actions = {
 
 		mouseDownMoveAction(e, {
 			keys: [],
-			translateX: (value) => transformGlobalToTimelineX(value, options),
+			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
 				const timelineIds = getTimelineIdsReferencedByComposition(
 					options.compositionId,
@@ -259,7 +259,7 @@ const actions = {
 				}
 			},
 			mouseMove: (params, { moveVector }) => {
-				const moveX = Math.round(moveVector.translated.x);
+				const moveX = Math.round(moveVector.normal.x);
 
 				const layerLengthShift: [number, number] =
 					which === "start" ? [moveX, 0] : [0, moveX];
@@ -352,7 +352,7 @@ export const trackHandlers = {
 			viewport: Rect;
 		},
 	): void => {
-		const posTranslated = transformGlobalToTrackPosition(Vec2.fromEvent(e), options);
+		const posTranslated = trackEditorGlobalToNormal(Vec2.fromEvent(e), options);
 
 		const { compositionState, timelineState } = getActionState();
 		const composition = compositionState.compositions[options.compositionId];
@@ -374,7 +374,7 @@ export const trackHandlers = {
 		hitTest: {
 			const globalXDistance = (a: number, b: number): number => {
 				return distanceFromTranslatedX(a, b, (value) =>
-					transformGlobalToTimelineX(value, options),
+					graphEditorGlobalToNormal(value, options),
 				);
 			};
 
@@ -447,12 +447,12 @@ export const trackHandlers = {
 		mouseDownMoveAction(e, {
 			keys: [],
 			shouldAddToStack: didCompSelectionChange(options.compositionId),
-			translate: (vec) => transformGlobalToTrackPosition(vec, options),
+			translate: (vec) => trackEditorGlobalToNormal(vec, options),
 			beforeMove: () => {},
 			mouseMove: (params, { mousePosition, initialMousePosition }) => {
 				const trackDragSelectRect = rectOfTwoVecs(
-					mousePosition.translated,
-					initialMousePosition.translated,
+					mousePosition.normal,
+					initialMousePosition.normal,
 				);
 
 				params.dispatchToAreaState(

@@ -1,5 +1,9 @@
 import Bezier from "bezier-easing";
 import uuid from "uuid/v4";
+import { CompositionState } from "~/composition/compositionReducer";
+import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
+import { reduceCompProperties } from "~/composition/compositionUtils";
+import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
 	TIMELINE_CANVAS_END_START_BUFFER,
 	TIMELINE_CP_TX_MAX,
@@ -194,7 +198,7 @@ export function getTimelineValueAtIndex(options: GetTimelineValueAtIndexOptions)
 	return 0 as never;
 }
 
-export const transformTimelineXToGlobalX = (
+export const timelineNormalToGlobalX = (
 	timelineX: number,
 	viewBounds: [number, number],
 	viewport: Rect,
@@ -213,7 +217,7 @@ export const transformTimelineXToGlobalX = (
 	);
 };
 
-export const transformGlobalToTimelineX = (
+export const graphEditorGlobalToNormal = (
 	value: number,
 	options: {
 		viewBounds: [number, number];
@@ -232,7 +236,7 @@ export const transformGlobalToTimelineX = (
 	return x;
 };
 
-export const transformGlobalToTrackPosition = (
+export const trackEditorGlobalToNormal = (
 	vec: Vec2,
 	options: {
 		compositionLength: number;
@@ -702,4 +706,26 @@ export const createTimelineForLayerProperty = (value: number, index: number): Ti
 		_newControlPointShift: null,
 		_dragSelectRect: null,
 	};
+};
+
+export const getSelectedTimelineIdsInComposition = (
+	compositionId: string,
+	compositionState: CompositionState,
+	compositionSelectionState: CompositionSelectionState,
+) => {
+	const compositionSelection = getCompSelectionFromState(
+		compositionId,
+		compositionSelectionState,
+	);
+	return reduceCompProperties<string[]>(
+		compositionId,
+		compositionState,
+		(acc, property) => {
+			if (property.timelineId && compositionSelection.properties[property.id]) {
+				acc.push(property.timelineId);
+			}
+			return acc;
+		},
+		[],
+	);
 };

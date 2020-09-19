@@ -4,43 +4,25 @@ import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils
 import { AreaType, TimelineColors } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { openGraphEditorContextMenu } from "~/graphEditor/graphEditorContextMenu";
-import { timelineHandlers } from "~/graphEditor/graphEditorHandlers";
+import { graphEditorHandlers } from "~/graphEditor/graphEditorHandlers";
 import { renderGraphEditor } from "~/graphEditor/renderGraphEditor";
+import { useGraphEditorCursor } from "~/graphEditor/useGraphEditorCursor";
 import { useTickedRendering } from "~/hook/useTickedRendering";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { applyTimelineIndexAndValueShifts } from "~/timeline/timelineUtils";
+import {
+	applyTimelineIndexAndValueShifts,
+	getSelectedTimelineIdsInComposition,
+} from "~/timeline/timelineUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
-
-const getTimelineIds = (compositionId: string) => {
-	const { compositionState, compositionSelectionState } = getActionState();
-
-	const compositionSelection = getCompSelectionFromState(
-		compositionId,
-		compositionSelectionState,
-	);
-	return reduceCompProperties<string[]>(
-		compositionId,
-		compositionState,
-		(acc, property) => {
-			if (property.timelineId && compositionSelection.properties[property.id]) {
-				acc.push(property.timelineId);
-			}
-			return acc;
-		},
-		[],
-	);
-};
 
 interface OwnProps {
 	compositionId: string;
 	viewport: Rect;
 	areaId: string;
-	viewBounds: [number, number];
-	dragSelectRect: Rect | null;
 }
 type Props = OwnProps;
 
-const GraphEditorComponent: React.FC<Props> = (props) => {
+export const GraphEditor: React.FC<Props> = (props) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
 	const propsRef = useRef(props);
@@ -112,7 +94,7 @@ const GraphEditorComponent: React.FC<Props> = (props) => {
 
 				renderGraphEditor({
 					ctx,
-					length: composition.length,
+					compositionLength: composition.length,
 					width: viewport.width,
 					height: viewport.height,
 					timelines,
@@ -126,27 +108,56 @@ const GraphEditorComponent: React.FC<Props> = (props) => {
 		[props],
 	);
 
-	const { viewBounds, viewport } = props;
+	const { viewport, areaId } = props;
 	const { width, height } = viewport;
 
-	const onLeftMouseDown = (e: React.MouseEvent) => {
-		const { timelineState, compositionState } = getActionState();
-		const timelineIds = getTimelineIds(props.compositionId);
-		const timelines = timelineIds.map((id) => timelineState[id]);
-		const composition = compositionState.compositions[props.compositionId];
+	const renderCursor = useGraphEditorCursor(canvasRef, { viewport, areaId });
 
-		timelineHandlers.onMouseDown(e, {
-			timelineAreaId: props.areaId,
-			timelines,
-			length: composition.length,
-			viewBounds,
+	const onLeftMouseDown = (e: React.MouseEvent) => {
+		const { compositionState, compositionSelectionState } = getActionState();
+		const timelineIds = getSelectedTimelineIdsInComposition(
+			props.compositionId,
+			compositionState,
+			compositionSelectionState,
+		);
+
+		if (timelineIds.length === 0) {
+			return;
+		}
+
+		graphEditorHandlers.onMouseDown(e, {
+			areaId: props.areaId,
 			viewport,
 		});
 	};
 
 	const onRightMouseDown = (e: React.MouseEvent) => {
-		const timelineIds = getTimelineIds(props.compositionId);
-		openGraphEditorContextMenu(Vec2.fromEvent(e), { timelineIds });
+		const { compositionState, compositionSelectionState } = getActionState();
+		const { compositionId } = props;
+		const timelineIds = getSelectedTimelineIdsInComposition(
+			compositionId,
+			compositionState,
+			compositionSelectionState,
+		);
+		openGraphEditorContextMenu(Vec2.fromEvent(e), { timelineIds, compositionId });
+	};
+
+	const onMouseMove = (e: React.MouseEvent) => {
+		const { compositionState, compositionSelectionState } = getActionState();
+		const timelineIds = getSelectedTimelineIdsInComposition(
+			props.compositionId,
+			compositionState,
+			compositionSelectionState,
+		);
+
+		if (timelineIds.length === 0) {
+			if (canvasRef.current) {
+				canvasRef.current.style.cursor = "";
+			}
+			return;
+		}
+
+		renderCursor(e);
 	};
 
 	return (
@@ -159,9 +170,8 @@ const GraphEditorComponent: React.FC<Props> = (props) => {
 					left: onLeftMouseDown,
 					right: onRightMouseDown,
 				})}
+				onMouseMove={onMouseMove}
 			/>
 		</div>
 	);
 };
-
-export const GraphEditor = GraphEditorComponent;

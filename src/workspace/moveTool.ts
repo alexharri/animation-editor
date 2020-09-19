@@ -287,7 +287,7 @@ export const moveToolHandlers = {
 
 				for (const layerId of layerIds) {
 					const layer = compositionState.layers[layerId];
-					let moveVector = _moveVector.translated.copy();
+					let moveVector = _moveVector.normal.copy();
 
 					if (keyDown.Shift) {
 						if (Math.abs(moveVector.x) > Math.abs(moveVector.y)) {

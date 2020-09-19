@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { COMP_TIME_SCRUBBER_HEIGHT } from "~/constants";
-import { createToGraphEditorViewportX } from "~/graphEditor/renderGraphEditor";
+import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { connectActionState } from "~/state/stateUtils";
 import { renderTimelineScrubber } from "~/timeline/scrubber/renderTimelineScrubber";
 import TimelineScrubberStyles from "~/timeline/scrubber/TimelineScrubber.styles";
@@ -24,8 +24,8 @@ type Props = OwnProps & StateProps;
 const TimelineScrubberComponent: React.FC<Props> = (props) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
-	const toTimelineX = createToGraphEditorViewportX({
-		length: props.length,
+	const toTimelineX = createGraphEditorNormalToViewportX({
+		compositionLength: props.length,
 		viewBounds: props.viewBounds,
 		width: props.viewportRight.width,
 	});

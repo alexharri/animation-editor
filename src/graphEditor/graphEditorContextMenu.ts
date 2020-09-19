@@ -6,6 +6,7 @@ import { timelineOperations } from "~/timeline/operations/timelineOperations";
 
 interface Options {
 	timelineIds: string[];
+	compositionId: string;
 }
 
 export const openGraphEditorContextMenu = (position: Vec2, opts: Options) => {
@@ -15,7 +16,7 @@ export const openGraphEditorContextMenu = (position: Vec2, opts: Options) => {
 			beforeSubmit: (params) => params.dispatch(contextMenuActions.closeContextMenu()),
 		},
 		(params) => {
-			const { timelineIds } = opts;
+			const { timelineIds, compositionId } = opts;
 
 			const op = createOperation();
 
@@ -25,7 +26,7 @@ export const openGraphEditorContextMenu = (position: Vec2, opts: Options) => {
 				label: "Remove selected keyframes",
 				default: true,
 				onSelect: () => {
-					timelineOperations.removeSelectedKeyframes(op, timelineIds);
+					timelineOperations.removeSelectedKeyframes(op, timelineIds, compositionId);
 					params.dispatch(op.actions);
 					params.submitAction("Remove selected keyframes");
 				},
