@@ -1,5 +1,8 @@
-import React, { useRef } from "react";
+import React, { useContext, useRef } from "react";
+import { AreaIdContext } from "~/area/util/AreaIdContext";
+import { PickWhipIcon } from "~/components/icons/PickWhipIcon";
 import { CompositionLayer } from "~/composition/compositionTypes";
+import { getValidLayerParentLayerIds } from "~/composition/layer/layerUtils";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import {
 	SelectOneContextMenu,
@@ -8,17 +11,20 @@ import {
 import { cssVariables } from "~/cssVariables";
 import { useRefRect } from "~/hook/useRefRect";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
-import { timelineLayerParentHandlers } from "~/timeline/layer/timelineLayerParentHandlers";
+import { layerHandlers } from "~/timeline/layer/layerHandlers";
+import { layerOperations } from "~/timeline/layer/layerOperations";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	wrapper: css`
-		width: 98px;
+		width: 116px;
 		margin-right: 4px;
 		height: 16px;
 		position: relative;
+		display: flex;
 	`,
 
 	select: css`
@@ -28,14 +34,26 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		font: 400 11px/14px ${cssVariables.fontFamily};
 		border: none;
 		display: block;
-		width: 98px;
-		margin: 1px 0 0;
+		margin-top: 1px;
 		text-align: left;
 		padding: 0 6px;
 		border-radius: 4px;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		overflow-x: hidden;
+		width: 98px;
+		margin-right: 2px;
+	`,
+
+	pickWhipWrapper: css`
+		width: 16px;
+		height: 16px;
+
+		svg {
+			width: 16px;
+			height: 16px;
+			stroke: ${cssVariables.light300};
+		}
 	`,
 }));
 
@@ -53,13 +71,17 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 	const rect = useRefRect(ref)!;
 
 	const onRemoveParent = (params: RequestActionParams) => {
-		params.cancelAction(); // Close modal and open requestAction for the handler.
-		timelineLayerParentHandlers.onRemoveParent(props.layerId);
+		const op = createOperation();
+		layerOperations.removeLayerParentLayer(op, props.layerId);
+		params.dispatch(op.actions);
+		params.submitAction("Remove layer's parent layer");
 	};
 
 	const onSelectParent = (params: RequestActionParams, parentId: string) => {
-		params.cancelAction(); // Close modal and open requestAction for the handler.
-		timelineLayerParentHandlers.onSelectParent(props.layerId, parentId);
+		const op = createOperation();
+		layerOperations.setLayerParentLayer(op, props.layerId, parentId);
+		params.dispatch(op.actions);
+		params.submitAction("Set layer's parent layer");
 	};
 
 	const openContextMenu = () => {
@@ -73,33 +95,17 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 
 				const position = Vec2.new(rect.left, rect.top + rect.height);
 
-				const layer = compositionState.layers[props.layerId];
-				const composition = compositionState.compositions[layer.compositionId];
-				const layerIds = composition.layers.filter((id) => id !== layer.id);
-
-				const isReferencedBy = (layerId: string): boolean => {
-					const layer = compositionState.layers[layerId];
-					if (!layer.parentLayerId) {
-						return false;
-					}
-					if (layer.parentLayerId === props.layerId) {
-						return true;
-					}
-					return isReferencedBy(layer.parentLayerId);
-				};
+				const layerIds = getValidLayerParentLayerIds(props.layerId, compositionState);
 
 				const options = [
-					...layerIds
-						// Filter out potential circular references
-						.filter((layerId) => !isReferencedBy(layerId))
-						.map((layerId) => {
-							const layer = compositionState.layers[layerId];
-							return {
-								item: layer.id,
-								label: layer.name,
-								selected: layer.id === props.parentLayerId,
-							};
-						}),
+					...layerIds.map((layerId) => {
+						const layer = compositionState.layers[layerId];
+						return {
+							item: layer.id,
+							label: layer.name,
+							selected: layer.id === props.parentLayerId,
+						};
+					}),
 					{
 						item: "",
 						label: "None",
@@ -130,6 +136,12 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 		);
 	};
 
+	const areaId = useContext(AreaIdContext);
+
+	const onPickWhipMouseDown = (e: React.MouseEvent) => {
+		layerHandlers.onLayerParentWhipMouseDown(e, areaId, props.layerId);
+	};
+
 	return (
 		<div className={s("wrapper")} ref={ref}>
 			<div
@@ -139,6 +151,14 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 				})}
 			>
 				{props.parentLayerName}
+			</div>
+			<div
+				className={s("pickWhipWrapper")}
+				onMouseDown={separateLeftRightMouse({
+					left: onPickWhipMouseDown,
+				})}
+			>
+				<PickWhipIcon />
 			</div>
 		</div>
 	);
@@ -151,7 +171,7 @@ const mapState: MapActionState<StateProps, OwnProps> = ({ compositionState }, { 
 
 	return {
 		parentLayerId: layer.parentLayerId,
-		parentLayerName: parentLayer?.name ?? "Not selected",
+		parentLayerName: parentLayer?.name ?? "None",
 	};
 };
 

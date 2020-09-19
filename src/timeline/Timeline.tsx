@@ -5,6 +5,7 @@ import { GraphEditor } from "~/graphEditor/GraphEditor";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
+import { TimelineLayerParentPickWhipPreview } from "~/timeline/layer/TimelineLayerParentPickWhipPreview";
 import { TimelineScrubber } from "~/timeline/scrubber/TimelineScrubber";
 import styles from "~/timeline/Timeline.styles";
 import { timelineAreaActions, TimelineAreaState } from "~/timeline/timelineAreaReducer";
@@ -173,6 +174,12 @@ const TimelineComponent: React.FC<Props> = (props) => {
 				<TimelineLayerList
 					compositionId={compositionId}
 					moveLayers={props.areaState.moveLayers}
+					panY={props.areaState.panY}
+				/>
+				<TimelineLayerParentPickWhipPreview
+					pickWhipLayerParent={props.areaState.pickWhipLayerParent}
+					viewport={viewportLeft}
+					compositionId={compositionId}
 					panY={props.areaState.panY}
 				/>
 			</div>

@@ -83,10 +83,10 @@ const performRequestedAction = (
 	};
 	_cancelAction = cancelAction;
 
+	store.dispatch(historyActions.startAction(actionId));
+
 	const escToken = addListener.keyboardOnce("Esc", "keydown", cancelAction);
 	cancelTokens.push(escToken);
-
-	store.dispatch(historyActions.startAction(actionId));
 
 	const dispatch: RequestActionParams["dispatch"] = (action, ...args) => {
 		if (Array.isArray(action)) {
