@@ -143,20 +143,6 @@ export const GraphEditor: React.FC<Props> = (props) => {
 	};
 
 	const onMouseMove = (e: React.MouseEvent) => {
-		const { compositionState, compositionSelectionState } = getActionState();
-		const timelineIds = getSelectedTimelineIdsInComposition(
-			props.compositionId,
-			compositionState,
-			compositionSelectionState,
-		);
-
-		if (timelineIds.length === 0) {
-			if (canvasRef.current) {
-				canvasRef.current.style.cursor = "";
-			}
-			return;
-		}
-
 		renderCursor(e);
 	};
 

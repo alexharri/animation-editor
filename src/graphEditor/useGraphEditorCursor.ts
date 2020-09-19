@@ -1,9 +1,12 @@
 import { useRef } from "react";
+import { AreaType } from "~/constants";
 import { cssCursors } from "~/cssVariables";
 import { constructGraphEditorContext } from "~/graphEditor/graphEditorContext";
 import { getGraphEditorTimelineTargetObject } from "~/graphEditor/graphEditorUtils";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { isKeyDown } from "~/listener/keyboard";
+import { getActionState, getAreaActionState } from "~/state/stateUtils";
+import { getSelectedTimelineIdsInComposition } from "~/timeline/timelineUtils";
 
 interface Options {
 	areaId: string;
@@ -16,6 +19,20 @@ interface Options {
 
 const render = (e: React.MouseEvent, canvas: HTMLCanvasElement, opts: Options) => {
 	const { areaId, keyDown, viewport } = opts;
+
+	const { compositionState, compositionSelectionState } = getActionState();
+	const { compositionId } = getAreaActionState<AreaType.Timeline>(areaId);
+	const timelineIds = getSelectedTimelineIdsInComposition(
+		compositionId,
+		compositionState,
+		compositionSelectionState,
+	);
+
+	if (timelineIds.length === 0) {
+		canvas.style.cursor = "";
+		return;
+	}
+
 	const ctx = constructGraphEditorContext(Vec2.fromEvent(e), areaId, viewport);
 	const { timelines } = ctx;
 
