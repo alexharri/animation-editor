@@ -3,10 +3,10 @@ export interface ContextMenuBaseProps {
 }
 
 export interface OpenCustomContextMenuOptions<
-	T extends ContextMenuBaseProps = ContextMenuBaseProps
+	P extends ContextMenuBaseProps = ContextMenuBaseProps
 > {
-	component: React.ComponentType<T>;
-	props: Omit<T, "updateRect">;
+	component: React.ComponentType<P>;
+	props: Omit<P, "updateRect">;
 	position: Vec2;
 	alignPosition?: "top-left" | "bottom-left" | "center";
 	closeMenuBuffer?: number;

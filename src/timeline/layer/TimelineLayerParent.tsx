@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useRef } from "react";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
+import {
+	SelectOneContextMenu,
+	SelectOneContextMenuProps,
+} from "~/contextMenu/selectOne/SelectOneContextMenu";
+import { cssVariables } from "~/cssVariables";
+import { useRefRect } from "~/hook/useRefRect";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { connectActionState, getActionState } from "~/state/stateUtils";
 import { timelineLayerParentHandlers } from "~/timeline/layer/timelineLayerParentHandlers";
@@ -15,17 +21,21 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		position: relative;
 	`,
 
-	name: css`
-		font-size: 11px;
-		color: #bbb;
-		line-height: 16px;
-		padding: 0 3px;
-		border-radius: 3px;
-		cursor: default;
-		overflow-x: hidden;
+	select: css`
+		height: 14px;
+		background: ${cssVariables.dark500};
+		color: ${cssVariables.light500};
+		font: 400 11px/14px ${cssVariables.fontFamily};
+		border: none;
+		display: block;
+		width: 98px;
+		margin: 1px 0 0;
+		text-align: left;
+		padding: 0 6px;
+		border-radius: 4px;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		overflow-y: hidden;
+		overflow-x: hidden;
 	`,
 }));
 
@@ -39,6 +49,9 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const TimelineLayerParentComponent: React.FC<Props> = (props) => {
+	const ref = useRef<HTMLDivElement>(null);
+	const rect = useRefRect(ref)!;
+
 	const onRemoveParent = (params: RequestActionParams) => {
 		params.cancelAction(); // Close modal and open requestAction for the handler.
 		timelineLayerParentHandlers.onRemoveParent(props.layerId);
@@ -49,41 +62,80 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 		timelineLayerParentHandlers.onSelectParent(props.layerId, parentId);
 	};
 
-	return (
-		<div className={s("wrapper")}>
-			<div
-				className={s("name")}
-				onMouseDown={separateLeftRightMouse({
-					left: (e) => {
-						requestAction({ history: true }, (params) => {
-							const { compositionState } = getActionState();
+	const openContextMenu = () => {
+		requestAction(
+			{
+				history: true,
+				beforeSubmit: (params) => params.dispatch(contextMenuActions.closeContextMenu()),
+			},
+			(params) => {
+				const { compositionState } = getActionState();
 
-							const layer = compositionState.layers[props.layerId];
-							const composition = compositionState.compositions[layer.compositionId];
-							const layerIds = composition.layers.filter((id) => id !== layer.id);
+				const position = Vec2.new(rect.left, rect.top + rect.height);
 
-							params.dispatch(
-								contextMenuActions.openContextMenu(
-									"Parent",
-									[
-										{
-											label: "None",
-											onSelect: () => onRemoveParent(params),
-										},
-										...layerIds.map((layerId) => {
-											const layer = compositionState.layers[layerId];
-											return {
-												label: layer.name,
-												onSelect: () => onSelectParent(params, layerId),
-											};
-										}),
-									],
-									Vec2.fromEvent(e),
-									params.cancelAction,
-								),
-							);
-						});
+				const layer = compositionState.layers[props.layerId];
+				const composition = compositionState.compositions[layer.compositionId];
+				const layerIds = composition.layers.filter((id) => id !== layer.id);
+
+				const isReferencedBy = (layerId: string): boolean => {
+					const layer = compositionState.layers[layerId];
+					if (!layer.parentLayerId) {
+						return false;
+					}
+					if (layer.parentLayerId === props.layerId) {
+						return true;
+					}
+					return isReferencedBy(layer.parentLayerId);
+				};
+
+				const options = [
+					...layerIds
+						// Filter out potential circular references
+						.filter((layerId) => !isReferencedBy(layerId))
+						.map((layerId) => {
+							const layer = compositionState.layers[layerId];
+							return {
+								item: layer.id,
+								label: layer.name,
+								selected: layer.id === props.parentLayerId,
+							};
+						}),
+					{
+						item: "",
+						label: "None",
+						selected: !props.parentLayerId,
 					},
+				];
+
+				params.dispatch(
+					contextMenuActions.openCustomContextMenu<SelectOneContextMenuProps<string>>({
+						close: params.cancelAction,
+						component: SelectOneContextMenu,
+						position,
+						props: {
+							options: options,
+							onSelect: (parentId) => {
+								if (!parentId) {
+									onRemoveParent(params);
+									return;
+								}
+								onSelectParent(params, parentId);
+							},
+						},
+						alignPosition: "bottom-left",
+						closeMenuBuffer: 64,
+					}),
+				);
+			},
+		);
+	};
+
+	return (
+		<div className={s("wrapper")} ref={ref}>
+			<div
+				className={s("select")}
+				onMouseDown={separateLeftRightMouse({
+					left: openContextMenu,
 				})}
 			>
 				{props.parentLayerName}

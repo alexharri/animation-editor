@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CONTEXT_MENU_OPTION_HEIGHT, DEFAULT_CONTEXT_MENU_WIDTH } from "~/constants";
-import styles from "~/contextMenu/ContextMenu.styles";
 import {
 	ContextMenuActionOption,
 	ContextMenuListOption,
 	ContextMenuOption,
 	ContextMenuState,
 } from "~/contextMenu/contextMenuReducer";
+import styles from "~/contextMenu/normal/NormalContextMenu.styles";
 import { connectActionState } from "~/state/stateUtils";
 import { boundingRectOfRects, isVecInRect } from "~/util/math";
 import { compileStylesheet } from "~/util/stylesheets";
@@ -18,7 +18,7 @@ type Props = ContextMenuState;
 const CLOSE_MENU_BUFFER = 100;
 const REDUCE_STACK_BUFFER = 64;
 
-const ContextMenuComponent: React.FC<Props> = (props) => {
+const NormalContextMenuComponent: React.FC<Props> = (props) => {
 	const [rect, setRect] = useState<Rect | null>(null);
 	const [reduceStackRect, setReduceStackRect] = useState<Rect | null>(null);
 	const [stack, setStack] = useState<
@@ -205,4 +205,6 @@ const ContextMenuComponent: React.FC<Props> = (props) => {
 	);
 };
 
-export const ContextMenu = connectActionState((state) => state.contextMenu)(ContextMenuComponent);
+export const NormalContextMenu = connectActionState((state) => state.contextMenu)(
+	NormalContextMenuComponent,
+);
