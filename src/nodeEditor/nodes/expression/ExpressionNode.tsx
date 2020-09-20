@@ -1,13 +1,12 @@
 import React from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
+import { NodeBody } from "~/nodeEditor/components/NodeBody";
+import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
+import { ExpressionNodeTextarea } from "~/nodeEditor/nodes/expression/ExpressionNodeTextarea";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
+import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
-import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
-import { expressionNodeHandlers } from "~/nodeEditor/nodes/expression/expressionNodeHandlers";
-import { NodeBody } from "~/nodeEditor/components/NodeBody";
-import { ExpressionNodeTextarea } from "~/nodeEditor/nodes/expression/ExpressionNodeTextarea";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -19,6 +18,7 @@ interface OwnProps {
 interface StateProps {
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
+	nodeWidth: number;
 }
 
 type Props = OwnProps & StateProps;
@@ -27,7 +27,7 @@ function ExpressionNodeComponent(props: Props) {
 	const { areaId, graphId, nodeId, outputs, inputs } = props;
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} allowResize={false}>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -51,19 +51,7 @@ function ExpressionNodeComponent(props: Props) {
 				<ExpressionNodeTextarea
 					nodeId={nodeId}
 					graphId={graphId}
-					className={s("expressionTextarea")}
-				/>
-				<div
-					className={s("expressionTextarea__resize")}
-					onMouseDown={separateLeftRightMouse({
-						left: (e) =>
-							expressionNodeHandlers.onTextareaHeightResizeMouseDown(
-								e,
-								props.areaId,
-								props.graphId,
-								props.nodeId,
-							),
-					})}
+					nodeWidth={props.nodeWidth}
 				/>
 			</div>
 			{inputs.map((input, i) => {
@@ -108,6 +96,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	return {
 		inputs: node.inputs,
 		outputs: node.outputs,
+		nodeWidth: node.width,
 	};
 };
 

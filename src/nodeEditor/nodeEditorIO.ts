@@ -1,3 +1,4 @@
+import { EXPR_TEXTAREA_HEIGHT_BUFFER, EXPR_TEXTAREA_MIN_HEIGHT } from "~/constants";
 import { NodeEditorNodeType, RGBAColor, ValueType } from "~/types";
 
 export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEditorNodeInput[] => {
@@ -379,7 +380,10 @@ export const getNodeEditorNodeDefaultOutputs = (
 export const getNodeEditorNodeDefaultState = <T extends NodeEditorNodeType>(type: T): any => {
 	switch (type) {
 		case NodeEditorNodeType.expr:
-			return { expression: "", textareaHeight: 80 } as NodeEditorNodeStateMap["expr"];
+			return {
+				expression: "",
+				textareaHeight: EXPR_TEXTAREA_MIN_HEIGHT + EXPR_TEXTAREA_HEIGHT_BUFFER,
+			} as NodeEditorNodeStateMap["expr"];
 
 		case NodeEditorNodeType.num_input:
 			return { value: 0, type: "value" };

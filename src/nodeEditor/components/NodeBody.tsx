@@ -1,10 +1,10 @@
 import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
-import { separateLeftRightMouse } from "~/util/mouse";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
-import { NodeEditorNodeType } from "~/types";
 import { connectActionState } from "~/state/stateUtils";
+import { NodeEditorNodeType } from "~/types";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -12,6 +12,7 @@ interface OwnProps {
 	areaId: string;
 	graphId: string;
 	nodeId: string;
+	allowResize?: boolean;
 	children: React.ReactNode;
 }
 interface StateProps {
@@ -24,7 +25,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const NodeBodyComponent: React.FC<Props> = (props) => {
-	const { top, left, width, type, nodeId } = props;
+	const { top, left, width, type, nodeId, allowResize = true } = props;
 	const { selected } = props;
 
 	return (
@@ -40,18 +41,20 @@ const NodeBodyComponent: React.FC<Props> = (props) => {
 				{type} ({nodeId})
 			</div>
 			{props.children}
-			<div
-				className={s("widthResize")}
-				onMouseDown={separateLeftRightMouse({
-					left: (e) =>
-						nodeHandlers.onWidthResizeMouseDown(
-							e,
-							props.areaId,
-							props.graphId,
-							props.nodeId,
-						),
-				})}
-			/>
+			{allowResize && (
+				<div
+					className={s("widthResize")}
+					onMouseDown={separateLeftRightMouse({
+						left: (e) =>
+							nodeHandlers.onWidthResizeMouseDown(
+								e,
+								props.areaId,
+								props.graphId,
+								props.nodeId,
+							),
+					})}
+				/>
+			)}
 		</div>
 	);
 };

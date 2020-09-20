@@ -28,7 +28,7 @@ export const cssVariables = {
 
 	toolbarHeight: `${TOOLBAR_HEIGHT}px`,
 	fontFamily: "'Open sans', sans-serif",
-	fontMonospace: "'Roboto Mono', monospace",
+	fontMonospace: "'Source Code Pro', monospace",
 };
 
 export const cssCursors = {
