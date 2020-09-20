@@ -6,7 +6,7 @@ import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { nodeValidInputToOutputsMap } from "~/nodeEditor/nodeEditorIO";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
+import { nodeEditorGlobalToNormal } from "~/nodeEditor/nodeEditorUtils";
 import {
 	calculateNodeInputPosition,
 	calculateNodeOutputPosition,
@@ -134,7 +134,7 @@ export const nodeHandlers = {
 		const { pan, scale } = getAreaActionState<AreaType.NodeEditor>(areaId);
 		const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 		const transformMousePosition = (mousePosition: Vec2) =>
-			transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+			nodeEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
 		const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
 
@@ -205,7 +205,7 @@ export const nodeHandlers = {
 
 				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 				const transformMousePosition = (mousePosition: Vec2) =>
-					transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+					nodeEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
 				const allNodeInputsOfType = getAllValidInputsForType(graph, nodeId, outputIndex);
 
@@ -273,7 +273,7 @@ export const nodeHandlers = {
 
 			const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 			const transformMousePosition = (mousePosition: Vec2) =>
-				transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+				nodeEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
 			const allNodeOutputsOfType = getAllOutputsOfType(graph, nodeId, inputIndex);
 
@@ -341,7 +341,7 @@ export const nodeHandlers = {
 
 			const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 			const transformMousePosition = (mousePosition: Vec2) =>
-				transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+				nodeEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
 			const pointer = graph.nodes[nodeId].inputs[inputIndex].pointer;
 
@@ -423,7 +423,7 @@ export const nodeHandlers = {
 		const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 
 		const transformMousePosition = (mousePosition: Vec2) =>
-			transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+			nodeEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
 		const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
 

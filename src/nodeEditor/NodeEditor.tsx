@@ -7,7 +7,7 @@ import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { NodeEditorConnections } from "~/nodeEditor/NodeEditorConnections";
 import { nodeEditorHandlers } from "~/nodeEditor/nodeEditorHandlers";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
-import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
+import { nodeEditorGlobalToNormal } from "~/nodeEditor/nodeEditorUtils";
 import { ArrayModifierIndexNode } from "~/nodeEditor/nodes/arrayModifier/ArrayModifierIndexNode";
 import { ColorInputNode } from "~/nodeEditor/nodes/color/ColorInputNode";
 import { ExpressionNode } from "~/nodeEditor/nodes/expression/ExpressionNode";
@@ -76,12 +76,7 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 				const {
 					areaState: { pan, scale },
 				} = props;
-				const pos = transformGlobalToNodeEditorPosition(
-					Vec2.fromEvent(e),
-					props,
-					scale,
-					pan,
-				);
+				const pos = nodeEditorGlobalToNormal(Vec2.fromEvent(e), props, scale, pan);
 				setClickCapturePos(pos);
 			};
 

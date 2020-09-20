@@ -1,12 +1,11 @@
+import { getAreaViewport } from "~/area/util/getAreaViewport";
+import { AreaType, NODE_EDITOR_EXPRESSION_NODE_MIN_TEXTAREA_HEIGHT } from "~/constants";
 import { requestAction } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { getActionState, getAreaActionState } from "~/state/stateUtils";
-
-import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
-import { getDistance } from "~/util/math";
-import { NODE_EDITOR_EXPRESSION_NODE_MIN_TEXTAREA_HEIGHT, AreaType } from "~/constants";
+import { nodeEditorGlobalToNormal } from "~/nodeEditor/nodeEditorUtils";
 import { NODE_HEIGHT_CONSTANTS } from "~/nodeEditor/util/calculateNodeHeight";
-import { getAreaViewport } from "~/area/util/getAreaViewport";
+import { getActionState, getAreaActionState } from "~/state/stateUtils";
+import { getDistance } from "~/util/math";
 
 export const expressionNodeHandlers = {
 	onTextareaHeightResizeMouseDown: (
@@ -19,7 +18,7 @@ export const expressionNodeHandlers = {
 		const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 
 		const transformMousePosition = (mousePosition: Vec2) =>
-			transformGlobalToNodeEditorPosition(mousePosition, viewport, scale, pan);
+			nodeEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
 		const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
 

@@ -1,10 +1,9 @@
-import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
+import React, { useRef } from "react";
 import { cssZIndex } from "~/cssVariables";
-import { useRef } from "react";
-import { AreaComponentProps } from "~/types/areaTypes";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
 import { connectActionState } from "~/state/stateUtils";
+import { AreaComponentProps } from "~/types/areaTypes";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 type OwnProps = AreaComponentProps<NodeEditorAreaState>;
 interface StateProps {
@@ -42,8 +41,8 @@ const NodeEditorDragSelectComponent: React.FC<Props> = (props) => {
 		.scale(props.areaState.scale)
 		.add(props.areaState.pan)
 		.add(Vec2.new(props.width / 2, props.height / 2));
-	const width = rect.width / props.areaState.scale;
-	const height = rect.height / props.areaState.scale;
+	const width = rect.width * props.areaState.scale;
+	const height = rect.height * props.areaState.scale;
 
 	return (
 		<div className={s("target")} ref={ref}>
@@ -53,7 +52,9 @@ const NodeEditorDragSelectComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ nodeEditor }, props) => {
-	return { rect: nodeEditor.graphs[props.areaState.graphId]._dragSelectRect };
+	return {
+		rect: nodeEditor.graphs[props.areaState.graphId]._dragSelectRect,
+	};
 };
 
 export const NodeEditorDragSelect = connectActionState(mapStateToProps)(

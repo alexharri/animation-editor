@@ -1,13 +1,13 @@
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { removeKeysFromMap } from "~/util/mapUtils";
 
-export const transformGlobalToNodeEditorPosition = (
-	globalPos: Vec2,
+export const nodeEditorGlobalToNormal = (
+	globalPosition: Vec2,
 	viewport: Rect,
 	scale: number,
 	pan: Vec2,
 ): Vec2 => {
-	let { x, y } = globalPos;
+	let { x, y } = globalPosition;
 	x -= viewport.left;
 	y -= viewport.top;
 	x /= scale;
@@ -19,7 +19,7 @@ export const transformGlobalToNodeEditorPosition = (
 	return Vec2.new(x, y);
 };
 
-export const transformGlobalToNodeEditorRect = (
+export const nodeEditorGlobalToNormalRect = (
 	globalRect: Rect,
 	viewport: Rect,
 	scale: number,

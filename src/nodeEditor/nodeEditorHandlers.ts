@@ -5,11 +5,12 @@ import { isKeyDown } from "~/listener/keyboard";
 import { requestAction } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { nodeEditorAreaActions } from "~/nodeEditor/nodeEditorAreaActions";
-import { transformGlobalToNodeEditorRect } from "~/nodeEditor/nodeEditorUtils";
+import { nodeEditorGlobalToNormal } from "~/nodeEditor/nodeEditorUtils";
 import { getNodeEditorContextMenuOptions } from "~/nodeEditor/util/nodeEditorContextMenu";
 import { createViewportWheelHandlers } from "~/shared/viewport/viewportWheelHandlers";
+import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { clearElementFocus } from "~/util/focus";
-import { getDistance, rectOfTwoVecs } from "~/util/math";
+import { rectOfTwoVecs } from "~/util/math";
 
 export const nodeEditorHandlers = {
 	onLeftClickOutside: (
@@ -19,43 +20,29 @@ export const nodeEditorHandlers = {
 		scale: number,
 		pan: Vec2,
 	) => {
-		const initialMousePos = Vec2.fromEvent(e);
+		const isAdditiveSelection = isKeyDown("Shift");
+		const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
 
-		requestAction({ history: true }, ({ addListener, dispatch, submitAction }) => {
-			let hasMoved = false;
-
-			addListener.repeated("mousemove", (e) => {
-				const mousePos = Vec2.fromEvent(e);
+		mouseDownMoveAction(e, {
+			translate: (vec) => nodeEditorGlobalToNormal(vec, viewport, scale, pan),
+			keys: [],
+			beforeMove: () => {},
+			mouseMove: (params, { initialMousePosition, mousePosition }) => {
+				const rect = rectOfTwoVecs(initialMousePosition.normal, mousePosition.normal);
+				params.dispatch(nodeEditorActions.setDragSelectRect(graphId, rect));
+			},
+			mouseUp: (params, hasMoved) => {
 				if (!hasMoved) {
-					// We don't consider the mouse to be "moved" until the mouse has moved at least
-					// 5px from where it was initially.
-					if (getDistance(initialMousePos, mousePos) > 5 / scale) {
-						hasMoved = true;
-					} else {
-						return;
-					}
+					params.dispatch(nodeEditorActions.clearNodeSelection(graphId));
+					params.submitAction("Modify selection");
+					return;
 				}
 
-				const viewport = getAreaViewport(areaId, AreaType.NodeEditor);
-				const rect = transformGlobalToNodeEditorRect(
-					rectOfTwoVecs(initialMousePos, mousePos),
-					viewport,
-					scale,
-					pan,
+				params.dispatch(
+					nodeEditorActions.submitDragSelectRect(graphId, isAdditiveSelection),
 				);
-				dispatch(nodeEditorActions.setDragSelectRect(graphId, rect));
-			});
-
-			addListener.once("mouseup", () => {
-				if (hasMoved) {
-					const isAdditiveSelection = isKeyDown("Shift");
-					dispatch(nodeEditorActions.submitDragSelectRect(graphId, isAdditiveSelection));
-					submitAction("Modify selection");
-				} else {
-					dispatch(nodeEditorActions.clearNodeSelection(graphId));
-					submitAction("Modify selection");
-				}
-			});
+				params.submitAction("Modify selection");
+			},
 		});
 	},
 

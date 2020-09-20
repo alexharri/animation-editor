@@ -1,13 +1,13 @@
 import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { DEFAULT_NODE_EDITOR_NODE_WIDTH } from "~/constants";
 import {
 	getNodeEditorNodeDefaultInputs,
 	getNodeEditorNodeDefaultOutputs,
 	NodeEditorNodeIO,
 } from "~/nodeEditor/nodeEditorIO";
+import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { NodeEditorNodeType } from "~/types";
-import { DEFAULT_NODE_EDITOR_NODE_WIDTH } from "~/constants";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 

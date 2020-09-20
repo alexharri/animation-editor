@@ -191,7 +191,7 @@ const getIndexTransformMapAbsoluteForComputed = (
 				break;
 			}
 			case PropertyName.Rotation: {
-				transform.rotation = 1;
+				transform.rotation = 0;
 				break;
 			}
 			case PropertyName.Scale: {

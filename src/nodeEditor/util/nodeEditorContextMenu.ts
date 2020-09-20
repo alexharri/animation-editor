@@ -5,7 +5,7 @@ import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
 import { RequestActionParams } from "~/listener/requestAction";
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
-import { transformGlobalToNodeEditorPosition } from "~/nodeEditor/nodeEditorUtils";
+import { nodeEditorGlobalToNormal } from "~/nodeEditor/nodeEditorUtils";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { NodeEditorNodeType, PropertyGroupName } from "~/types";
 
@@ -61,12 +61,7 @@ export const getNodeEditorContextMenuOptions = (options: Options) => {
 			if (!e) {
 				return;
 			}
-			const pos = transformGlobalToNodeEditorPosition(
-				Vec2.fromEvent(e),
-				viewport,
-				scale,
-				pan,
-			);
+			const pos = nodeEditorGlobalToNormal(Vec2.fromEvent(e), viewport, scale, pan);
 			dispatch(nodeEditorActions.submitAddNode(graphId, pos));
 			submitAction("Add node");
 		};
