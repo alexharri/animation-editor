@@ -70,7 +70,7 @@ export const createApplicationStateFromActionState = (
 		),
 		compositionState: toHistoryBasedState(actionState.compositionState),
 		contextMenu: toActionBasedState(actionState.contextMenu),
-		nodeEditor: toHistoryBasedState(actionState.nodeEditor),
+		flowState: toHistoryBasedState(actionState.flowState),
 		project: toHistoryBasedState(actionState.project),
 		shapeState: toHistoryBasedState(actionState.shapeState),
 		shapeSelectionState: toHistoryBasedState(actionState.shapeSelectionState, "selection"),

@@ -58,7 +58,7 @@ class AreaErrorBoundaryComponent extends React.Component<Props> {
 	};
 
 	static getDerivedStateFromError(error: any): Partial<State> {
-		const historyIndex = store.getState().nodeEditor.index;
+		const historyIndex = store.getState().flowState.index;
 		return {
 			errorAtHistoryIndex: historyIndex,
 			error,
@@ -117,6 +117,6 @@ class AreaErrorBoundaryComponent extends React.Component<Props> {
 }
 
 const mapState = (state: ApplicationState): StateProps => ({
-	historyIndex: state.nodeEditor.index,
+	historyIndex: state.flowState.index,
 });
 export const AreaErrorBoundary = connect(mapState)(AreaErrorBoundaryComponent);

@@ -1,5 +1,7 @@
-import { StyleParams } from "~/util/stylesheets";
+import { FLOW_NODE_H_PADDING_ADDITIONAL } from "~/constants";
 import { cssVariables } from "~/cssVariables";
+import { hexToRGBAString } from "~/util/color/convertColor";
+import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	button: css`
@@ -33,16 +35,39 @@ export default ({ css }: StyleParams) => ({
 		&--computed {
 			color: red;
 		}
+
+		&--flowEditor {
+			color: ${cssVariables.white500};
+			background-color: ${hexToRGBAString(cssVariables.gray700, 0.4)};
+			padding-left: ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
+			padding-right: ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
+
+			&:hover {
+				background-color: ${hexToRGBAString(cssVariables.gray800, 0.5)};
+			}
+
+			&:active {
+				background-color: ${hexToRGBAString(cssVariables.gray700, 0.4)};
+			}
+		}
 	`,
 
 	button__label: css`
 		flex-grow: 0;
 		text-overflow: ellipsis;
+
+		&--flowEditor {
+			font-size: 12px;
+		}
 	`,
 
 	button__value: css`
 		flex-grow: 1;
 		text-align: right;
+
+		&--flowEditor {
+			font-size: 12px;
+		}
 	`,
 
 	container: css`
@@ -80,6 +105,12 @@ export default ({ css }: StyleParams) => ({
 		&::selection {
 			color: white;
 			background: ${cssVariables.primary700};
+		}
+
+		&--flowEditor {
+			padding-left: ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
+			padding-right: ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
+			font-size: 12px;
 		}
 	`,
 });

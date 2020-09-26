@@ -7,27 +7,29 @@ import {
 	getLayerArrayModifierCountPropertyId,
 	getLayerArrayModifiers,
 } from "~/composition/util/compositionPropertyUtils";
+import { FlowState } from "~/flow/flowReducers";
 import {
-	ComputeNodeArg,
-	ComputeNodeContext,
-	computeNodeOutputArgs,
-} from "~/nodeEditor/graph/computeNode";
-import { NodeEditorNode } from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorGraphState, NodeEditorState } from "~/nodeEditor/nodeEditorReducers";
+	FlowComputeContext,
+	FlowComputeNodeArg,
+	FlowGraph,
+	FlowNode,
+	FlowNodeType,
+} from "~/flow/flowTypes";
+import { computeNodeOutputArgs } from "~/flow/graph/computeNode";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
-import { AffineTransform, CompositionRenderValues, LayerType, NodeEditorNodeType } from "~/types";
+import { AffineTransform, CompositionRenderValues, LayerType } from "~/types";
 
-function getGraphOutputNodes(graph: NodeEditorGraphState) {
-	const outputNodes: NodeEditorNode<NodeEditorNodeType.property_output>[] = [];
+function getGraphOutputNodes(graph: FlowGraph) {
+	const outputNodes: FlowNode<FlowNodeType.property_output>[] = [];
 	for (const key in graph.nodes) {
 		const node = graph.nodes[key];
 
-		if (node.type === NodeEditorNodeType.property_output) {
-			outputNodes.push(node as NodeEditorNode<NodeEditorNodeType.property_output>);
+		if (node.type === FlowNodeType.property_output) {
+			outputNodes.push(node as FlowNode<FlowNodeType.property_output>);
 		}
 	}
 	return outputNodes;
@@ -40,13 +42,13 @@ function getGraphOutputNodes(graph: NodeEditorGraphState) {
  * create right now.
  */
 function getGraphNodesToCompute(
-	outputNodes: NodeEditorNode<NodeEditorNodeType.property_output>[],
-	graph: NodeEditorGraphState,
+	outputNodes: FlowNode<FlowNodeType.property_output>[],
+	graph: FlowGraph,
 ) {
 	const visitedNodes = new Set<string>();
 	const toCompute: string[] = [];
 
-	function dfs(node: NodeEditorNode<any>) {
+	function dfs(node: FlowNode<any>) {
 		if (visitedNodes.has(node.id)) {
 			return;
 		}
@@ -78,7 +80,7 @@ interface Context {
 	};
 	timelineState: TimelineState;
 	timelineSelectionState: TimelineSelectionState;
-	graphs: NodeEditorState["graphs"];
+	graphs: FlowState["graphs"];
 	frameIndex: number;
 }
 
@@ -153,7 +155,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 
 		// Compute property values from layer graphs
 		for (const layerId of composition.layers) {
-			const computed: { [nodeId: string]: ComputeNodeArg[] } = {};
+			const computed: { [nodeId: string]: FlowComputeNodeArg[] } = {};
 			const layer = compositionState.layers[layerId];
 
 			if (!layer.graphId) {
@@ -169,7 +171,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 
 			const toCompute = getGraphNodesToCompute(outputNodes, graph);
 
-			const ctx: ComputeNodeContext = {
+			const ctx: FlowComputeContext = {
 				compositionId: layer.compositionId,
 				compositionState,
 				computed,
@@ -257,9 +259,9 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 				for (let i = 0; i < count; i++) {
 					const toCompute = getGraphNodesToCompute(outputNodes, graph);
 
-					const computed: { [nodeId: string]: ComputeNodeArg[] } = {};
+					const computed: { [nodeId: string]: FlowComputeNodeArg[] } = {};
 
-					const ctx: ComputeNodeContext = {
+					const ctx: FlowComputeContext = {
 						compositionId: layer.compositionId,
 						compositionState,
 						computed,
@@ -420,7 +422,7 @@ export const getCompositionRenderValues = (
 	const context: Context = {
 		compositionId,
 		compositionState: state.compositionState,
-		graphs: state.nodeEditor.graphs,
+		graphs: state.flowState.graphs,
 		timelineSelectionState: state.timelineSelectionState,
 		timelineState: state.timelineState,
 		container,

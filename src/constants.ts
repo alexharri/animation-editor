@@ -89,7 +89,7 @@ export const toolGroups: Array<Array<{ tool: Tool }>> = [
 ];
 
 export enum AreaType {
-	NodeEditor = "node_editor",
+	FlowEditor = "flow",
 	Timeline = "composition_timeline",
 	Workspace = "composition_workspace",
 	History = "history",
@@ -103,10 +103,10 @@ export enum TimelineColors {
 	Height = "#EE30F2",
 }
 
-export const DEFAULT_NODE_EDITOR_NODE_WIDTH = 128;
-export const NODE_EDITOR_MIN_NODE_WIDTH = 64;
-export const NODE_EDITOR_EXPRESSION_NODE_MIN_TEXTAREA_HEIGHT = 24;
-export const NODE_EDITOR_NODE_H_PADDING = 12;
+export const DEFAULT_FLOW_NODE_WIDTH = 128;
+export const FLOW_NODE_MIN_WIDTH = 64;
+export const FLOW_NODE_H_PADDING_BASE = 8;
+export const FLOW_NODE_H_PADDING_ADDITIONAL = 4;
 
 export const DEFAULT_CONTEXT_MENU_WIDTH = 180;
 export const CONTEXT_MENU_OPTION_HEIGHT = 20;
@@ -134,3 +134,10 @@ export const TIMELINE_ITEM_HEIGHT = TIMELINE_LAYER_HEIGHT + TIMELINE_BETWEEN_LAY
 export const TIMELINE_SEPARATOR_WIDTH = 2;
 
 export const TRACKPAD_ZOOM_DELTA_FAC = 1 / 7;
+
+export const EXPR_TEXTAREA_H_PADDING = 8;
+export const EXPR_TEXTAREA_V_PADDING = 4;
+export const EXPR_TEXTAREA_LINE_HEIGHT = 16;
+export const EXPR_TEXTAREA_MIN_WIDTH = DEFAULT_FLOW_NODE_WIDTH - EXPR_TEXTAREA_H_PADDING * 2;
+export const EXPR_TEXTAREA_MIN_HEIGHT = EXPR_TEXTAREA_LINE_HEIGHT + EXPR_TEXTAREA_V_PADDING * 2;
+export const EXPR_TEXTAREA_HEIGHT_BUFFER = 8;

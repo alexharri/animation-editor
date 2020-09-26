@@ -1,5 +1,7 @@
 import { parse } from "mathjs";
 
+const defaultSymbols = new Set(["pi", "PI"]);
+
 interface AccessorNode {
 	type: "AccessorNode";
 	object: Node;
@@ -213,7 +215,7 @@ export const getExpressionIO = (expression: string) => {
 					break;
 				}
 
-				if (!hasBeenAssigned.has(node.name)) {
+				if (!hasBeenAssigned.has(node.name) && !defaultSymbols.has(node.name)) {
 					inputs.add(node.name);
 				}
 				break;

@@ -58,7 +58,7 @@ export default ({ css }: StyleParams) => ({
 		right: 0;
 		bottom: 0;
 		cursor: ${cssCursors.grab.default};
-		z-index: ${cssZIndex.nodeEditor.panTarget};
+		z-index: ${cssZIndex.flowEditor.panTarget};
 	`,
 
 	zoomTarget: css`
@@ -69,7 +69,7 @@ export default ({ css }: StyleParams) => ({
 		right: 0;
 		bottom: 0;
 		cursor: ${cssCursors.zoom.zoomIn};
-		z-index: ${cssZIndex.nodeEditor.zoomTarget};
+		z-index: ${cssZIndex.flowEditor.zoomTarget};
 	`,
 
 	clickCaptureTarget: css`
@@ -80,7 +80,7 @@ export default ({ css }: StyleParams) => ({
 		right: 0;
 		bottom: 0;
 		cursor: none;
-		z-index: ${cssZIndex.nodeEditor.clickCaptureTarget};
+		z-index: ${cssZIndex.flowEditor.clickCaptureTarget};
 	`,
 
 	svg: css`

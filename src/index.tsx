@@ -29,10 +29,10 @@ addListener.repeated("keydown", { modifierKeys: ["Command"] }, (e) => {
 	const state = store.getState();
 	if (isKeyDown("Shift")) {
 		// Attempted redo
-		if (state.nodeEditor.index < state.nodeEditor.list.length - 1) {
-			store.dispatch(historyActions.moveHistoryIndex(state.nodeEditor.index + 1));
+		if (state.flowState.index < state.flowState.list.length - 1) {
+			store.dispatch(historyActions.moveHistoryIndex(state.flowState.index + 1));
 		}
-	} else if (state.nodeEditor.index > 0) {
-		store.dispatch(historyActions.moveHistoryIndex(state.nodeEditor.index - 1));
+	} else if (state.flowState.index > 0) {
+		store.dispatch(historyActions.moveHistoryIndex(state.flowState.index - 1));
 	}
 });

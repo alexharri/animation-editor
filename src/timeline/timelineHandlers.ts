@@ -20,6 +20,8 @@ import {
 	TIMELINE_ITEM_HEIGHT,
 	TIMELINE_LAYER_HEIGHT,
 } from "~/constants";
+import { flowActions } from "~/flow/flowActions";
+import { createArrayModifierFlowGraph, createLayerFlowGraph } from "~/flow/graph/createFlowGraph";
 import { isKeyDown } from "~/listener/keyboard";
 import {
 	requestAction,
@@ -27,8 +29,6 @@ import {
 	RequestActionParams,
 	ShouldAddToStackFn,
 } from "~/listener/requestAction";
-import { createArrayModifierGraph, createLayerGraph } from "~/nodeEditor/graph/createLayerGraph";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
@@ -646,15 +646,15 @@ export const timelineHandlers = {
 			// If graph exists, delete it. If not, create one.
 			if (property.graphId) {
 				dispatch(compositionActions.setPropertyGraphId(propertyId, ""));
-				dispatch(nodeEditorActions.removeGraph(property.graphId));
+				dispatch(flowActions.removeGraph(property.graphId));
 				submitAction("Remove array modifier graph");
 				return;
 			}
 
-			const graph = createArrayModifierGraph(propertyId);
+			const graph = createArrayModifierFlowGraph(propertyId);
 
 			dispatch(compositionActions.setPropertyGraphId(propertyId, graph.id));
-			dispatch(nodeEditorActions.setGraph(graph));
+			dispatch(flowActions.setGraph(graph));
 			submitAction("Create array modifier graph");
 		});
 	},
@@ -671,15 +671,15 @@ export const timelineHandlers = {
 			// If graph exists, delete it. If not, create one.
 			if (layer.graphId) {
 				dispatch(compositionActions.setLayerGraphId(layerId, ""));
-				dispatch(nodeEditorActions.removeGraph(layer.graphId));
+				dispatch(flowActions.removeGraph(layer.graphId));
 				submitAction("Remove layer graph");
 				return;
 			}
 
-			const graph = createLayerGraph(layerId);
+			const graph = createLayerFlowGraph(layerId);
 
 			dispatch(compositionActions.setLayerGraphId(layerId, graph.id));
-			dispatch(nodeEditorActions.setGraph(graph));
+			dispatch(flowActions.setGraph(graph));
 			submitAction("Create layer graph");
 		});
 	},
@@ -709,9 +709,9 @@ export const timelineHandlers = {
 						areaToOpen: {
 							position: mousePos,
 							area: {
-								type: AreaType.NodeEditor,
+								type: AreaType.FlowEditor,
 								state: {
-									...areaInitialStates[AreaType.NodeEditor],
+									...areaInitialStates[AreaType.FlowEditor],
 									graphId,
 								},
 							},
@@ -746,8 +746,8 @@ export const timelineHandlers = {
 				}
 
 				dispatch(
-					areaActions.setAreaType(areaId, AreaType.NodeEditor, {
-						...areaInitialStates[AreaType.NodeEditor],
+					areaActions.setAreaType(areaId, AreaType.FlowEditor, {
+						...areaInitialStates[AreaType.FlowEditor],
 						graphId,
 					}),
 				);
