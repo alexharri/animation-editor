@@ -60,7 +60,7 @@ export default ({ css }: StyleParams) => ({
 		transform: translate(0, -50%);
 		width: 9px;
 		height: 9px;
-		background: rgba(214, 214, 28, 0.8);
+		background: #b3b223;
 		border-radius: 50%;
 	`,
 
@@ -92,7 +92,7 @@ export default ({ css }: StyleParams) => ({
 		transform: translate(0, -50%);
 		width: 9px;
 		height: 9px;
-		background: rgba(0, 200, 75, 0.8);
+		background: #0fa744;
 		border-radius: 50%;
 	`,
 

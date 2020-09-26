@@ -15,6 +15,7 @@ import { ExpressionNode } from "~/flow/nodes/expression/ExpressionNode";
 import { Node } from "~/flow/nodes/Node";
 import { NodePreview } from "~/flow/nodes/NodePreview";
 import { NumberInputNode } from "~/flow/nodes/NumberInputNode";
+import { NumberLerpNode } from "~/flow/nodes/NumberLerpNode";
 import { PropertyInputNode } from "~/flow/nodes/property/PropertyInputNode";
 import { PropertyOutputNode } from "~/flow/nodes/property/PropertyOutputNode";
 import { RadToDegNode } from "~/flow/nodes/RadToDegNode";
@@ -177,6 +178,11 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 							switch (props.graph.nodes[nodeId].type) {
 								case FlowNodeType.expr: {
 									NodeComponent = ExpressionNode;
+									break;
+								}
+
+								case FlowNodeType.num_lerp: {
+									NodeComponent = NumberLerpNode;
 									break;
 								}
 
