@@ -47,7 +47,7 @@ const areaTypeOptions: Array<{ icon: React.ComponentType; type: AreaType; label:
 	},
 	{
 		icon: EditIcon,
-		type: AreaType.NodeEditor,
+		type: AreaType.FlowEditor,
 		label: "Node Editor",
 	},
 	{
@@ -88,7 +88,7 @@ export const AreaComponent: React.FC<Props> = (props) => {
 						},
 						{
 							label: "Node Editor",
-							type: AreaType.NodeEditor,
+							type: AreaType.FlowEditor,
 						},
 						{
 							label: "History",

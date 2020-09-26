@@ -1,12 +1,12 @@
+import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { getActionStateFromApplicationState } from "~/state/stateUtils";
-import { useCallback, useState, useEffect } from "react";
 import { store } from "~/state/store";
 
 type Selector<T> = (actionState: ActionState) => T;
 
 export const useComputeHistory = <T>(selector: Selector<T>): T => {
-	const index = useSelector((state: ApplicationState) => state.nodeEditor.index);
+	const index = useSelector((state: ApplicationState) => state.flowState.index);
 
 	const getState = useCallback(() => {
 		const state = store.getState();

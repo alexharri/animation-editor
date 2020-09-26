@@ -5,15 +5,16 @@ import { getLayerTypeName } from "~/composition/layer/layerUtils";
 import { createArrayModifier } from "~/composition/modifiers/arrayModifier";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
+import { flowActions } from "~/flow/flowActions";
+import { FlowNodeState } from "~/flow/flowNodeState";
+import { FlowNodeType } from "~/flow/flowTypes";
 import { requestAction } from "~/listener/requestAction";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import { shapeActions } from "~/shape/shapeReducer";
 import { shapeSelectionActions } from "~/shape/shapeSelectionReducer";
 import { getShapeLayerPathIds } from "~/shape/shapeUtils";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
-import { LayerType, NodeEditorNodeType, ToDispatch } from "~/types";
+import { LayerType, ToDispatch } from "~/types";
 import { createGenMapIdFn } from "~/util/mapUtils";
 
 interface Options {
@@ -79,11 +80,7 @@ export const createTimelineContextMenu = (
 		// Remove layer
 		if (layerId) {
 			const removeLayer = () => {
-				const {
-					compositionState,
-					nodeEditor: nodeEditorState,
-					shapeState,
-				} = getActionState();
+				const { compositionState, flowState, shapeState } = getActionState();
 				const layer = compositionState.layers[layerId];
 
 				const toDispatch: ToDispatch = [
@@ -134,7 +131,7 @@ export const createTimelineContextMenu = (
 
 				// Remove layer graph if it exists
 				if (layer.graphId) {
-					toDispatch.push(nodeEditorActions.removeGraph(layer.graphId));
+					toDispatch.push(flowActions.removeGraph(layer.graphId));
 				}
 
 				// Remove references to layer in layer graphs in this composition
@@ -151,18 +148,16 @@ export const createTimelineContextMenu = (
 						continue;
 					}
 
-					const graph = nodeEditorState.graphs[graphId];
+					const graph = flowState.graphs[graphId];
 					const nodeIds = Object.keys(graph.nodes);
 					for (let j = 0; j < nodeIds.length; j += 1) {
 						const node = graph.nodes[nodeIds[j]];
 
-						if (node.type !== NodeEditorNodeType.property_input) {
+						if (node.type !== FlowNodeType.property_input) {
 							continue;
 						}
 
-						const state = node.state as NodeEditorNodeState<
-							NodeEditorNodeType.property_input
-						>;
+						const state = node.state as FlowNodeState<FlowNodeType.property_input>;
 
 						if (state.layerId !== layer.id) {
 							continue;
@@ -172,9 +167,9 @@ export const createTimelineContextMenu = (
 						//
 						// Reset node state/outputs and remove all references to it.
 						toDispatch.push(
-							nodeEditorActions.removeReferencesToNodeInGraph(graph.id, node.id),
-							nodeEditorActions.setNodeOutputs(graph.id, node.id, []),
-							nodeEditorActions.updateNodeState<NodeEditorNodeType.property_input>(
+							flowActions.removeReferencesToNodeInGraph(graph.id, node.id),
+							flowActions.setNodeOutputs(graph.id, node.id, []),
+							flowActions.updateNodeState<FlowNodeType.property_input>(
 								graph.id,
 								node.id,
 								{ layerId: "", propertyId: "" },

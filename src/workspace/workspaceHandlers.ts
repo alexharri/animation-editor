@@ -3,7 +3,7 @@ import { createViewportWheelHandlers } from "~/shared/viewport/viewportWheelHand
 import { workspaceAreaActions } from "~/workspace/workspaceAreaReducer";
 
 export const workspaceHandlers = {
-	...createViewportWheelHandlers(AreaType.NodeEditor, {
+	...createViewportWheelHandlers(AreaType.FlowEditor, {
 		setPan: (pan) => workspaceAreaActions.setFields({ pan }),
 		setScale: (scale) => workspaceAreaActions.setFields({ scale }),
 	}),

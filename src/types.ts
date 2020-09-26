@@ -25,37 +25,6 @@ export interface AffineTransform {
 	scale: number;
 }
 
-export enum NodeEditorNodeType {
-	empty = "empty",
-
-	num_input = "num_input",
-	num_cap = "num_cap",
-	num_lerp = "num_lerp",
-
-	vec2_add = "vec2_add",
-	vec2_lerp = "vec2_lerp",
-	vec2_factors = "vec2_factors",
-	vec2_input = "vec2_input",
-
-	deg_to_rad = "deg_to_rad",
-	rad_to_deg = "rad_to_deg",
-
-	rect_translate = "rect_translate",
-
-	expr = "expr",
-
-	color_from_rgba_factors = "color_from_rgba_factors",
-	color_to_rgba_factors = "color_to_rgba_factors",
-	color_input = "color_input",
-
-	property_output = "property_output",
-	property_input = "property_input",
-
-	array_modifier_index = "array_modifier_index",
-
-	composition = "composition",
-}
-
 export enum ValueType {
 	Number = "number",
 	Vec2 = "vec2",

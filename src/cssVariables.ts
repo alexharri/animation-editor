@@ -67,7 +67,7 @@ export const cssZIndex = {
 		panTarget: 50,
 		zoomTarget: 55,
 	},
-	nodeEditor: {
+	flowEditor: {
 		connections: 500,
 		nodes: 1000,
 		dragSelectPreview: 1010,

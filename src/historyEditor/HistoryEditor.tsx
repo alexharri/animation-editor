@@ -1,7 +1,7 @@
 import React from "react";
 import { connect } from "react-redux";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
 import styles from "~/historyEditor/HistoryEditor.styles";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(styles);
 
@@ -63,7 +63,7 @@ class HistoryEditor extends React.Component<ApplicationState, State> {
 	private currentEl = React.createRef<HTMLDivElement>();
 
 	public shouldComponentUpdate(prevProps: ApplicationState) {
-		if (this.props.nodeEditor.index !== prevProps.nodeEditor.index) {
+		if (this.props.flowState.index !== prevProps.flowState.index) {
 			return true;
 		}
 
@@ -90,7 +90,7 @@ class HistoryEditor extends React.Component<ApplicationState, State> {
 	}
 
 	public render() {
-		const { list, index } = this.props.nodeEditor;
+		const { list, index } = this.props.flowState;
 
 		const undo = list.slice(0, index);
 		const redo = list.slice(index + 1);

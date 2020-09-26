@@ -1,5 +1,5 @@
 import { AreaType } from "~/constants";
-import { initialNodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
+import { initialFlowAreaState } from "~/flow/flowAreaReducer";
 import { initialTimelineAreaState } from "~/timeline/timelineAreaReducer";
 import { AreaState } from "~/types/areaTypes";
 import { initialCompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
@@ -7,7 +7,7 @@ import { initialCompositionWorkspaceAreaState } from "~/workspace/workspaceAreaR
 export const areaInitialStates: { [K in AreaType]: AreaState<K> } = {
 	[AreaType.Timeline]: initialTimelineAreaState,
 	[AreaType.Workspace]: initialCompositionWorkspaceAreaState,
-	[AreaType.NodeEditor]: initialNodeEditorAreaState,
+	[AreaType.FlowEditor]: initialFlowAreaState,
 	[AreaType.History]: {},
 	[AreaType.Project]: {},
 };

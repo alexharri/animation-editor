@@ -1,7 +1,7 @@
 import { AreaType } from "~/constants";
+import { flowAreaReducer } from "~/flow/flowAreaReducer";
+import { FlowEditor } from "~/flow/FlowEditor";
 import HistoryEditor from "~/historyEditor/HistoryEditor";
-import { NodeEditor } from "~/nodeEditor/NodeEditor";
-import { nodeEditorAreaReducer } from "~/nodeEditor/nodeEditorAreaReducer";
 import { Project } from "~/project/Project";
 import { Timeline } from "~/timeline/Timeline";
 import { timelineAreaReducer } from "~/timeline/timelineAreaReducer";
@@ -16,7 +16,7 @@ export const areaComponentRegistry: {
 } = {
 	[AreaType.Timeline]: Timeline,
 	[AreaType.Workspace]: Workspace,
-	[AreaType.NodeEditor]: NodeEditor,
+	[AreaType.FlowEditor]: FlowEditor,
 	[AreaType.History]: HistoryEditor,
 	[AreaType.Project]: Project,
 };
@@ -26,7 +26,7 @@ export const areaStateReducerRegistry: {
 } = {
 	[AreaType.Timeline]: timelineAreaReducer,
 	[AreaType.Workspace]: compositionWorkspaceAreaReducer,
-	[AreaType.NodeEditor]: nodeEditorAreaReducer,
+	[AreaType.FlowEditor]: flowAreaReducer,
 	[AreaType.History]: () => ({}),
 	[AreaType.Project]: () => ({}),
 };
@@ -38,7 +38,7 @@ export const _areaReactKeyRegistry: Partial<
 > = {
 	[AreaType.Timeline]: "compositionId",
 	[AreaType.Workspace]: "compositionId",
-	[AreaType.NodeEditor]: "graphId",
+	[AreaType.FlowEditor]: "graphId",
 };
 
 export const areaKeyboardShortcutRegistry: Partial<

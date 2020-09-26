@@ -36,7 +36,7 @@ export default ({ css }: StyleParams) => ({
 			color: red;
 		}
 
-		&--nodeEditor {
+		&--flowEditor {
 			color: ${cssVariables.white500};
 			background-color: ${hexToRGBAString(cssVariables.gray700, 0.4)};
 			padding-left: ${NODE_H_PADDING_ADDITIONAL}px;
@@ -56,7 +56,7 @@ export default ({ css }: StyleParams) => ({
 		flex-grow: 0;
 		text-overflow: ellipsis;
 
-		&--nodeEditor {
+		&--flowEditor {
 			font-size: 12px;
 		}
 	`,
@@ -65,7 +65,7 @@ export default ({ css }: StyleParams) => ({
 		flex-grow: 1;
 		text-align: right;
 
-		&--nodeEditor {
+		&--flowEditor {
 			font-size: 12px;
 		}
 	`,
@@ -107,7 +107,7 @@ export default ({ css }: StyleParams) => ({
 			background: ${cssVariables.primary700};
 		}
 
-		&--nodeEditor {
+		&--flowEditor {
 			padding-left: ${NODE_H_PADDING_ADDITIONAL}px;
 			padding-right: ${NODE_H_PADDING_ADDITIONAL}px;
 			font-size: 12px;

@@ -43,7 +43,7 @@ interface Props {
 	fillWidth?: boolean;
 	fullWidth?: boolean;
 	dragRelative?: boolean;
-	nodeEditor?: boolean;
+	flowEditor?: boolean;
 }
 
 interface State {
@@ -91,14 +91,14 @@ export class NumberInput extends React.Component<Props, State> {
 	}
 
 	public render() {
-		const { width, fillWidth = false, fullWidth = false, nodeEditor = false } = this.props;
+		const { width, fillWidth = false, fullWidth = false, flowEditor = false } = this.props;
 		const { typing } = this.state;
 
 		if (this.state.typing) {
 			return (
 				<div className={s("container", { typing, fullWidth })} style={{ width }}>
 					<input
-						className={s("input", { nodeEditor })}
+						className={s("input", { flowEditor })}
 						ref={this.input}
 						value={this.state.inputValue}
 						onChange={(e) => {
@@ -148,7 +148,7 @@ export class NumberInput extends React.Component<Props, State> {
 				<button
 					className={s("button", {
 						fillWidth,
-						nodeEditor,
+						flowEditor,
 						computed:
 							!this.state.useState &&
 							typeof this.props.showValue === "number" &&
@@ -161,10 +161,10 @@ export class NumberInput extends React.Component<Props, State> {
 				>
 					{this.props.label ? (
 						<>
-							<div className={s("button__label", { nodeEditor })}>
+							<div className={s("button__label", { flowEditor })}>
 								{this.props.label}
 							</div>
-							<div className={s("button__value", { nodeEditor })}>{val}</div>
+							<div className={s("button__value", { flowEditor })}>{val}</div>
 						</>
 					) : (
 						<div className={s("button__value")}>{val}</div>
