@@ -1,13 +1,13 @@
 import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { separateLeftRightMouse } from "~/util/mouse";
+import { useNumberInputAction } from "~/hook/useNumberInputAction";
+import { NodeEditorVec2Input } from "~/nodeEditor/components/NodeEditorVec2Input";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { NodeEditorNodeInput } from "~/nodeEditor/nodeEditorIO";
+import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { connectActionState } from "~/state/stateUtils";
-import { useNumberInputAction } from "~/hook/useNumberInputAction";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import NodeStyles from "~/nodeEditor/nodes/Node.styles";
-import { NodeEditorVec2Input } from "~/nodeEditor/components/NodeEditorVec2Input";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -48,30 +48,32 @@ const NodeVec2InputComponent: React.FC<Props> = (props) => {
 	});
 
 	return (
-		<div className={s("input")}>
-			<div
-				className={s("input__circle")}
-				onMouseDown={separateLeftRightMouse({
-					left: input.pointer
-						? (e) =>
-								nodeHandlers.onInputWithPointerMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									index,
-								)
-						: (e) =>
-								nodeHandlers.onInputMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									index,
-								),
-				})}
-			/>
-			<div className={s("input__name")}>{input.name}</div>
+		<>
+			<div className={s("input")}>
+				<div
+					className={s("input__circle")}
+					onMouseDown={separateLeftRightMouse({
+						left: input.pointer
+							? (e) =>
+									nodeHandlers.onInputWithPointerMouseDown(
+										e,
+										props.areaId,
+										props.graphId,
+										props.nodeId,
+										index,
+									)
+							: (e) =>
+									nodeHandlers.onInputMouseDown(
+										e,
+										props.areaId,
+										props.graphId,
+										props.nodeId,
+										index,
+									),
+					})}
+				/>
+				<div className={s("input__name")}>{input.name}</div>
+			</div>
 			{!input.pointer && (
 				<>
 					<NodeEditorVec2Input
@@ -84,7 +86,7 @@ const NodeVec2InputComponent: React.FC<Props> = (props) => {
 					/>
 				</>
 			)}
-		</div>
+		</>
 	);
 };
 

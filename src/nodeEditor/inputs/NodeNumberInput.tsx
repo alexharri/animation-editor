@@ -1,13 +1,13 @@
 import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { separateLeftRightMouse } from "~/util/mouse";
+import { useNumberInputAction } from "~/hook/useNumberInputAction";
+import { NodeEditorNumberInput } from "~/nodeEditor/components/NodeEditorNumberInput";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { NodeEditorNodeInput } from "~/nodeEditor/nodeEditorIO";
+import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { connectActionState } from "~/state/stateUtils";
-import { useNumberInputAction } from "~/hook/useNumberInputAction";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import NodeStyles from "~/nodeEditor/nodes/Node.styles";
-import { NodeEditorNumberInput } from "~/nodeEditor/components/NodeEditorNumberInput";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -16,6 +16,10 @@ interface OwnProps {
 	graphId: string;
 	nodeId: string;
 	index: number;
+	tick?: number;
+	min?: number;
+	max?: number;
+	decimalPlaces?: number;
 }
 interface StateProps {
 	input: NodeEditorNodeInput;
@@ -23,7 +27,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const NodeNumberInputComponent: React.FC<Props> = (props) => {
-	const { graphId, nodeId, index, input } = props;
+	const { graphId, nodeId, index, input, tick, min, max, decimalPlaces } = props;
 
 	const { onChange, onChangeEnd } = useNumberInputAction({
 		onChange: (value, params) => {
@@ -35,7 +39,7 @@ const NodeNumberInputComponent: React.FC<Props> = (props) => {
 	});
 
 	return (
-		<div className={s("input")}>
+		<div className={s("input", { noPadding: !input.pointer })}>
 			<div
 				className={s("input__circle")}
 				onMouseDown={separateLeftRightMouse({
@@ -67,6 +71,11 @@ const NodeNumberInputComponent: React.FC<Props> = (props) => {
 					onChangeEnd={onChangeEnd}
 					value={input.value}
 					paddingRight
+					paddingLeft
+					tick={tick}
+					min={min}
+					max={max}
+					decimalPlaces={decimalPlaces}
 				/>
 			)}
 		</div>

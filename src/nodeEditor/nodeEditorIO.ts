@@ -106,13 +106,13 @@ export const getNodeEditorNodeDefaultInputs = (type: NodeEditorNodeType): NodeEd
 			return [
 				{
 					type: ValueType.Vec2,
-					name: "Input Vector A",
+					name: "Vec2",
 					value: Vec2.new(0, 0),
 					pointer: null,
 				},
 				{
 					type: ValueType.Vec2,
-					name: "Input Vector B",
+					name: "Vec2",
 					value: Vec2.new(0, 0),
 					pointer: null,
 				},

@@ -1,5 +1,5 @@
 import React from "react";
-import { NODE_EDITOR_NODE_H_PADDING } from "~/constants";
+import { NODE_H_PADDING_ADDITIONAL, NODE_H_PADDING_BASE } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -7,7 +7,7 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 const s = compileStylesheetLabelled(({ css }) => ({
 	container: css`
 		height: 20px;
-		padding: 1px ${NODE_EDITOR_NODE_H_PADDING}px;
+		padding: 1px ${NODE_H_PADDING_BASE}px;
 	`,
 
 	select: css`
@@ -18,7 +18,7 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		width: 100%;
 		color: ${cssVariables.light500};
 		border-radius: 4px;
-		padding: 0 4px;
+		padding: 0 ${NODE_H_PADDING_ADDITIONAL}px;
 		border: none;
 		outline: none;
 		-webkit-appearance: none;

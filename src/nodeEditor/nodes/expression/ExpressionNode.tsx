@@ -3,6 +3,7 @@ import { NodeBody } from "~/nodeEditor/components/NodeBody";
 import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
 import { ExpressionNodeTextarea } from "~/nodeEditor/nodes/expression/ExpressionNodeTextarea";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { NodeProps } from "~/nodeEditor/nodes/nodeEditorTypes";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -10,11 +11,7 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
-interface OwnProps {
-	areaId: string;
-	graphId: string;
-	nodeId: string;
-}
+type OwnProps = NodeProps;
 interface StateProps {
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
@@ -24,10 +21,16 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function ExpressionNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, inputs } = props;
+	const { areaId, graphId, nodeId, outputs, inputs, zIndex } = props;
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} allowResize={false}>
+		<NodeBody
+			areaId={areaId}
+			graphId={graphId}
+			nodeId={nodeId}
+			allowResize={false}
+			zIndex={zIndex}
+		>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>

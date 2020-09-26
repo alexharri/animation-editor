@@ -1,13 +1,13 @@
 import React from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { separateLeftRightMouse } from "~/util/mouse";
+import { useNumberInputAction } from "~/hook/useNumberInputAction";
+import { NodeEditorTValueInput } from "~/nodeEditor/components/NodeEditorTValueInput";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { NodeEditorNodeInput } from "~/nodeEditor/nodeEditorIO";
+import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { connectActionState } from "~/state/stateUtils";
-import { useNumberInputAction } from "~/hook/useNumberInputAction";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import NodeStyles from "~/nodeEditor/nodes/Node.styles";
-import { NodeEditorTValueInput } from "~/nodeEditor/components/NodeEditorTValueInput";
+import { separateLeftRightMouse } from "~/util/mouse";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
@@ -35,7 +35,7 @@ const NodeTValueInputComponent: React.FC<Props> = (props) => {
 	});
 
 	return (
-		<div className={s("input")}>
+		<div className={s("input", { noPadding: !input.pointer })}>
 			<div
 				className={s("input__circle")}
 				onMouseDown={separateLeftRightMouse({
@@ -67,6 +67,7 @@ const NodeTValueInputComponent: React.FC<Props> = (props) => {
 					onChangeEnd={onChangeEnd}
 					value={input.value}
 					paddingRight
+					paddingLeft
 				/>
 			)}
 		</div>

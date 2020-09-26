@@ -1,5 +1,32 @@
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
+import { NodeEditorNodeType } from "~/types";
 import { removeKeysFromMap } from "~/util/mapUtils";
+
+const nodeEditorToNodeLabel: Record<NodeEditorNodeType, string> = {
+	[NodeEditorNodeType.array_modifier_index]: "Index",
+	[NodeEditorNodeType.color_from_rgba_factors]: "Color from RGBA",
+	[NodeEditorNodeType.color_input]: "Color Input",
+	[NodeEditorNodeType.color_to_rgba_factors]: "RGBA from Color",
+	[NodeEditorNodeType.composition]: "Composition",
+	[NodeEditorNodeType.deg_to_rad]: "Degrees to Radians",
+	[NodeEditorNodeType.empty]: "Empty",
+	[NodeEditorNodeType.expr]: "Expression",
+	[NodeEditorNodeType.num_cap]: "Cap number",
+	[NodeEditorNodeType.num_input]: "Number input",
+	[NodeEditorNodeType.num_lerp]: "Number interpolation",
+	[NodeEditorNodeType.property_input]: "Property Input",
+	[NodeEditorNodeType.property_output]: "Property Output",
+	[NodeEditorNodeType.rad_to_deg]: "Radians to Degrees",
+	[NodeEditorNodeType.rect_translate]: "Translate Rect",
+	[NodeEditorNodeType.vec2_add]: "Add Vec2",
+	[NodeEditorNodeType.vec2_factors]: "Vec2 Factors",
+	[NodeEditorNodeType.vec2_input]: "Vec2 Input",
+	[NodeEditorNodeType.vec2_lerp]: "Vec2 interpolation",
+};
+
+export const getNodeEditorNodeLabel = (type: NodeEditorNodeType): string => {
+	return nodeEditorToNodeLabel[type];
+};
 
 export const nodeEditorGlobalToNormal = (
 	globalPosition: Vec2,

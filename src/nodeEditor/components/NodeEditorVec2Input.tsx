@@ -1,25 +1,11 @@
 import React from "react";
 import { NumberInput } from "~/components/common/NumberInput";
+import { NODE_H_PADDING_BASE } from "~/constants";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { NODE_EDITOR_NODE_H_PADDING } from "~/constants";
 
 const s = compileStylesheetLabelled(({ css }) => ({
-	container: css`
-		min-height: 20px;
-		padding: 4px 0;
-
-		&--horizontalPadding {
-			padding-left: ${NODE_EDITOR_NODE_H_PADDING};
-			padding-right: ${NODE_EDITOR_NODE_H_PADDING};
-		}
-
-		&--paddingLeft {
-			padding-left: ${NODE_EDITOR_NODE_H_PADDING};
-		}
-
-		&--paddingRight {
-			padding-right: ${NODE_EDITOR_NODE_H_PADDING};
-		}
+	input: css`
+		padding: 2px ${NODE_H_PADDING_BASE}px;
 	`,
 }));
 
@@ -35,28 +21,32 @@ interface Props {
 }
 
 export const NodeEditorVec2Input: React.FC<Props> = (props) => {
-	const { horizontalPadding = false, paddingLeft = false, paddingRight = false } = props;
-
 	return (
-		<div className={s("container", { horizontalPadding, paddingLeft, paddingRight })}>
-			<NumberInput
-				label="X"
-				value={props.value.x}
-				onChange={props.onXChange}
-				onChangeEnd={props.onXChangeEnd}
-				decimalPlaces={1}
-				fillWidth
-				fullWidth
-			/>
-			<NumberInput
-				label="Y"
-				value={props.value.y}
-				onChange={props.onYChange}
-				onChangeEnd={props.onYChangeEnd}
-				decimalPlaces={1}
-				fillWidth
-				fullWidth
-			/>
-		</div>
+		<>
+			<div className={s("input")}>
+				<NumberInput
+					label="X"
+					value={props.value.x}
+					onChange={props.onXChange}
+					onChangeEnd={props.onXChangeEnd}
+					decimalPlaces={1}
+					fillWidth
+					fullWidth
+					nodeEditor
+				/>
+			</div>
+			<div className={s("input")}>
+				<NumberInput
+					label="Y"
+					value={props.value.y}
+					onChange={props.onYChange}
+					onChangeEnd={props.onYChangeEnd}
+					decimalPlaces={1}
+					fillWidth
+					fullWidth
+					nodeEditor
+				/>
+			</div>
+		</>
 	);
 };

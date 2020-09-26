@@ -1,12 +1,16 @@
 import React from "react";
-import { connectActionState } from "~/state/stateUtils";
+import { cssVariables, cssZIndex } from "~/cssVariables";
 import { NodeEditorAreaState } from "~/nodeEditor/nodeEditorAreaReducer";
-import {
-	calculateNodeOutputPosition,
-	calculateNodeInputPosition,
-} from "~/nodeEditor/util/calculateNodeHeight";
-import { nodeEditorPositionToViewport } from "~/nodeEditor/nodeEditorUtils";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
+import { nodeEditorPositionToViewport } from "~/nodeEditor/nodeEditorUtils";
+import {
+	calculateNodeInputPosition,
+	calculateNodeOutputPosition,
+} from "~/nodeEditor/util/calculateNodeHeight";
+import { connectActionState } from "~/state/stateUtils";
+
+const COLOR = cssVariables.red500;
+const LINE_WIDTH = 1.5;
 
 interface OwnProps {
 	graphId: string;
@@ -56,7 +60,7 @@ class NodeEditorConnectionsComponent extends React.Component<Props> {
 					y1={outputPos.y}
 					x2={targetPos.x}
 					y2={targetPos.y}
-					style={{ stroke: "#ff0000", strokeWidth: 2 * areaState.scale }}
+					style={{ stroke: COLOR, strokeWidth: LINE_WIDTH * areaState.scale }}
 				/>,
 			);
 		}
@@ -88,7 +92,7 @@ class NodeEditorConnectionsComponent extends React.Component<Props> {
 					y1={inputPos.y}
 					x2={targetPos.x}
 					y2={targetPos.y}
-					style={{ stroke: "#ff0000", strokeWidth: 2 * areaState.scale }}
+					style={{ stroke: COLOR, strokeWidth: LINE_WIDTH * areaState.scale }}
 				/>,
 			);
 		}
@@ -127,7 +131,10 @@ class NodeEditorConnectionsComponent extends React.Component<Props> {
 						y1={nodePos.y}
 						x2={targetPos.x}
 						y2={targetPos.y}
-						style={{ stroke: "#ff0000", strokeWidth: 2 * areaState.scale }}
+						style={{
+							stroke: COLOR,
+							strokeWidth: LINE_WIDTH * areaState.scale,
+						}}
 					/>,
 				);
 			}
@@ -137,7 +144,13 @@ class NodeEditorConnectionsComponent extends React.Component<Props> {
 			<svg
 				width={props.width}
 				height={props.height}
-				style={{ zIndex: 45, position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+				style={{
+					zIndex: cssZIndex.nodeEditor.connections,
+					position: "absolute",
+					top: 0,
+					left: 0,
+					pointerEvents: "none",
+				}}
 			>
 				{lines}
 			</svg>

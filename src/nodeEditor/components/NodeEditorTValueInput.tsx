@@ -1,7 +1,7 @@
 import React from "react";
 import { NumberInput } from "~/components/common/NumberInput";
+import { NODE_H_PADDING_BASE } from "~/constants";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { NODE_EDITOR_NODE_H_PADDING } from "~/constants";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	container: css`
@@ -9,16 +9,16 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		padding: 2px 0;
 
 		&--horizontalPadding {
-			padding-left: ${NODE_EDITOR_NODE_H_PADDING};
-			padding-right: ${NODE_EDITOR_NODE_H_PADDING};
+			padding-left: ${NODE_H_PADDING_BASE};
+			padding-right: ${NODE_H_PADDING_BASE};
 		}
 
 		&--paddingLeft {
-			padding-left: ${NODE_EDITOR_NODE_H_PADDING};
+			padding-left: ${NODE_H_PADDING_BASE};
 		}
 
 		&--paddingRight {
-			padding-right: ${NODE_EDITOR_NODE_H_PADDING};
+			padding-right: ${NODE_H_PADDING_BASE};
 		}
 	`,
 }));
@@ -48,6 +48,7 @@ export const NodeEditorTValueInput: React.FC<Props> = (props) => {
 				tick={0.01}
 				fullWidth
 				fillWidth
+				nodeEditor
 			/>
 		</div>
 	);

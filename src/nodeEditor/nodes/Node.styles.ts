@@ -1,18 +1,22 @@
-import { NODE_EDITOR_NODE_H_PADDING } from "~/constants";
+import { NODE_H_PADDING_ADDITIONAL, NODE_H_PADDING_BASE } from "~/constants";
 import { cssVariables } from "~/cssVariables";
+import { hexToRGBAString } from "~/util/color/convertColor";
 import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
-		border: 1px solid red;
+		border: 1px solid ${cssVariables.light200};
+		border-radius: 4px;
 		padding: 28px 0 16px;
 		width: 128px;
 		position: absolute;
-		background: ${cssVariables.gray500};
+		background: ${hexToRGBAString(cssVariables.dark800, 0.8)};
+		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 		cursor: default;
 
 		&--selected {
 			border: 1px solid white;
+			background: ${hexToRGBAString(cssVariables.gray500, 0.8)};
 		}
 	`,
 
@@ -23,18 +27,24 @@ export default ({ css }: StyleParams) => ({
 		right: 0;
 		height: 20px;
 		line-height: 20px;
+		border-top-left-radius: 3px;
+		border-top-right-radius: 3px;
 		color: ${cssVariables.white500};
-		background: ${cssVariables.gray700};
-		padding-left: 16px;
+		background: rgba(255, 255, 255, 0.05);
+		padding-left: ${NODE_H_PADDING_BASE + NODE_H_PADDING_ADDITIONAL}px;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		overflow-x: hidden;
+
+		&--selected {
+			background: rgba(255, 255, 255, 0.2);
+		}
 	`,
 
 	input: css`
 		min-height: 20px;
 		line-height: 20px;
-		padding-left: ${NODE_EDITOR_NODE_H_PADDING}px;
+		padding-left: ${NODE_H_PADDING_BASE + NODE_H_PADDING_ADDITIONAL}px;
 		width: 100%;
 		position: relative;
 
@@ -50,7 +60,7 @@ export default ({ css }: StyleParams) => ({
 		transform: translate(0, -50%);
 		width: 9px;
 		height: 9px;
-		background: yellow;
+		background: rgba(214, 214, 28, 0.8);
 		border-radius: 50%;
 	`,
 
@@ -65,7 +75,7 @@ export default ({ css }: StyleParams) => ({
 	output: css`
 		height: 20px;
 		line-height: 20px;
-		padding-right: ${NODE_EDITOR_NODE_H_PADDING}px;
+		padding-right: ${NODE_H_PADDING_BASE + NODE_H_PADDING_ADDITIONAL}px;
 		width: 100%;
 		position: relative;
 		z-index: 10;
@@ -82,7 +92,7 @@ export default ({ css }: StyleParams) => ({
 		transform: translate(0, -50%);
 		width: 9px;
 		height: 9px;
-		background: green;
+		background: rgba(0, 200, 75, 0.8);
 		border-radius: 50%;
 	`,
 
@@ -98,9 +108,9 @@ export default ({ css }: StyleParams) => ({
 	widthResize: css`
 		position: absolute;
 		top: 0;
-		right: -1px;
+		right: -2px;
 		bottom: 0;
-		width: 2px;
+		width: 4px;
 		cursor: ew-resize;
 	`,
 
@@ -113,7 +123,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	colorInput__colorValue: css`
-		margin-left: ${NODE_EDITOR_NODE_H_PADDING};
+		margin-left: ${NODE_H_PADDING_BASE};
 		border: none;
 		background: black;
 		border-radius: 3px;

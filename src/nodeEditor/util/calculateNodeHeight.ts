@@ -34,6 +34,16 @@ const getInputHeight = (node: NodeEditorNode<NodeEditorNodeType>, index: number)
 			}
 			break;
 		}
+
+		case NodeEditorNodeType.vec2_add: {
+			switch (index) {
+				case 0:
+					return getVec2InputHeight(node, index);
+				case 1:
+					return getVec2InputHeight(node, index);
+			}
+			break;
+		}
 	}
 
 	return inputHeight;

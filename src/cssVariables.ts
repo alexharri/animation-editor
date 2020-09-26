@@ -7,6 +7,8 @@ export const cssVariables = {
 	primary600: "#418dff",
 	primary700: "#4babff",
 
+	red500: "#c21f13",
+
 	white500: "#f3f3f3",
 
 	light500: "#adadad",
@@ -14,17 +16,17 @@ export const cssVariables = {
 	light300: "#777",
 	light200: "#676767",
 
-	gray800: "#666",
-	gray700: "#555",
-	gray600: "#444",
+	gray800: "#666666",
+	gray700: "#555555",
+	gray600: "#444444",
 	gray500: "#3d3d3d",
 	gray400: "#353535",
 
-	dark800: "#333",
+	dark800: "#333333",
 	dark700: "#2d2d2d",
 	dark600: "#272727",
-	dark500: "#222",
-	dark300: "#111",
+	dark500: "#222222",
+	dark300: "#111111",
 
 	toolbarHeight: `${TOOLBAR_HEIGHT}px`,
 	fontFamily: "'Open sans', sans-serif",
@@ -66,10 +68,12 @@ export const cssZIndex = {
 		zoomTarget: 55,
 	},
 	nodeEditor: {
-		dragSelectPreview: 45,
-		panTarget: 50,
-		zoomTarget: 55,
-		clickCaptureTarget: 60,
+		connections: 500,
+		nodes: 1000,
+		dragSelectPreview: 1010,
+		panTarget: 2000,
+		zoomTarget: 2010,
+		clickCaptureTarget: 2020,
 	},
 	area: {
 		areaBase: 5,

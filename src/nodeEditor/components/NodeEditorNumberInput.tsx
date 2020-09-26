@@ -1,7 +1,7 @@
 import React from "react";
 import { NumberInput } from "~/components/common/NumberInput";
+import { NODE_H_PADDING_BASE } from "~/constants";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { NODE_EDITOR_NODE_H_PADDING } from "~/constants";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	container: css`
@@ -9,16 +9,16 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		padding: 2px 0;
 
 		&--horizontalPadding {
-			padding-left: ${NODE_EDITOR_NODE_H_PADDING};
-			padding-right: ${NODE_EDITOR_NODE_H_PADDING};
+			padding-left: ${NODE_H_PADDING_BASE};
+			padding-right: ${NODE_H_PADDING_BASE};
 		}
 
 		&--paddingLeft {
-			padding-left: ${NODE_EDITOR_NODE_H_PADDING};
+			padding-left: ${NODE_H_PADDING_BASE};
 		}
 
 		&--paddingRight {
-			padding-right: ${NODE_EDITOR_NODE_H_PADDING};
+			padding-right: ${NODE_H_PADDING_BASE};
 		}
 	`,
 }));
@@ -30,10 +30,11 @@ interface Props {
 	onChangeEnd: ((type: "relative" | "absolute") => void) | undefined;
 	min?: number;
 	max?: number;
+	tick?: number;
+	decimalPlaces?: number;
 	horizontalPadding?: boolean;
 	paddingRight?: boolean;
 	paddingLeft?: boolean;
-	decimalPlaces?: number;
 }
 
 export const NodeEditorNumberInput: React.FC<Props> = (props) => {
@@ -42,7 +43,11 @@ export const NodeEditorNumberInput: React.FC<Props> = (props) => {
 		paddingLeft = false,
 		paddingRight = false,
 		decimalPlaces,
+		tick,
+		min,
+		max,
 	} = props;
+
 	return (
 		<div className={s("container", { horizontalPadding, paddingLeft, paddingRight })}>
 			<NumberInput
@@ -50,11 +55,13 @@ export const NodeEditorNumberInput: React.FC<Props> = (props) => {
 				value={props.value}
 				onChange={props.onChange}
 				onChangeEnd={props.onChangeEnd}
-				max={props.max}
-				min={props.min}
+				max={max}
+				min={min}
+				tick={tick}
 				decimalPlaces={decimalPlaces}
 				fillWidth
 				fullWidth
+				nodeEditor
 			/>
 		</div>
 	);

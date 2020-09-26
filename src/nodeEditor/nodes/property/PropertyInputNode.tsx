@@ -10,6 +10,7 @@ import {
 	NodeEditorNodeState,
 } from "~/nodeEditor/nodeEditorIO";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { NodeProps } from "~/nodeEditor/nodes/nodeEditorTypes";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { PropertyNodeSelectProperty } from "~/nodeEditor/nodes/property/PropertyNodeSelectProperty";
 import { connectActionState, getActionState } from "~/state/stateUtils";
@@ -18,11 +19,7 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
-interface OwnProps {
-	areaId: string;
-	graphId: string;
-	nodeId: string;
-}
+type OwnProps = NodeProps;
 interface StateProps {
 	graphLayerId: string;
 	graphPropertyId: string;
@@ -38,7 +35,15 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function PropertyInputNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, compositionLayerIds, layerPropertyIds } = props;
+	const {
+		areaId,
+		graphId,
+		nodeId,
+		outputs,
+		compositionLayerIds,
+		layerPropertyIds,
+		zIndex,
+	} = props;
 
 	const onSelectLayer = (layerId: string) => {
 		requestAction({ history: true }, (params) => {
@@ -100,7 +105,7 @@ function PropertyInputNodeComponent(props: Props) {
 	};
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
 			<PropertyNodeSelectProperty
 				selectFromLayerIds={compositionLayerIds}
 				selectFromPropertyIds={layerPropertyIds}

@@ -1,25 +1,22 @@
 import React from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import NodeStyles from "~/nodeEditor/nodes/Node.styles";
-import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
-import { NodeEditorNodeState, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
-import { NodeEditorNodeType } from "~/types";
-import { NodeEditorSelect } from "~/nodeEditor/components/NodeEditorSelect";
-import { NodeEditorNumberInput } from "~/nodeEditor/components/NodeEditorNumberInput";
-import { requestAction } from "~/listener/requestAction";
-import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
-import { NodeEditorTValueInput } from "~/nodeEditor/components/NodeEditorTValueInput";
-import { NodeBody } from "~/nodeEditor/components/NodeBody";
 import { useNumberInputAction } from "~/hook/useNumberInputAction";
+import { requestAction } from "~/listener/requestAction";
+import { NodeBody } from "~/nodeEditor/components/NodeBody";
+import { NodeEditorNumberInput } from "~/nodeEditor/components/NodeEditorNumberInput";
+import { NodeEditorSelect } from "~/nodeEditor/components/NodeEditorSelect";
+import { NodeEditorTValueInput } from "~/nodeEditor/components/NodeEditorTValueInput";
+import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
+import { NodeEditorNodeOutput, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
+import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { NodeProps } from "~/nodeEditor/nodes/nodeEditorTypes";
+import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
+import { connectActionState } from "~/state/stateUtils";
+import { NodeEditorNodeType } from "~/types";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
-interface OwnProps {
-	areaId: string;
-	graphId: string;
-	nodeId: string;
-}
+type OwnProps = NodeProps;
 interface StateProps {
 	outputs: NodeEditorNodeOutput[];
 	state: NodeEditorNodeState<NodeEditorNodeType.num_input>;
@@ -28,7 +25,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function NumberInputNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, state } = props;
+	const { areaId, graphId, nodeId, outputs, state, zIndex } = props;
 
 	const { onChange, onChangeEnd } = useNumberInputAction({
 		onChange: (value, params) => {
@@ -55,7 +52,7 @@ function NumberInputNodeComponent(props: Props) {
 	};
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -103,6 +100,7 @@ function NumberInputNodeComponent(props: Props) {
 					value={state.value}
 					onChange={onChange}
 					onChangeEnd={onChangeEnd}
+					horizontalPadding
 				/>
 			)}
 		</NodeBody>

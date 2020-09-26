@@ -1,4 +1,5 @@
 import React from "react";
+import { getNodeEditorNodeLabel } from "~/nodeEditor/nodeEditorUtils";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { connectActionState } from "~/state/stateUtils";
@@ -12,6 +13,7 @@ interface OwnProps {
 	areaId: string;
 	graphId: string;
 	nodeId: string;
+	zIndex: number;
 	allowResize?: boolean;
 	children: React.ReactNode;
 }
@@ -25,21 +27,19 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const NodeBodyComponent: React.FC<Props> = (props) => {
-	const { top, left, width, type, nodeId, allowResize = true } = props;
+	const { top, left, width, type, allowResize = true, zIndex } = props;
 	const { selected } = props;
 
 	return (
 		<div
 			className={s("container", { selected })}
-			style={{ left, top, width }}
+			style={{ left, top, width, zIndex }}
 			onMouseDown={separateLeftRightMouse({
 				left: (e) => nodeHandlers.mouseDown(e, props.areaId, props.graphId, props.nodeId),
 				right: (e) => nodeHandlers.onRightClick(e, props.graphId, props.nodeId),
 			})}
 		>
-			<div className={s("header")}>
-				{type} ({nodeId})
-			</div>
+			<div className={s("header", { selected })}>{getNodeEditorNodeLabel(type)}</div>
 			{props.children}
 			{allowResize && (
 				<div

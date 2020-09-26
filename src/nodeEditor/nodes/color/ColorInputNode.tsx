@@ -12,6 +12,7 @@ import { NodeEditorTValueInput } from "~/nodeEditor/components/NodeEditorTValueI
 import { nodeEditorActions } from "~/nodeEditor/nodeEditorActions";
 import { NodeEditorNodeOutput, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { NodeProps } from "~/nodeEditor/nodes/nodeEditorTypes";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { NODE_HEIGHT_CONSTANTS } from "~/nodeEditor/util/calculateNodeHeight";
 import { connectActionState } from "~/state/stateUtils";
@@ -22,11 +23,7 @@ const s = compileStylesheetLabelled(NodeStyles);
 
 const labels = ["Red", "Green", "Blue", "Alpha"];
 
-interface OwnProps {
-	areaId: string;
-	graphId: string;
-	nodeId: string;
-}
+type OwnProps = NodeProps;
 interface StateProps {
 	outputs: NodeEditorNodeOutput[];
 	state: NodeEditorNodeState<NodeEditorNodeType.color_input>;
@@ -35,7 +32,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const ColorInputNodeComponent: React.FC<Props> = (props) => {
-	const { areaId, graphId, nodeId, outputs, state } = props;
+	const { areaId, graphId, nodeId, outputs, state, zIndex } = props;
 
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const getButtonRect = useGetRefRectFn(buttonRef);
@@ -131,7 +128,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 	};
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>

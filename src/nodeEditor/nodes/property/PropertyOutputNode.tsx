@@ -11,6 +11,7 @@ import {
 	NodeEditorNodeState,
 } from "~/nodeEditor/nodeEditorIO";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { NodeProps } from "~/nodeEditor/nodes/nodeEditorTypes";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { PropertyNodeSelectProperty } from "~/nodeEditor/nodes/property/PropertyNodeSelectProperty";
 import { connectActionState, getActionState } from "~/state/stateUtils";
@@ -20,11 +21,7 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
-interface OwnProps {
-	areaId: string;
-	graphId: string;
-	nodeId: string;
-}
+type OwnProps = NodeProps;
 interface StateProps {
 	graphLayerId: string;
 	graphPropertyId: string;
@@ -39,7 +36,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function PropertyOutputNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, inputs } = props;
+	const { areaId, graphId, nodeId, inputs, zIndex } = props;
 
 	const onSelectProperty = (propertyId: string) => {
 		requestAction({ history: true }, (params) => {
@@ -121,7 +118,7 @@ function PropertyOutputNodeComponent(props: Props) {
 	);
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
 			{select}
 			{inputs.map((input, i) => {
 				return (

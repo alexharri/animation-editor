@@ -2,6 +2,7 @@ import React from "react";
 import { NodeBody } from "~/nodeEditor/components/NodeBody";
 import { NodeEditorNodeOutput, NodeEditorNodeState } from "~/nodeEditor/nodeEditorIO";
 import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { NodeProps } from "~/nodeEditor/nodes/nodeEditorTypes";
 import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
 import { connectActionState } from "~/state/stateUtils";
 import { NodeEditorNodeType } from "~/types";
@@ -9,11 +10,7 @@ import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
-interface OwnProps {
-	areaId: string;
-	graphId: string;
-	nodeId: string;
-}
+type OwnProps = NodeProps;
 interface StateProps {
 	outputs: NodeEditorNodeOutput[];
 	state: NodeEditorNodeState<NodeEditorNodeType.array_modifier_index>;
@@ -23,10 +20,10 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function ArrayModifierIndexNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs } = props;
+	const { areaId, graphId, nodeId, outputs, zIndex } = props;
 
 	return (
-		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId}>
+		<NodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>

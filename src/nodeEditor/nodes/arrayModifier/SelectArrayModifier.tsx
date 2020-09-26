@@ -7,7 +7,7 @@ import {
 import {
 	CONTEXT_MENU_OPTION_HEIGHT,
 	DEFAULT_CONTEXT_MENU_WIDTH,
-	NODE_EDITOR_NODE_H_PADDING,
+	NODE_H_PADDING_BASE,
 } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
@@ -29,8 +29,8 @@ const styles = ({ css }: StyleParams) => ({
 		font: 400 12px/18px ${cssVariables.fontFamily};
 		border: none;
 		display: block;
-		width: calc(100% - ${NODE_EDITOR_NODE_H_PADDING * 2}px);
-		margin: 0 ${NODE_EDITOR_NODE_H_PADDING};
+		width: calc(100% - ${NODE_H_PADDING_BASE * 2}px);
+		margin: 0 ${NODE_H_PADDING_BASE};
 		text-align: left;
 		padding: 0 6px;
 		border-radius: 4px;

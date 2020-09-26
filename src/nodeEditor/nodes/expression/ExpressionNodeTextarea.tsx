@@ -5,7 +5,7 @@ import {
 	EXPR_TEXTAREA_MIN_HEIGHT,
 	EXPR_TEXTAREA_MIN_WIDTH,
 	EXPR_TEXTAREA_V_PADDING,
-	NODE_EDITOR_NODE_H_PADDING,
+	NODE_H_PADDING_BASE,
 } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { useComputeHistory } from "~/hook/useComputeHistory";
@@ -29,8 +29,8 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		border-radius: 2px;
 		background: ${cssVariables.dark500};
 		width: calc(100% - 16px);
-		max-width: calc(100% - ${NODE_EDITOR_NODE_H_PADDING * 2}px);
-		margin: 0 ${NODE_EDITOR_NODE_H_PADDING}px 8px;
+		max-width: calc(100% - ${NODE_H_PADDING_BASE * 2}px);
+		margin: 0 ${NODE_H_PADDING_BASE}px 8px;
 		color: ${cssVariables.white500};
 		font-size: 13px;
 		font-family: ${cssVariables.fontMonospace};
@@ -166,19 +166,18 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 			return;
 		}
 
-		let w = el.offsetWidth + NODE_EDITOR_NODE_H_PADDING * 2 + EXPR_TEXTAREA_H_PADDING * 2;
+		let w = el.offsetWidth + NODE_H_PADDING_BASE * 2 + EXPR_TEXTAREA_H_PADDING * 2;
 		let h = value.split("\n").length * EXPR_TEXTAREA_LINE_HEIGHT + EXPR_TEXTAREA_V_PADDING * 2;
 
 		w = Math.max(EXPR_TEXTAREA_MIN_WIDTH, w);
 		h = Math.max(EXPR_TEXTAREA_MIN_HEIGHT, h);
-
-		console.log(h);
 
 		params.dispatch(
 			nodeEditorActions.setExpressionNodeTextareaHeight(graphId, nodeId, h + 8),
 			nodeEditorActions.setNodeWidth(graphId, nodeId, w + 16),
 		);
 	}, [value]);
+
 	useEffect(() => {
 		setValue(expression);
 	}, [expression]);

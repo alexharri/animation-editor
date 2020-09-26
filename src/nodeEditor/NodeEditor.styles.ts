@@ -8,7 +8,7 @@ export default ({ css }: StyleParams) => ({
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: ${cssVariables.dark800};
+		background: ${cssVariables.dark600};
 	`,
 
 	panTarget: css`

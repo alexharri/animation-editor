@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { cssCursors } from "~/cssVariables";
+import { cssCursors, cssZIndex } from "~/cssVariables";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { NodeEditorDragSelect } from "~/nodeEditor/dragSelect/NodeEditorDragSelect";
 import styles from "~/nodeEditor/NodeEditor.styles";
@@ -9,13 +9,18 @@ import { nodeEditorHandlers } from "~/nodeEditor/nodeEditorHandlers";
 import { NodeEditorGraphState } from "~/nodeEditor/nodeEditorReducers";
 import { nodeEditorGlobalToNormal } from "~/nodeEditor/nodeEditorUtils";
 import { ArrayModifierIndexNode } from "~/nodeEditor/nodes/arrayModifier/ArrayModifierIndexNode";
+import { CapNumberNode } from "~/nodeEditor/nodes/CapNumberNode";
 import { ColorInputNode } from "~/nodeEditor/nodes/color/ColorInputNode";
+import { DegToRadNode } from "~/nodeEditor/nodes/DegToRadNode";
 import { ExpressionNode } from "~/nodeEditor/nodes/expression/ExpressionNode";
 import { Node } from "~/nodeEditor/nodes/Node";
 import { NodePreview } from "~/nodeEditor/nodes/NodePreview";
 import { NumberInputNode } from "~/nodeEditor/nodes/NumberInputNode";
 import { PropertyInputNode } from "~/nodeEditor/nodes/property/PropertyInputNode";
 import { PropertyOutputNode } from "~/nodeEditor/nodes/property/PropertyOutputNode";
+import { RadToDegNode } from "~/nodeEditor/nodes/RadToDegNode";
+import { Vec2AddNode } from "~/nodeEditor/nodes/Vec2AddNode";
+import { Vec2FactorsNode } from "~/nodeEditor/nodes/Vec2FactorsNode";
 import { Vec2InputNode } from "~/nodeEditor/nodes/Vec2InputNode";
 import { Vec2LerpNode } from "~/nodeEditor/nodes/Vec2LerpNode";
 import { connectActionState } from "~/state/stateUtils";
@@ -149,17 +154,25 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 				/>
 				<div
 					style={{
+						position: "relative",
+						zIndex: cssZIndex.nodeEditor.nodes,
 						transform: `translate(${pan.x + props.width / 2}px, ${
 							pan.y + props.height / 2
 						}px)`,
 					}}
 				>
-					<div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
-						{nodeIds.map((nodeId) => {
+					<div
+						style={{
+							transform: `scale(${scale})`,
+							transformOrigin: "0 0",
+						}}
+					>
+						{nodeIds.map((nodeId, i) => {
 							let NodeComponent: React.ComponentType<{
 								areaId: string;
 								graphId: string;
 								nodeId: string;
+								zIndex: number;
 							}> = Node;
 
 							switch (props.graph.nodes[nodeId].type) {
@@ -170,6 +183,11 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 
 								case NodeEditorNodeType.property_input: {
 									NodeComponent = PropertyInputNode;
+									break;
+								}
+
+								case NodeEditorNodeType.num_cap: {
+									NodeComponent = CapNumberNode;
 									break;
 								}
 
@@ -188,8 +206,28 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 									break;
 								}
 
+								case NodeEditorNodeType.deg_to_rad: {
+									NodeComponent = DegToRadNode;
+									break;
+								}
+
+								case NodeEditorNodeType.rad_to_deg: {
+									NodeComponent = RadToDegNode;
+									break;
+								}
+
+								case NodeEditorNodeType.vec2_add: {
+									NodeComponent = Vec2AddNode;
+									break;
+								}
+
 								case NodeEditorNodeType.vec2_lerp: {
 									NodeComponent = Vec2LerpNode;
+									break;
+								}
+
+								case NodeEditorNodeType.vec2_factors: {
+									NodeComponent = Vec2FactorsNode;
 									break;
 								}
 
@@ -209,6 +247,7 @@ const NodeEditorComponent: React.FC<Props> = (props) => {
 									nodeId={nodeId}
 									areaId={props.areaId}
 									graphId={props.areaState.graphId}
+									zIndex={i}
 								/>
 							);
 						})}

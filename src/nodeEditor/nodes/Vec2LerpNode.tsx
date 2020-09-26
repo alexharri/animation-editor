@@ -1,20 +1,17 @@
 import React from "react";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import NodeStyles from "~/nodeEditor/nodes/Node.styles";
-import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
-import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
 import { NodeBody } from "~/nodeEditor/components/NodeBody";
 import { NodeTValueInput } from "~/nodeEditor/inputs/NodeTValueInput";
 import { NodeVec2Input } from "~/nodeEditor/inputs/NodeVec2Input";
+import { NodeEditorNodeInput, NodeEditorNodeOutput } from "~/nodeEditor/nodeEditorIO";
+import NodeStyles from "~/nodeEditor/nodes/Node.styles";
+import { NodeProps } from "~/nodeEditor/nodes/nodeEditorTypes";
+import { nodeHandlers } from "~/nodeEditor/nodes/nodeHandlers";
+import { connectActionState } from "~/state/stateUtils";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
 
-interface OwnProps {
-	areaId: string;
-	graphId: string;
-	nodeId: string;
-}
+type OwnProps = NodeProps;
 interface StateProps {
 	inputs: NodeEditorNodeInput[];
 	outputs: NodeEditorNodeOutput[];
@@ -24,9 +21,9 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function Vec2LerpNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs } = props;
+	const { areaId, graphId, nodeId, outputs, zIndex } = props;
 
-	const baseProps = { areaId, graphId, nodeId };
+	const baseProps = { areaId, graphId, nodeId, zIndex };
 
 	return (
 		<NodeBody {...baseProps}>
