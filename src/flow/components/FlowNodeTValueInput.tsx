@@ -1,6 +1,6 @@
 import React from "react";
 import { NumberInput } from "~/components/common/NumberInput";
-import { NODE_H_PADDING_BASE } from "~/constants";
+import { FLOW_NODE_H_PADDING_BASE } from "~/constants";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(({ css }) => ({
@@ -9,16 +9,16 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		padding: 2px 0;
 
 		&--horizontalPadding {
-			padding-left: ${NODE_H_PADDING_BASE};
-			padding-right: ${NODE_H_PADDING_BASE};
+			padding-left: ${FLOW_NODE_H_PADDING_BASE};
+			padding-right: ${FLOW_NODE_H_PADDING_BASE};
 		}
 
 		&--paddingLeft {
-			padding-left: ${NODE_H_PADDING_BASE};
+			padding-left: ${FLOW_NODE_H_PADDING_BASE};
 		}
 
 		&--paddingRight {
-			padding-right: ${NODE_H_PADDING_BASE};
+			padding-right: ${FLOW_NODE_H_PADDING_BASE};
 		}
 	`,
 }));

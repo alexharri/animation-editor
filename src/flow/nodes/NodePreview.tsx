@@ -1,5 +1,5 @@
 import React from "react";
-import { DEFAULT_NODE_EDITOR_NODE_WIDTH } from "~/constants";
+import { DEFAULT_FLOW_NODE_WIDTH } from "~/constants";
 import { getFlowNodeDefaultInputs, getFlowNodeDefaultOutputs } from "~/flow/flowIO";
 import { FlowNodeIO, FlowNodeType } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
@@ -27,7 +27,7 @@ export function NodePreview(props: Props) {
 	return (
 		<div
 			className={s("container")}
-			style={{ left, top, width: DEFAULT_NODE_EDITOR_NODE_WIDTH, opacity: 0.5 }}
+			style={{ left, top, width: DEFAULT_FLOW_NODE_WIDTH, opacity: 0.5 }}
 		>
 			<div className={s("header")}>{type}</div>
 			{outputs.map((output, i) => {

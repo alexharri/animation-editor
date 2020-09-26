@@ -1,5 +1,5 @@
 import uuid from "uuid/v4";
-import { DEFAULT_NODE_EDITOR_NODE_WIDTH } from "~/constants";
+import { DEFAULT_FLOW_NODE_WIDTH } from "~/constants";
 import { FlowGraph, FlowNodeType } from "~/flow/flowTypes";
 
 const createFlowGraphBase = () => {
@@ -12,7 +12,7 @@ const createFlowGraphBase = () => {
 				position: Vec2.new(0, 0),
 				state: { layerId: "", propertyId: "" },
 				type: FlowNodeType.property_output,
-				width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
+				width: DEFAULT_FLOW_NODE_WIDTH,
 				outputs: [],
 				inputs: [],
 			},

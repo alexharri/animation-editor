@@ -1,5 +1,5 @@
 import { getAreaViewport } from "~/area/util/getAreaViewport";
-import { AreaType, NODE_EDITOR_MIN_NODE_WIDTH } from "~/constants";
+import { AreaType, FLOW_NODE_MIN_WIDTH } from "~/constants";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { flowActions } from "~/flow/flowActions";
 import { flowValidInputsToOutputsMap } from "~/flow/flowIO";
@@ -445,7 +445,7 @@ export const nodeHandlers = {
 				}
 
 				const width = Math.max(
-					NODE_EDITOR_MIN_NODE_WIDTH,
+					FLOW_NODE_MIN_WIDTH,
 					Math.round(mousePos.x - node.position.x),
 				);
 				dispatch(flowActions.setNodeWidth(graphId, nodeId, width));

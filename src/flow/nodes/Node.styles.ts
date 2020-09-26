@@ -1,4 +1,4 @@
-import { NODE_H_PADDING_ADDITIONAL, NODE_H_PADDING_BASE } from "~/constants";
+import { FLOW_NODE_H_PADDING_ADDITIONAL, FLOW_NODE_H_PADDING_BASE } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { hexToRGBAString } from "~/util/color/convertColor";
 import { StyleParams } from "~/util/stylesheets";
@@ -31,7 +31,7 @@ export default ({ css }: StyleParams) => ({
 		border-top-right-radius: 3px;
 		color: ${cssVariables.white500};
 		background: rgba(255, 255, 255, 0.05);
-		padding-left: ${NODE_H_PADDING_BASE + NODE_H_PADDING_ADDITIONAL}px;
+		padding-left: ${FLOW_NODE_H_PADDING_BASE + FLOW_NODE_H_PADDING_ADDITIONAL}px;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		overflow-x: hidden;
@@ -44,7 +44,7 @@ export default ({ css }: StyleParams) => ({
 	input: css`
 		min-height: 20px;
 		line-height: 20px;
-		padding-left: ${NODE_H_PADDING_BASE + NODE_H_PADDING_ADDITIONAL}px;
+		padding-left: ${FLOW_NODE_H_PADDING_BASE + FLOW_NODE_H_PADDING_ADDITIONAL}px;
 		width: 100%;
 		position: relative;
 
@@ -75,7 +75,7 @@ export default ({ css }: StyleParams) => ({
 	output: css`
 		height: 20px;
 		line-height: 20px;
-		padding-right: ${NODE_H_PADDING_BASE + NODE_H_PADDING_ADDITIONAL}px;
+		padding-right: ${FLOW_NODE_H_PADDING_BASE + FLOW_NODE_H_PADDING_ADDITIONAL}px;
 		width: 100%;
 		position: relative;
 		z-index: 10;
@@ -123,7 +123,7 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	colorInput__colorValue: css`
-		margin-left: ${NODE_H_PADDING_BASE};
+		margin-left: ${FLOW_NODE_H_PADDING_BASE};
 		border: none;
 		background: black;
 		border-radius: 3px;

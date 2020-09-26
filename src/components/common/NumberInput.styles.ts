@@ -1,4 +1,4 @@
-import { NODE_H_PADDING_ADDITIONAL } from "~/constants";
+import { FLOW_NODE_H_PADDING_ADDITIONAL } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { hexToRGBAString } from "~/util/color/convertColor";
 import { StyleParams } from "~/util/stylesheets";
@@ -39,8 +39,8 @@ export default ({ css }: StyleParams) => ({
 		&--flowEditor {
 			color: ${cssVariables.white500};
 			background-color: ${hexToRGBAString(cssVariables.gray700, 0.4)};
-			padding-left: ${NODE_H_PADDING_ADDITIONAL}px;
-			padding-right: ${NODE_H_PADDING_ADDITIONAL}px;
+			padding-left: ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
+			padding-right: ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
 
 			&:hover {
 				background-color: ${hexToRGBAString(cssVariables.gray800, 0.5)};
@@ -108,8 +108,8 @@ export default ({ css }: StyleParams) => ({
 		}
 
 		&--flowEditor {
-			padding-left: ${NODE_H_PADDING_ADDITIONAL}px;
-			padding-right: ${NODE_H_PADDING_ADDITIONAL}px;
+			padding-left: ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
+			padding-right: ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
 			font-size: 12px;
 		}
 	`,

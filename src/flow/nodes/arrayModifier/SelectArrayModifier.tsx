@@ -7,7 +7,7 @@ import {
 import {
 	CONTEXT_MENU_OPTION_HEIGHT,
 	DEFAULT_CONTEXT_MENU_WIDTH,
-	NODE_H_PADDING_BASE,
+	FLOW_NODE_H_PADDING_BASE,
 } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { NODE_HEIGHT_CONSTANTS } from "~/flow/util/flowNodeHeight";
@@ -29,8 +29,8 @@ const styles = ({ css }: StyleParams) => ({
 		font: 400 12px/18px ${cssVariables.fontFamily};
 		border: none;
 		display: block;
-		width: calc(100% - ${NODE_H_PADDING_BASE * 2}px);
-		margin: 0 ${NODE_H_PADDING_BASE};
+		width: calc(100% - ${FLOW_NODE_H_PADDING_BASE * 2}px);
+		margin: 0 ${FLOW_NODE_H_PADDING_BASE};
 		text-align: left;
 		padding: 0 6px;
 		border-radius: 4px;

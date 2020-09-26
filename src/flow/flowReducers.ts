@@ -1,5 +1,5 @@
 import { ActionType, getType } from "typesafe-actions";
-import { DEFAULT_NODE_EDITOR_NODE_WIDTH } from "~/constants";
+import { DEFAULT_FLOW_NODE_WIDTH } from "~/constants";
 import { flowActions as actions } from "~/flow/flowActions";
 import { getFlowNodeDefaultInputs, getFlowNodeDefaultOutputs } from "~/flow/flowIO";
 import { getFlowNodeDefaultState } from "~/flow/flowNodeState";
@@ -183,7 +183,7 @@ function graphReducer(state: FlowGraph, action: FlowAction): FlowGraph {
 						id,
 						type,
 						position,
-						width: DEFAULT_NODE_EDITOR_NODE_WIDTH,
+						width: DEFAULT_FLOW_NODE_WIDTH,
 						inputs: io?.inputs || getFlowNodeDefaultInputs(type),
 						outputs: io?.outputs || getFlowNodeDefaultOutputs(type),
 						state: getFlowNodeDefaultState(type),

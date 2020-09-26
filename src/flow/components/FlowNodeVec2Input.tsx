@@ -1,11 +1,11 @@
 import React from "react";
 import { NumberInput } from "~/components/common/NumberInput";
-import { NODE_H_PADDING_BASE } from "~/constants";
+import { FLOW_NODE_H_PADDING_BASE } from "~/constants";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	input: css`
-		padding: 2px ${NODE_H_PADDING_BASE}px;
+		padding: 2px ${FLOW_NODE_H_PADDING_BASE}px;
 	`,
 }));
 
