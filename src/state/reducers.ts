@@ -15,7 +15,12 @@ import {
 	ContextMenuState,
 	initialContextMenuState,
 } from "~/contextMenu/contextMenuReducer";
-import { flowReducer, FlowState, initialFlowState } from "~/flow/flowReducers";
+import { flowReducer, FlowState, initialFlowState } from "~/flow/state/flowReducers";
+import {
+	flowSelectionReducer,
+	FlowSelectionState,
+	initialFlowSelectionState,
+} from "~/flow/state/flowSelectionReducer";
 import { initialProjectState, projectReducer, ProjectState } from "~/project/projectReducer";
 import { initialShapeState, shapeReducer, ShapeState } from "~/shape/shapeReducer";
 import {
@@ -39,6 +44,7 @@ declare global {
 		compositionState: HistoryState<CompositionState>;
 		compositionSelectionState: HistoryState<CompositionSelectionState>;
 		flowState: HistoryState<FlowState>;
+		flowSelectionState: HistoryState<FlowSelectionState>;
 		contextMenu: ActionBasedState<ContextMenuState>;
 		project: HistoryState<ProjectState>;
 		shapeState: HistoryState<ShapeState>;
@@ -53,6 +59,7 @@ declare global {
 		compositionState: CompositionState;
 		compositionSelectionState: CompositionSelectionState;
 		flowState: FlowState;
+		flowSelectionState: FlowSelectionState;
 		contextMenu: ContextMenuState;
 		project: ProjectState;
 		shapeState: ShapeState;
@@ -84,6 +91,10 @@ const reducers = {
 	),
 
 	flowState: createReducerWithHistory(initialFlowState, flowReducer),
+	flowSelectionState: createReducerWithHistory(initialFlowSelectionState, flowSelectionReducer, {
+		selectionForKey: "flowState",
+	}),
+
 	contextMenu: createActionBasedReducer(initialContextMenuState, contextMenuReducer),
 
 	project: createReducerWithHistory(initialProjectState, projectReducer),
@@ -99,7 +110,7 @@ const reducers = {
 	timelineSelectionState: createReducerWithHistory(
 		initialTimelineSelectionState,
 		timelineSelectionReducer,
-		{ selectionForKey: "timelines" },
+		{ selectionForKey: "timelineState" },
 	),
 
 	tool: createActionBasedReducer(initialToolState, toolReducer),

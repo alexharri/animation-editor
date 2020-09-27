@@ -7,7 +7,6 @@ import {
 	getLayerArrayModifierCountPropertyId,
 	getLayerArrayModifiers,
 } from "~/composition/util/compositionPropertyUtils";
-import { FlowState } from "~/flow/flowReducers";
 import {
 	FlowComputeContext,
 	FlowComputeNodeArg,
@@ -16,6 +15,7 @@ import {
 	FlowNodeType,
 } from "~/flow/flowTypes";
 import { computeNodeOutputArgs } from "~/flow/graph/computeNode";
+import { FlowState } from "~/flow/state/flowReducers";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import { TimelineState } from "~/timeline/timelineReducer";

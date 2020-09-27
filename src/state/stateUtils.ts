@@ -10,7 +10,14 @@ const getCurrentStateFromApplicationState = (_state: ApplicationState): ActionSt
 	const keys = Object.keys(state) as Array<keyof ApplicationState>;
 	const actionState = keys.reduce<ActionState>((obj, key) => {
 		if (state[key].list) {
-			obj[key] = state[key].list[state[key].index].state;
+			const s = state[key] as HistoryState<any>;
+			const shiftForward =
+				s.type === "selection" &&
+				s.indexDirection === -1 &&
+				s.list[s.index + 1].modifiedRelated &&
+				s.list[s.index + 1].allowIndexShift;
+
+			obj[key] = s.list[s.index + (shiftForward ? 1 : 0)].state;
 		} else {
 			obj[key] = state[key].state;
 		}
@@ -71,6 +78,7 @@ export const createApplicationStateFromActionState = (
 		compositionState: toHistoryBasedState(actionState.compositionState),
 		contextMenu: toActionBasedState(actionState.contextMenu),
 		flowState: toHistoryBasedState(actionState.flowState),
+		flowSelectionState: toHistoryBasedState(actionState.flowSelectionState, "selection"),
 		project: toHistoryBasedState(actionState.project),
 		shapeState: toHistoryBasedState(actionState.shapeState),
 		shapeSelectionState: toHistoryBasedState(actionState.shapeSelectionState, "selection"),

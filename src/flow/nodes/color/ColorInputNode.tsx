@@ -5,11 +5,11 @@ import { ContextMenuBaseProps, OpenCustomContextMenuOptions } from "~/contextMen
 import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeNumberInput } from "~/flow/components/FlowNodeNumberInput";
 import { FlowNodeTValueInput } from "~/flow/components/FlowNodeTValueInput";
-import { flowActions } from "~/flow/flowActions";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNodeOutput, FlowNodeProps, FlowNodeType } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
 import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { flowActions } from "~/flow/state/flowActions";
 import { NODE_HEIGHT_CONSTANTS } from "~/flow/util/flowNodeHeight";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { useNumberInputAction } from "~/hook/useNumberInputAction";

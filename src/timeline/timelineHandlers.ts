@@ -20,8 +20,8 @@ import {
 	TIMELINE_ITEM_HEIGHT,
 	TIMELINE_LAYER_HEIGHT,
 } from "~/constants";
-import { flowActions } from "~/flow/flowActions";
 import { createArrayModifierFlowGraph, createLayerFlowGraph } from "~/flow/graph/createFlowGraph";
+import { flowActions } from "~/flow/state/flowActions";
 import { isKeyDown } from "~/listener/keyboard";
 import {
 	requestAction,

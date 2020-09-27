@@ -1,10 +1,15 @@
 import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { AreaType, FLOW_NODE_MIN_WIDTH } from "~/constants";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
-import { flowActions } from "~/flow/flowActions";
 import { flowValidInputsToOutputsMap } from "~/flow/flowIO";
 import { FlowGraph } from "~/flow/flowTypes";
-import { flowEditorGlobalToNormal } from "~/flow/flowUtils";
+import {
+	didFlowSelectionChange,
+	flowEditorGlobalToNormal,
+	flowSelectionFromState,
+} from "~/flow/flowUtils";
+import { flowActions } from "~/flow/state/flowActions";
+import { flowSelectionActions } from "~/flow/state/flowSelectionReducer";
 import {
 	calculateNodeInputPosition,
 	calculateNodeOutputPosition,
@@ -97,59 +102,39 @@ export const nodeHandlers = {
 	},
 
 	mouseDown: (e: React.MouseEvent, areaId: string, graphId: string, nodeId: string) => {
-		const shouldAddToStack = (prevState: ActionState, nextState: ActionState): boolean => {
-			// Check if move vector has changed
-
-			if (
+		const didMoveVectorChange = (prevState: ActionState, nextState: ActionState): boolean => {
+			return (
 				prevState.flowState.graphs[graphId].moveVector !==
 				nextState.flowState.graphs[graphId].moveVector
-			) {
-				return true;
-			}
-
-			// Check if selection has changed
-
-			const prevSelected = Object.keys(prevState.flowState.graphs[graphId].selection.nodes);
-			const nextSelected = Object.keys(nextState.flowState.graphs[graphId].selection.nodes);
-
-			if (prevSelected.length !== nextSelected.length) {
-				return true;
-			}
-
-			const nextSelectedSet = new Set(...nextSelected);
-
-			for (let i = 0; i < prevSelected.length; i += 1) {
-				if (!nextSelectedSet.has(prevSelected[i])) {
-					return true;
-				}
-			}
-
-			return false;
+			);
 		};
 
 		const { pan, scale } = getAreaActionState<AreaType.FlowEditor>(areaId);
 		const viewport = getAreaViewport(areaId, AreaType.FlowEditor);
 		const transformMousePosition = (mousePosition: Vec2) =>
 			flowEditorGlobalToNormal(mousePosition, viewport, scale, pan);
+		const shiftKeyDownAtMouseDown = isKeyDown("Shift");
+		const { flowSelectionState } = getActionState();
 
 		const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
 
 		requestAction(
-			{ history: true, shouldAddToStack },
+			{
+				history: true,
+				shouldAddToStack: [didFlowSelectionChange(graphId), didMoveVectorChange],
+			},
 			({ submitAction, dispatch, addListener }) => {
-				const shiftKeyDownAtMouseDown = isKeyDown("Shift");
-
-				const graph = getActionState().flowState.graphs[graphId];
+				const selection = flowSelectionFromState(graphId, flowSelectionState);
 
 				// If the shift key is down, we modify the selection state immediately by
 				// toggling the selection state of the node that was clicked.
 				if (shiftKeyDownAtMouseDown) {
-					dispatch(flowActions.toggleNodeSelection(graphId, nodeId));
-				} else if (!graph.selection.nodes[nodeId]) {
+					dispatch(flowSelectionActions.toggleNode(graphId, nodeId));
+				} else if (!selection.nodes[nodeId]) {
 					// If the current node is not selected, we clear the node selectction state
 					// and add the clicked node to the selection.
-					dispatch(flowActions.clearNodeSelection(graphId));
-					dispatch(flowActions.addNodeToSelection(graphId, nodeId));
+					dispatch(flowSelectionActions.clear(graphId));
+					dispatch(flowSelectionActions.addNode(graphId, nodeId));
 				}
 
 				let hasMoved = false;
@@ -171,13 +156,15 @@ export const nodeHandlers = {
 				});
 
 				addListener.once("mouseup", () => {
+					const { flowSelectionState } = getActionState();
+					const selection = flowSelectionFromState(graphId, flowSelectionState);
 					if (hasMoved) {
-						dispatch(flowActions.applyMoveVector(graphId));
+						dispatch(flowActions.applyMoveVector(graphId, selection));
 						submitAction("Move selection", { allowIndexShift: true });
 					} else {
 						if (!shiftKeyDownAtMouseDown) {
-							dispatch(flowActions.clearNodeSelection(graphId));
-							dispatch(flowActions.addNodeToSelection(graphId, nodeId));
+							dispatch(flowSelectionActions.clear(graphId));
+							dispatch(flowSelectionActions.addNode(graphId, nodeId));
 						}
 						submitAction("Modify selection");
 					}

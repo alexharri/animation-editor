@@ -1,5 +1,6 @@
 import { FlowGraph, FlowNodeType } from "~/flow/flowTypes";
-import { removeKeysFromMap } from "~/util/mapUtils";
+import { FlowGraphSelection, FlowSelectionState } from "~/flow/state/flowSelectionReducer";
+import { isMapShallowEqual, removeKeysFromMap } from "~/util/mapUtils";
 
 const flowNodeTypeToLabel: Record<FlowNodeType, string> = {
 	[FlowNodeType.array_modifier_index]: "Index",
@@ -138,4 +139,27 @@ export const removeNodeAndReferencesToItInFlowGraph = (
 	};
 
 	return newGraph;
+};
+
+export const flowSelectionFromState = (
+	graphId: string,
+	flowState: FlowSelectionState,
+): FlowGraphSelection => {
+	return flowState[graphId] || { nodes: {} };
+};
+
+export const didFlowSelectionChange: (
+	graphId: string,
+) => (prevState: ActionState, nextState: ActionState) => boolean = (graphId) => (
+	prevState,
+	nextState,
+) => {
+	const a = flowSelectionFromState(graphId, prevState.flowSelectionState);
+	const b = flowSelectionFromState(graphId, nextState.flowSelectionState);
+
+	if (!isMapShallowEqual(a.nodes, b.nodes)) {
+		return true;
+	}
+
+	return false;
 };

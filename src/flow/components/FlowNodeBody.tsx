@@ -1,6 +1,6 @@
 import React from "react";
 import { FlowNodeType } from "~/flow/flowTypes";
-import { getFlowNodeLabel } from "~/flow/flowUtils";
+import { flowSelectionFromState, getFlowNodeLabel } from "~/flow/flowUtils";
 import NodeStyles from "~/flow/nodes/Node.styles";
 import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
 import { connectActionState } from "~/state/stateUtils";
@@ -60,12 +60,15 @@ const FlowNodeBodyComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ flowState },
+	{ flowState, flowSelectionState },
 	{ graphId, nodeId },
 ) => {
 	const graph = flowState.graphs[graphId];
+	const selection = flowSelectionFromState(graphId, flowSelectionState);
+
 	const { type, width, position } = graph.nodes[nodeId];
-	const selected = !!graph.selection.nodes[nodeId];
+	const selected = !!selection.nodes[nodeId];
+
 	const { x: left, y: top } =
 		selected && (graph.moveVector.x !== 0 || graph.moveVector.y !== 0)
 			? position.add(graph.moveVector)

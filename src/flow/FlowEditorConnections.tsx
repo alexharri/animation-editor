@@ -1,8 +1,9 @@
 import React from "react";
 import { cssVariables, cssZIndex } from "~/cssVariables";
-import { FlowAreaState } from "~/flow/flowAreaReducer";
 import { FlowGraph } from "~/flow/flowTypes";
-import { flowEditorPositionToViewport } from "~/flow/flowUtils";
+import { flowEditorPositionToViewport, flowSelectionFromState } from "~/flow/flowUtils";
+import { FlowAreaState } from "~/flow/state/flowAreaReducer";
+import { FlowGraphSelection } from "~/flow/state/flowSelectionReducer";
 import {
 	calculateNodeInputPosition,
 	calculateNodeOutputPosition,
@@ -22,6 +23,7 @@ interface OwnProps {
 }
 interface StateProps {
 	graph: FlowGraph;
+	selection: FlowGraphSelection;
 }
 type Props = OwnProps & StateProps;
 
@@ -29,7 +31,7 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 	public render() {
 		const { props } = this;
 
-		const { areaState, graph, width, height, left, top } = props;
+		const { areaState, graph, selection, width, height, left, top } = props;
 		const { pan, scale } = areaState;
 		const opts = { viewport: { width, height, left, top }, pan, scale };
 
@@ -112,15 +114,13 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 
 				const targetPos = calculateNodeOutputPosition(targetNode, pointer.outputIndex)
 					.apply((vec) =>
-						graph.selection.nodes[targetNode.id]
-							? vec.add(props.graph.moveVector)
-							: vec,
+						selection.nodes[targetNode.id] ? vec.add(props.graph.moveVector) : vec,
 					)
 					.apply((vec) => flowEditorPositionToViewport(vec, opts));
 
 				const nodePos = calculateNodeInputPosition(node, j)
 					.apply((vec) =>
-						graph.selection.nodes[node.id] ? vec.add(props.graph.moveVector) : vec,
+						selection.nodes[node.id] ? vec.add(props.graph.moveVector) : vec,
 					)
 					.apply((vec) => flowEditorPositionToViewport(vec, opts));
 
@@ -158,9 +158,14 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 	}
 }
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = (state, ownProps) => ({
-	graph: state.flowState.graphs[ownProps.graphId],
-});
+const mapStateToProps: MapActionState<StateProps, OwnProps> = (state, ownProps) => {
+	const graph = state.flowState.graphs[ownProps.graphId];
+	const selection = flowSelectionFromState(ownProps.graphId, state.flowSelectionState);
+	return {
+		graph,
+		selection,
+	};
+};
 
 export const FlowEditorConnections = connectActionState<StateProps, OwnProps>(mapStateToProps)(
 	FlowEditorConnectionsComponent,
