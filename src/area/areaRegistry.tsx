@@ -1,6 +1,7 @@
 import { AreaType } from "~/constants";
-import { flowAreaReducer } from "~/flow/flowAreaReducer";
 import { FlowEditor } from "~/flow/FlowEditor";
+import { flowEditorKeyboardShortcuts } from "~/flow/flowEditorKeyboardShortcuts";
+import { flowAreaReducer } from "~/flow/state/flowAreaReducer";
 import HistoryEditor from "~/historyEditor/HistoryEditor";
 import { Project } from "~/project/Project";
 import { Timeline } from "~/timeline/Timeline";
@@ -47,4 +48,5 @@ export const areaKeyboardShortcutRegistry: Partial<
 	}
 > = {
 	[AreaType.Timeline]: timelineKeyboardShortcuts,
+	[AreaType.FlowEditor]: flowEditorKeyboardShortcuts,
 };

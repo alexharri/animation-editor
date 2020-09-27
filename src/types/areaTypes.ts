@@ -1,5 +1,5 @@
 import { AreaType } from "~/constants";
-import { FlowAreaState } from "~/flow/flowAreaReducer";
+import { FlowAreaState } from "~/flow/state/flowAreaReducer";
 import { TimelineAreaState } from "~/timeline/timelineAreaReducer";
 import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { cssCursors, cssZIndex } from "~/cssVariables";
 import { FlowEditorDragSelect } from "~/flow/dragSelect/FlowEditorDragSelect";
-import { FlowAreaState } from "~/flow/flowAreaReducer";
 import styles from "~/flow/FlowEditor.styles";
 import { FlowEditorConnections } from "~/flow/FlowEditorConnections";
 import { flowEditorHandlers } from "~/flow/flowEditorHandlers";
@@ -23,6 +22,7 @@ import { Vec2AddNode } from "~/flow/nodes/vec2/Vec2AddNode";
 import { Vec2FactorsNode } from "~/flow/nodes/vec2/Vec2FactorsNode";
 import { Vec2InputNode } from "~/flow/nodes/vec2/Vec2InputNode";
 import { Vec2LerpNode } from "~/flow/nodes/vec2/Vec2LerpNode";
+import { FlowAreaState } from "~/flow/state/flowAreaReducer";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { connectActionState } from "~/state/stateUtils";
 import { AreaComponentProps } from "~/types/areaTypes";

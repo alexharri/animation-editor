@@ -1,9 +1,9 @@
 import React from "react";
 import { FlowNodeVec2Input } from "~/flow/components/FlowNodeVec2Input";
-import { flowActions } from "~/flow/flowActions";
 import { FlowNodeInput } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
 import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { flowActions } from "~/flow/state/flowActions";
 import { useNumberInputAction } from "~/hook/useNumberInputAction";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";

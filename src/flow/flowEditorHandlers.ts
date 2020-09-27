@@ -1,16 +1,23 @@
 import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { AreaType } from "~/constants";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
-import { flowActions } from "~/flow/flowActions";
 import { flowAreaActions } from "~/flow/flowAreaActions";
-import { flowEditorGlobalToNormal } from "~/flow/flowUtils";
+import {
+	didFlowSelectionChange,
+	flowEditorGlobalToNormal,
+	flowSelectionFromState,
+} from "~/flow/flowUtils";
+import { flowActions } from "~/flow/state/flowActions";
+import { flowSelectionActions } from "~/flow/state/flowSelectionReducer";
 import { getFlowGraphContextMenuOptions } from "~/flow/util/flowGraphContextMenu";
+import { calculateNodeHeight } from "~/flow/util/flowNodeHeight";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction } from "~/listener/requestAction";
 import { createViewportWheelHandlers } from "~/shared/viewport/viewportWheelHandlers";
+import { getActionState } from "~/state/stateUtils";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { clearElementFocus } from "~/util/focus";
-import { rectOfTwoVecs } from "~/util/math";
+import { rectOfTwoVecs, rectsIntersect } from "~/util/math";
 
 export const flowEditorHandlers = {
 	onLeftClickOutside: (
@@ -24,6 +31,7 @@ export const flowEditorHandlers = {
 		const viewport = getAreaViewport(areaId, AreaType.FlowEditor);
 
 		mouseDownMoveAction(e, {
+			shouldAddToStack: didFlowSelectionChange(graphId),
 			translate: (vec) => flowEditorGlobalToNormal(vec, viewport, scale, pan),
 			keys: [],
 			beforeMove: () => {},
@@ -33,12 +41,36 @@ export const flowEditorHandlers = {
 			},
 			mouseUp: (params, hasMoved) => {
 				if (!hasMoved) {
-					params.dispatch(flowActions.clearNodeSelection(graphId));
+					params.dispatch(flowSelectionActions.clear(graphId));
 					params.submitAction("Modify selection");
 					return;
 				}
 
-				params.dispatch(flowActions.submitDragSelectRect(graphId, isAdditiveSelection));
+				const { flowState, flowSelectionState } = getActionState();
+				const selection = flowSelectionFromState(graphId, flowSelectionState);
+				const graph = flowState.graphs[graphId];
+
+				const nodeIds = Object.keys(graph.nodes).reduce<string[]>((arr, nodeId) => {
+					const node = graph.nodes[nodeId];
+
+					const shouldBeSelected =
+						(isAdditiveSelection && selection.nodes[nodeId]) ||
+						rectsIntersect(graph._dragSelectRect!, {
+							left: node.position.x,
+							top: node.position.y,
+							height: calculateNodeHeight(node),
+							width: node.width,
+						});
+
+					if (shouldBeSelected) {
+						arr.push(nodeId);
+					}
+
+					return arr;
+				}, []);
+
+				params.dispatch(flowActions.setDragSelectRect(graphId, null));
+				params.dispatch(flowSelectionActions.setSelectedNodesInGraph(graphId, nodeIds));
 				params.submitAction("Modify selection");
 			},
 		});

@@ -66,7 +66,6 @@ export const useAreaKeyboardShortcuts = (areaId: string, areaType: AreaType, vie
 
 			if (shortcut.shouldAddToStack) {
 				shouldAddToStack = (prevState, nextState) => {
-					console.log({ prevState, nextState });
 					return shortcut.shouldAddToStack!(areaId, prevState, nextState);
 				};
 			}

@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { cssZIndex } from "~/cssVariables";
-import { FlowAreaState } from "~/flow/flowAreaReducer";
+import { FlowAreaState } from "~/flow/state/flowAreaReducer";
 import { connectActionState } from "~/state/stateUtils";
 import { AreaComponentProps } from "~/types/areaTypes";
 import { compileStylesheetLabelled } from "~/util/stylesheets";

@@ -1,7 +1,7 @@
 import { EvalFunction } from "mathjs";
 import { CompositionState } from "~/composition/compositionReducer";
 import { FlowNodeState } from "~/flow/flowNodeState";
-import { KeySelectionMap, PropertyValueMap, ValueType } from "~/types";
+import { PropertyValueMap, ValueType } from "~/types";
 
 export enum FlowNodeType {
 	empty = "empty",
@@ -68,7 +68,6 @@ export interface FlowGraph {
 	id: string;
 	moveVector: Vec2;
 	nodes: { [nodeId: string]: FlowNode<FlowNodeType> };
-	selection: { nodes: KeySelectionMap };
 	_addNodeOfTypeOnClick: { type: FlowNodeType; io?: FlowNodeIO } | null;
 	_dragSelectRect: Rect | null;
 	_dragOutputTo: {

@@ -67,7 +67,8 @@ export function createReducerWithHistory<S>(
 				const shiftForward =
 					state.type === "selection" &&
 					state.indexDirection === -1 &&
-					state.list[state.index + 1].modifiedRelated;
+					state.list[state.index + 1].modifiedRelated &&
+					state.list[state.index + 1].allowIndexShift;
 
 				return {
 					...state,

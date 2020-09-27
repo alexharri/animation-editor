@@ -7,6 +7,7 @@ import {
 	FlowNodeOutput,
 	FlowNodeType,
 } from "~/flow/flowTypes";
+import { FlowGraphSelection } from "~/flow/state/flowSelectionReducer";
 
 export const flowActions = {
 	/**
@@ -15,6 +16,7 @@ export const flowActions = {
 	setGraph: createAction("flowGraph/SET_GRAPH", (action) => {
 		return (graph: FlowGraph) => action({ graph });
 	}),
+
 	removeGraph: createAction("flowGraph/REMOVE_GRAPH", (action) => {
 		return (graphId: string) => action({ graphId });
 	}),
@@ -93,28 +95,12 @@ export const flowActions = {
 	 * Selection
 	 */
 	setDragSelectRect: createAction("flowGraph/SET_DRAG_SELECT_RECT", (action) => {
-		return (graphId: string, rect: Rect) => action({ graphId, rect });
+		return (graphId: string, rect: Rect | null) => action({ graphId, rect });
 	}),
 
 	submitDragSelectRect: createAction("flowGraph/SUBMIT_DRAG_SELECT", (action) => {
 		return (graphId: string, additiveSelection: boolean) =>
 			action({ graphId, additiveSelection });
-	}),
-
-	addNodeToSelection: createAction("flowGraph/ADD_NODE_TO_SELECTION", (action) => {
-		return (graphId: string, nodeId: string) => action({ graphId, nodeId });
-	}),
-
-	removeNodeFromSelection: createAction("flowGraph/REMOVE_NODE_FROM_SELECTION", (action) => {
-		return (graphId: string, nodeId: string) => action({ graphId, nodeId });
-	}),
-
-	toggleNodeSelection: createAction("flowGraph/TOGGLE_NODE_SELECTION", (action) => {
-		return (graphId: string, nodeId: string) => action({ graphId, nodeId });
-	}),
-
-	clearNodeSelection: createAction("flowGraph/CLEAR_SELECTION", (action) => {
-		return (graphId: string) => action({ graphId });
 	}),
 
 	/**
@@ -125,7 +111,7 @@ export const flowActions = {
 	}),
 
 	applyMoveVector: createAction("flowGraph/APPLY_MOVE_VECTOR", (action) => {
-		return (graphId: string) => action({ graphId });
+		return (graphId: string, selection: FlowGraphSelection) => action({ graphId, selection });
 	}),
 
 	/**

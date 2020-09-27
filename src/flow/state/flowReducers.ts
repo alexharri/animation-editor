@@ -1,6 +1,5 @@
 import { ActionType, getType } from "typesafe-actions";
 import { DEFAULT_FLOW_NODE_WIDTH } from "~/constants";
-import { flowActions as actions } from "~/flow/flowActions";
 import { getFlowNodeDefaultInputs, getFlowNodeDefaultOutputs } from "~/flow/flowIO";
 import { getFlowNodeDefaultState } from "~/flow/flowNodeState";
 import { FlowGraph, FlowNode, FlowNodeInput, FlowNodeType } from "~/flow/flowTypes";
@@ -8,10 +7,8 @@ import {
 	removeNodeAndReferencesToItInFlowGraph,
 	removeReferencesToNodeInFlowGraph,
 } from "~/flow/flowUtils";
-import { calculateNodeHeight } from "~/flow/util/flowNodeHeight";
-import { KeySelectionMap } from "~/types";
+import { flowActions as actions } from "~/flow/state/flowActions";
 import { removeKeysFromMap } from "~/util/mapUtils";
-import { rectsIntersect } from "~/util/math";
 
 type FlowAction = ActionType<typeof actions>;
 
@@ -75,53 +72,6 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
 
 function graphReducer(state: FlowGraph, action: FlowAction): FlowGraph {
 	switch (action.type) {
-		case getType(actions.addNodeToSelection): {
-			const { nodeId } = action.payload;
-			return {
-				...state,
-				selection: {
-					...state.selection,
-					nodes: {
-						...state.selection.nodes,
-						[nodeId]: true,
-					},
-				},
-			};
-		}
-
-		case getType(actions.removeNodeFromSelection): {
-			const { nodeId } = action.payload;
-			return {
-				...state,
-				selection: {
-					...state.selection,
-					nodes: Object.keys(state.selection.nodes).reduce<KeySelectionMap>((obj, id) => {
-						if (nodeId !== id) {
-							obj[id] = true;
-						}
-						return obj;
-					}, {}),
-				},
-			};
-		}
-
-		case getType(actions.toggleNodeSelection): {
-			const { graphId, nodeId } = action.payload;
-			return state.selection.nodes[nodeId]
-				? graphReducer(state, actions.removeNodeFromSelection(graphId, nodeId))
-				: graphReducer(state, actions.addNodeToSelection(graphId, nodeId));
-		}
-
-		case getType(actions.clearNodeSelection): {
-			return {
-				...state,
-				selection: {
-					...state.selection,
-					nodes: {},
-				},
-			};
-		}
-
 		case getType(actions.setMoveVector): {
 			const { moveVector } = action.payload;
 			return { ...state, moveVector };
@@ -129,13 +79,14 @@ function graphReducer(state: FlowGraph, action: FlowAction): FlowGraph {
 
 		case getType(actions.applyMoveVector): {
 			const { moveVector } = state;
+			const { selection } = action.payload;
 			return {
 				...state,
 				moveVector: Vec2.new(0, 0),
 				nodes: Object.keys(state.nodes).reduce<FlowGraph["nodes"]>((obj, nodeId) => {
 					const node = state.nodes[nodeId];
 
-					obj[nodeId] = state.selection.nodes[nodeId]
+					obj[nodeId] = selection.nodes[nodeId]
 						? { ...node, position: node.position.add(moveVector) }
 						: node;
 
@@ -149,9 +100,6 @@ function graphReducer(state: FlowGraph, action: FlowAction): FlowGraph {
 
 			return {
 				...removeNodeAndReferencesToItInFlowGraph(nodeId, state),
-				selection: {
-					nodes: removeKeysFromMap(state.selection.nodes, [nodeId]),
-				},
 			};
 		}
 
@@ -160,7 +108,6 @@ function graphReducer(state: FlowGraph, action: FlowAction): FlowGraph {
 
 			return {
 				...removeReferencesToNodeInFlowGraph(nodeId, state),
-				selection: state.selection,
 			};
 		}
 
@@ -214,35 +161,6 @@ function graphReducer(state: FlowGraph, action: FlowAction): FlowGraph {
 		case getType(actions.setDragSelectRect): {
 			const { rect } = action.payload;
 			return { ...state, _dragSelectRect: rect };
-		}
-
-		case getType(actions.submitDragSelectRect): {
-			const { additiveSelection } = action.payload;
-
-			return {
-				...state,
-				_dragSelectRect: null,
-				selection: {
-					...state.selection,
-					nodes: Object.keys(state.nodes).reduce<{ [key: string]: true }>((obj, key) => {
-						const node = state.nodes[key];
-						const shouldBeSelected =
-							(additiveSelection && state.selection.nodes[key]) ||
-							rectsIntersect(state._dragSelectRect!, {
-								left: node.position.x,
-								top: node.position.y,
-								height: calculateNodeHeight(node),
-								width: node.width,
-							});
-
-						if (shouldBeSelected) {
-							obj[key] = true;
-						}
-
-						return obj;
-					}, {}),
-				},
-			};
 		}
 
 		case getType(actions.setDragSelectRect): {

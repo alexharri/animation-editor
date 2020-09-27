@@ -8,9 +8,9 @@ import {
 	FLOW_NODE_H_PADDING_BASE,
 } from "~/constants";
 import { cssVariables } from "~/cssVariables";
-import { flowActions } from "~/flow/flowActions";
 import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { getExpressionUpdateIO } from "~/flow/nodes/expression/expressionUtils";
+import { flowActions } from "~/flow/state/flowActions";
 import { useComputeHistory } from "~/hook/useComputeHistory";
 import { isKeyCodeOf } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
