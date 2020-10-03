@@ -332,9 +332,7 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 				params.dispatch(compositionActions.setShapeMoveVector(compositionId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
@@ -956,9 +954,7 @@ export const penToolHandlers = {
 						.sub(cpPosTranslated);
 				}
 
-				const transformed = toUse
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 				params.dispatch(shapeActions.setMoveVector(shapeId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
@@ -1511,9 +1507,7 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 				toDispatch.push(
 					shapeActions.setControlPointPosition(rcpl, transformed.scale(-1)),
 					shapeActions.setControlPointPosition(rcpr, transformed),
@@ -1652,9 +1646,7 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 				params.dispatch(shapeActions.setMoveVector(shapeId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
@@ -1735,8 +1727,7 @@ export const penToolHandlers = {
 				const transform = ctx.layerTransform;
 				const toUse = mousePosition.normal
 					.sub(transform.translate)
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+					.multiplyMat2(transform.matrix.inverse());
 
 				const newNode: ShapeNode = {
 					id: newNodeId,
@@ -1816,9 +1807,7 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 
 				const prevCpPos = transformed.scale(-1);
 				const nextCpPos = transformed;
@@ -2065,9 +2054,7 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 
 				const createCpId = createGenMapIdFn(getActionState().shapeState.controlPoints);
 
@@ -2189,8 +2176,7 @@ export const penToolHandlers = {
 				const transform = ctx.layerTransform;
 				const toUse = mousePosition.normal
 					.sub(transform.translate)
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+					.multiplyMat2(transform.matrix.inverse());
 
 				const node: ShapeNode = {
 					id: nodeId,
@@ -2240,9 +2226,7 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse
-					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
-					.rotate(-transform.rotation);
+				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 
 				if (firstMove) {
 					const e0: ShapeEdge = {

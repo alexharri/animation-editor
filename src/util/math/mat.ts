@@ -1,3 +1,4 @@
+import * as mathjs from "mathjs";
 import { getAngleRadians } from "~/util/math";
 
 type Matrix2x2 = [[number, number], [number, number]];
@@ -133,5 +134,10 @@ export class Mat2 {
 	public j(): Vec2 {
 		const [jx, jy] = this.matrix[1];
 		return Vec2.new(jx, jy);
+	}
+
+	public inverse(): Mat2 {
+		const matrix = mathjs.inv(this.matrix);
+		return Mat2.new(matrix);
 	}
 }
