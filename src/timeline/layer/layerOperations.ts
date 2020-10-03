@@ -42,10 +42,13 @@ const setLayerParentLayer = (op: Operation, layerId: string, parentId: string): 
 	const transform = transformMap[layer.id].transform[0];
 	const parentTransform = transformMap[parentId].transform[0];
 
-	const { anchor, scale, rotation, translate } = adjustTransformToParent(
-		transform,
-		parentTransform,
-	);
+	const {
+		anchor,
+		scaleX: scaleX,
+		scaleY: scaleY,
+		rotation: rotation,
+		translate,
+	} = adjustTransformToParent(transform, parentTransform);
 
 	const properties = getLayerTransformProperties(layerId, compositionState);
 
@@ -55,7 +58,8 @@ const setLayerParentLayer = (op: Operation, layerId: string, parentId: string): 
 		compositionActions.setPropertyValue(properties.positionX.id, translate.x),
 		compositionActions.setPropertyValue(properties.positionY.id, translate.y),
 		compositionActions.setPropertyValue(properties.rotation.id, rotation * RAD_TO_DEG_FAC),
-		compositionActions.setPropertyValue(properties.scale.id, scale),
+		compositionActions.setPropertyValue(properties.scaleX.id, scaleX),
+		compositionActions.setPropertyValue(properties.scaleY.id, scaleY),
 		compositionActions.setLayerParentLayerId(layerId, parentId),
 	);
 };
@@ -65,7 +69,9 @@ const removeLayerParentLayer = (op: Operation, layerId: string): void => {
 	const layer = compositionState.layers[layerId];
 
 	const transformMap = getTransformMap(layer.compositionId);
-	const { anchor, translate, rotation, scale } = transformMap[layer.id].transform[0];
+	const { anchor, translate, rotation: rotation, scaleX: scaleX, scaleY: scaleY } = transformMap[
+		layer.id
+	].transform[0];
 
 	const properties = getLayerTransformProperties(layerId, compositionState);
 
@@ -75,7 +81,8 @@ const removeLayerParentLayer = (op: Operation, layerId: string): void => {
 		compositionActions.setPropertyValue(properties.positionX.id, translate.x),
 		compositionActions.setPropertyValue(properties.positionY.id, translate.y),
 		compositionActions.setPropertyValue(properties.rotation.id, rotation * RAD_TO_DEG_FAC),
-		compositionActions.setPropertyValue(properties.scale.id, scale),
+		compositionActions.setPropertyValue(properties.scaleX.id, scaleX),
+		compositionActions.setPropertyValue(properties.scaleY.id, scaleY),
 		compositionActions.setLayerParentLayerId(layerId, ""),
 	);
 };

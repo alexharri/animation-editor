@@ -1,23 +1,27 @@
 import React, { useRef } from "react";
 import { NumberInput } from "~/components/common/NumberInput";
+import { LinkIcon } from "~/components/icons/LinkIcon";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition, CompositionProperty } from "~/composition/compositionTypes";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
-import { connectActionState } from "~/state/stateUtils";
+import { createOperation } from "~/state/operation";
+import { connectActionState, getActionState } from "~/state/stateUtils";
 import TimelinePropertyStyles from "~/timeline/property/TimelineProperty.styles";
 import { timelineActions } from "~/timeline/timelineActions";
-import { Timeline, TimelineKeyframe } from "~/timeline/timelineTypes";
-import { createTimelineKeyframe, splitKeyframesAtIndex } from "~/timeline/timelineUtils";
+import { timelineHandlers } from "~/timeline/timelineHandlers";
+import { TimelineKeyframe } from "~/timeline/timelineTypes";
+import {
+	createTimelineKeyframe,
+	getTimelineValueAtIndex,
+	splitKeyframesAtIndex,
+} from "~/timeline/timelineUtils";
 import { PropertyName } from "~/types";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
-const usePropertyNumberInput = (
-	timeline: Timeline | undefined,
-	property: CompositionProperty,
-	composition: Composition,
-) => {
+const usePropertyNumberInput = (property: CompositionProperty, composition: Composition) => {
 	const paramsRef = useRef<RequestActionParams | null>(null);
+	const proportionRef = useRef(1);
 	const onValueChangeFn = useRef<((value: number) => void) | null>(null);
 	const onValueChangeEndFn = useRef<(() => void) | null>(null);
 
@@ -30,70 +34,123 @@ const usePropertyNumberInput = (
 		requestAction({ history: true }, (params) => {
 			paramsRef.current = params;
 
-			let keyframe: TimelineKeyframe | null = null;
+			const updateTwin = property.twinPropertyId && property.shouldMaintainProportions;
 
-			if (timeline) {
-				for (let i = 0; i < timeline.keyframes.length; i += 1) {
-					if (timeline.keyframes[i].index === composition.frameIndex) {
-						keyframe = timeline.keyframes[i];
-					}
-				}
+			if (updateTwin) {
+				const {
+					compositionState,
+					timelineState,
+					timelineSelectionState,
+				} = getActionState();
+				const twinProperty = compositionState.properties[
+					property.twinPropertyId
+				] as CompositionProperty;
+				const composition = compositionState.compositions[property.compositionId];
+				const layer = compositionState.layers[property.layerId];
+				const { frameIndex } = composition;
+				const { index } = layer;
+
+				const propertyValue = property.timelineId
+					? getTimelineValueAtIndex({
+							frameIndex,
+							layerIndex: index,
+							timeline: timelineState[property.timelineId],
+							selection: timelineSelectionState[property.timelineId],
+					  })
+					: property.value;
+				const twinValue = twinProperty.timelineId
+					? getTimelineValueAtIndex({
+							frameIndex,
+							layerIndex: index,
+							timeline: timelineState[twinProperty.timelineId],
+							selection: timelineSelectionState[twinProperty.timelineId],
+					  })
+					: twinProperty.value;
+
+				const proportion = twinValue / propertyValue;
+				proportionRef.current = proportion;
 			}
 
 			onValueChangeFn.current = (value) => {
-				if (!timeline) {
-					params.dispatch(compositionActions.setPropertyValue(property.id, value));
-					return;
-				}
+				const op = createOperation();
+				const { compositionState, timelineState } = getActionState();
 
-				if (keyframe) {
-					params.dispatch(
-						timelineActions.setKeyframe(timeline.id, {
-							...keyframe,
-							value,
-						}),
-					);
-					return;
-				}
+				const update = (propertyId: string, value: number) => {
+					const property = compositionState.properties[propertyId] as CompositionProperty;
+					const timeline = timelineState[property.timelineId];
 
-				const index = composition.frameIndex;
-				const keyframes = timeline.keyframes;
+					let keyframe: TimelineKeyframe | null = null;
 
-				if (index < keyframes[0].index) {
-					const k = createTimelineKeyframe(value, index);
-					params.dispatch(timelineActions.setKeyframe(timeline.id, k));
-					return;
-				}
-
-				if (index > keyframes[keyframes.length - 1].index) {
-					const k = createTimelineKeyframe(value, index);
-					params.dispatch(timelineActions.setKeyframe(timeline.id, k));
-					return;
-				}
-
-				for (let i = 0; i < keyframes.length; i += 1) {
-					if (keyframes[i].index > index) {
-						continue;
+					if (timeline) {
+						for (let i = 0; i < timeline.keyframes.length; i += 1) {
+							if (timeline.keyframes[i].index === composition.frameIndex) {
+								keyframe = timeline.keyframes[i];
+							}
+						}
 					}
 
-					if (keyframes[i].index === index) {
-						return keyframes[i].value;
+					if (!timeline) {
+						op.add(compositionActions.setPropertyValue(propertyId, value));
+						return;
 					}
 
-					if (index > keyframes[i + 1].index) {
-						continue;
+					if (keyframe) {
+						op.add(
+							timelineActions.setKeyframe(timeline.id, {
+								...keyframe,
+								value,
+							}),
+						);
+						return;
 					}
 
-					const [k0, k, k1] = splitKeyframesAtIndex(
-						keyframes[i],
-						keyframes[i + 1],
-						index,
-					);
-					keyframe = k;
-					params.dispatch(timelineActions.setKeyframe(timeline.id, k0));
-					params.dispatch(timelineActions.setKeyframe(timeline.id, k));
-					params.dispatch(timelineActions.setKeyframe(timeline.id, k1));
+					const index = composition.frameIndex;
+					const keyframes = timeline.keyframes;
+
+					if (index < keyframes[0].index) {
+						const k = createTimelineKeyframe(value, index);
+						op.add(timelineActions.setKeyframe(timeline.id, k));
+						return;
+					}
+
+					if (index > keyframes[keyframes.length - 1].index) {
+						const k = createTimelineKeyframe(value, index);
+						op.add(timelineActions.setKeyframe(timeline.id, k));
+						return;
+					}
+
+					for (let i = 0; i < keyframes.length; i += 1) {
+						if (keyframes[i].index > index) {
+							continue;
+						}
+
+						if (keyframes[i].index === index) {
+							return keyframes[i].value;
+						}
+
+						if (index > keyframes[i + 1].index) {
+							continue;
+						}
+
+						const [k0, k, k1] = splitKeyframesAtIndex(
+							keyframes[i],
+							keyframes[i + 1],
+							index,
+						);
+						keyframe = k;
+						op.add(timelineActions.setKeyframe(timeline.id, k0));
+						op.add(timelineActions.setKeyframe(timeline.id, k));
+						op.add(timelineActions.setKeyframe(timeline.id, k1));
+					}
+				};
+
+				update(property.id, value);
+
+				if (updateTwin) {
+					const proportion = proportionRef.current;
+					update(property.twinPropertyId, proportion * value);
 				}
+				params.dispatch(op.actions);
 			};
 			onValueChangeFn.current(value);
 
@@ -124,21 +181,26 @@ interface OwnProps {
 interface StateProps {
 	property: CompositionProperty;
 	composition: Composition;
-	timeline?: Timeline;
 }
 type Props = OwnProps & StateProps;
 
 const TimelineNumberValueComponent: React.FC<Props> = (props) => {
-	const { composition, property, timeline } = props;
+	const { composition, property } = props;
 
-	const [onValueChange, onValueChangeEnd] = usePropertyNumberInput(
-		timeline,
-		property,
-		composition,
-	);
+	const [onValueChange, onValueChangeEnd] = usePropertyNumberInput(property, composition);
 
 	return (
 		<div className={s("value")}>
+			{property.twinPropertyId && (
+				<button
+					className={s("maintainProportionsButton", {
+						active: property.shouldMaintainProportions,
+					})}
+					onClick={() => timelineHandlers.toggleMaintainPropertyProportions(property.id)}
+				>
+					<LinkIcon />
+				</button>
+			)}
 			<NumberInput
 				min={property.min}
 				max={property.max}
@@ -147,12 +209,16 @@ const TimelineNumberValueComponent: React.FC<Props> = (props) => {
 				value={props.rawValue}
 				showValue={props.computedValue}
 				tick={
-					property.name === PropertyName.Scale || property.name === PropertyName.Opacity
+					property.name === PropertyName.ScaleX ||
+					property.name === PropertyName.ScaleY ||
+					property.name === PropertyName.Opacity
 						? 0.01
 						: 1
 				}
 				decimalPlaces={
-					property.name === PropertyName.Scale || property.name === PropertyName.Opacity
+					property.name === PropertyName.ScaleX ||
+					property.name === PropertyName.ScaleY ||
+					property.name === PropertyName.Opacity
 						? 2
 						: 1
 				}
@@ -162,7 +228,7 @@ const TimelineNumberValueComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ timelineState, compositionState, compositionSelectionState },
+	{ compositionState, compositionSelectionState },
 	{ propertyId },
 ) => {
 	const property = compositionState.properties[propertyId] as CompositionProperty;
@@ -173,11 +239,8 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	);
 	const isSelected = !!compositionSelection.properties[propertyId];
 
-	const timeline = property.timelineId ? timelineState[property.timelineId] : undefined;
-
 	return {
 		composition,
-		timeline,
 		isSelected,
 		property,
 	};

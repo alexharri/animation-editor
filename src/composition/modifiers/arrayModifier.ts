@@ -32,6 +32,8 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		value: 1,
 		valueType: ValueType.Number,
 		color: TimelineColors.Height,
+		twinPropertyId: "",
+		shouldMaintainProportions: false,
 	};
 
 	group.properties.push(count.id);
@@ -47,6 +49,8 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		value: "absolute_for_computed",
 		valueType: ValueType.TransformBehavior,
 		color: TimelineColors.Height,
+		twinPropertyId: "",
+		shouldMaintainProportions: false,
 	};
 
 	group.properties.push(transformBehavior.id);

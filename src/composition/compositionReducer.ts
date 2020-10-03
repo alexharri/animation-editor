@@ -184,6 +184,11 @@ export const compositionActions = {
 		return (compositionId: string, shapeMoveVector: Vec2) =>
 			action({ compositionId, shapeMoveVector });
 	}),
+
+	setPropertyMaintainProportions: createAction("comp/SET_PROP_MAINTAIN_PROPORTIONS", (action) => {
+		return (propertyId: string, shouldMaintainProportions: boolean) =>
+			action({ propertyId, shouldMaintainProportions });
+	}),
 };
 
 type Action = ActionType<typeof compositionActions>;
@@ -757,6 +762,21 @@ export const compositionReducer = (
 					(composition) => ({
 						...composition,
 						shapeMoveVector,
+					}),
+				),
+			};
+		}
+
+		case getType(compositionActions.setPropertyMaintainProportions): {
+			const { shouldMaintainProportions, propertyId } = action.payload;
+			return {
+				...state,
+				properties: modifyItemInUnionMap(
+					state.properties,
+					propertyId,
+					(item: CompositionProperty) => ({
+						...item,
+						shouldMaintainProportions,
 					}),
 				),
 			};

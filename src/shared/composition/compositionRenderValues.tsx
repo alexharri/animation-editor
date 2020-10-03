@@ -21,7 +21,7 @@ import { store } from "~/state/store";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
-import { AffineTransform, CompositionRenderValues, LayerType } from "~/types";
+import { CompositionRenderValues, LayerTransform, LayerType } from "~/types";
 
 function getGraphOutputNodes(graph: FlowGraph) {
 	const outputNodes: FlowNode<FlowNodeType.property_output>[] = [];
@@ -117,7 +117,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 
 	const renderCompAtFrameIndex = (
 		parent: any,
-		parentTransform: AffineTransform | undefined,
+		parentTransform: LayerTransform | undefined,
 		compositionId: string,
 		frameIndex: number,
 	): CompositionRenderValues => {
@@ -337,7 +337,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 	const _compRenderValues: { [key: string]: CompositionRenderValues } = {};
 	const getCompRenderValuesAtFrameIndex = (
 		parent: any,
-		parentTransform: AffineTransform | undefined,
+		parentTransform: LayerTransform | undefined,
 		compositionId: string,
 		frameIndex: number,
 	): CompositionRenderValues => {
@@ -359,7 +359,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 		compositionId: string,
 		frameIndex: number,
 		parent?: CompositionRenderValues,
-		parentTransform?: AffineTransform,
+		parentTransform?: LayerTransform,
 	): CompositionRenderValues {
 		const composition = compositionState.compositions[compositionId];
 

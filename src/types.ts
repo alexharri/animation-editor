@@ -1,5 +1,6 @@
 import { keys } from "~/constants";
 import { RequestActionParams } from "~/listener/requestAction";
+import { Mat2 } from "~/util/math/mat";
 
 export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
 
@@ -18,11 +19,13 @@ export type HSLColor = [number, number, number];
 export type RGBColor = [number, number, number];
 export type RGBAColor = [number, number, number, number];
 
-export interface AffineTransform {
+export interface LayerTransform {
 	translate: Vec2;
 	anchor: Vec2;
 	rotation: number; // Radians
-	scale: number;
+	scaleX: number;
+	scaleY: number;
+	matrix: Mat2;
 }
 
 export enum ValueType {
@@ -76,6 +79,8 @@ export enum PropertyName {
 	AnchorX = 0,
 	AnchorY = 1,
 	Scale = 2,
+	ScaleX = 24,
+	ScaleY = 25,
 	PositionX = 3,
 	PositionY = 4,
 	Rotation = 5,
@@ -133,9 +138,9 @@ export interface CompositionRenderValues {
 	arrayModifierProperties: ArrayModifierPropertyValueMap;
 	transforms: {
 		[layerId: string]: {
-			transform: { [index: number]: AffineTransform };
+			transform: { [index: number]: LayerTransform };
 			indexTransforms: Array<{
-				[index: number]: AffineTransform;
+				[index: number]: LayerTransform;
 			}>;
 		};
 	};

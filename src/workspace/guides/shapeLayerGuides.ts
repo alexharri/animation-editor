@@ -1,5 +1,4 @@
 import { CompositionLayer } from "~/composition/compositionTypes";
-import { transformMat2 } from "~/composition/transformUtils";
 import { Tool } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
@@ -534,9 +533,8 @@ export function renderShapeLayerGuides(
 	const { continueFrom, closePathNodeId } = getContinue(opts, layer.id);
 
 	const transform = map.transforms[layer.id].transform[index];
-	const mat2 = transformMat2(transform);
 	const toViewport = (vec: Vec2): Vec2 => {
-		return mat2
+		return transform.matrix
 			.multiplyVec2(vec.sub(transform.anchor))
 			.add(transform.translate)
 			.scale(scale)

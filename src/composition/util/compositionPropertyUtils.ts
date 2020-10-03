@@ -3,13 +3,14 @@ import { CompositionProperty, CompositionPropertyGroup } from "~/composition/com
 import { getIndexTransformMap } from "~/composition/transformUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import {
-	AffineTransform,
 	ArrayModifierPropertyValueMap,
+	LayerTransform,
 	PropertyGroupName,
 	PropertyName,
 	PropertyValueMap,
 	TransformBehavior,
 } from "~/types";
+import { Mat2 } from "~/util/math/mat";
 
 const propertyGroupNameToLabel: { [key in keyof typeof PropertyGroupName]: string } = {
 	Dimensions: "Dimensions",
@@ -27,6 +28,8 @@ const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
 	AnchorX: "Anchor X",
 	AnchorY: "Anchor Y",
 	Scale: "Scale",
+	ScaleX: "X Scale",
+	ScaleY: "Y Scale",
 	Rotation: "Rotation",
 	PositionX: "X Position",
 	PositionY: "Y Position",
@@ -116,19 +119,19 @@ export const getLayerArrayModifierIndexTransform = (
 	propertyToValue: PropertyValueMap,
 	arrayModifierPropertyToValue: ArrayModifierPropertyValueMap,
 	count: number,
-	transform: AffineTransform,
+	transform: LayerTransform,
 	transformGroupId: string,
 	behavior: TransformBehavior,
-): { [index: number]: AffineTransform } => {
+): { [index: number]: LayerTransform } => {
 	const transformGroup = compositionState.properties[
 		transformGroupId
 	] as CompositionPropertyGroup;
 
-	const indexTransforms: AffineTransform[] = [];
+	const indexTransforms: LayerTransform[] = [];
 	const isComputedByIndex: { [key: string]: boolean } = {};
 
 	for (let i = 0; i < count; i += 1) {
-		const transform: AffineTransform = {} as any;
+		const transform: LayerTransform = {} as any;
 
 		for (const propertyId of transformGroup.properties) {
 			const property = compositionState.properties[propertyId];
@@ -175,13 +178,20 @@ export const getLayerArrayModifierIndexTransform = (
 					transform.rotation = value * DEG_TO_RAD_FAC;
 					break;
 				}
-				case PropertyName.Scale: {
-					transform.scale = value;
+				case PropertyName.ScaleX: {
+					transform.scaleX = value;
+					break;
+				}
+				case PropertyName.ScaleY: {
+					transform.scaleY = value;
 					break;
 				}
 			}
 		}
 
+		transform.matrix = Mat2.identity()
+			.scaleXY(transform.scaleX, transform.scaleY)
+			.rotate(transform.rotation);
 		indexTransforms.push(transform);
 	}
 

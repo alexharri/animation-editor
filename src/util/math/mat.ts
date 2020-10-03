@@ -27,6 +27,16 @@ export class Mat2 {
 		]);
 	}
 
+	public static transform(rotationRad: number, scaleX: number, scaleY: number) {
+		const sin = Math.sin(rotationRad) * scaleY;
+		const cos = Math.cos(rotationRad) * scaleX;
+
+		return new Mat2([
+			[cos, sin],
+			[-sin, cos],
+		]);
+	}
+
 	public matrix: Matrix2x2;
 
 	constructor(matrix: Matrix2x2) {
@@ -42,8 +52,35 @@ export class Mat2 {
 		]);
 	}
 
+	public scaleX(scalar: number) {
+		const [ix, iy] = this.matrix[0];
+		const [jx, jy] = this.matrix[1];
+		return Mat2.new([
+			[ix * scalar, iy],
+			[jx * scalar, jy],
+		]);
+	}
+
+	public scaleY(scalar: number) {
+		const [ix, iy] = this.matrix[0];
+		const [jx, jy] = this.matrix[1];
+		return Mat2.new([
+			[ix, iy * scalar],
+			[jx, jy * scalar],
+		]);
+	}
+
+	public scaleXY(scaleX: number, scaleY: number) {
+		const [ix, iy] = this.matrix[0];
+		const [jx, jy] = this.matrix[1];
+		return Mat2.new([
+			[ix * scaleX, iy * scaleY],
+			[jx * scaleX, jy * scaleY],
+		]);
+	}
+
 	public rotate(rad: number) {
-		return Mat2.rotation(rad).multiplyMat2(this);
+		return this.multiplyMat2(Mat2.rotation(rad));
 	}
 
 	public multiply<T extends Mat2 | Vec2>(matOrVec: T): T {

@@ -6,7 +6,7 @@ import {
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
-import { applyParentTransform, transformMat2 } from "~/composition/transformUtils";
+import { applyParentTransform } from "~/composition/transformUtils";
 import {
 	getLayerArrayModifiers,
 	getLayerCompositionProperties,
@@ -24,8 +24,8 @@ import {
 	pathIdToCurves,
 } from "~/shape/shapeUtils";
 import {
-	AffineTransform,
 	CompositionRenderValues,
+	LayerTransform,
 	LayerType,
 	PropertyGroupName,
 	PropertyName,
@@ -108,7 +108,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
 		index: number,
-		parentIndexTransforms: AffineTransform[] = [],
+		parentIndexTransforms: LayerTransform[] = [],
 	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
@@ -123,7 +123,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
 		}
 
-		const mat2 = transformMat2(transform);
+		const mat2 = transform.matrix;
 
 		const corners = [
 			[1, 0],
@@ -156,7 +156,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
 		index: number,
-		parentIndexTransforms: AffineTransform[] = [],
+		parentIndexTransforms: LayerTransform[] = [],
 	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
@@ -171,7 +171,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
 		}
 
-		const [[ix, iy], [jx, jy]] = transformMat2(transform).matrix;
+		const [[ix, iy], [jx, jy]] = transform.matrix.matrix;
 
 		const toPos = (_x: number, _y: number) => {
 			const p = Vec2.new(_x, _y);
@@ -182,16 +182,18 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			return Vec2.new(x, y).scale(scale).add(pan);
 		};
 
-		const or = Math.abs(OuterRadius * transform.scale * scale);
-		const ir = Math.abs(InnerRadius * transform.scale * scale);
+		const orX = Math.abs(OuterRadius * transform.scaleX * scale);
+		const orY = Math.abs(OuterRadius * transform.scaleY * scale);
+		const irX = Math.abs(InnerRadius * transform.scaleX * scale);
+		const irY = Math.abs(InnerRadius * transform.scaleY * scale);
 
 		const c = toPos(-transform.anchor.x, -transform.anchor.y);
 
 		ctx.beginPath();
-		ctx.arc(c.x, c.y, or, 0, 2 * Math.PI, false);
+		ctx.ellipse(c.x, c.y, orX, orY, transform.rotation, 0, 2 * Math.PI);
 
-		if (ir) {
-			ctx.arc(c.x, c.y, ir, 0, 2 * Math.PI, false);
+		if (InnerRadius !== 0) {
+			ctx.ellipse(c.x, c.y, irX, irY, transform.rotation, 0, 2 * Math.PI);
 		}
 
 		ctx.fillStyle = fillColor;
@@ -203,12 +205,12 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			ctx.lineWidth = StrokeWidth * scale;
 
 			ctx.beginPath();
-			ctx.arc(c.x, c.y, or, 0, 2 * Math.PI, false);
+			ctx.ellipse(c.x, c.y, orX, orY, transform.rotation, 0, 2 * Math.PI);
 			ctx.stroke();
 			ctx.closePath();
 
 			ctx.beginPath();
-			ctx.arc(c.x, c.y, ir, 0, 2 * Math.PI, false);
+			ctx.ellipse(c.x, c.y, irX, irY, transform.rotation, 0, 2 * Math.PI);
 			ctx.stroke();
 			ctx.closePath();
 		}
@@ -218,7 +220,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
 		index: number,
-		parentIndexTransforms: AffineTransform[] = [],
+		parentIndexTransforms: LayerTransform[] = [],
 	) {
 		const shapeGroups = reduceLayerPropertiesAndGroups<CompositionPropertyGroup[]>(
 			layer.id,
@@ -236,10 +238,9 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		for (const parentTransform of parentIndexTransforms) {
 			transform = applyParentTransform(parentTransform, transform, true);
 		}
-		const mat2 = transformMat2(transform);
 
 		const toPos = (vec: Vec2): Vec2 => {
-			return mat2
+			return transform.matrix
 				.multiplyVec2(vec.sub(transform.anchor))
 				.add(transform.translate)
 				.scale(scale)
@@ -350,12 +351,12 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderCompositionChildren(
 		map: CompositionRenderValues,
 		compositionId: string,
-		parentIndexTransforms: AffineTransform[] = [],
+		parentIndexTransforms: LayerTransform[] = [],
 	) {
 		const composition = compositionState.compositions[compositionId];
 		const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
-		const renderLayer = (layer: CompositionLayer, transformList: AffineTransform[]) => {
+		const renderLayer = (layer: CompositionLayer, transformList: LayerTransform[]) => {
 			switch (layer.type) {
 				case LayerType.Composition: {
 					renderCompositionChildren(
@@ -393,7 +394,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 				continue;
 			}
 
-			function dimension(dimensionIndex: number, transforms: AffineTransform[] = []) {
+			function dimension(dimensionIndex: number, transforms: LayerTransform[] = []) {
 				const mod = arrayModifiers[dimensionIndex];
 				const count = Math.max(1, map.properties[mod.countId].computedValue);
 

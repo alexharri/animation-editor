@@ -318,7 +318,7 @@ export const moveToolHandlers = {
 
 						const transform = renderValues.transforms[layer.parentLayerId].transform[0];
 						moveVector = moveVector
-							.scale(1 / transform.scale)
+							.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
 							.rotate(-transform.rotation);
 					}
 

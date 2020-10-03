@@ -8,8 +8,8 @@ import {
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
 import {
-	AffineTransform,
 	ArrayModifierPropertyValueMap,
+	LayerTransform,
 	PropertyName,
 	PropertyValueMap,
 	TransformBehavior,
@@ -19,16 +19,12 @@ import { Mat2 } from "~/util/math/mat";
 
 interface LayerTransformMap {
 	[layerId: string]: {
-		transform: { [index: number]: AffineTransform };
+		transform: { [index: number]: LayerTransform };
 		indexTransforms: Array<{
-			[index: number]: AffineTransform;
+			[index: number]: LayerTransform;
 		}>;
 	};
 }
-
-export const transformMat2 = (transform: AffineTransform): Mat2 => {
-	return Mat2.rotation(transform.rotation).scale(transform.scale);
-};
 
 export const getLayerTransformProperties = (
 	layerId: string,
@@ -47,7 +43,8 @@ export const getLayerTransformProperties = (
 		positionX: props.PositionX,
 		positionY: props.PositionY,
 		rotation: props.Rotation,
-		scale: props.Scale,
+		scaleX: props.ScaleX,
+		scaleY: props.ScaleY,
 	};
 };
 
@@ -55,7 +52,7 @@ const getBaseTransform = (
 	layerId: string,
 	propertyToValue: PropertyValueMap,
 	compositionState: CompositionState,
-): AffineTransform => {
+): LayerTransform => {
 	const props = getLayerCompositionProperties(layerId, compositionState).reduce<
 		{ [key in keyof typeof PropertyName]: any }
 	>((obj, p) => {
@@ -67,16 +64,20 @@ const getBaseTransform = (
 	return {
 		anchor: Vec2.new(props.AnchorX, props.AnchorY),
 		rotation: props.Rotation * DEG_TO_RAD_FAC,
-		scale: props.Scale,
+		scaleX: props.ScaleX,
+		scaleY: props.ScaleY,
 		translate: Vec2.new(props.PositionX, props.PositionY),
+		matrix: Mat2.identity()
+			.scaleXY(props.ScaleX, props.ScaleY)
+			.rotate(props.Rotation * DEG_TO_RAD_FAC),
 	};
 };
 
 export const applyParentTransform = (
-	transform: AffineTransform,
-	parentTransform: AffineTransform,
+	transform: LayerTransform,
+	parentTransform: LayerTransform,
 	isBaseTransform: boolean,
-): AffineTransform => {
+): LayerTransform => {
 	let translate = transform.translate;
 
 	translate = translate.add(parentTransform.translate);
@@ -85,26 +86,33 @@ export const applyParentTransform = (
 		translate = translate.sub(parentTransform.anchor);
 	}
 
+	if (parentTransform.scaleX !== 1 || parentTransform.scaleY !== 1) {
+		translate = translate.scaleXY(
+			parentTransform.scaleX,
+			parentTransform.scaleY,
+			parentTransform.translate,
+		);
+	}
+
 	if (parentTransform.rotation !== 0) {
 		translate = rotateVec2CCW(translate, parentTransform.rotation, parentTransform.translate);
-	}
-	if (parentTransform.scale !== 1) {
-		translate = translate.scale(parentTransform.scale, parentTransform.translate);
 	}
 
 	return {
 		translate,
 		anchor: transform.anchor,
 		rotation: transform.rotation + parentTransform.rotation,
-		scale: transform.scale * parentTransform.scale,
+		scaleX: transform.scaleX * parentTransform.scaleX,
+		scaleY: transform.scaleY * parentTransform.scaleY,
+		matrix: transform.matrix.multiplyMat2(parentTransform.matrix),
 	};
 };
 
 const applyIndexTransform = (
-	indexTransform: AffineTransform,
-	transform: AffineTransform,
-): AffineTransform => {
-	const { rotation, scale } = transform;
+	indexTransform: LayerTransform,
+	transform: LayerTransform,
+): LayerTransform => {
+	const { rotation: rotation, scaleX, scaleY, matrix } = transform;
 
 	const anchor = indexTransform.anchor;
 	const origin = transform.translate.add(transform.anchor).sub(anchor);
@@ -114,61 +122,68 @@ const applyIndexTransform = (
 	if (rotation !== 0) {
 		translate = rotateVec2CCW(translate, rotation, origin);
 	}
-	if (scale !== 1) {
-		translate = translate.scale(scale, origin);
+	if (scaleX !== 1 || scaleY !== 1) {
+		translate = translate.scaleXY(scaleX, scaleY, origin);
 	}
 
 	return {
 		translate,
 		anchor,
 		rotation: indexTransform.rotation + rotation,
-		scale: indexTransform.scale * scale,
+		scaleX: indexTransform.scaleX * scaleX,
+		scaleY: indexTransform.scaleY * scaleY,
+		matrix: matrix.multiply(indexTransform.matrix),
 	};
 };
 
 const getIndexTransformMapRecursive = (
-	_transform: AffineTransform,
-	indexTransforms: AffineTransform[],
+	_transform: LayerTransform,
+	indexTransforms: LayerTransform[],
 	count: number,
-): { [index: number]: AffineTransform } => {
-	let transform: AffineTransform = {
+): { [index: number]: LayerTransform } => {
+	let transform: LayerTransform = {
 		translate: Vec2.new(0, 0),
 		anchor: indexTransforms[0].anchor,
 		rotation: 0,
-		scale: 1,
+		scaleX: 1,
+		scaleY: 1,
+		matrix: Mat2.identity(),
 	};
 
-	const transforms: { [index: number]: AffineTransform } = {
+	const transforms: { [index: number]: LayerTransform } = {
 		[0]: transform,
 	};
 
 	for (let i = 1; i < count; i += 1) {
 		transform = applyIndexTransform(indexTransforms[i], transform);
 		transforms[i] = transform;
-		// transform.anchor = Vec2.new(0, 0);
 	}
 
 	return transforms;
 };
 
 const getIndexTransformMapAbsoluteForComputed = (
-	indexTransforms: AffineTransform[],
+	indexTransforms: LayerTransform[],
 	count: number,
 	isComputedByIndex: { [key: string]: boolean },
-): { [index: number]: AffineTransform } => {
-	let transform: AffineTransform = {
+): { [index: number]: LayerTransform } => {
+	let transform: LayerTransform = {
 		translate: Vec2.new(0, 0),
 		anchor: Vec2.new(0, 0),
 		rotation: 0,
-		scale: 1,
+		scaleX: 1,
+		scaleY: 1,
+		matrix: Mat2.identity(),
 	};
 
-	const transforms: { [index: number]: AffineTransform } = {
+	const transforms: { [index: number]: LayerTransform } = {
 		[0]: {
 			translate: Vec2.new(0, 0),
 			anchor: indexTransforms[0].anchor,
 			rotation: 0,
-			scale: 1,
+			scaleX: 1,
+			scaleY: 1,
+			matrix: Mat2.identity(),
 		},
 	};
 
@@ -194,8 +209,12 @@ const getIndexTransformMapAbsoluteForComputed = (
 				transform.rotation = 0;
 				break;
 			}
-			case PropertyName.Scale: {
-				transform.scale = 1;
+			case PropertyName.ScaleX: {
+				transform.scaleX = 1;
+				break;
+			}
+			case PropertyName.ScaleY: {
+				transform.scaleY = 1;
 				break;
 			}
 		}
@@ -226,8 +245,12 @@ const getIndexTransformMapAbsoluteForComputed = (
 					transforms[0].rotation = indexTransforms[0].rotation;
 					break;
 				}
-				case PropertyName.Scale: {
-					transforms[0].scale = indexTransforms[0].scale;
+				case PropertyName.ScaleX: {
+					transforms[0].scaleX = indexTransforms[0].scaleX;
+					break;
+				}
+				case PropertyName.ScaleY: {
+					transforms[0].scaleY = indexTransforms[0].scaleY;
 					break;
 				}
 			}
@@ -243,7 +266,9 @@ const getIndexTransformMapAbsoluteForComputed = (
 				anchor: transform.anchor.copy(),
 				translate: transform.translate.copy(),
 				rotation: transform.rotation,
-				scale: transform.scale,
+				scaleX: transform.scaleX,
+				scaleY: transform.scaleY,
+				matrix: transform.matrix,
 			};
 
 			for (const key of computedKeys) {
@@ -256,12 +281,12 @@ const getIndexTransformMapAbsoluteForComputed = (
 };
 
 export const getIndexTransformMap = (
-	transform: AffineTransform,
-	indexTransforms: AffineTransform[],
+	transform: LayerTransform,
+	indexTransforms: LayerTransform[],
 	count: number,
 	isComputedByIndex: { [key: number]: boolean },
 	behavior: TransformBehavior,
-): { [index: number]: AffineTransform } => {
+): { [index: number]: LayerTransform } => {
 	switch (behavior) {
 		case "absolute_for_computed":
 			return getIndexTransformMapAbsoluteForComputed(
@@ -278,11 +303,13 @@ export const getIndexTransformMap = (
 	}
 };
 
-const defaultTransform: AffineTransform = {
+const defaultTransform: LayerTransform = {
 	anchor: Vec2.new(0, 0),
 	rotation: 0,
-	scale: 1,
+	scaleX: 1,
+	scaleY: 1,
 	translate: Vec2.new(0, 0),
+	matrix: Mat2.identity(),
 };
 
 export const computeLayerTransformMap = (
@@ -290,7 +317,7 @@ export const computeLayerTransformMap = (
 	propertyToValue: PropertyValueMap,
 	arrayModifierPropertyToValue: ArrayModifierPropertyValueMap,
 	compositionState: CompositionState,
-	baseTransform: AffineTransform = defaultTransform,
+	baseTransform: LayerTransform = defaultTransform,
 	options: { recursive: boolean },
 ): LayerTransformMap => {
 	const map: LayerTransformMap = {};
@@ -357,25 +384,28 @@ export const computeLayerTransformMap = (
 };
 
 export const adjustTransformToParent = (
-	transform: AffineTransform,
-	parentTransform: AffineTransform,
-): AffineTransform => {
+	transform: LayerTransform,
+	parentTransform: LayerTransform,
+): LayerTransform => {
 	const translateDiff = transform.translate.sub(parentTransform.translate);
 
 	const rmat = Mat2.rotation(-parentTransform.rotation);
 	const translate = translateDiff
 		.multiplyMat2(rmat, parentTransform.anchor)
-		.scale(1 / parentTransform.scale, parentTransform.anchor);
+		.scaleXY(1 / parentTransform.scaleX, 1 / parentTransform.scaleY, parentTransform.anchor);
 
 	const anchor = transform.anchor;
 
 	const rotation = transform.rotation - parentTransform.rotation;
-	const scale = transform.scale / parentTransform.scale;
+	const scaleX = transform.scaleX / parentTransform.scaleX;
+	const scaleY = transform.scaleY / parentTransform.scaleY;
 
 	return {
 		anchor,
 		translate,
-		rotation,
-		scale,
+		rotation: rotation,
+		scaleX: scaleX,
+		scaleY: scaleY,
+		matrix: Mat2.identity(),
 	};
 };

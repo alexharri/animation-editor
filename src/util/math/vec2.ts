@@ -105,12 +105,31 @@ export class Vec2 {
 		);
 	}
 
-	public scaleX(scale: number): Vec2 {
-		return new Vec2(this.x * scale, this.y);
+	public scaleX(scale: number, anchor = Vec2.new(0, 0)): Vec2 {
+		if (scale === 1) {
+			return this;
+		}
+
+		return new Vec2(anchor.x + (this.x - anchor.x) * scale, this.y);
 	}
 
-	public scaleY(scale: number): Vec2 {
-		return new Vec2(this.x, this.y * scale);
+	public scaleY(scale: number, anchor = Vec2.new(0, 0)): Vec2 {
+		if (scale === 1) {
+			return this;
+		}
+
+		return new Vec2(this.x, anchor.y + (this.y - anchor.y) * scale);
+	}
+
+	public scaleXY(scaleX: number, scaleY: number, anchor = Vec2.new(0, 0)): Vec2 {
+		if (scaleX === 1 && scaleY === 1) {
+			return this;
+		}
+
+		return new Vec2(
+			anchor.x + (this.x - anchor.x) * scaleX,
+			anchor.y + (this.y - anchor.y) * scaleY,
+		);
 	}
 
 	public rotate(rad: number, anchor = Vec2.new(0, 0)): Vec2 {
@@ -174,8 +193,9 @@ declare global {
 		public subY(y: number): Vec2;
 		public subXY(x: number, y: number): Vec2;
 		public scale(scale: number, anchor?: Vec2): Vec2;
-		public scaleX(scale: number): Vec2;
-		public scaleY(scale: number): Vec2;
+		public scaleX(scale: number, anchor?: Vec2): Vec2;
+		public scaleY(scale: number, anchor?: Vec2): Vec2;
+		public scaleXY(scaleX: number, scaleY: number, anchor?: Vec2): Vec2;
 		public rotate(rad: number): Vec2;
 		public multiplyMat2(mat2: Mat2, anchor?: Vec2): Vec2;
 		public copy(): Vec2;

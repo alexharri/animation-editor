@@ -332,7 +332,9 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				const transformed = toUse
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
+					.rotate(-transform.rotation);
 				params.dispatch(compositionActions.setShapeMoveVector(compositionId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
@@ -476,12 +478,7 @@ export const penToolHandlers = {
 									}
 									return vec;
 								})
-								.apply((vec) => {
-									if (transform.scale) {
-										return vec.scale(transform.scale);
-									}
-									return vec;
-								})
+								.apply((vec) => vec.scaleXY(transform.scaleX, transform.scaleY))
 								.add(transform.translate);
 						};
 
@@ -951,7 +948,7 @@ export const penToolHandlers = {
 
 				if (keyDown.Shift) {
 					const cpPosTranslated = cp.position
-						.scale(transform.scale)
+						.scaleXY(transform.scaleX, transform.scaleY)
 						.rotate(transform.rotation);
 					toUse = toUse
 						.add(cpPosTranslated)
@@ -959,7 +956,9 @@ export const penToolHandlers = {
 						.sub(cpPosTranslated);
 				}
 
-				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				const transformed = toUse
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
+					.rotate(-transform.rotation);
 				params.dispatch(shapeActions.setMoveVector(shapeId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
@@ -1512,7 +1511,9 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				const transformed = toUse
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
+					.rotate(-transform.rotation);
 				toDispatch.push(
 					shapeActions.setControlPointPosition(rcpl, transformed.scale(-1)),
 					shapeActions.setControlPointPosition(rcpr, transformed),
@@ -1651,7 +1652,9 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				const transformed = toUse
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
+					.rotate(-transform.rotation);
 				params.dispatch(shapeActions.setMoveVector(shapeId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
@@ -1732,7 +1735,7 @@ export const penToolHandlers = {
 				const transform = ctx.layerTransform;
 				const toUse = mousePosition.normal
 					.sub(transform.translate)
-					.scale(1 / transform.scale)
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
 					.rotate(-transform.rotation);
 
 				const newNode: ShapeNode = {
@@ -1813,7 +1816,9 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				const transformed = toUse
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
+					.rotate(-transform.rotation);
 
 				const prevCpPos = transformed.scale(-1);
 				const nextCpPos = transformed;
@@ -2060,7 +2065,9 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				const transformed = toUse
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
+					.rotate(-transform.rotation);
 
 				const createCpId = createGenMapIdFn(getActionState().shapeState.controlPoints);
 
@@ -2182,7 +2189,7 @@ export const penToolHandlers = {
 				const transform = ctx.layerTransform;
 				const toUse = mousePosition.normal
 					.sub(transform.translate)
-					.scale(1 / transform.scale)
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
 					.rotate(-transform.rotation);
 
 				const node: ShapeNode = {
@@ -2233,7 +2240,9 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = toUse.scale(1 / transform.scale).rotate(-transform.rotation);
+				const transformed = toUse
+					.scaleXY(1 / transform.scaleX, 1 / transform.scaleY)
+					.rotate(-transform.rotation);
 
 				if (firstMove) {
 					const e0: ShapeEdge = {

@@ -204,4 +204,33 @@ export default ({ css }: StyleParams) => ({
 			}
 		}
 	`,
+
+	maintainProportionsButton: css`
+		position: relative;
+		border: none;
+		background: ${cssVariables.dark500};
+		width: 16px;
+		height: 14px;
+		line-height: 14px;
+		padding: 0;
+		margin: 0;
+		margin-top: 1px;
+		margin-right: 2px;
+		border-radius: 2px;
+
+		svg {
+			fill: ${cssVariables.dark600};
+			width: 16px;
+			height: 16px;
+			position: absolute;
+			top: -1px;
+			left: 0;
+		}
+
+		&--active {
+			svg {
+				fill: ${cssVariables.light200};
+			}
+		}
+	`,
 });

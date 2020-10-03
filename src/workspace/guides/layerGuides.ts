@@ -1,6 +1,5 @@
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { getLayerDimensions, getLayerNameToProperty } from "~/composition/layer/layerUtils";
-import { transformMat2 } from "~/composition/transformUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import {
 	getPathIdToShapeGroupId,
@@ -8,7 +7,7 @@ import {
 	getShapeLayerSelectedPathIds,
 	pathIdToCurves,
 } from "~/shape/shapeUtils";
-import { AffineTransform, CompositionRenderValues, LayerType, NameToProperty } from "~/types";
+import { CompositionRenderValues, LayerTransform, LayerType, NameToProperty } from "~/types";
 import { boundingRectOfRects, isVecInPoly, rectCorners } from "~/util/math";
 import { pathBoundingRect } from "~/util/math/boundingRect";
 import { Mat2 } from "~/util/math/mat";
@@ -49,18 +48,17 @@ const getCorners = (
 	nameToProperty: NameToProperty,
 	scale: number,
 	pan: Vec2,
-	transform: AffineTransform,
+	transform: LayerTransform,
 ) => {
 	if (layer.type === LayerType.Shape) {
 		const rect = getShapeLayerRect(opts, layer);
-		const mat2 = transformMat2(transform);
 		return rectCorners(rect).map((p) =>
-			mat2.multiply(p).add(transform.translate).scale(scale).add(pan),
+			transform.matrix.multiply(p).add(transform.translate).scale(scale).add(pan),
 		);
 	}
 
 	const [width, height] = getLayerDimensions(layer.type, nameToProperty);
-	const mat2 = transformMat2(transform);
+
 	return [
 		[1, 0],
 		[1, 1],
@@ -76,7 +74,11 @@ const getCorners = (
 			y -= r;
 		}
 
-		return mat2.multiply(Vec2.new(x, y)).add(transform.translate).scale(scale).add(pan);
+		return transform.matrix
+			.multiply(Vec2.new(x, y))
+			.add(transform.translate)
+			.scale(scale)
+			.add(pan);
 	});
 };
 

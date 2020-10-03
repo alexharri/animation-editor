@@ -852,4 +852,25 @@ export const timelineHandlers = {
 			params.submitAction("Move modifier");
 		});
 	},
+
+	toggleMaintainPropertyProportions: (propertyId: string) => {
+		requestAction({ history: true }, (params) => {
+			const { compositionState } = getActionState();
+			const property = compositionState.properties[propertyId] as CompositionProperty;
+
+			const shouldMaintainProportions = !property.shouldMaintainProportions;
+
+			params.dispatch(
+				compositionActions.setPropertyMaintainProportions(
+					propertyId,
+					shouldMaintainProportions,
+				),
+				compositionActions.setPropertyMaintainProportions(
+					property.twinPropertyId,
+					shouldMaintainProportions,
+				),
+			);
+			params.submitAction("Move modifier");
+		});
+	},
 };

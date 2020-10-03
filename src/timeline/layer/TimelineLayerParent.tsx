@@ -9,7 +9,6 @@ import {
 	SelectOneContextMenuProps,
 } from "~/contextMenu/selectOne/SelectOneContextMenu";
 import { cssVariables } from "~/cssVariables";
-import { useRefRect } from "~/hook/useRefRect";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
@@ -68,7 +67,6 @@ type Props = OwnProps & StateProps;
 
 const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 	const ref = useRef<HTMLDivElement>(null);
-	const rect = useRefRect(ref)!;
 
 	const onRemoveParent = (params: RequestActionParams) => {
 		const op = createOperation();
@@ -85,6 +83,13 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 	};
 
 	const openContextMenu = () => {
+		const el = ref.current;
+		if (!el) {
+			return;
+		}
+
+		const rect = el.getBoundingClientRect();
+
 		requestAction(
 			{
 				history: true,

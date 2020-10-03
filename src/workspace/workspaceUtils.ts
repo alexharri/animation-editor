@@ -1,5 +1,4 @@
 import { getLayerDimensions, getLayerNameToProperty } from "~/composition/layer/layerUtils";
-import { transformMat2 } from "~/composition/transformUtils";
 import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
 import { CompositionRenderValues, LayerType } from "~/types";
@@ -61,14 +60,12 @@ export const workspaceLayerBoundingBoxCorners = (
 	const { compositionState } = actionState;
 
 	const transform = map.transforms[layerId].transform[0];
-	const mat2 = transformMat2(transform);
 
 	const layer = compositionState.layers[layerId];
 	if (layer.type === LayerType.Shape) {
 		const rect = getShapeLayerRect(layerId, actionState);
-		const mat2 = transformMat2(transform);
 		return rectCorners(rect).map((p) =>
-			mat2.multiply(p).add(transform.translate).scale(scale).add(pan),
+			transform.matrix.multiply(p).add(transform.translate).scale(scale).add(pan),
 		);
 	}
 
@@ -90,7 +87,11 @@ export const workspaceLayerBoundingBoxCorners = (
 			y -= r;
 		}
 
-		return mat2.multiply(Vec2.new(x, y)).add(transform.translate).scale(scale).add(pan);
+		return transform.matrix
+			.multiply(Vec2.new(x, y))
+			.add(transform.translate)
+			.scale(scale)
+			.add(pan);
 	});
 
 	return corners;
