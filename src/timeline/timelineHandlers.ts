@@ -870,7 +870,7 @@ export const timelineHandlers = {
 					shouldMaintainProportions,
 				),
 			);
-			params.submitAction("Move modifier");
+			params.submitAction("Toggle maintain proportions");
 		});
 	},
 };
