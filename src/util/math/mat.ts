@@ -28,16 +28,6 @@ export class Mat2 {
 		]);
 	}
 
-	public static transform(rotationRad: number, scaleX: number, scaleY: number) {
-		const sin = Math.sin(rotationRad) * scaleY;
-		const cos = Math.cos(rotationRad) * scaleX;
-
-		return new Mat2([
-			[cos, sin],
-			[-sin, cos],
-		]);
-	}
-
 	public matrix: Matrix2x2;
 
 	constructor(matrix: Matrix2x2) {
