@@ -6,7 +6,7 @@ import {
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
-import { applyParentTransform } from "~/composition/transformUtils";
+import { applyParentIndexTransform, applyParentTransform } from "~/composition/transformUtils";
 import {
 	getLayerArrayModifiers,
 	getLayerCompositionProperties,
@@ -27,6 +27,7 @@ import {
 	CompositionRenderValues,
 	LayerTransform,
 	LayerType,
+	ParentIndexTransform,
 	PropertyGroupName,
 	PropertyName,
 } from "~/types";
@@ -108,7 +109,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
 		index: number,
-		parentIndexTransforms: LayerTransform[] = [],
+		indexTransforms: LayerTransform[] = [],
+		parentIndexTransforms: ParentIndexTransform[] = [],
 	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
@@ -120,7 +122,19 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		let transform = map.transforms[layer.id].transform[index];
 
 		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
-			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
+			let { indexTransform, layerTransform } = parentIndexTransforms[i];
+
+			for (let j = 0; j < i; j++) {
+				layerTransform = applyParentIndexTransform(
+					layerTransform,
+					parentIndexTransforms[j],
+				);
+			}
+
+			transform = applyParentIndexTransform(transform, { indexTransform, layerTransform });
+		}
+		for (let i = 0; i < indexTransforms.length; i += 1) {
+			transform = applyParentTransform(indexTransforms[i], transform, true);
 		}
 
 		const mat2 = transform.matrix;
@@ -182,18 +196,22 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			return Vec2.new(x, y).scale(scale).add(pan);
 		};
 
-		const orX = Math.abs(OuterRadius * transform.scaleX * scale);
-		const orY = Math.abs(OuterRadius * transform.scaleY * scale);
-		const irX = Math.abs(InnerRadius * transform.scaleX * scale);
-		const irY = Math.abs(InnerRadius * transform.scaleY * scale);
+		const xLen = transform.matrix.multiplyVec2(Vec2.new(0, OuterRadius)).length();
+		const yLen = transform.matrix.multiplyVec2(Vec2.new(OuterRadius, 0)).length();
+		const angle = transform.matrix.getRotationAngle() + Math.PI / 2;
+
+		const orX = Math.abs(xLen * scale);
+		const orY = Math.abs(yLen * scale);
+		const irX = Math.abs(InnerRadius * scale);
+		const irY = Math.abs(InnerRadius * scale);
 
 		const c = toPos(-transform.anchor.x, -transform.anchor.y);
 
 		ctx.beginPath();
-		ctx.ellipse(c.x, c.y, orX, orY, transform.rotation, 0, 2 * Math.PI);
+		ctx.ellipse(c.x, c.y, orX, orY, angle, 0, 2 * Math.PI);
 
 		if (InnerRadius !== 0) {
-			ctx.ellipse(c.x, c.y, irX, irY, transform.rotation, 0, 2 * Math.PI);
+			ctx.ellipse(c.x, c.y, irX, irY, angle, 0, 2 * Math.PI);
 		}
 
 		ctx.fillStyle = fillColor;
@@ -205,12 +223,12 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			ctx.lineWidth = StrokeWidth * scale;
 
 			ctx.beginPath();
-			ctx.ellipse(c.x, c.y, orX, orY, transform.rotation, 0, 2 * Math.PI);
+			ctx.ellipse(c.x, c.y, orX, orY, angle, 0, 2 * Math.PI);
 			ctx.stroke();
 			ctx.closePath();
 
 			ctx.beginPath();
-			ctx.ellipse(c.x, c.y, irX, irY, transform.rotation, 0, 2 * Math.PI);
+			ctx.ellipse(c.x, c.y, irX, irY, angle, 0, 2 * Math.PI);
 			ctx.stroke();
 			ctx.closePath();
 		}
@@ -351,34 +369,38 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderCompositionChildren(
 		map: CompositionRenderValues,
 		compositionId: string,
-		parentIndexTransforms: LayerTransform[] = [],
+		parentIndexTransforms: ParentIndexTransform[] = [],
 	) {
 		const composition = compositionState.compositions[compositionId];
 		const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
-		const renderLayer = (layer: CompositionLayer, transformList: LayerTransform[]) => {
+		const renderLayer = (
+			layer: CompositionLayer,
+			indexTransforms: LayerTransform[],
+			parentIndexTransforms: ParentIndexTransform[],
+		) => {
 			switch (layer.type) {
 				case LayerType.Composition: {
 					renderCompositionChildren(
 						map.compositionLayers[layer.id][0],
 						compositionState.compositionLayerIdToComposition[layer.id],
-						transformList,
+						parentIndexTransforms,
 					);
 					break;
 				}
 
 				case LayerType.Shape: {
-					renderShapeLayer(map, layer, 0, transformList);
+					renderShapeLayer(map, layer, 0, indexTransforms);
 					break;
 				}
 
 				case LayerType.Rect: {
-					renderRectLayer(map, layer, 0, transformList);
+					renderRectLayer(map, layer, 0, indexTransforms, parentIndexTransforms);
 					break;
 				}
 
 				case LayerType.Ellipse: {
-					renderEllipse(map, layer, 0, transformList);
+					renderEllipse(map, layer, 0, indexTransforms);
 					break;
 				}
 			}
@@ -390,7 +412,43 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			const arrayModifiers = getLayerArrayModifiers(layer.id, compositionState);
 
 			if (!arrayModifiers.length) {
-				renderLayer(layer, []);
+				renderLayer(layer, [], parentIndexTransforms);
+				continue;
+			}
+
+			if (layer.type === LayerType.Composition) {
+				function dimension(
+					dimensionIndex: number,
+					transforms: ParentIndexTransform[] = parentIndexTransforms,
+				) {
+					const mod = arrayModifiers[dimensionIndex];
+					const count = Math.max(1, map.properties[mod.countId].computedValue);
+
+					const hasNext = !!arrayModifiers[dimensionIndex + 1];
+
+					for (let i = 0; i < count; i++) {
+						const layerTransform = map.transforms[layer.id].transform[0];
+						const indexTransform =
+							map.transforms[layer.id].indexTransforms[dimensionIndex][i];
+
+						if (hasNext) {
+							dimension(dimensionIndex + 1, [
+								...transforms,
+								{ layerTransform, indexTransform },
+							]);
+							continue;
+						}
+
+						const parentIndexTransformList: ParentIndexTransform[] = [
+							...transforms,
+							{ layerTransform, indexTransform },
+						];
+
+						renderLayer(layer, [], parentIndexTransformList);
+					}
+				}
+
+				dimension(0);
 				continue;
 			}
 
@@ -401,16 +459,17 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 				const hasNext = !!arrayModifiers[dimensionIndex + 1];
 
 				for (let i = 0; i < count; i++) {
-					const transform = map.transforms[layer.id].indexTransforms[dimensionIndex][i];
+					const indexTransform =
+						map.transforms[layer.id].indexTransforms[dimensionIndex][i];
 
 					if (hasNext) {
-						dimension(dimensionIndex + 1, [...transforms, transform]);
+						dimension(dimensionIndex + 1, [...transforms, indexTransform]);
 						continue;
 					}
 
-					const transformList = [...parentIndexTransforms, ...transforms, transform];
+					const indexTransforms: LayerTransform[] = [...transforms, indexTransform];
 
-					renderLayer(layer, transformList);
+					renderLayer(layer, indexTransforms, parentIndexTransforms);
 				}
 			}
 

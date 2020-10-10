@@ -340,8 +340,9 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 		parentTransform: LayerTransform | undefined,
 		compositionId: string,
 		frameIndex: number,
+		layerId?: string,
 	): CompositionRenderValues => {
-		const key = `${compositionId}:${frameIndex}`;
+		const key = `${compositionId}:${frameIndex}:${layerId}`;
 
 		if (!_compRenderValues[key]) {
 			_compRenderValues[key] = renderCompAtFrameIndex(
@@ -352,7 +353,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			);
 		}
 
-		return _compRenderValues[key];
+		return renderCompAtFrameIndex(parent, parentTransform, compositionId, frameIndex);
 	};
 
 	function crawl(
@@ -360,6 +361,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 		frameIndex: number,
 		parent?: CompositionRenderValues,
 		parentTransform?: LayerTransform,
+		layerId?: string,
 	): CompositionRenderValues {
 		const composition = compositionState.compositions[compositionId];
 
@@ -368,6 +370,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			parentTransform,
 			compositionId,
 			frameIndex,
+			layerId,
 		);
 
 		if (options.recursive) {
@@ -397,6 +400,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 							map.frameIndex - layer.index,
 							map,
 							transform,
+							layerId,
 						);
 					}
 				}

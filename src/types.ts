@@ -28,6 +28,11 @@ export interface LayerTransform {
 	matrix: Mat2;
 }
 
+export interface ParentIndexTransform {
+	layerTransform: LayerTransform;
+	indexTransform: LayerTransform;
+}
+
 export enum ValueType {
 	Number = "number",
 	Vec2 = "vec2",

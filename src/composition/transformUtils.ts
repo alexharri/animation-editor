@@ -10,6 +10,7 @@ import { layerParentSort } from "~/shared/layer/layerParentSort";
 import {
 	ArrayModifierPropertyValueMap,
 	LayerTransform,
+	ParentIndexTransform,
 	PropertyName,
 	PropertyValueMap,
 	TransformBehavior,
@@ -73,6 +74,32 @@ const getBaseTransform = (
 	};
 };
 
+export const applyParentIndexTransform = (
+	t: LayerTransform,
+	parentIndexTransform: ParentIndexTransform,
+): LayerTransform => {
+	const { indexTransform: it, layerTransform: lt } = parentIndexTransform;
+
+	let translate = t.translate;
+
+	const anchor = lt.translate;
+
+	// translate = translate.scaleXY(it.scaleX, it.scaleY, anchor);
+	// translate = rotateVec2CCW(translate, it.rotation, anchor);
+	translate = translate
+		.multiplyMat2(it.matrix, anchor)
+		.add(it.translate.scaleXY(lt.scaleX, lt.scaleY).rotate(lt.rotation));
+
+	return {
+		translate,
+		anchor: t.anchor,
+		rotation: t.rotation + it.rotation,
+		scaleX: t.scaleX * it.scaleX,
+		scaleY: t.scaleY * it.scaleY,
+		matrix: t.matrix.multiplyMat2(it.matrix),
+	};
+};
+
 export const applyParentTransform = (
 	transform: LayerTransform,
 	parentTransform: LayerTransform,
@@ -112,7 +139,7 @@ const applyIndexTransform = (
 	indexTransform: LayerTransform,
 	transform: LayerTransform,
 ): LayerTransform => {
-	const { rotation: rotation, scaleX, scaleY, matrix } = transform;
+	const { rotation, scaleX, scaleY, matrix } = transform;
 
 	const anchor = indexTransform.anchor;
 	const origin = transform.translate.add(transform.anchor).sub(anchor);

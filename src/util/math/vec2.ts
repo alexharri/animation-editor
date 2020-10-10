@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-misused-new */
 
-import { interpolate, rotateVec2CCW } from "~/util/math";
+import { getDistance, interpolate, rotateVec2CCW } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
 
 export class Vec2 {
@@ -161,6 +161,10 @@ export class Vec2 {
 		return fn(this);
 	}
 
+	public length(): number {
+		return getDistance(Vec2.ORIGIN, this);
+	}
+
 	// @ts-ignore
 	private toJSON() {
 		return {
@@ -196,10 +200,11 @@ declare global {
 		public scaleX(scale: number, anchor?: Vec2): Vec2;
 		public scaleY(scale: number, anchor?: Vec2): Vec2;
 		public scaleXY(scaleX: number, scaleY: number, anchor?: Vec2): Vec2;
-		public rotate(rad: number): Vec2;
+		public rotate(rad: number, anchor?: Vec2): Vec2;
 		public multiplyMat2(mat2: Mat2, anchor?: Vec2): Vec2;
 		public copy(): Vec2;
 		public round(): Vec2;
 		public apply(fn: (vec2: Vec2) => Vec2): Vec2;
+		public length(): number;
 	}
 }

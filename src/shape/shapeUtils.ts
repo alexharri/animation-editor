@@ -497,9 +497,13 @@ export const getSingleSelectedShapeLayerId = (
 
 	const selectedLayers = Object.keys(selection.layers);
 
-	// console.log(selection, compositionId);
 	const selectedShapeLayers = selectedLayers.filter((layerId) => {
 		const layer = compositionState.layers[layerId];
+
+		if (!layer) {
+			return false;
+		}
+
 		return layer.type === LayerType.Shape;
 	});
 
