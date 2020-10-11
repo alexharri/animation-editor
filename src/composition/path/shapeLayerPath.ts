@@ -34,6 +34,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 		layerId,
 		timelineId: "",
 		color: TimelineColors.Height,
+		twinPropertyId: "",
+		shouldMaintainProportions: false,
 	};
 
 	group.properties.push(path.id);
@@ -50,6 +52,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -61,6 +65,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -75,6 +81,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 	];
 
@@ -102,6 +110,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -114,6 +124,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -128,6 +140,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -139,6 +153,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -150,6 +166,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -162,6 +180,8 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 	];
 

@@ -22,6 +22,8 @@ const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			color: TimelineColors.Width,
 			value: 50,
 			min: 0,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -34,6 +36,8 @@ const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			color: TimelineColors.Width,
 			value: 0,
 			min: 0,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 	];
 
@@ -65,6 +69,8 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			color: TimelineColors.Width,
 			value: [255, 0, 0],
 			min: 0,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -77,6 +83,8 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			color: TimelineColors.Height,
 			value: 0,
 			min: 0,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -89,6 +97,8 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			color: TimelineColors.Height,
 			value: [0, 0, 255],
 			min: 0,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 	];
 

@@ -2,11 +2,8 @@ import React, { useEffect, useRef } from "react";
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
-import { computeLayerTransformMap } from "~/composition/transformUtils";
-import {
-	getLayerArrayModifierCountPropertyId,
-	getLayerArrayModifiers,
-} from "~/composition/util/compositionPropertyUtils";
+import { computeLayerTransformMap } from "~/composition/transformMap";
+import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import {
 	FlowComputeContext,
 	FlowComputeNodeArg,
@@ -21,7 +18,7 @@ import { store } from "~/state/store";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
-import { AffineTransform, CompositionRenderValues, LayerType } from "~/types";
+import { CompositionRenderValues, LayerTransform, LayerType } from "~/types";
 
 function getGraphOutputNodes(graph: FlowGraph) {
 	const outputNodes: FlowNode<FlowNodeType.property_output>[] = [];
@@ -116,8 +113,8 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 	};
 
 	const renderCompAtFrameIndex = (
-		parent: any,
-		parentTransform: AffineTransform | undefined,
+		parent: CompositionRenderValues | undefined,
+		parentTransform: LayerTransform | undefined,
 		compositionId: string,
 		frameIndex: number,
 	): CompositionRenderValues => {
@@ -337,11 +334,12 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 	const _compRenderValues: { [key: string]: CompositionRenderValues } = {};
 	const getCompRenderValuesAtFrameIndex = (
 		parent: any,
-		parentTransform: AffineTransform | undefined,
+		parentTransform: LayerTransform | undefined,
 		compositionId: string,
 		frameIndex: number,
+		layerId?: string,
 	): CompositionRenderValues => {
-		const key = `${compositionId}:${frameIndex}`;
+		const key = `${compositionId}:${frameIndex}:${layerId}`;
 
 		if (!_compRenderValues[key]) {
 			_compRenderValues[key] = renderCompAtFrameIndex(
@@ -352,14 +350,15 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			);
 		}
 
-		return _compRenderValues[key];
+		return renderCompAtFrameIndex(parent, parentTransform, compositionId, frameIndex);
 	};
 
 	function crawl(
 		compositionId: string,
 		frameIndex: number,
 		parent?: CompositionRenderValues,
-		parentTransform?: AffineTransform,
+		parentTransform?: LayerTransform,
+		layerId?: string,
 	): CompositionRenderValues {
 		const composition = compositionState.compositions[compositionId];
 
@@ -368,6 +367,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			parentTransform,
 			compositionId,
 			frameIndex,
+			layerId,
 		);
 
 		if (options.recursive) {
@@ -376,29 +376,16 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 				const layer = compositionState.layers[layerId];
 
 				if (layer.type === LayerType.Composition) {
-					map.compositionLayers[layer.id] = {};
+					let transform = map.transforms[layer.id].transform;
 
-					let count = 1;
-
-					const countPropertyId = getLayerArrayModifierCountPropertyId(
+					const id = compositionState.compositionLayerIdToComposition[layer.id];
+					map.compositionLayers[layer.id] = crawl(
+						id,
+						map.frameIndex - layer.index,
+						map,
+						transform,
 						layerId,
-						compositionState,
 					);
-					if (countPropertyId) {
-						count = map.properties[countPropertyId].computedValue;
-					}
-
-					for (let i = 0; i < count; i += 1) {
-						let transform = map.transforms[layer.id].transform[i];
-
-						const id = compositionState.compositionLayerIdToComposition[layer.id];
-						map.compositionLayers[layer.id][i] = crawl(
-							id,
-							map.frameIndex - layer.index,
-							map,
-							transform,
-						);
-					}
 				}
 			}
 		}

@@ -17,7 +17,6 @@ const _graphBase: FlowGraph = {
 	layerId: "",
 	propertyId: "",
 	nodes: {},
-	selection: { nodes: {} },
 };
 
 const _nodeBase: FlowNode<any> = {

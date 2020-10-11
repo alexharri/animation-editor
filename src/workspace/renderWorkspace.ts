@@ -6,7 +6,7 @@ import {
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
-import { applyParentTransform, transformMat2 } from "~/composition/transformUtils";
+import { applyParentIndexTransform, applyParentTransform } from "~/composition/transformUtils";
 import {
 	getLayerArrayModifiers,
 	getLayerCompositionProperties,
@@ -24,17 +24,33 @@ import {
 	pathIdToCurves,
 } from "~/shape/shapeUtils";
 import {
-	AffineTransform,
 	CompositionRenderValues,
+	LayerTransform,
 	LayerType,
+	ParentIndexTransform,
 	PropertyGroupName,
 	PropertyName,
 } from "~/types";
 import { traceCurve } from "~/util/canvas/renderPrimitives";
 import { rgbToString } from "~/util/color/convertColor";
+import { interpolate } from "~/util/math";
 import { renderLayerGuides } from "~/workspace/guides/layerGuides";
 import { renderShapeLayerGuides } from "~/workspace/guides/shapeLayerGuides";
 import { RenderGuidesContext } from "~/workspace/renderTypes";
+
+const computeLayerTransform = (
+	transform: LayerTransform,
+	indexTransforms: LayerTransform[],
+	parentIndexTransforms: ParentIndexTransform[],
+) => {
+	for (let i = 0; i < indexTransforms.length; i += 1) {
+		transform = applyParentTransform(indexTransforms[i], transform, true);
+	}
+	for (let i = 0; i < parentIndexTransforms.length; i += 1) {
+		transform = applyParentIndexTransform(transform, parentIndexTransforms[i]);
+	}
+	return transform;
+};
 
 const getNameToProperty = (
 	map: CompositionRenderValues,
@@ -107,8 +123,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderRectLayer(
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
-		index: number,
-		parentIndexTransforms: AffineTransform[] = [],
+		indexTransforms: LayerTransform[],
+		parentIndexTransforms: ParentIndexTransform[],
 	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
@@ -117,13 +133,13 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		const fillColor = `rgba(${Fill.join(",")})`;
 		const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
-		let transform = map.transforms[layer.id].transform[index];
+		const transform = computeLayerTransform(
+			map.transforms[layer.id].transform,
+			indexTransforms,
+			parentIndexTransforms,
+		);
 
-		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
-			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
-		}
-
-		const mat2 = transformMat2(transform);
+		const mat2 = transform.matrix;
 
 		const corners = [
 			[1, 0],
@@ -147,7 +163,10 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		if (StrokeWidth) {
 			ctx.strokeStyle = strokeColor;
-			ctx.lineWidth = StrokeWidth;
+			ctx.lineWidth =
+				StrokeWidth *
+				scale *
+				interpolate(Math.abs(transform.scaleX), Math.abs(transform.scaleY), 0.5);
 			ctx.stroke();
 		}
 	}
@@ -155,8 +174,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderEllipse(
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
-		index: number,
-		parentIndexTransforms: AffineTransform[] = [],
+		indexTransforms: LayerTransform[],
+		parentIndexTransforms: ParentIndexTransform[],
 	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
@@ -165,13 +184,13 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		const fillColor = `rgba(${Fill.join(",")})`;
 		const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
-		let transform = map.transforms[layer.id].transform[index];
+		const transform = computeLayerTransform(
+			map.transforms[layer.id].transform,
+			indexTransforms,
+			parentIndexTransforms,
+		);
 
-		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
-			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
-		}
-
-		const [[ix, iy], [jx, jy]] = transformMat2(transform).matrix;
+		const [[ix, iy], [jx, jy]] = transform.matrix.matrix;
 
 		const toPos = (_x: number, _y: number) => {
 			const p = Vec2.new(_x, _y);
@@ -182,16 +201,22 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			return Vec2.new(x, y).scale(scale).add(pan);
 		};
 
-		const or = Math.abs(OuterRadius * transform.scale * scale);
-		const ir = Math.abs(InnerRadius * transform.scale * scale);
+		const xLen = transform.matrix.multiplyVec2(Vec2.new(0, OuterRadius)).length();
+		const yLen = transform.matrix.multiplyVec2(Vec2.new(OuterRadius, 0)).length();
+		const angle = transform.matrix.getRotationAngle() + Math.PI / 2;
+
+		const orX = Math.abs(xLen * scale);
+		const orY = Math.abs(yLen * scale);
+		const irX = Math.abs(InnerRadius * scale);
+		const irY = Math.abs(InnerRadius * scale);
 
 		const c = toPos(-transform.anchor.x, -transform.anchor.y);
 
 		ctx.beginPath();
-		ctx.arc(c.x, c.y, or, 0, 2 * Math.PI, false);
+		ctx.ellipse(c.x, c.y, orX, orY, angle, 0, 2 * Math.PI);
 
-		if (ir) {
-			ctx.arc(c.x, c.y, ir, 0, 2 * Math.PI, false);
+		if (InnerRadius !== 0) {
+			ctx.ellipse(c.x, c.y, irX, irY, angle, 0, 2 * Math.PI);
 		}
 
 		ctx.fillStyle = fillColor;
@@ -200,15 +225,18 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		if (StrokeWidth) {
 			ctx.strokeStyle = strokeColor;
-			ctx.lineWidth = StrokeWidth * scale;
+			ctx.lineWidth =
+				StrokeWidth *
+				scale *
+				interpolate(Math.abs(transform.scaleX), Math.abs(transform.scaleY), 0.5);
 
 			ctx.beginPath();
-			ctx.arc(c.x, c.y, or, 0, 2 * Math.PI, false);
+			ctx.ellipse(c.x, c.y, orX, orY, angle, 0, 2 * Math.PI);
 			ctx.stroke();
 			ctx.closePath();
 
 			ctx.beginPath();
-			ctx.arc(c.x, c.y, ir, 0, 2 * Math.PI, false);
+			ctx.ellipse(c.x, c.y, irX, irY, angle, 0, 2 * Math.PI);
 			ctx.stroke();
 			ctx.closePath();
 		}
@@ -217,8 +245,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderShapeLayer(
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
-		index: number,
-		parentIndexTransforms: AffineTransform[] = [],
+		indexTransforms: LayerTransform[],
+		parentIndexTransforms: ParentIndexTransform[],
 	) {
 		const shapeGroups = reduceLayerPropertiesAndGroups<CompositionPropertyGroup[]>(
 			layer.id,
@@ -232,14 +260,14 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			[],
 		).reverse();
 
-		let transform = map.transforms[layer.id].transform[index];
-		for (const parentTransform of parentIndexTransforms) {
-			transform = applyParentTransform(parentTransform, transform, true);
-		}
-		const mat2 = transformMat2(transform);
+		const transform = computeLayerTransform(
+			map.transforms[layer.id].transform,
+			indexTransforms,
+			parentIndexTransforms,
+		);
 
 		const toPos = (vec: Vec2): Vec2 => {
-			return mat2
+			return transform.matrix
 				.multiplyVec2(vec.sub(transform.anchor))
 				.add(transform.translate)
 				.scale(scale)
@@ -314,7 +342,10 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			} = getShapeStrokeGroupValues(group, compositionState);
 
 			ctx.strokeStyle = rgbToString(color, opacity);
-			ctx.lineWidth = lineWidth * scale;
+			ctx.lineWidth =
+				lineWidth *
+				scale *
+				interpolate(Math.abs(transform.scaleX), Math.abs(transform.scaleY), 0.5);
 			ctx.miterLimit = miterLimit;
 			ctx.lineCap = lineCap;
 			ctx.lineJoin = lineJoin;
@@ -350,34 +381,38 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderCompositionChildren(
 		map: CompositionRenderValues,
 		compositionId: string,
-		parentIndexTransforms: AffineTransform[] = [],
+		parentIndexTransforms: ParentIndexTransform[] = [],
 	) {
 		const composition = compositionState.compositions[compositionId];
 		const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
-		const renderLayer = (layer: CompositionLayer, transformList: AffineTransform[]) => {
+		const renderLayer = (
+			layer: CompositionLayer,
+			indexTransforms: LayerTransform[],
+			parentIndexTransforms: ParentIndexTransform[],
+		) => {
 			switch (layer.type) {
 				case LayerType.Composition: {
 					renderCompositionChildren(
-						map.compositionLayers[layer.id][0],
+						map.compositionLayers[layer.id],
 						compositionState.compositionLayerIdToComposition[layer.id],
-						transformList,
+						parentIndexTransforms,
 					);
 					break;
 				}
 
 				case LayerType.Shape: {
-					renderShapeLayer(map, layer, 0, transformList);
+					renderShapeLayer(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
 
 				case LayerType.Rect: {
-					renderRectLayer(map, layer, 0, transformList);
+					renderRectLayer(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
 
 				case LayerType.Ellipse: {
-					renderEllipse(map, layer, 0, transformList);
+					renderEllipse(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
 			}
@@ -389,27 +424,68 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			const arrayModifiers = getLayerArrayModifiers(layer.id, compositionState);
 
 			if (!arrayModifiers.length) {
-				renderLayer(layer, []);
+				renderLayer(layer, [], parentIndexTransforms);
 				continue;
 			}
 
-			function dimension(dimensionIndex: number, transforms: AffineTransform[] = []) {
+			if (layer.type === LayerType.Composition) {
+				function dimension(
+					dimensionIndex: number,
+					transforms: ParentIndexTransform[] = parentIndexTransforms,
+				) {
+					const mod = arrayModifiers[dimensionIndex];
+					const count = Math.max(1, map.properties[mod.countId].computedValue);
+
+					const hasAnotherDimension = !!arrayModifiers[dimensionIndex + 1];
+
+					for (let i = 0; i < count; i++) {
+						let layerTransform = map.transforms[layer.id].transform;
+						const indexTransform =
+							map.transforms[layer.id].indexTransforms[dimensionIndex][i];
+
+						for (let j = 0; j < transforms.length; j++) {
+							layerTransform = applyParentIndexTransform(
+								layerTransform,
+								transforms[j],
+							);
+						}
+
+						const parentIndexTransformList: ParentIndexTransform[] = [
+							...transforms,
+							{ baseTransform: layerTransform, indexTransform },
+						];
+
+						if (hasAnotherDimension) {
+							dimension(dimensionIndex + 1, parentIndexTransformList);
+							continue;
+						}
+
+						renderLayer(layer, [], parentIndexTransformList);
+					}
+				}
+
+				dimension(0);
+				continue;
+			}
+
+			function dimension(dimensionIndex: number, transforms: LayerTransform[] = []) {
 				const mod = arrayModifiers[dimensionIndex];
 				const count = Math.max(1, map.properties[mod.countId].computedValue);
 
 				const hasNext = !!arrayModifiers[dimensionIndex + 1];
 
 				for (let i = 0; i < count; i++) {
-					const transform = map.transforms[layer.id].indexTransforms[dimensionIndex][i];
+					const indexTransform =
+						map.transforms[layer.id].indexTransforms[dimensionIndex][i];
 
 					if (hasNext) {
-						dimension(dimensionIndex + 1, [...transforms, transform]);
+						dimension(dimensionIndex + 1, [...transforms, indexTransform]);
 						continue;
 					}
 
-					const transformList = [...parentIndexTransforms, ...transforms, transform];
+					const indexTransforms: LayerTransform[] = [...transforms, indexTransform];
 
-					renderLayer(layer, transformList);
+					renderLayer(layer, indexTransforms, parentIndexTransforms);
 				}
 			}
 

@@ -12,6 +12,9 @@ export const createLayerTransformProperties = (
 ): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
 
+	const scaleXId = createId();
+	const scaleYId = createId();
+
 	const properties: CompositionProperty[] = [
 		{
 			type: "property",
@@ -23,6 +26,8 @@ export const createLayerTransformProperties = (
 			valueType: ValueType.Number,
 			value: 0,
 			color: TimelineColors.XPosition,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -34,6 +39,8 @@ export const createLayerTransformProperties = (
 			valueType: ValueType.Number,
 			value: 0,
 			color: TimelineColors.YPosition,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -45,6 +52,8 @@ export const createLayerTransformProperties = (
 			valueType: ValueType.Number,
 			value: 0,
 			color: TimelineColors.XPosition,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -56,17 +65,34 @@ export const createLayerTransformProperties = (
 			valueType: ValueType.Number,
 			value: 0,
 			color: TimelineColors.YPosition,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
-			id: createId(),
+			id: scaleXId,
 			layerId,
 			compositionId,
-			name: PropertyName.Scale,
+			name: PropertyName.ScaleX,
 			timelineId: "",
 			valueType: ValueType.Number,
 			value: 1,
 			color: TimelineColors.YPosition,
+			twinPropertyId: scaleYId,
+			shouldMaintainProportions: true,
+		},
+		{
+			type: "property",
+			id: scaleYId,
+			layerId,
+			compositionId,
+			name: PropertyName.ScaleY,
+			timelineId: "",
+			valueType: ValueType.Number,
+			value: 1,
+			color: TimelineColors.YPosition,
+			twinPropertyId: scaleXId,
+			shouldMaintainProportions: true,
 		},
 		{
 			type: "property",
@@ -78,6 +104,8 @@ export const createLayerTransformProperties = (
 			valueType: ValueType.Number,
 			value: 0,
 			color: TimelineColors.YPosition,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -91,6 +119,8 @@ export const createLayerTransformProperties = (
 			color: TimelineColors.YPosition,
 			max: 1,
 			min: 0,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 	];
 

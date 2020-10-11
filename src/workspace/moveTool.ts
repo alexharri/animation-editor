@@ -316,10 +316,8 @@ export const moveToolHandlers = {
 							continue;
 						}
 
-						const transform = renderValues.transforms[layer.parentLayerId].transform[0];
-						moveVector = moveVector
-							.scale(1 / transform.scale)
-							.rotate(-transform.rotation);
+						const transform = renderValues.transforms[layer.parentLayerId].transform;
+						moveVector = transform.matrix.inverse().multiplyVec2(moveVector);
 					}
 
 					i: for (let i = 0; i < 2; i += 1) {

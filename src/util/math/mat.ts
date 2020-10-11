@@ -1,3 +1,4 @@
+import * as mathjs from "mathjs";
 import { getAngleRadians } from "~/util/math";
 
 type Matrix2x2 = [[number, number], [number, number]];
@@ -42,8 +43,35 @@ export class Mat2 {
 		]);
 	}
 
+	public scaleX(scalar: number) {
+		const [ix, iy] = this.matrix[0];
+		const [jx, jy] = this.matrix[1];
+		return Mat2.new([
+			[ix * scalar, iy],
+			[jx * scalar, jy],
+		]);
+	}
+
+	public scaleY(scalar: number) {
+		const [ix, iy] = this.matrix[0];
+		const [jx, jy] = this.matrix[1];
+		return Mat2.new([
+			[ix, iy * scalar],
+			[jx, jy * scalar],
+		]);
+	}
+
+	public scaleXY(scaleX: number, scaleY: number) {
+		const [ix, iy] = this.matrix[0];
+		const [jx, jy] = this.matrix[1];
+		return Mat2.new([
+			[ix * scaleX, iy * scaleY],
+			[jx * scaleX, jy * scaleY],
+		]);
+	}
+
 	public rotate(rad: number) {
-		return Mat2.rotation(rad).multiplyMat2(this);
+		return this.multiplyMat2(Mat2.rotation(rad));
 	}
 
 	public multiply<T extends Mat2 | Vec2>(matOrVec: T): T {
@@ -96,5 +124,10 @@ export class Mat2 {
 	public j(): Vec2 {
 		const [jx, jy] = this.matrix[1];
 		return Vec2.new(jx, jy);
+	}
+
+	public inverse(): Mat2 {
+		const matrix = mathjs.inv(this.matrix);
+		return Mat2.new(matrix);
 	}
 }

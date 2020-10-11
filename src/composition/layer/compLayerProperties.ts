@@ -22,6 +22,8 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			color: TimelineColors.Width,
 			value: 100,
 			min: 0,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 		{
 			type: "property",
@@ -34,6 +36,8 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			color: TimelineColors.Height,
 			value: 100,
 			min: 0,
+			twinPropertyId: "",
+			shouldMaintainProportions: false,
 		},
 	];
 

@@ -1,10 +1,9 @@
-import { transformMat2 } from "~/composition/transformUtils";
 import { AreaType } from "~/constants";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
-import { AffineTransform, CompositionRenderValues, MousePosition } from "~/types";
+import { CompositionRenderValues, LayerTransform, MousePosition } from "~/types";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
 export interface PenToolContext {
@@ -16,7 +15,7 @@ export interface PenToolContext {
 	viewport: Rect;
 	areaId: string;
 	layerId: string;
-	layerTransform: AffineTransform;
+	layerTransform: LayerTransform;
 	normalToViewport: (vec: Vec2) => Vec2;
 	globalToNormal: (vec: Vec2) => Vec2;
 	shapeState: ShapeState;
@@ -45,10 +44,9 @@ export const constructPenToolContext = (
 		{ recursive: false },
 	);
 
-	const transform = map.transforms[layerId].transform[0];
-	const mat2 = transformMat2(transform);
+	const transform = map.transforms[layerId].transform;
 	const normalToViewport = (vec: Vec2): Vec2 => {
-		return mat2.multiplyVec2(vec).add(transform.translate).scale(scale).add(pan);
+		return transform.matrix.multiplyVec2(vec).add(transform.translate).scale(scale).add(pan);
 	};
 	const globalToNormal = (vec: Vec2) => globalToWorkspacePosition(vec, viewport, scale, _pan);
 

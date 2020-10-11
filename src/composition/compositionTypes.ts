@@ -58,6 +58,8 @@ export type CompositionProperty = {
 	color?: string;
 	min?: number;
 	max?: number;
+	twinPropertyId: string;
+	shouldMaintainProportions: boolean;
 } & (
 	| {
 			valueType: ValueType.Any;
