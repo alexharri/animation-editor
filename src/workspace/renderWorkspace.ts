@@ -33,9 +33,24 @@ import {
 } from "~/types";
 import { traceCurve } from "~/util/canvas/renderPrimitives";
 import { rgbToString } from "~/util/color/convertColor";
+import { interpolate } from "~/util/math";
 import { renderLayerGuides } from "~/workspace/guides/layerGuides";
 import { renderShapeLayerGuides } from "~/workspace/guides/shapeLayerGuides";
 import { RenderGuidesContext } from "~/workspace/renderTypes";
+
+const computeLayerTransform = (
+	transform: LayerTransform,
+	indexTransforms: LayerTransform[],
+	parentIndexTransforms: ParentIndexTransform[],
+) => {
+	for (let i = 0; i < indexTransforms.length; i += 1) {
+		transform = applyParentTransform(indexTransforms[i], transform, true);
+	}
+	for (let i = 0; i < parentIndexTransforms.length; i += 1) {
+		transform = applyParentIndexTransform(transform, parentIndexTransforms[i]);
+	}
+	return transform;
+};
 
 const getNameToProperty = (
 	map: CompositionRenderValues,
@@ -108,8 +123,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderRectLayer(
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
-		indexTransforms: LayerTransform[] = [],
-		parentIndexTransforms: ParentIndexTransform[] = [],
+		indexTransforms: LayerTransform[],
+		parentIndexTransforms: ParentIndexTransform[],
 	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
@@ -118,14 +133,11 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		const fillColor = `rgba(${Fill.join(",")})`;
 		const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
-		let transform = map.transforms[layer.id].transform;
-
-		for (let i = 0; i < indexTransforms.length; i += 1) {
-			transform = applyParentTransform(indexTransforms[i], transform, true);
-		}
-		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
-			transform = applyParentIndexTransform(transform, parentIndexTransforms[i]);
-		}
+		const transform = computeLayerTransform(
+			map.transforms[layer.id].transform,
+			indexTransforms,
+			parentIndexTransforms,
+		);
 
 		const mat2 = transform.matrix;
 
@@ -151,7 +163,10 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		if (StrokeWidth) {
 			ctx.strokeStyle = strokeColor;
-			ctx.lineWidth = StrokeWidth;
+			ctx.lineWidth =
+				StrokeWidth *
+				scale *
+				interpolate(Math.abs(transform.scaleX), Math.abs(transform.scaleY), 0.5);
 			ctx.stroke();
 		}
 	}
@@ -159,7 +174,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderEllipse(
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
-		parentIndexTransforms: LayerTransform[] = [],
+		indexTransforms: LayerTransform[],
+		parentIndexTransforms: ParentIndexTransform[],
 	) {
 		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
 
@@ -168,11 +184,11 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		const fillColor = `rgba(${Fill.join(",")})`;
 		const strokeColor = `rgba(${StrokeColor.join(",")})`;
 
-		let transform = map.transforms[layer.id].transform;
-
-		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
-			transform = applyParentTransform(parentIndexTransforms[i], transform, true);
-		}
+		const transform = computeLayerTransform(
+			map.transforms[layer.id].transform,
+			indexTransforms,
+			parentIndexTransforms,
+		);
 
 		const [[ix, iy], [jx, jy]] = transform.matrix.matrix;
 
@@ -209,7 +225,10 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		if (StrokeWidth) {
 			ctx.strokeStyle = strokeColor;
-			ctx.lineWidth = StrokeWidth * scale;
+			ctx.lineWidth =
+				StrokeWidth *
+				scale *
+				interpolate(Math.abs(transform.scaleX), Math.abs(transform.scaleY), 0.5);
 
 			ctx.beginPath();
 			ctx.ellipse(c.x, c.y, orX, orY, angle, 0, 2 * Math.PI);
@@ -226,7 +245,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	function renderShapeLayer(
 		map: CompositionRenderValues,
 		layer: CompositionLayer,
-		parentIndexTransforms: LayerTransform[] = [],
+		indexTransforms: LayerTransform[],
+		parentIndexTransforms: ParentIndexTransform[],
 	) {
 		const shapeGroups = reduceLayerPropertiesAndGroups<CompositionPropertyGroup[]>(
 			layer.id,
@@ -240,10 +260,11 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			[],
 		).reverse();
 
-		let transform = map.transforms[layer.id].transform;
-		for (const parentTransform of parentIndexTransforms) {
-			transform = applyParentTransform(parentTransform, transform, true);
-		}
+		const transform = computeLayerTransform(
+			map.transforms[layer.id].transform,
+			indexTransforms,
+			parentIndexTransforms,
+		);
 
 		const toPos = (vec: Vec2): Vec2 => {
 			return transform.matrix
@@ -321,7 +342,10 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			} = getShapeStrokeGroupValues(group, compositionState);
 
 			ctx.strokeStyle = rgbToString(color, opacity);
-			ctx.lineWidth = lineWidth * scale;
+			ctx.lineWidth =
+				lineWidth *
+				scale *
+				interpolate(Math.abs(transform.scaleX), Math.abs(transform.scaleY), 0.5);
 			ctx.miterLimit = miterLimit;
 			ctx.lineCap = lineCap;
 			ctx.lineJoin = lineJoin;
@@ -378,7 +402,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 				}
 
 				case LayerType.Shape: {
-					renderShapeLayer(map, layer, indexTransforms);
+					renderShapeLayer(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
 
@@ -388,7 +412,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 				}
 
 				case LayerType.Ellipse: {
-					renderEllipse(map, layer, indexTransforms);
+					renderEllipse(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
 			}
