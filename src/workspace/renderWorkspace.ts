@@ -120,18 +120,22 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		let transform = map.transforms[layer.id].transform;
 
+		const ltArr: LayerTransform[] = [];
+
 		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
 			let { indexTransform, layerTransform } = parentIndexTransforms[i];
 
 			for (let j = 0; j < i; j++) {
-				layerTransform = applyParentIndexTransform(
-					layerTransform,
-					parentIndexTransforms[j],
-				);
+				layerTransform = applyParentIndexTransform(layerTransform, {
+					indexTransform: parentIndexTransforms[j].indexTransform,
+					layerTransform: ltArr[j],
+				});
 			}
 
 			transform = applyParentIndexTransform(transform, { indexTransform, layerTransform });
+			ltArr[i] = layerTransform;
 		}
+
 		for (let i = 0; i < indexTransforms.length; i += 1) {
 			transform = applyParentTransform(indexTransforms[i], transform, true);
 		}

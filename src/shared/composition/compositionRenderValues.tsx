@@ -118,15 +118,6 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 		compositionId: string,
 		frameIndex: number,
 	): CompositionRenderValues => {
-		let parentTransforms: CompositionRenderValues["parentTransforms"] = [];
-
-		if (parent && parentTransform) {
-			parentTransforms = [
-				...parent.parentTransforms,
-				{ origin: parentTransform.translate, transform: parentTransform },
-			];
-		}
-
 		const composition = compositionState.compositions[compositionId];
 		const map: CompositionRenderValues = {
 			frameIndex,
@@ -134,7 +125,6 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			arrayModifierProperties: {},
 			compositionLayers: {},
 			transforms: {},
-			parentTransforms,
 			parent,
 		};
 

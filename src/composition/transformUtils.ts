@@ -77,6 +77,28 @@ export const applyParentIndexTransform = (
 	};
 };
 
+export const applyCompositionTransform = (
+	t: LayerTransform,
+	compositionTransform: { origin: Vec2; transform: LayerTransform },
+): LayerTransform => {
+	const { transform: ct, origin } = compositionTransform;
+
+	let translate = t.translate;
+
+	translate = translate
+		.multiplyMat2(ct.matrix, origin)
+		.add(ct.translate.scaleXY(ct.scaleX, ct.scaleY).rotate(ct.rotation));
+
+	return {
+		translate,
+		anchor: t.anchor,
+		rotation: t.rotation + ct.rotation,
+		scaleX: t.scaleX * ct.scaleX,
+		scaleY: t.scaleY * ct.scaleY,
+		matrix: t.matrix.multiplyMat2(ct.matrix),
+	};
+};
+
 export const applyParentTransform = (
 	transform: LayerTransform,
 	parentTransform: LayerTransform,
