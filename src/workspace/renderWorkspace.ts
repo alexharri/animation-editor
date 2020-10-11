@@ -120,20 +120,8 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		let transform = map.transforms[layer.id].transform;
 
-		const ltArr: LayerTransform[] = [];
-
 		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
-			let { indexTransform, layerTransform } = parentIndexTransforms[i];
-
-			for (let j = 0; j < i; j++) {
-				layerTransform = applyParentIndexTransform(layerTransform, {
-					indexTransform: parentIndexTransforms[j].indexTransform,
-					layerTransform: ltArr[j],
-				});
-			}
-
-			transform = applyParentIndexTransform(transform, { indexTransform, layerTransform });
-			ltArr[i] = layerTransform;
+			transform = applyParentIndexTransform(transform, parentIndexTransforms[i]);
 		}
 
 		for (let i = 0; i < indexTransforms.length; i += 1) {
@@ -425,25 +413,29 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 					const mod = arrayModifiers[dimensionIndex];
 					const count = Math.max(1, map.properties[mod.countId].computedValue);
 
-					const hasNext = !!arrayModifiers[dimensionIndex + 1];
+					const hasAnotherDimension = !!arrayModifiers[dimensionIndex + 1];
 
 					for (let i = 0; i < count; i++) {
-						const layerTransform = map.transforms[layer.id].transform;
+						let layerTransform = map.transforms[layer.id].transform;
 						const indexTransform =
 							map.transforms[layer.id].indexTransforms[dimensionIndex][i];
 
-						if (hasNext) {
-							dimension(dimensionIndex + 1, [
-								...transforms,
-								{ layerTransform, indexTransform },
-							]);
-							continue;
+						for (let j = 0; j < transforms.length; j++) {
+							layerTransform = applyParentIndexTransform(
+								layerTransform,
+								transforms[j],
+							);
 						}
 
 						const parentIndexTransformList: ParentIndexTransform[] = [
 							...transforms,
-							{ layerTransform, indexTransform },
+							{ baseTransform: layerTransform, indexTransform },
 						];
+
+						if (hasAnotherDimension) {
+							dimension(dimensionIndex + 1, parentIndexTransformList);
+							continue;
+						}
 
 						renderLayer(layer, [], parentIndexTransformList);
 					}

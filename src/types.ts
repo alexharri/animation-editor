@@ -29,7 +29,7 @@ export interface LayerTransform {
 }
 
 export interface ParentIndexTransform {
-	layerTransform: LayerTransform;
+	baseTransform: LayerTransform;
 	indexTransform: LayerTransform;
 }
 

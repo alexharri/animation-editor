@@ -57,23 +57,19 @@ export const applyParentIndexTransform = (
 	t: LayerTransform,
 	parentIndexTransform: ParentIndexTransform,
 ): LayerTransform => {
-	const { indexTransform: it, layerTransform: lt } = parentIndexTransform;
+	const { indexTransform, baseTransform } = parentIndexTransform;
 
-	let translate = t.translate;
-
-	const anchor = lt.translate;
-
-	translate = translate
-		.multiplyMat2(it.matrix, anchor)
-		.add(it.translate.scaleXY(lt.scaleX, lt.scaleY).rotate(lt.rotation));
+	const translate = t.translate
+		.multiplyMat2(indexTransform.matrix, baseTransform.translate)
+		.add(indexTransform.translate.multiplyMat2(baseTransform.matrix));
 
 	return {
 		translate,
 		anchor: t.anchor,
-		rotation: t.rotation + it.rotation,
-		scaleX: t.scaleX * it.scaleX,
-		scaleY: t.scaleY * it.scaleY,
-		matrix: t.matrix.multiplyMat2(it.matrix),
+		rotation: t.rotation + indexTransform.rotation,
+		scaleX: t.scaleX * indexTransform.scaleX,
+		scaleY: t.scaleY * indexTransform.scaleY,
+		matrix: t.matrix.multiplyMat2(indexTransform.matrix),
 	};
 };
 
@@ -87,7 +83,7 @@ export const applyCompositionTransform = (
 
 	translate = translate
 		.multiplyMat2(ct.matrix, origin)
-		.add(ct.translate.scaleXY(ct.scaleX, ct.scaleY).rotate(ct.rotation));
+		.add(ct.translate.rotate(ct.rotation).scaleXY(ct.scaleX, ct.scaleY));
 
 	return {
 		translate,
