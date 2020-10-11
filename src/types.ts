@@ -141,16 +141,20 @@ export interface ArrayModifierPropertyValueMap {
 export interface CompositionRenderValues {
 	properties: PropertyValueMap;
 	arrayModifierProperties: ArrayModifierPropertyValueMap;
+	parentTransforms: Array<{
+		origin: Vec2;
+		transform: LayerTransform;
+	}>;
 	transforms: {
 		[layerId: string]: {
-			transform: { [index: number]: LayerTransform };
+			transform: LayerTransform;
 			indexTransforms: Array<{
 				[index: number]: LayerTransform;
 			}>;
 		};
 	};
 	compositionLayers: {
-		[layerId: string]: { [index: number]: CompositionRenderValues };
+		[layerId: string]: CompositionRenderValues;
 	};
 	frameIndex: number;
 	parent?: CompositionRenderValues;

@@ -316,7 +316,7 @@ export const moveToolHandlers = {
 							continue;
 						}
 
-						const transform = renderValues.transforms[layer.parentLayerId].transform[0];
+						const transform = renderValues.transforms[layer.parentLayerId].transform;
 						moveVector = transform.matrix.inverse().multiplyVec2(moveVector);
 					}
 

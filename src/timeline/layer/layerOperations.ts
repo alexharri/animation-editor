@@ -1,9 +1,6 @@
 import { compositionActions } from "~/composition/compositionReducer";
-import {
-	adjustTransformToParent,
-	computeLayerTransformMap,
-	getLayerTransformProperties,
-} from "~/composition/transformUtils";
+import { computeLayerTransformMap } from "~/composition/transformMap";
+import { adjustTransformToParent, getLayerTransformProperties } from "~/composition/transformUtils";
 import { RAD_TO_DEG_FAC } from "~/constants";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionState } from "~/state/stateUtils";
@@ -39,8 +36,8 @@ const setLayerParentLayer = (op: Operation, layerId: string, parentId: string): 
 
 	const transformMap = getTransformMap(layer.compositionId);
 
-	const transform = transformMap[layer.id].transform[0];
-	const parentTransform = transformMap[parentId].transform[0];
+	const transform = transformMap[layer.id].transform;
+	const parentTransform = transformMap[parentId].transform;
 
 	const {
 		anchor,
@@ -69,9 +66,7 @@ const removeLayerParentLayer = (op: Operation, layerId: string): void => {
 	const layer = compositionState.layers[layerId];
 
 	const transformMap = getTransformMap(layer.compositionId);
-	const { anchor, translate, rotation: rotation, scaleX: scaleX, scaleY: scaleY } = transformMap[
-		layer.id
-	].transform[0];
+	const { anchor, translate, rotation, scaleX, scaleY } = transformMap[layer.id].transform;
 
 	const properties = getLayerTransformProperties(layerId, compositionState);
 

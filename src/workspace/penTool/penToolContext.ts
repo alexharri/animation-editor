@@ -44,7 +44,7 @@ export const constructPenToolContext = (
 		{ recursive: false },
 	);
 
-	const transform = map.transforms[layerId].transform[0];
+	const transform = map.transforms[layerId].transform;
 	const normalToViewport = (vec: Vec2): Vec2 => {
 		return transform.matrix.multiplyVec2(vec).add(transform.translate).scale(scale).add(pan);
 	};

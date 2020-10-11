@@ -2,11 +2,8 @@ import React, { useEffect, useRef } from "react";
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
-import { computeLayerTransformMap } from "~/composition/transformUtils";
-import {
-	getLayerArrayModifierCountPropertyId,
-	getLayerArrayModifiers,
-} from "~/composition/util/compositionPropertyUtils";
+import { computeLayerTransformMap } from "~/composition/transformMap";
+import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import {
 	FlowComputeContext,
 	FlowComputeNodeArg,
@@ -116,11 +113,20 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 	};
 
 	const renderCompAtFrameIndex = (
-		parent: any,
+		parent: CompositionRenderValues | undefined,
 		parentTransform: LayerTransform | undefined,
 		compositionId: string,
 		frameIndex: number,
 	): CompositionRenderValues => {
+		let parentTransforms: CompositionRenderValues["parentTransforms"] = [];
+
+		if (parent && parentTransform) {
+			parentTransforms = [
+				...parent.parentTransforms,
+				{ origin: parentTransform.translate, transform: parentTransform },
+			];
+		}
+
 		const composition = compositionState.compositions[compositionId];
 		const map: CompositionRenderValues = {
 			frameIndex,
@@ -128,6 +134,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			arrayModifierProperties: {},
 			compositionLayers: {},
 			transforms: {},
+			parentTransforms,
 			parent,
 		};
 
@@ -379,30 +386,16 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 				const layer = compositionState.layers[layerId];
 
 				if (layer.type === LayerType.Composition) {
-					map.compositionLayers[layer.id] = {};
+					let transform = map.transforms[layer.id].transform;
 
-					let count = 1;
-
-					const countPropertyId = getLayerArrayModifierCountPropertyId(
+					const id = compositionState.compositionLayerIdToComposition[layer.id];
+					map.compositionLayers[layer.id] = crawl(
+						id,
+						map.frameIndex - layer.index,
+						map,
+						transform,
 						layerId,
-						compositionState,
 					);
-					if (countPropertyId) {
-						count = map.properties[countPropertyId].computedValue;
-					}
-
-					for (let i = 0; i < count; i += 1) {
-						let transform = map.transforms[layer.id].transform[i];
-
-						const id = compositionState.compositionLayerIdToComposition[layer.id];
-						map.compositionLayers[layer.id][i] = crawl(
-							id,
-							map.frameIndex - layer.index,
-							map,
-							transform,
-							layerId,
-						);
-					}
 				}
 			}
 		}

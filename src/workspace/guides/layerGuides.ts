@@ -189,7 +189,6 @@ export function renderLayerGuides(
 		mousePosition,
 	} = opts;
 
-	const index = 0; // Guides are always based on the layer at i=0
 	const isSelected = selection.layers[layer.id];
 
 	if (opts.hasHoveredLayer && !isSelected) {
@@ -220,7 +219,7 @@ export function renderLayerGuides(
 	};
 
 	const nameToProperty = getLayerNameToProperty(map, compositionState, layer.id);
-	const transform = map.transforms[layer.id].transform[index];
+	const transform = map.transforms[layer.id].transform;
 	const corners = getCorners(opts, layer, nameToProperty, scale, pan, transform);
 
 	if (mousePosition && !opts.hasHoveredLayer) {

@@ -59,7 +59,7 @@ export const workspaceLayerBoundingBoxCorners = (
 ) => {
 	const { compositionState } = actionState;
 
-	const transform = map.transforms[layerId].transform[0];
+	const transform = map.transforms[layerId].transform;
 
 	const layer = compositionState.layers[layerId];
 	if (layer.type === LayerType.Shape) {
