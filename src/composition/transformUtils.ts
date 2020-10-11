@@ -60,6 +60,7 @@ export const applyParentIndexTransform = (
 	const { indexTransform, baseTransform } = parentIndexTransform;
 
 	const translate = t.translate
+		.sub(indexTransform.anchor)
 		.multiplyMat2(indexTransform.matrix, baseTransform.translate)
 		.add(indexTransform.translate.multiplyMat2(baseTransform.matrix));
 

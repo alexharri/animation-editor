@@ -120,12 +120,11 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		let transform = map.transforms[layer.id].transform;
 
-		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
-			transform = applyParentIndexTransform(transform, parentIndexTransforms[i]);
-		}
-
 		for (let i = 0; i < indexTransforms.length; i += 1) {
 			transform = applyParentTransform(indexTransforms[i], transform, true);
+		}
+		for (let i = 0; i < parentIndexTransforms.length; i += 1) {
+			transform = applyParentIndexTransform(transform, parentIndexTransforms[i]);
 		}
 
 		const mat2 = transform.matrix;
