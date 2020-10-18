@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { reduceCompProperties } from "~/composition/compositionUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType, TimelineColors } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { openGraphEditorContextMenu } from "~/graphEditor/graphEditorContextMenu";
@@ -59,7 +59,7 @@ export const GraphEditor: React.FC<Props> = (props) => {
 
 				const composition = compositionState.compositions[compositionId];
 
-				const compositionSelection = getCompSelectionFromState(
+				const compositionSelection = compSelectionFromState(
 					compositionId,
 					compositionSelectionState,
 				);

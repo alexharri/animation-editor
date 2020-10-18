@@ -15,13 +15,13 @@ import {
 import { createLayer } from "~/composition/layer/createLayer";
 import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
 import { getLayerModifierPropertyGroupId } from "~/composition/util/compositionPropertyUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { LayerType, PropertyGroupName, RGBAColor, RGBColor, TransformBehavior } from "~/types";
 import {
 	addListToMap,
 	createGenMapIdFn,
-	modifyItemInUnionMap,
 	modifyItemsInMap,
+	modifyItemsInUnionMap,
 	removeKeysFromMap,
 } from "~/util/mapUtils";
 
@@ -189,6 +189,22 @@ export const compositionActions = {
 		return (propertyId: string, shouldMaintainProportions: boolean) =>
 			action({ propertyId, shouldMaintainProportions });
 	}),
+
+	toggleLayerViewProperty: createAction("comp/TOGGLE_LAYER_VIEW_PROPERTY", (action) => {
+		return (layerId: string, propertyId: string) => action({ layerId, propertyId });
+	}),
+
+	setLayerViewProperties: createAction("comp/SET_LAYER_VIEW_PROPERTIES", (action) => {
+		return (layerId: string, propertyIds: string[]) => action({ layerId, propertyIds });
+	}),
+
+	setPropertyGroupViewProperties: createAction("comp/SET_GROUP_VIEW_PROPERTIES", (action) => {
+		return (groupId: string, propertyIds: string[]) => action({ groupId, propertyIds });
+	}),
+
+	clearViewProperties: createAction("comp/CLEAR_VIEW_PROPERTIES", (action) => {
+		return (layerId: string) => action({ layerId });
+	}),
 };
 
 type Action = ActionType<typeof compositionActions>;
@@ -201,7 +217,7 @@ export const compositionReducer = (
 		case getType(compositionActions.applyLayerIndexShift): {
 			const { compositionId, layerIndexShift, selectionState } = action.payload;
 
-			const selection = getCompSelectionFromState(compositionId, selectionState);
+			const selection = compSelectionFromState(compositionId, selectionState);
 
 			const newState = {
 				...state,
@@ -234,7 +250,7 @@ export const compositionReducer = (
 				selectionState,
 			} = action.payload;
 
-			const selection = getCompSelectionFromState(compositionId, selectionState);
+			const selection = compSelectionFromState(compositionId, selectionState);
 			const composition = state.compositions[compositionId];
 
 			const notSelected: string[] = [];
@@ -275,7 +291,7 @@ export const compositionReducer = (
 		case getType(compositionActions.applyLayerLengthShift): {
 			const { compositionId, layerLengthShift, selectionState } = action.payload;
 
-			const selection = getCompSelectionFromState(compositionId, selectionState);
+			const selection = compSelectionFromState(compositionId, selectionState);
 
 			const newState = {
 				...state,
@@ -446,7 +462,7 @@ export const compositionReducer = (
 			const { propertyId, value } = action.payload;
 			return {
 				...state,
-				properties: modifyItemInUnionMap(
+				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
 					(item: CompositionProperty) => ({
@@ -461,12 +477,13 @@ export const compositionReducer = (
 			const { propertyId, collapsed } = action.payload;
 			return {
 				...state,
-				properties: modifyItemInUnionMap(
+				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
 					(item: CompositionPropertyGroup) => ({
 						...item,
 						collapsed,
+						viewProperties: [],
 					}),
 				),
 			};
@@ -476,7 +493,7 @@ export const compositionReducer = (
 			const { propertyId, timelineId } = action.payload;
 			return {
 				...state,
-				properties: modifyItemInUnionMap(
+				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
 					(item: CompositionProperty) => ({
@@ -579,7 +596,7 @@ export const compositionReducer = (
 
 			return {
 				...state,
-				properties: modifyItemInUnionMap(
+				properties: modifyItemsInUnionMap(
 					removeKeysFromMap(state.properties, propertyIdsToRemove),
 					parentProperty!.id,
 					(group: CompositionPropertyGroup) => ({
@@ -605,7 +622,7 @@ export const compositionReducer = (
 			const { propertyId, graphId } = action.payload;
 			return {
 				...state,
-				properties: modifyItemInUnionMap(
+				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
 					(property: CompositionPropertyGroup) => ({
@@ -629,12 +646,39 @@ export const compositionReducer = (
 
 		case getType(compositionActions.setLayerCollapsed): {
 			const { layerId, collapsed } = action.payload;
+
+			const toClear = !collapsed
+				? []
+				: reduceLayerPropertiesAndGroups<string[]>(
+						layerId,
+						state,
+						(acc, group) => {
+							if (group.type === "property") {
+								return acc;
+							}
+
+							if (group.viewProperties.length) {
+								acc.push(group.id);
+							}
+							return acc;
+						},
+						[],
+				  );
+
 			return {
 				...state,
 				layers: modifyItemsInMap(state.layers, layerId, (layer) => ({
 					...layer,
 					collapsed,
+					viewProperties: [],
 				})),
+				properties: modifyItemsInUnionMap(
+					state.properties,
+					toClear,
+					(group: CompositionPropertyGroup) => {
+						return { ...group, viewProperties: [], collapsed: true };
+					},
+				),
 			};
 		}
 
@@ -682,7 +726,7 @@ export const compositionReducer = (
 				groupIndex = 0;
 			}
 
-			newState.properties = modifyItemInUnionMap(
+			newState.properties = modifyItemsInUnionMap(
 				newState.properties,
 				layer.properties[groupIndex],
 				(group: CompositionPropertyGroup) => ({
@@ -701,7 +745,7 @@ export const compositionReducer = (
 				...state,
 				properties: addListToMap(state.properties, propertiesToAdd, "id"),
 			};
-			newState.properties = modifyItemInUnionMap(
+			newState.properties = modifyItemsInUnionMap(
 				newState.properties,
 				addToPropertyGroup,
 				(group: CompositionPropertyGroup) => ({
@@ -741,7 +785,7 @@ export const compositionReducer = (
 
 			return {
 				...state,
-				properties: modifyItemInUnionMap(
+				properties: modifyItemsInUnionMap(
 					state.properties,
 					modifierGroupId,
 					(item: CompositionPropertyGroup) => ({
@@ -771,13 +815,88 @@ export const compositionReducer = (
 			const { shouldMaintainProportions, propertyId } = action.payload;
 			return {
 				...state,
-				properties: modifyItemInUnionMap(
+				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
 					(item: CompositionProperty) => ({
 						...item,
 						shouldMaintainProportions,
 					}),
+				),
+			};
+		}
+
+		case getType(compositionActions.toggleLayerViewProperty): {
+			const { layerId, propertyId } = action.payload;
+			return {
+				...state,
+				layers: modifyItemsInMap(state.layers, layerId, (layer) => {
+					const viewProperties = [...layer.viewProperties];
+					const index = viewProperties.indexOf(propertyId);
+					if (index === -1) {
+						viewProperties.push(propertyId);
+					} else {
+						viewProperties.splice(index, 1);
+					}
+					return { ...layer, viewProperties };
+				}),
+			};
+		}
+
+		case getType(compositionActions.setLayerViewProperties): {
+			const { layerId, propertyIds } = action.payload;
+			return {
+				...state,
+				layers: modifyItemsInMap(state.layers, layerId, (layer) => {
+					return { ...layer, viewProperties: propertyIds };
+				}),
+			};
+		}
+
+		case getType(compositionActions.setPropertyGroupViewProperties): {
+			const { groupId, propertyIds } = action.payload;
+			return {
+				...state,
+				properties: modifyItemsInUnionMap(
+					state.properties,
+					groupId,
+					(group: CompositionPropertyGroup) => {
+						return { ...group, viewProperties: propertyIds };
+					},
+				),
+			};
+		}
+
+		case getType(compositionActions.clearViewProperties): {
+			const { layerId } = action.payload;
+
+			const toClear = reduceLayerPropertiesAndGroups<string[]>(
+				layerId,
+				state,
+				(acc, group) => {
+					if (group.type === "property") {
+						return acc;
+					}
+
+					if (group.viewProperties.length) {
+						acc.push(group.id);
+					}
+					return acc;
+				},
+				[],
+			);
+
+			return {
+				...state,
+				layers: modifyItemsInMap(state.layers, layerId, (layer) => {
+					return { ...layer, viewProperties: [], collapsed: true };
+				}),
+				properties: modifyItemsInUnionMap(
+					state.properties,
+					toClear,
+					(group: CompositionPropertyGroup) => {
+						return { ...group, viewProperties: [], collapsed: true };
+					},
 				),
 			};
 		}

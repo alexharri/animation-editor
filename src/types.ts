@@ -179,7 +179,9 @@ export interface KeyboardShortcut {
 	name: string;
 	key: keyof typeof keys;
 	modifierKeys?: Array<"Command" | "Alt" | "Shift">;
+	optionalModifierKeys?: Array<"Command" | "Alt" | "Shift">;
 	fn: ShortcutFn;
+	history?: boolean;
 	shouldAddToStack?: ShouldAddShortcutToStackFn;
 }
 

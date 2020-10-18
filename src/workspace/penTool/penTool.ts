@@ -8,7 +8,7 @@ import {
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
 import { createShapeLayerShapeGroup } from "~/composition/path/shapeLayerPath";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
@@ -109,7 +109,7 @@ export const penToolHandlers = {
 		} = getActionState();
 
 		const { layerId, compositionId } = ctx;
-		const compositionSelection = getCompSelectionFromState(
+		const compositionSelection = compSelectionFromState(
 			compositionId,
 			compositionSelectionState,
 		);
@@ -236,7 +236,7 @@ export const penToolHandlers = {
 		const { shapeState, compositionId } = ctx;
 		const { compositionState, compositionSelectionState } = getActionState();
 
-		let selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+		let selection = compSelectionFromState(compositionId, compositionSelectionState);
 
 		let shapeGroupId!: string;
 
@@ -319,7 +319,7 @@ export const penToolHandlers = {
 					addShapeToSelection(params);
 				}
 
-				selection = getCompSelectionFromState(
+				selection = compSelectionFromState(
 					compositionId,
 					getActionState().compositionSelectionState,
 				);
@@ -336,7 +336,7 @@ export const penToolHandlers = {
 				params.dispatch(compositionActions.setShapeMoveVector(compositionId, transformed));
 			},
 			mouseUp: (params, hasMoved) => {
-				selection = getCompSelectionFromState(
+				selection = compSelectionFromState(
 					compositionId,
 					getActionState().compositionSelectionState,
 				);
@@ -404,7 +404,7 @@ export const penToolHandlers = {
 
 		const layer = compositionState.layers[layerId];
 		const compositionId = layer.compositionId;
-		const compositionSelection = getCompSelectionFromState(
+		const compositionSelection = compSelectionFromState(
 			compositionId,
 			compositionSelectionState,
 		);
@@ -603,7 +603,7 @@ export const penToolHandlers = {
 
 		const { compositionId } = areaState;
 
-		const selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+		const selection = compSelectionFromState(compositionId, compositionSelectionState);
 		const selectedLayers = Object.keys(selection.layers);
 
 		const selectedShapeLayers = selectedLayers.filter((layerId) => {

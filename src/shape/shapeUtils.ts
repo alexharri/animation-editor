@@ -5,7 +5,7 @@ import {
 	reduceLayerProperties,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { ShapeEdge, ShapeGraph, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
@@ -493,7 +493,7 @@ export const getSingleSelectedShapeLayerId = (
 	compositionState: CompositionState,
 	compositionSelectionState: CompositionSelectionState,
 ): string | null => {
-	const selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+	const selection = compSelectionFromState(compositionId, compositionSelectionState);
 
 	const selectedLayers = Object.keys(selection.layers);
 
@@ -519,7 +519,7 @@ export const getSelectedShapeLayerIds = (
 	compositionState: CompositionState,
 	compositionSelectionState: CompositionSelectionState,
 ): string[] => {
-	const selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+	const selection = compSelectionFromState(compositionId, compositionSelectionState);
 	const composition = compositionState.compositions[compositionId];
 	return composition.layers.filter((layerId) => {
 		const layer = compositionState.layers[layerId];
@@ -656,7 +656,7 @@ export const getShapeLayerDirectlySelectedPaths = (
 	compositionSelectionState: CompositionSelectionState,
 ): Set<string> => {
 	const layer = compositionState.layers[layerId];
-	const selection = getCompSelectionFromState(layer.compositionId, compositionSelectionState);
+	const selection = compSelectionFromState(layer.compositionId, compositionSelectionState);
 
 	return reduceLayerPropertiesAndGroups<Set<string>>(
 		layer.id,
@@ -681,7 +681,7 @@ export const getShapeLayerSelectedPathIds = (
 	compositionSelectionState: CompositionSelectionState,
 ): string[] => {
 	const layer = compositionState.layers[layerId];
-	const selection = getCompSelectionFromState(layer.compositionId, compositionSelectionState);
+	const selection = compSelectionFromState(layer.compositionId, compositionSelectionState);
 
 	const pathIdSet = reduceLayerPropertiesAndGroups<Set<string>>(
 		layer.id,
@@ -718,7 +718,7 @@ export const getCompositionSelectedPathsSet = (
 	let set = new Set<string>();
 
 	const composition = compositionState.compositions[compositionId];
-	const selection = getCompSelectionFromState(compositionId, compositionSelectionState);
+	const selection = compSelectionFromState(compositionId, compositionSelectionState);
 
 	for (const layerId of composition.layers) {
 		const layer = compositionState.layers[layerId];

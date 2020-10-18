@@ -1,7 +1,7 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import { Composition } from "~/composition/compositionTypes";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
 	TIMELINE_BETWEEN_LAYERS,
 	TIMELINE_LAYER_HEIGHT,
@@ -44,10 +44,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		layerLengthShift,
 	} = options;
 
-	const compositionSelection = getCompSelectionFromState(
-		composition.id,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
 
 	const getLayerIndexAndLength = (layerId: string): [number, number] => {
 		const layer = compositionState.layers[layerId];
@@ -153,9 +150,16 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			renderEdge(selected ? cssVariables.dark700 : cssVariables.dark600);
 
 			if (property.type === "group") {
-				if (!property.collapsed) {
-					for (let j = 0; j < property.properties.length; j += 1) {
-						renderProperty(property.properties[j]);
+				let { collapsed, properties } = property;
+
+				if (property.viewProperties.length) {
+					properties = property.viewProperties;
+					collapsed = false;
+				}
+
+				if (!collapsed) {
+					for (let j = 0; j < properties.length; j += 1) {
+						renderProperty(properties[j]);
 					}
 				}
 				return;
@@ -183,9 +187,15 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			}
 		};
 
-		if (!layer.collapsed) {
-			for (let j = 0; j < layer.properties.length; j += 1) {
-				renderProperty(layer.properties[j]);
+		let { collapsed, properties } = layer;
+		if (layer.viewProperties.length) {
+			collapsed = false;
+			properties = layer.viewProperties;
+		}
+
+		if (!collapsed) {
+			for (let j = 0; j < properties.length; j += 1) {
+				renderProperty(properties[j]);
 			}
 		}
 

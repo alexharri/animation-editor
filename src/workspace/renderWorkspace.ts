@@ -11,7 +11,7 @@ import {
 	getLayerArrayModifiers,
 	getLayerCompositionProperties,
 } from "~/composition/util/compositionPropertyUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { Tool } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
@@ -106,10 +106,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	} = options;
 
 	const composition = compositionState.compositions[compositionId];
-	const compositionSelection = getCompSelectionFromState(
-		compositionId,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 
 	ctx.clearRect(0, 0, viewport.width, viewport.height);
 
@@ -515,7 +512,7 @@ export function renderCompositionWorkspaceGuides(options: Options) {
 
 	const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
 
-	const selection = getCompSelectionFromState(composition.id, compositionSelectionState);
+	const selection = compSelectionFromState(composition.id, compositionSelectionState);
 	const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
 	const renderContext: RenderGuidesContext = {

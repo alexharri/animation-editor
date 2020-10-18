@@ -16,6 +16,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 		properties: [],
 		collapsed: true,
 		graphId: "",
+		viewProperties: [],
 	};
 
 	return { properties: [], group };

@@ -49,6 +49,7 @@ const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",
+		viewProperties: [],
 	};
 
 	return { properties, group };
@@ -110,6 +111,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",
+		viewProperties: [],
 	};
 
 	return { properties, group };

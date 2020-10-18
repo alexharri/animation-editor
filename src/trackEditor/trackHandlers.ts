@@ -8,8 +8,8 @@ import {
 	reduceVisibleCompProperties,
 } from "~/composition/compositionUtils";
 import {
+	compSelectionFromState,
 	didCompSelectionChange,
-	getCompSelectionFromState,
 } from "~/composition/util/compSelectionUtils";
 import { AreaType, TIMELINE_LAYER_HEIGHT, TIMELINE_TRACK_START_END_X_MARGIN } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
@@ -119,7 +119,7 @@ const actions = {
 			beforeMove: (params) => {
 				const { compositionState, compositionSelectionState } = getActionState();
 				const composition = compositionState.compositions[options.compositionId];
-				const compositionSelection = getCompSelectionFromState(
+				const compositionSelection = compSelectionFromState(
 					composition.id,
 					compositionSelectionState,
 				);
@@ -216,7 +216,7 @@ const actions = {
 	) => {
 		const { compositionState, compositionSelectionState } = getActionState();
 		const composition = compositionState.compositions[options.compositionId];
-		const compositionSelection = getCompSelectionFromState(
+		const compositionSelection = compSelectionFromState(
 			composition.id,
 			compositionSelectionState,
 		);
@@ -303,7 +303,7 @@ const actions = {
 						compositionSelectionState,
 					} = getActionState();
 
-					const compositionSelection = getCompSelectionFromState(
+					const compositionSelection = compSelectionFromState(
 						composition.id,
 						compositionSelectionState,
 					);

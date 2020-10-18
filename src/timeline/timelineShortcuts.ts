@@ -1,11 +1,11 @@
 import { reduceCompProperties } from "~/composition/compositionUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { areaActionStateFromState, getActionState } from "~/state/stateUtils";
 import { timelineOperations } from "~/timeline/operations/timelineOperations";
-import { KeyboardShortcut, ShouldAddShortcutToStackFn } from "~/types";
+import { KeyboardShortcut, PropertyName, ShouldAddShortcutToStackFn } from "~/types";
 
 const getAreaActionState = (areaId: string, actionState = getActionState()) =>
 	areaActionStateFromState<AreaType.Timeline>(areaId, actionState);
@@ -14,10 +14,7 @@ const getSelectedTimelineIds = (areaId: string, actionState = getActionState()) 
 	const { compositionId } = getAreaActionState(areaId, actionState);
 	const { compositionState, compositionSelectionState } = actionState;
 
-	const compositionSelection = getCompSelectionFromState(
-		compositionId,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 
 	// All selected timeline ids in the composition
 	const timelineIds = reduceCompProperties<string[]>(
@@ -50,6 +47,27 @@ const timelineShortcuts = {
 
 		const op = createOperation();
 		timelineOperations.easyEaseSelectedKeyframes(op, timelineIds);
+
+		params.dispatch(op.actions);
+	},
+
+	viewTransformProperties: (propertyNames: PropertyName[]) => (
+		areaId: string,
+		params: RequestActionParams,
+	) => {
+		const { compositionId } = getAreaActionState(areaId);
+
+		const op = createOperation();
+		timelineOperations.viewTransformProperties(op, compositionId, propertyNames);
+
+		params.dispatch(op.actions);
+	},
+
+	viewAnimatedProperties: (areaId: string, params: RequestActionParams) => {
+		const { compositionId } = getAreaActionState(areaId);
+
+		const op = createOperation();
+		timelineOperations.viewAnimatedProperties(op, compositionId);
 
 		params.dispatch(op.actions);
 	},
@@ -92,5 +110,37 @@ export const timelineKeyboardShortcuts: KeyboardShortcut[] = [
 		name: "Easy ease selected keyframes",
 		key: "F9",
 		fn: timelineShortcuts.easeEaseSelectedKeyframes,
+	},
+	{
+		name: "View animated properties",
+		key: "U",
+		fn: timelineShortcuts.viewAnimatedProperties,
+	},
+	{
+		name: "View position property",
+		key: "P",
+		fn: timelineShortcuts.viewTransformProperties([
+			PropertyName.PositionX,
+			PropertyName.PositionY,
+		]),
+		optionalModifierKeys: ["Shift"],
+	},
+	{
+		name: "View rotation property",
+		key: "R",
+		fn: timelineShortcuts.viewTransformProperties([PropertyName.Rotation]),
+		optionalModifierKeys: ["Shift"],
+	},
+	{
+		name: "View scale property",
+		key: "S",
+		fn: timelineShortcuts.viewTransformProperties([PropertyName.ScaleX, PropertyName.ScaleY]),
+		optionalModifierKeys: ["Shift"],
+	},
+	{
+		name: "View anchor property",
+		key: "A",
+		fn: timelineShortcuts.viewTransformProperties([PropertyName.AnchorX, PropertyName.AnchorY]),
+		optionalModifierKeys: ["Shift"],
 	},
 ];

@@ -21,6 +21,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 		properties: [],
 		collapsed: true,
 		graphId: "",
+		viewProperties: [],
 	};
 	propertiesToAdd.push(group);
 
@@ -94,6 +95,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 		properties: fillProperties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",
+		viewProperties: [],
 	};
 
 	group.properties.push(fillGroup.id);
@@ -193,6 +195,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 		properties: strokeProperties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",
+		viewProperties: [],
 	};
 
 	group.properties.push(strokeGroup.id);

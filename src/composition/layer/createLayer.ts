@@ -87,6 +87,7 @@ export const createLayer = (
 		type,
 		collapsed: true,
 		parentLayerId: "",
+		viewProperties: [],
 	};
 
 	return {

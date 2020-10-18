@@ -21,6 +21,7 @@ export const createLayerModifierProperties = (
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",
+		viewProperties: [],
 	};
 
 	return { properties, group };

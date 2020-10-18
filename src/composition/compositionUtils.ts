@@ -15,9 +15,16 @@ export const reduceVisibleLayerProperties = <T>(
 		const property = compositionState.properties[propertyId];
 
 		if (property.type === "group") {
-			if (!property.collapsed) {
-				for (let j = 0; j < property.properties.length; j += 1) {
-					crawlProperty(property.properties[j]);
+			let { collapsed, properties } = property;
+
+			if (property.viewProperties.length) {
+				properties = property.viewProperties;
+				collapsed = false;
+			}
+
+			if (!collapsed) {
+				for (let j = 0; j < properties.length; j += 1) {
+					crawlProperty(properties[j]);
 				}
 			}
 			return;
@@ -26,8 +33,19 @@ export const reduceVisibleLayerProperties = <T>(
 		acc = fn(acc, property);
 	};
 
-	for (let j = 0; j < layer.properties.length; j += 1) {
-		crawlProperty(layer.properties[j]);
+	let { collapsed, properties } = layer;
+
+	if (layer.viewProperties.length) {
+		collapsed = false;
+		properties = layer.viewProperties;
+	}
+
+	if (collapsed) {
+		return acc;
+	}
+
+	for (let j = 0; j < properties.length; j += 1) {
+		crawlProperty(properties[j]);
 	}
 
 	return acc;

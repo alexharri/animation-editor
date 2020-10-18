@@ -7,8 +7,8 @@ import {
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
 import {
+	compSelectionFromState,
 	didCompSelectionChange,
-	getCompSelectionFromState,
 } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
@@ -113,7 +113,7 @@ export const moveToolHandlers = {
 		const { compositionId } = layer;
 
 		const composition = compositionState.compositions[compositionId];
-		const compositionSelection = getCompSelectionFromState(
+		const compositionSelection = compSelectionFromState(
 			compositionId,
 			compositionSelectionState,
 		);
@@ -274,7 +274,7 @@ export const moveToolHandlers = {
 					compositionState,
 					compositionSelectionState,
 				} = getActionState();
-				const compositionSelection = getCompSelectionFromState(
+				const compositionSelection = compSelectionFromState(
 					compositionId,
 					compositionSelectionState,
 				);

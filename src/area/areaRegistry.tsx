@@ -11,6 +11,7 @@ import { KeyboardShortcut } from "~/types";
 import { AreaComponentProps, AreaState } from "~/types/areaTypes";
 import { Workspace } from "~/workspace/Workspace";
 import { compositionWorkspaceAreaReducer } from "~/workspace/workspaceAreaReducer";
+import { workspaceKeyboardShortcuts } from "~/workspace/workspaceShortcuts";
 
 export const areaComponentRegistry: {
 	[T in AreaType]: React.ComponentType<AreaComponentProps<AreaState<T>>>;
@@ -49,4 +50,5 @@ export const areaKeyboardShortcutRegistry: Partial<
 > = {
 	[AreaType.Timeline]: timelineKeyboardShortcuts,
 	[AreaType.FlowEditor]: flowEditorKeyboardShortcuts,
+	[AreaType.Workspace]: workspaceKeyboardShortcuts,
 };
