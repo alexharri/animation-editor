@@ -1,3 +1,4 @@
+import { compositionKeyboardShortcuts } from "~/composition/compositionShortcuts";
 import { Tool } from "~/constants";
 import { RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
@@ -14,6 +15,7 @@ const workspaceShortcuts = {
 };
 
 export const workspaceKeyboardShortcuts: KeyboardShortcut[] = [
+	...compositionKeyboardShortcuts,
 	{
 		name: "Select move tool",
 		key: "V",
@@ -22,7 +24,7 @@ export const workspaceKeyboardShortcuts: KeyboardShortcut[] = [
 	},
 	{
 		name: "Select pen tool",
-		key: "P",
+		key: "G",
 		fn: workspaceShortcuts.selectTool(Tool.pen),
 		history: false,
 	},

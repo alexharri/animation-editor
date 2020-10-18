@@ -12,6 +12,7 @@ export const keys = {
 	B: 66,
 	C: 67,
 	F: 70,
+	G: 71,
 	I: 73,
 	O: 79,
 	P: 80,
