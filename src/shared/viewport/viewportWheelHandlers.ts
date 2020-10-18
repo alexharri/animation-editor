@@ -20,8 +20,6 @@ export const createViewportWheelHandlers = <T extends PossibleAreaTypes>(
 ) => {
 	const handlers = {
 		onPanStart: (areaId: string, e: React.MouseEvent) => {
-			e.stopPropagation();
-
 			const areaState = getAreaActionState<T>(areaId);
 			const initialPos = Vec2.fromEvent(e);
 

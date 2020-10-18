@@ -1,5 +1,10 @@
+import { useEffect } from "react";
+import { addListener, removeListener } from "~/listener/addListener";
+import { isKeyCodeOf } from "~/listener/keyboard";
 import { requestAction } from "~/listener/requestAction";
-import { getIsActionInProgress } from "~/state/stateUtils";
+import { getActionState, getIsActionInProgress } from "~/state/stateUtils";
+import { isVecInRect } from "~/util/math";
+import { getMousePosition } from "~/util/mouse";
 
 type Playback = { frameIndex: number };
 
@@ -43,4 +48,51 @@ export const startPlayback = (compositionId: string, startFrameIndex: number) =>
 		};
 		requestAnimationFrame(tick);
 	});
+};
+
+export const useCompositionPlayback = (
+	compositionId: string,
+	viewportRef: React.MutableRefObject<Rect>,
+) => {
+	useEffect(() => {
+		const token = addListener.keydownLong("Space", (e) => {
+			if (!isKeyCodeOf("Space", e.keyCode) || getIsActionInProgress()) {
+				return;
+			}
+
+			const { left, top, width, height } = viewportRef.current;
+			const viewport = { left, top, width, height };
+
+			const mousePosition = getMousePosition();
+			if (!isVecInRect(mousePosition, viewport)) {
+				return;
+			}
+
+			const start = Date.now();
+			let didMouseDown = false;
+
+			const mouseDownToken = addListener.repeated("mousedown", () => {
+				didMouseDown = true;
+			});
+
+			addListener.keyboardOnce("Space", "keyup", () => {
+				removeListener(mouseDownToken);
+
+				const elapsed = Date.now() - start;
+
+				if (elapsed > 300 || didMouseDown) {
+					return;
+				}
+
+				const { frameIndex } = getActionState().compositionState.compositions[
+					compositionId
+				];
+				startPlayback(compositionId, frameIndex);
+			});
+		});
+
+		return () => {
+			removeListener(token);
+		};
+	}, []);
 };

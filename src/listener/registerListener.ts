@@ -215,8 +215,8 @@ export function addKeyboardListenerExecuteOnce<T extends keyof KT2E>(
 			return;
 		}
 
-		window.removeEventListener(type, listener);
 		listenerFunc(e);
+		removeListenerExecuted(cancelToken);
 	};
 
 	addListener(cancelToken, type, listener, opts);
