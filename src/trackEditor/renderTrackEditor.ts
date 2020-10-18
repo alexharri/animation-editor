@@ -184,33 +184,27 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 				ctx.beginPath();
 				ctx.moveTo(left, top - W);
 
-				const traceHourglass = (fac = 1) => {
+				const traceHalf = (hasControlPoint: boolean, fac: number) => {
 					const W = (fac * TIMELINE_TRACK_KEYFRAME_HEIGHT) / 2;
 					const O = fac * 1;
 					const C = fac * 1.5;
 
-					ctx.lineTo(left + W, top - W);
-					ctx.lineTo(left + W, top - W + C);
-					ctx.lineTo(left + O, top - O);
-					ctx.lineTo(left + O, top + O);
-					ctx.lineTo(left + W, top + W - C);
-					ctx.lineTo(left + W, top + W);
-					ctx.lineTo(left, top + W);
+					if (hasControlPoint) {
+						ctx.lineTo(left + W, top - W);
+						ctx.lineTo(left + W, top - W + C);
+						ctx.lineTo(left + O, top - O);
+						ctx.lineTo(left + O, top + O);
+						ctx.lineTo(left + W, top + W - C);
+						ctx.lineTo(left + W, top + W);
+						ctx.lineTo(left, top + W);
+					} else {
+						ctx.lineTo(left + W, top);
+						ctx.lineTo(left, top + W);
+					}
 				};
 
-				if (k.controlPointRight) {
-					traceHourglass(1);
-				} else {
-					ctx.lineTo(left + W, top);
-					ctx.lineTo(left, top + W);
-				}
-
-				if (k.controlPointLeft) {
-					traceHourglass(-1);
-				} else {
-					ctx.lineTo(left - W, top);
-					ctx.lineTo(left, top - W);
-				}
+				traceHalf(!!k.controlPointRight, 1);
+				traceHalf(!!k.controlPointLeft, -1);
 
 				ctx.fillStyle = selected ? cssVariables.primary500 : cssVariables.light500;
 				ctx.fill();
