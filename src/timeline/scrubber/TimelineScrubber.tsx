@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { getCompositionPlayback } from "~/composition/compositionPlayback";
 import { TIMELINE_SCRUBBER_HEIGHT } from "~/constants";
 import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { connectActionState } from "~/state/stateUtils";
@@ -23,6 +24,10 @@ type Props = OwnProps & StateProps;
 
 const TimelineScrubberComponent: React.FC<Props> = (props) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const scrubElRef = useRef<HTMLDivElement>(null);
+
+	const propsRef = useRef(props);
+	propsRef.current = props;
 
 	const toTimelineX = createGraphEditorNormalToViewportX({
 		compositionLength: props.length,
@@ -43,6 +48,43 @@ const TimelineScrubberComponent: React.FC<Props> = (props) => {
 			width: props.viewportRight.width,
 		});
 	}, [props.length, props.viewBounds, props.viewportRight.width]);
+
+	useEffect(() => {
+		let lastPlayback = false;
+
+		const tick = () => {
+			requestAnimationFrame(tick);
+
+			const el = scrubElRef.current;
+
+			if (!el) {
+				return;
+			}
+
+			const toTimelineX = createGraphEditorNormalToViewportX({
+				compositionLength: propsRef.current.length,
+				viewBounds: propsRef.current.viewBounds,
+				width: propsRef.current.viewportRight.width,
+			});
+
+			const { compositionId } = props;
+
+			const playback = getCompositionPlayback(compositionId);
+
+			if (!playback) {
+				if (lastPlayback) {
+					el.style.left = toTimelineX(propsRef.current.frameIndex) + "px";
+				}
+
+				lastPlayback = false;
+				return;
+			}
+
+			lastPlayback = true;
+			el.style.left = toTimelineX(playback.frameIndex) + "px";
+		};
+		requestAnimationFrame(tick);
+	}, []);
 
 	return (
 		<div className={s("wrapper")}>
@@ -65,7 +107,11 @@ const TimelineScrubberComponent: React.FC<Props> = (props) => {
 					},
 				})}
 			/>
-			<div className={s("head")} style={{ left: toTimelineX(props.frameIndex) }}>
+			<div
+				className={s("head")}
+				style={{ left: toTimelineX(props.frameIndex) }}
+				ref={scrubElRef}
+			>
 				<div className={s("scrubLine")} style={{ height: props.viewportRight.height }} />
 			</div>
 		</div>

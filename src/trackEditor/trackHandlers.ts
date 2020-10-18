@@ -373,7 +373,7 @@ export const trackHandlers = {
 
 		const yPosMap = getTimelineTrackYPositions(composition.id, compositionState, options.panY);
 
-		const timelineIdToLayerId = reduceVisibleCompProperties<{ [timelineId: string]: string }>(
+		const timelineIdToLayerId = reduceCompProperties<{ [timelineId: string]: string }>(
 			composition.id,
 			compositionState,
 			(obj, property) => {

@@ -1,12 +1,16 @@
 import React, { useEffect, useRef } from "react";
+import { getCompositionPlayback, startPlayback } from "~/composition/compositionPlayback";
 import { Tool } from "~/constants";
 import { cssCursors, cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
+import { addListener, removeListener } from "~/listener/addListener";
+import { isKeyCodeOf } from "~/listener/keyboard";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
-import { getActionId, getActionState } from "~/state/stateUtils";
+import { getActionId, getActionState, getIsActionInProgress } from "~/state/stateUtils";
 import { AreaComponentProps } from "~/types/areaTypes";
-import { separateLeftRightMouse } from "~/util/mouse";
+import { isVecInRect } from "~/util/math";
+import { getMousePosition, separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { moveToolHandlers } from "~/workspace/moveTool";
 import { penToolHandlers } from "~/workspace/penTool/penTool";
@@ -25,6 +29,7 @@ const getOptions = (
 	ctx: CanvasRenderingContext2D,
 	mousePosition: Vec2 | undefined,
 	keyDown: { Shift: boolean; Command: boolean },
+	frameIndex?: number,
 ) => {
 	const { width, height, left, top } = props;
 
@@ -43,7 +48,7 @@ const getOptions = (
 	const map = getCompositionRenderValues(
 		state,
 		composition.id,
-		composition.frameIndex,
+		frameIndex ?? composition.frameIndex,
 		{
 			width: composition.width,
 			height: composition.height,
@@ -161,6 +166,21 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				return;
 			}
 
+			const playback = getCompositionPlayback(propsRef.current.areaState.compositionId);
+			if (playback) {
+				shouldRenderRef.current = false;
+				renderWorkspace(
+					getOptions(
+						propsRef.current,
+						mainCtx,
+						undefined,
+						keyDownRef.current,
+						playback.frameIndex,
+					),
+				);
+				return;
+			}
+
 			const render = shouldRenderRef.current;
 			const renderGuides = render || shouldRenderGuidesRef.current;
 
@@ -187,6 +207,42 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 
 		return () => {
 			mounted = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		const token = addListener.repeated("keydown", (e) => {
+			if (!isKeyCodeOf("Space", e.keyCode) || getIsActionInProgress()) {
+				return;
+			}
+
+			const { left, top, width, height } = propsRef.current;
+			const viewport = { left, top, width, height };
+
+			const mousePosition = getMousePosition();
+			if (!isVecInRect(mousePosition, viewport)) {
+				return;
+			}
+
+			const start = Date.now();
+
+			addListener.keyboardOnce("Space", "keyup", () => {
+				const elapsed = Date.now() - start;
+
+				if (elapsed > 300) {
+					return;
+				}
+
+				const { compositionId } = props.areaState;
+				const { frameIndex } = getActionState().compositionState.compositions[
+					compositionId
+				];
+				startPlayback(compositionId, frameIndex);
+			});
+		});
+
+		return () => {
+			removeListener(token);
 		};
 	}, []);
 
