@@ -47,7 +47,7 @@ import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { animate } from "~/util/animation/animate";
 import { capToRange, getDistance, interpolate } from "~/util/math";
 
-const ZOOM_FAC = 0.25;
+const ZOOM_FAC = 0.4;
 
 export const timelineHandlers = {
 	onScrubMouseDown: (

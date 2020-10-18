@@ -11,7 +11,7 @@ import { cssVariables } from "~/cssVariables";
 import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
-import { renderDiamond, renderRect } from "~/util/canvas/renderPrimitives";
+import { renderRect } from "~/util/canvas/renderPrimitives";
 
 interface RenderTimelineOptions {
 	ctx: Ctx;
@@ -179,11 +179,42 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 				const selected = options.timelineSelection[timeline.id]?.keyframes[k.id];
 
-				renderDiamond(ctx, Vec2.new(left, top), {
-					width: TIMELINE_TRACK_KEYFRAME_HEIGHT,
-					height: TIMELINE_TRACK_KEYFRAME_HEIGHT,
-					fillColor: selected ? cssVariables.primary500 : cssVariables.light500,
-				});
+				const W = TIMELINE_TRACK_KEYFRAME_HEIGHT / 2;
+
+				ctx.beginPath();
+				ctx.moveTo(left, top - W);
+
+				const traceHourglass = (fac = 1) => {
+					const W = (fac * TIMELINE_TRACK_KEYFRAME_HEIGHT) / 2;
+					const O = fac * 1;
+					const C = fac * 1.5;
+
+					ctx.lineTo(left + W, top - W);
+					ctx.lineTo(left + W, top - W + C);
+					ctx.lineTo(left + O, top - O);
+					ctx.lineTo(left + O, top + O);
+					ctx.lineTo(left + W, top + W - C);
+					ctx.lineTo(left + W, top + W);
+					ctx.lineTo(left, top + W);
+				};
+
+				if (k.controlPointRight) {
+					traceHourglass(1);
+				} else {
+					ctx.lineTo(left + W, top);
+					ctx.lineTo(left, top + W);
+				}
+
+				if (k.controlPointLeft) {
+					traceHourglass(-1);
+				} else {
+					ctx.lineTo(left - W, top);
+					ctx.lineTo(left, top - W);
+				}
+
+				ctx.fillStyle = selected ? cssVariables.primary500 : cssVariables.light500;
+				ctx.fill();
+				ctx.closePath();
 			}
 		};
 

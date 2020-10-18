@@ -5,6 +5,7 @@ import { CompositionProperty } from "~/composition/compositionTypes";
 import {
 	getTimelineIdsReferencedByComposition,
 	getTimelineIdsReferencedByLayer,
+	reduceCompProperties,
 	reduceVisibleCompProperties,
 } from "~/composition/compositionUtils";
 import {
@@ -41,34 +42,47 @@ const actions = {
 	) => {
 		const { compositionState, timelineState } = getActionState();
 
-		const timelineIds = getTimelineIdsReferencedByComposition(
-			options.compositionId,
+		const { compositionId } = options;
+		const timelineIds = getTimelineIdsReferencedByComposition(compositionId, compositionState);
+
+		const properties = reduceCompProperties<CompositionProperty[]>(
+			compositionId,
 			compositionState,
+			(acc, property) => {
+				if (property.timelineId) {
+					acc.push(property);
+				}
+				return acc;
+			},
+			[],
 		);
+
+		const timeline = timelineState[timelineId];
+		const property = properties.find((p) => p.timelineId === timelineId)!;
+
+		const commandKeyDownAtMouseDown = isKeyDown("Command");
+		const shiftKeyDownAtMouseDown = isKeyDown("Shift");
+		const additiveSelection = commandKeyDownAtMouseDown || shiftKeyDownAtMouseDown;
 
 		mouseDownMoveAction(e, {
 			keys: [],
 			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
-				const timeline = timelineState[timelineId];
 				const keyframe = timeline.keyframes[index];
 
-				const commandKeyDownAtMouseDown = isKeyDown("Command");
-				const shiftKeyDownAtMouseDown = isKeyDown("Shift");
-
 				const selection = getTimelineSelection(timelineId);
-				const additiveSelection = commandKeyDownAtMouseDown || shiftKeyDownAtMouseDown;
 
 				if (additiveSelection) {
 					params.dispatch(
 						timelineSelectionActions.toggleKeyframe(timeline.id, keyframe.id),
 					);
 				} else if (!selection.keyframes[keyframe.id]) {
-					// If the current node is not selected, we clear the selections of all timelines
-					// we are operating on.
 					params.dispatch(timelineIds.map((id) => timelineSelectionActions.clear(id)));
 					params.dispatch(
 						timelineSelectionActions.toggleKeyframe(timeline.id, keyframe.id),
+						compSelectionActions.clearCompositionSelection(compositionId),
+						compSelectionActions.addLayerToSelection(compositionId, property.layerId),
+						compSelectionActions.addPropertyToSelection(compositionId, property.id),
 					);
 				}
 			},
