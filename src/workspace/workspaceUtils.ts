@@ -1,5 +1,5 @@
 import { getLayerDimensions, getLayerNameToProperty } from "~/composition/layer/layerUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
 import { CompositionRenderValues, LayerType } from "~/types";
 import { boundingRectOfRects, rectCorners } from "~/util/math";
@@ -32,10 +32,7 @@ const getShapeLayerRect = (layerId: string, actionState: ActionState) => {
 	} = actionState;
 	const layer = compositionState.layers[layerId];
 	const composition = compositionState.compositions[layer.compositionId];
-	const compositionSelection = getCompSelectionFromState(
-		composition.id,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
 	const pathIds = getShapeLayerPathIds(layerId, compositionState);
 	const pathIdToShapeGroupId = getPathIdToShapeGroupId(layer.id, compositionState);
 	const rects = pathIds

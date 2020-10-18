@@ -35,9 +35,16 @@ export const getTimelineTrackYPositions = (
 			map.property[property.id] = getY();
 
 			if (property.type === "group") {
-				if (!property.collapsed) {
-					for (let j = 0; j < property.properties.length; j += 1) {
-						crawlProperty(property.properties[j]);
+				let { collapsed, properties } = property;
+
+				if (property.viewProperties.length) {
+					properties = property.viewProperties;
+					collapsed = false;
+				}
+
+				if (!collapsed) {
+					for (let j = 0; j < properties.length; j += 1) {
+						crawlProperty(properties[j]);
 					}
 				}
 				return;
@@ -48,9 +55,16 @@ export const getTimelineTrackYPositions = (
 			}
 		};
 
-		if (!layer.collapsed) {
-			for (let j = 0; j < layer.properties.length; j += 1) {
-				crawlProperty(layer.properties[j]);
+		let { collapsed, properties } = layer;
+
+		if (layer.viewProperties.length) {
+			collapsed = false;
+			properties = layer.viewProperties;
+		}
+
+		if (!collapsed) {
+			for (let j = 0; j < properties.length; j += 1) {
+				crawlProperty(properties[j]);
 			}
 		}
 
@@ -76,17 +90,34 @@ export const getTimelineLayerListHeight = (
 
 			const property = compositionState.properties[propertyId];
 
-			if (property.type === "group" && !property.collapsed) {
-				for (const propertyId of property.properties) {
-					crawl(propertyId);
+			if (property.type === "group") {
+				let { collapsed, properties } = property;
+
+				if (property.viewProperties.length) {
+					properties = property.viewProperties;
+					collapsed = false;
+				}
+
+				if (!collapsed) {
+					for (const propertyId of properties) {
+						crawl(propertyId);
+					}
 				}
 			}
 		};
 
 		const layer = compositionState.layers[layerId];
-		if (!layer.collapsed) {
-			for (let j = 0; j < layer.properties.length; j += 1) {
-				crawl(layer.properties[j]);
+
+		let { collapsed, properties } = layer;
+
+		if (layer.viewProperties.length) {
+			collapsed = false;
+			properties = layer.viewProperties;
+		}
+
+		if (!collapsed) {
+			for (let j = 0; j < properties.length; j += 1) {
+				crawl(properties[j]);
 			}
 		}
 	}

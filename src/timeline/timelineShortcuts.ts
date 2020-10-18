@@ -1,5 +1,6 @@
+import { compositionKeyboardShortcuts } from "~/composition/compositionShortcuts";
 import { reduceCompProperties } from "~/composition/compositionUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
@@ -14,10 +15,7 @@ const getSelectedTimelineIds = (areaId: string, actionState = getActionState()) 
 	const { compositionId } = getAreaActionState(areaId, actionState);
 	const { compositionState, compositionSelectionState } = actionState;
 
-	const compositionSelection = getCompSelectionFromState(
-		compositionId,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 
 	// All selected timeline ids in the composition
 	const timelineIds = reduceCompProperties<string[]>(
@@ -34,7 +32,7 @@ const getSelectedTimelineIds = (areaId: string, actionState = getActionState()) 
 	return timelineIds;
 };
 
-const timelineShortcuts = {
+export const timelineShortcuts = {
 	removeSelectedKeyframes: (areaId: string, params: RequestActionParams) => {
 		const { compositionId } = getAreaActionState(areaId);
 		const timelineIds = getSelectedTimelineIds(areaId);
@@ -76,6 +74,7 @@ const wereKeyframesRemoved: ShouldAddShortcutToStackFn = (areaId, prevState, nex
 };
 
 export const timelineKeyboardShortcuts: KeyboardShortcut[] = [
+	...compositionKeyboardShortcuts,
 	{
 		name: "Remove selected keyframes",
 		key: "Backspace",

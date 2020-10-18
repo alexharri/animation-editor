@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { areaActions } from "~/area/state/areaActions";
+import { useCompositionPlayback } from "~/composition/compositionPlayback";
 import { TIMELINE_SEPARATOR_WIDTH, TRACKPAD_ZOOM_DELTA_FAC } from "~/constants";
 import { GraphEditor } from "~/graphEditor/GraphEditor";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
@@ -66,6 +67,8 @@ const TimelineComponent: React.FC<Props> = (props) => {
 
 	const propsRef = useRef<Props>(props);
 	propsRef.current = props;
+
+	useCompositionPlayback(props.areaState.compositionId, propsRef);
 
 	useEffect(() => {
 		if (!wrapperRef.current) {

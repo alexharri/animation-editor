@@ -122,6 +122,7 @@ export const getAreaActionState = <T extends AreaType>(areaId: string): AreaStat
 };
 
 export const getActionId = () => store.getState().area.action?.id || null;
+export const getIsActionInProgress = () => !!(store.getState().area.action?.id || null);
 
 (window as any).getState = () => store.getState();
 (window as any).getActionState = () => getActionState();

@@ -8,7 +8,7 @@ import {
 	getLayerPropertyGroupLabel,
 	getLayerPropertyLabel,
 } from "~/composition/util/compositionPropertyUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
 import styles from "~/timeline/property/TimelineProperty.styles";
@@ -50,7 +50,13 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 	const nameWidth = 180 - props.depth * 20;
 
 	if (property.type === "group") {
-		const { properties } = property;
+		const { viewProperties } = property;
+		let { collapsed, properties } = property;
+
+		if (viewProperties.length) {
+			collapsed = false;
+			properties = viewProperties;
+		}
 
 		const canHaveGraph = property.name === PropertyGroupName.ArrayModifier;
 		const graphId = property.graphId;
@@ -60,7 +66,7 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 		const toggleGroupOpen = () => {
 			requestAction({ history: true }, (params) => {
 				params.dispatch(
-					compositionActions.setPropertyGroupCollapsed(property.id, !property.collapsed),
+					compositionActions.setPropertyGroupCollapsed(property.id, !collapsed),
 				);
 				params.submitAction("Toggle property group collapsed");
 			});
@@ -71,7 +77,7 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 				<div className={s("container")}>
 					<div className={s("contentContainer")} style={{ marginLeft }}>
 						<div
-							className={s("collapsedArrow", { open: !property.collapsed })}
+							className={s("collapsedArrow", { open: !collapsed })}
 							onMouseDown={(e) => e.stopPropagation()}
 							onClick={toggleGroupOpen}
 						/>
@@ -154,7 +160,7 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 						)}
 					</div>
 				</div>
-				{!property.collapsed &&
+				{!collapsed &&
 					properties.map((id) => (
 						<TimelineLayerProperty
 							compositionId={props.compositionId}
@@ -216,10 +222,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ id, compositionId },
 ) => {
 	const property = compositionState.properties[id] as CompositionProperty;
-	const compositionSelection = getCompSelectionFromState(
-		compositionId,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 	const isSelected = !!compositionSelection.properties[id];
 
 	return {

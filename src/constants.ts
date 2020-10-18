@@ -8,15 +8,18 @@ export const keys = {
 	Esc: 27,
 	Space: 32,
 	Delete: 46,
+	A: 65,
 	B: 66,
 	C: 67,
 	F: 70,
+	G: 71,
 	I: 73,
 	O: 79,
 	P: 80,
 	Q: 81,
 	R: 82,
 	S: 83,
+	U: 85,
 	V: 86,
 	X: 88,
 	Z: 90,
@@ -125,7 +128,7 @@ export const TIMELINE_CANVAS_END_START_BUFFER = VIEW_BOUNDS_HANDLE_WIDTH;
 export const TIMELINE_SCRUBBER_HEIGHT = 24;
 
 export const TIMELINE_HEADER_HEIGHT = 32;
-export const TIMELINE_TRACK_KEYFRAME_HEIGHT = 11;
+export const TIMELINE_TRACK_KEYFRAME_HEIGHT = 10;
 export const TIMELINE_TRACK_START_END_X_MARGIN = 4;
 
 export const TIMELINE_LAYER_HEIGHT = 16;

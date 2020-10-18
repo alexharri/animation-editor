@@ -1,7 +1,7 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import { Composition } from "~/composition/compositionTypes";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
 	TIMELINE_BETWEEN_LAYERS,
 	TIMELINE_LAYER_HEIGHT,
@@ -11,7 +11,7 @@ import { cssVariables } from "~/cssVariables";
 import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
-import { renderDiamond, renderRect } from "~/util/canvas/renderPrimitives";
+import { renderRect } from "~/util/canvas/renderPrimitives";
 
 interface RenderTimelineOptions {
 	ctx: Ctx;
@@ -44,10 +44,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		layerLengthShift,
 	} = options;
 
-	const compositionSelection = getCompSelectionFromState(
-		composition.id,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
 
 	const getLayerIndexAndLength = (layerId: string): [number, number] => {
 		const layer = compositionState.layers[layerId];
@@ -153,9 +150,16 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			renderEdge(selected ? cssVariables.dark700 : cssVariables.dark600);
 
 			if (property.type === "group") {
-				if (!property.collapsed) {
-					for (let j = 0; j < property.properties.length; j += 1) {
-						renderProperty(property.properties[j]);
+				let { collapsed, properties } = property;
+
+				if (property.viewProperties.length) {
+					properties = property.viewProperties;
+					collapsed = false;
+				}
+
+				if (!collapsed) {
+					for (let j = 0; j < properties.length; j += 1) {
+						renderProperty(properties[j]);
 					}
 				}
 				return;
@@ -175,17 +179,48 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 				const selected = options.timelineSelection[timeline.id]?.keyframes[k.id];
 
-				renderDiamond(ctx, Vec2.new(left, top), {
-					width: TIMELINE_TRACK_KEYFRAME_HEIGHT,
-					height: TIMELINE_TRACK_KEYFRAME_HEIGHT,
-					fillColor: selected ? cssVariables.primary500 : cssVariables.light500,
-				});
+				const W = TIMELINE_TRACK_KEYFRAME_HEIGHT / 2;
+
+				ctx.beginPath();
+				ctx.moveTo(left, top - W);
+
+				const traceHalf = (hasControlPoint: boolean, fac: number) => {
+					const W = (fac * TIMELINE_TRACK_KEYFRAME_HEIGHT) / 2;
+					const O = fac * 1;
+					const C = fac * 1.5;
+
+					if (hasControlPoint) {
+						ctx.lineTo(left + W, top - W);
+						ctx.lineTo(left + W, top - W + C);
+						ctx.lineTo(left + O, top - O);
+						ctx.lineTo(left + O, top + O);
+						ctx.lineTo(left + W, top + W - C);
+						ctx.lineTo(left + W, top + W);
+						ctx.lineTo(left, top + W);
+					} else {
+						ctx.lineTo(left + W, top);
+						ctx.lineTo(left, top + W);
+					}
+				};
+
+				traceHalf(!!k.controlPointRight, 1);
+				traceHalf(!!k.controlPointLeft, -1);
+
+				ctx.fillStyle = selected ? cssVariables.primary500 : cssVariables.light500;
+				ctx.fill();
+				ctx.closePath();
 			}
 		};
 
-		if (!layer.collapsed) {
-			for (let j = 0; j < layer.properties.length; j += 1) {
-				renderProperty(layer.properties[j]);
+		let { collapsed, properties } = layer;
+		if (layer.viewProperties.length) {
+			collapsed = false;
+			properties = layer.viewProperties;
+		}
+
+		if (!collapsed) {
+			for (let j = 0; j < properties.length; j += 1) {
+				renderProperty(properties[j]);
 			}
 		}
 

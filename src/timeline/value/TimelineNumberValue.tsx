@@ -3,7 +3,7 @@ import { NumberInput } from "~/components/common/NumberInput";
 import { LinkIcon } from "~/components/icons/LinkIcon";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition, CompositionProperty } from "~/composition/compositionTypes";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
@@ -233,10 +233,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 ) => {
 	const property = compositionState.properties[propertyId] as CompositionProperty;
 	const composition = compositionState.compositions[property.compositionId];
-	const compositionSelection = getCompSelectionFromState(
-		composition.id,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
 	const isSelected = !!compositionSelection.properties[propertyId];
 
 	return {

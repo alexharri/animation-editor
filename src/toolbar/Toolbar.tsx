@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { ConvertAnchorIcon } from "~/components/icons/ConvertAnchorIcon";
 import { EllipseIcon } from "~/components/icons/EllipseIcon";
 import { FillIcon } from "~/components/icons/FillIcon";
@@ -7,9 +7,7 @@ import { PenIcon } from "~/components/icons/PenIcon";
 import { PolygonIcon } from "~/components/icons/PolygonIcon";
 import { RectangleIcon } from "~/components/icons/RectangleIcon";
 import { SelectionIcon } from "~/components/icons/SelectionIcon";
-import { keyToToolMap, Tool, toolGroups, toolToKey, toolToLabel } from "~/constants";
-import { addListener, removeListener } from "~/listener/addListener";
-import { getKeyFromKeyCode, isAnyModifierKeyDown } from "~/listener/keyboard";
+import { Tool, toolGroups, toolToKey, toolToLabel } from "~/constants";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
 import { toolActions } from "~/toolbar/toolActions";
@@ -36,24 +34,6 @@ interface StateProps {
 type Props = StateProps;
 
 const ToolbarComponent: React.FC<Props> = (props) => {
-	// Tool keyboard shortcut listener
-	useEffect(() => {
-		const token = addListener.repeated("keydown", (e) => {
-			const key = getKeyFromKeyCode(e.keyCode);
-			if (key && typeof keyToToolMap[key] !== "undefined") {
-				if (isAnyModifierKeyDown()) {
-					return;
-				}
-
-				requestAction({}, ({ dispatch, submitAction }) => {
-					dispatch(toolActions.setTool(keyToToolMap[key]!));
-					submitAction("Set tool");
-				});
-			}
-		});
-		return () => removeListener(token);
-	}, []);
-
 	const onGroupItemClick = useRef<((tool: Tool) => void) | null>(null);
 	const group = useRef<HTMLDivElement>(null);
 

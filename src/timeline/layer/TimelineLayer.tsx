@@ -3,7 +3,7 @@ import { GraphIcon } from "~/components/icons/GraphIcon";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
 import { compositionActions } from "~/composition/compositionReducer";
 import { CompositionLayer } from "~/composition/compositionTypes";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
 import styles from "~/timeline/layer/TimelineLayer.style";
@@ -28,10 +28,22 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const TimelineLayerComponent: React.FC<Props> = (props) => {
-	const {
-		layer,
-		layer: { collapsed },
-	} = props;
+	const { layer } = props;
+
+	const { viewProperties } = layer;
+	let { collapsed, properties } = layer;
+
+	if (viewProperties.length) {
+		collapsed = false;
+		properties = viewProperties;
+	}
+
+	const toggleCollapsed = () => {
+		requestAction({ history: true }, (params) => {
+			params.dispatch(compositionActions.setLayerCollapsed(layer.id, !collapsed));
+			params.submitAction("Toggle layer collapsed");
+		});
+	};
 
 	return (
 		<div data-ct-layer-id={props.id} style={{ position: "relative" }}>
@@ -44,14 +56,7 @@ const TimelineLayerComponent: React.FC<Props> = (props) => {
 				<div
 					className={s("collapsedArrow", { open: !collapsed })}
 					onMouseDown={(e) => e.stopPropagation()}
-					onClick={() => {
-						requestAction({ history: true }, (params) => {
-							params.dispatch(
-								compositionActions.setLayerCollapsed(layer.id, !collapsed),
-							);
-							params.submitAction("Toggle layer collapsed");
-						});
-					}}
+					onClick={toggleCollapsed}
 				/>
 				<TimelineLayerName layerId={props.id} layerWrapper={props.layerWrapper} />
 				<div className={s("graphWrapper")}>
@@ -79,9 +84,9 @@ const TimelineLayerComponent: React.FC<Props> = (props) => {
 				</div>
 				<TimelineLayerParent layerId={props.id} />
 			</div>
-			{!layer.collapsed && (
+			{!collapsed && (
 				<>
-					{layer.properties.map((id) => (
+					{properties.map((id) => (
 						<TimelineLayerProperty
 							compositionId={props.compositionId}
 							id={id}
@@ -101,7 +106,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ id },
 ) => {
 	const layer = compositionState.layers[id];
-	const compositionSelection = getCompSelectionFromState(
+	const compositionSelection = compSelectionFromState(
 		layer.compositionId,
 		compositionSelectionState,
 	);

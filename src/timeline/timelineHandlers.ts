@@ -11,8 +11,8 @@ import {
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
 import {
+	compSelectionFromState,
 	didCompSelectionChange,
-	getCompSelectionFromState,
 } from "~/composition/util/compSelectionUtils";
 import {
 	AreaType,
@@ -47,7 +47,7 @@ import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { animate } from "~/util/animation/animate";
 import { capToRange, getDistance, interpolate } from "~/util/math";
 
-const ZOOM_FAC = 0.25;
+const ZOOM_FAC = 0.4;
 
 export const timelineHandlers = {
 	onScrubMouseDown: (
@@ -421,7 +421,7 @@ export const timelineHandlers = {
 		const { compositionState, compositionSelectionState } = getActionState();
 
 		const composition = compositionState.compositions[compositionId];
-		const compositionSelection = getCompSelectionFromState(
+		const compositionSelection = compSelectionFromState(
 			compositionId,
 			compositionSelectionState,
 		);
@@ -435,7 +435,7 @@ export const timelineHandlers = {
 		const getInsertBelowLayerIndex = (
 			mousePosGlobal: Vec2,
 		): { type: "above" | "below" | "invalid"; layerId: string } | null => {
-			const compositionSelection = getCompSelectionFromState(
+			const compositionSelection = compSelectionFromState(
 				compositionId,
 				getActionState().compositionSelectionState,
 			);
@@ -765,7 +765,7 @@ export const timelineHandlers = {
 		e.stopPropagation();
 
 		const { compositionState, compositionSelectionState, timelineState } = getActionState();
-		const compositionSelection = getCompSelectionFromState(
+		const compositionSelection = compSelectionFromState(
 			compositionId,
 			compositionSelectionState,
 		);

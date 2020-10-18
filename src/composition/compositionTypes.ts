@@ -35,6 +35,7 @@ export interface CompositionLayer {
 	properties: string[];
 	collapsed: boolean;
 	parentLayerId: string;
+	viewProperties: string[];
 }
 
 export interface CompositionPropertyGroup {
@@ -45,6 +46,7 @@ export interface CompositionPropertyGroup {
 	properties: string[];
 	collapsed: boolean;
 	graphId: string; // Currently only ArrayModifier groups may have an associated graph
+	viewProperties: string[];
 }
 
 export type CompositionProperty = {

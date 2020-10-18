@@ -41,23 +41,26 @@ export const modifyItemsInMap = <M extends { [key: string]: T }, T = M[string]>(
 	return obj;
 };
 
-export const modifyItemInUnionMap = <
+export const modifyItemsInUnionMap = <
 	M extends { [key: string]: T },
 	T = M[string],
 	U extends T = T
 >(
 	map: M,
-	key: string,
+	keys: string | string[],
 	fn: (item: U) => U,
 ): M => {
-	if (!map.hasOwnProperty(key)) {
-		throw new Error(`Key '${key}' does not exist in map.`);
+	let obj: M = { ...map };
+	const keyList = typeof keys === "string" ? [keys] : keys;
+
+	for (const key of keyList) {
+		if (!obj.hasOwnProperty(key)) {
+			throw new Error(`Key '${key}' does not exist in map.`);
+		}
+		(obj as any)[key] = fn(obj[key] as U);
 	}
 
-	return {
-		...map,
-		[key]: fn(map[key] as U),
-	};
+	return obj;
 };
 
 export const reduceMap = <M extends { [key: string]: T }, T = M[string]>(

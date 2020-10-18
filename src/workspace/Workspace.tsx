@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { getCompositionPlayback, useCompositionPlayback } from "~/composition/compositionPlayback";
 import { Tool } from "~/constants";
 import { cssCursors, cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
@@ -25,6 +26,7 @@ const getOptions = (
 	ctx: CanvasRenderingContext2D,
 	mousePosition: Vec2 | undefined,
 	keyDown: { Shift: boolean; Command: boolean },
+	frameIndex?: number,
 ) => {
 	const { width, height, left, top } = props;
 
@@ -43,7 +45,7 @@ const getOptions = (
 	const map = getCompositionRenderValues(
 		state,
 		composition.id,
-		composition.frameIndex,
+		frameIndex ?? composition.frameIndex,
 		{
 			width: composition.width,
 			height: composition.height,
@@ -161,6 +163,21 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				return;
 			}
 
+			const playback = getCompositionPlayback(propsRef.current.areaState.compositionId);
+			if (playback) {
+				shouldRenderRef.current = false;
+				renderWorkspace(
+					getOptions(
+						propsRef.current,
+						mainCtx,
+						undefined,
+						keyDownRef.current,
+						playback.frameIndex,
+					),
+				);
+				return;
+			}
+
 			const render = shouldRenderRef.current;
 			const renderGuides = render || shouldRenderGuidesRef.current;
 
@@ -189,6 +206,8 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 			mounted = false;
 		};
 	}, []);
+
+	useCompositionPlayback(props.areaState.compositionId, propsRef);
 
 	useEffect(() => {
 		shouldRenderRef.current = true;

@@ -8,6 +8,8 @@ import { KeyboardShortcut } from "~/types";
 import { isVecInRect } from "~/util/math";
 import { getMousePosition } from "~/util/mouse";
 
+const modifierKeys = ["Command", "Alt", "Shift"] as const;
+
 type Key = keyof typeof keys;
 
 export const useAreaKeyboardShortcuts = (areaId: string, areaType: AreaType, viewport: Rect) => {
@@ -15,8 +17,12 @@ export const useAreaKeyboardShortcuts = (areaId: string, areaType: AreaType, vie
 	viewportRef.current = viewport;
 
 	useEffect(() => {
-		const keyboardShortcuts = areaKeyboardShortcutRegistry[areaType] || [];
+		const keyboardShortcuts = [...(areaKeyboardShortcutRegistry[areaType] || [])];
 
+		/**
+		 * "Best" is defined as the keyboard shortcut with the highest number of
+		 * modifier keys which has all of its modifier keys down.
+		 */
 		const findBestShortcut = (key: Key) => {
 			let keyboardShortcut: KeyboardShortcut | null = null;
 			let nModifierKeys = -Infinity;
@@ -62,6 +68,22 @@ export const useAreaKeyboardShortcuts = (areaId: string, areaType: AreaType, vie
 				return;
 			}
 
+			for (const key of modifierKeys) {
+				if (
+					isKeyDown(key) &&
+					!(shortcut.modifierKeys || []).includes(key) &&
+					!(shortcut.optionalModifierKeys || []).includes(key)
+				) {
+					// Additional modifier keys beyond what the shortcut requires were
+					// down.
+					//
+					// Do not execute shortcut.
+					return;
+				}
+			}
+
+			const { history = true } = shortcut;
+
 			let shouldAddToStack: ShouldAddToStackFn | undefined;
 
 			if (shortcut.shouldAddToStack) {
@@ -70,7 +92,7 @@ export const useAreaKeyboardShortcuts = (areaId: string, areaType: AreaType, vie
 				};
 			}
 
-			requestAction({ history: true, shouldAddToStack }, (params) => {
+			requestAction({ history, shouldAddToStack }, (params) => {
 				shortcut.fn(areaId, params);
 				params.submitAction(shortcut.name);
 			});

@@ -6,7 +6,7 @@ const _emptySelection = {
 	layers: {},
 	properties: {},
 };
-export const getCompSelectionFromState = (
+export const compSelectionFromState = (
 	compositionId: string,
 	compositionSelectionState: CompositionSelectionState,
 ) => {
@@ -22,8 +22,8 @@ export const didCompSelectionChange: (
 	prevState,
 	nextState,
 ) => {
-	const a = getCompSelectionFromState(compositionId, prevState.compositionSelectionState);
-	const b = getCompSelectionFromState(compositionId, nextState.compositionSelectionState);
+	const a = compSelectionFromState(compositionId, prevState.compositionSelectionState);
+	const b = compSelectionFromState(compositionId, nextState.compositionSelectionState);
 
 	if (!isMapShallowEqual(a.layers, b.layers)) {
 		return true;

@@ -2,7 +2,7 @@ import React, { useContext, useRef, useState } from "react";
 import { AreaIdContext } from "~/area/util/AreaIdContext";
 import { compositionActions } from "~/composition/compositionReducer";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { cssVariables } from "~/cssVariables";
 import { isKeyCodeOf } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
@@ -174,7 +174,7 @@ const mapState: MapActionState<StateProps, OwnProps> = (
 	{ layerId },
 ) => {
 	const layer = compositionState.layers[layerId];
-	const compositionSelection = getCompSelectionFromState(
+	const compositionSelection = compSelectionFromState(
 		layer.compositionId,
 		compositionSelectionState,
 	);

@@ -3,7 +3,7 @@ import uuid from "uuid/v4";
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import { reduceCompProperties } from "~/composition/compositionUtils";
-import { getCompSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
 	TIMELINE_CANVAS_END_START_BUFFER,
 	TIMELINE_CP_TX_MAX,
@@ -713,10 +713,7 @@ export const getSelectedTimelineIdsInComposition = (
 	compositionState: CompositionState,
 	compositionSelectionState: CompositionSelectionState,
 ) => {
-	const compositionSelection = getCompSelectionFromState(
-		compositionId,
-		compositionSelectionState,
-	);
+	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 	return reduceCompProperties<string[]>(
 		compositionId,
 		compositionState,
