@@ -31,7 +31,10 @@ export const computeLayerTransformMap = (
 	compositionId: string,
 	propertyToValue: PropertyValueMap,
 	arrayModifierPropertyToValue: ArrayModifierPropertyValueMap,
-	state: Pick<ActionState, "compositionState" | "shapeState" | "shapeSelectionState">,
+	state: Pick<
+		ActionState,
+		"compositionState" | "compositionSelectionState" | "shapeState" | "shapeSelectionState"
+	>,
 	parentTransform: LayerTransform = defaultTransform,
 	options: { recursive: boolean },
 ): LayerTransformMap => {

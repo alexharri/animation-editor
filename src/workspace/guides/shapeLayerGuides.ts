@@ -468,7 +468,7 @@ const renderPath = (
 		}
 	}
 
-	let boundingRect: Rect | undefined;
+	let boundingRect: Rect | null = null;
 
 	const selected = selectedPathIds.has(pathId);
 	const noDirectlySelectedPaths = !directlySelectedPaths.size;
@@ -480,7 +480,7 @@ const renderPath = (
 		if (isVecInRect(viewportMousePosition, rect)) {
 			boundingRect = pathBoundingRect(curves);
 
-			if (isVecInRect(viewportMousePosition, boundingRect)) {
+			if (boundingRect && isVecInRect(viewportMousePosition, boundingRect)) {
 				pathCtx.hasHoveredShape = true;
 				const canClickToSelect = opts.keyDown.Command || selectedPathIds.size;
 				if (
@@ -505,7 +505,9 @@ const renderPath = (
 		if (!boundingRect) {
 			boundingRect = pathBoundingRect(curves);
 		}
-		renderPathBoundingRect(ctx, boundingRect, "selected");
+		if (boundingRect) {
+			renderPathBoundingRect(ctx, boundingRect, "selected");
+		}
 	}
 
 	renderPathNodes(ctx, opts, pathCtx, pathId);

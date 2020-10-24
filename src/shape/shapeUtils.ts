@@ -8,7 +8,7 @@ import {
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
-import { ShapeEdge, ShapeGraph, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
+import { ShapeGraph, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
 import {
 	FillRule,
 	LayerType,
@@ -30,83 +30,6 @@ import { closestPointOnPath } from "~/util/math/closestPoint";
 import { Mat2 } from "~/util/math/mat";
 import { PenToolContext } from "~/workspace/penTool/penToolContext";
 
-export const getShapeNodeToEdges = (
-	shapeId: string,
-	shapeState: ShapeState,
-): { [nodeId: string]: string[] } => {
-	const shape = shapeState.shapes[shapeId];
-
-	const obj: { [nodeId: string]: string[] } = {};
-
-	for (const nodeId of shape.nodes) {
-		obj[nodeId] = [];
-	}
-
-	return shape.edges.reduce((obj, edgeId) => {
-		const edge = shapeState.edges[edgeId];
-
-		if (edge.n0) {
-			obj[edge.n0].push(edge.id);
-		}
-
-		if (edge.n1) {
-			obj[edge.n1].push(edge.id);
-		}
-
-		return obj;
-	}, obj);
-};
-
-export const getShapeEdgeAsPath = (
-	fromNodeId: string,
-	edge: ShapeEdge,
-	shapeState: ShapeState,
-	selection: ShapeSelection,
-): Line | CubicBezier => {
-	const node = shapeState.nodes[fromNodeId];
-	const shape = shapeState.shapes[node.shapeId];
-
-	const moveVector = shape.moveVector;
-
-	const x = edge.n0 === fromNodeId;
-
-	const n0Id = x ? edge.n0 : edge.n1;
-	const n1Id = x ? edge.n1 : edge.n0;
-	const cp0 = shapeState.controlPoints[x ? edge.cp0 : edge.cp1];
-	const cp1 = shapeState.controlPoints[x ? edge.cp1 : edge.cp0];
-
-	const n0 = shapeState.nodes[n0Id];
-	const n1 = shapeState.nodes[n1Id];
-
-	let p0 = n0.position;
-	let p3 = n1.position;
-
-	if (selection.nodes[n0Id]) {
-		p0 = p0.add(moveVector);
-	}
-	if (selection.nodes[n1Id]) {
-		p3 = p3.add(moveVector);
-	}
-
-	let p1 = cp0 ? p0.add(cp0.position) : null;
-	let p2 = cp1 ? p3.add(cp1.position) : null;
-
-	if (p1 && selection.controlPoints[cp0!.id] && !selection.nodes[n0Id]) {
-		p1 = p1.add(moveVector);
-	}
-	if (p2 && selection.controlPoints[cp1!.id] && !selection.nodes[n1Id]) {
-		p2 = p2.add(moveVector);
-	}
-
-	if (p1 && p2) {
-		return [p0, p1, p2, p3];
-	}
-	if (p1 || p2) {
-		return quadraticToCubicBezier(p0, p1, p2, p3);
-	}
-	return [p0, p3];
-};
-
 const _emptySelection: ShapeSelection = {
 	nodes: {},
 	edges: {},
@@ -120,51 +43,6 @@ export const getShapeSelectionFromState = (
 	// that different object references do not cause unnecessary rerenders.
 	const selection = shapeSelectionState[shapeId] ?? _emptySelection;
 	return selection;
-};
-
-export const getShapePathFirstNodeId = (
-	shape: ShapeGraph,
-	shapeState: ShapeState,
-	nodeToEdgeIds: { [nodeId: string]: string[] },
-): string => {
-	const initialNode = shapeState.nodes[shape.nodes[0]];
-
-	let lastEdgeId: string | undefined;
-	let curr = initialNode;
-
-	while (true) {
-		const edgeIds = nodeToEdgeIds[curr.id];
-
-		if (edgeIds.length > 2) {
-			throw new Error(`Expected a circular path. Node ${curr.id} has more than 2 edges.`);
-		}
-
-		let edgeId: string;
-
-		if (!lastEdgeId) {
-			edgeId = edgeIds[0];
-		} else {
-			edgeId = edgeIds[0] !== lastEdgeId ? edgeIds[0] : edgeIds[1];
-		}
-
-		if (!edgeId) {
-			return curr.id;
-		}
-
-		const edge = shapeState.edges[edgeId];
-		const nextNodeId = edge.n0 !== curr.id ? edge.n0 : edge.n1;
-
-		if (!nextNodeId) {
-			return curr.id;
-		}
-
-		if (nextNodeId === initialNode.id) {
-			return initialNode.id;
-		}
-
-		lastEdgeId = edgeId;
-		curr = shapeState.nodes[nextNodeId];
-	}
 };
 
 export const getItemControlPointPositions = (

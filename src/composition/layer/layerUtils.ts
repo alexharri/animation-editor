@@ -1,8 +1,9 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionLayer } from "~/composition/compositionTypes";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { TIMELINE_HEADER_HEIGHT, TIMELINE_LAYER_HEIGHT } from "~/constants";
-import { getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
+import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
 import { LayerType, NameToProperty, PropertyName, PropertyValueMap } from "~/types";
 import { boundingRectOfRects, isVecInRect } from "~/util/math";
@@ -22,21 +23,31 @@ export const getLayerTypeName = (type: LayerType): string => {
 
 type GetLayerDimensionsStateRequired = Pick<
 	ActionState,
-	"compositionState" | "shapeState" | "shapeSelectionState"
+	"compositionState" | "compositionSelectionState" | "shapeState" | "shapeSelectionState"
 >;
 
 const getShapeLayerBoundingRect = (
 	state: GetLayerDimensionsStateRequired,
 	layer: CompositionLayer,
 ): Rect | null => {
-	const { compositionState, shapeState, shapeSelectionState } = state;
+	const { compositionState, compositionSelectionState, shapeState, shapeSelectionState } = state;
+
+	const pathIdToShapeGroupId = getPathIdToShapeGroupId(layer.id, compositionState);
 
 	const pathIds = getShapeLayerPathIds(layer.id, compositionState);
+	const composition = compositionState.compositions[layer.compositionId];
+	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
 
 	const rects = pathIds
-		.map((pathId) => pathIdToCurves(pathId, shapeState, shapeSelectionState, Vec2.ORIGIN))
+		.map((pathId) => {
+			const shapeGroupId = pathIdToShapeGroupId[pathId];
+			const shapeSelected = compositionSelection.properties[shapeGroupId];
+			const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
+			return pathIdToCurves(pathId, shapeState, shapeSelectionState, shapeMoveVector)!;
+		})
 		.filter(Boolean)
-		.map((curves) => pathBoundingRect(curves!));
+		.map((curves) => pathBoundingRect(curves)!)
+		.filter(Boolean);
 	return boundingRectOfRects(rects);
 };
 

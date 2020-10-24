@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { CompositionState } from "~/composition/compositionReducer";
+import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
 import { computeLayerTransformMap } from "~/composition/transformMap";
@@ -73,6 +74,7 @@ function getGraphNodesToCompute(
 interface Context {
 	compositionId: string;
 	compositionState: CompositionState;
+	compositionSelectionState: CompositionSelectionState;
 	shapeState: ShapeState;
 	shapeSelectionState: ShapeSelectionState;
 	container: {
@@ -413,6 +415,7 @@ export const getCompositionRenderValues = (
 	const context: Context = {
 		compositionId,
 		compositionState: state.compositionState,
+		compositionSelectionState: state.compositionSelectionState,
 		shapeState: state.shapeState,
 		shapeSelectionState: state.shapeSelectionState,
 		graphs: state.flowState.graphs,

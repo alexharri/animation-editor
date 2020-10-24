@@ -134,7 +134,7 @@ export function pathControlPointsBoundingRect(curves: Curve[]) {
 	return rect;
 }
 
-export function pathBoundingRect(curves: Curve[]) {
+export function pathBoundingRect(curves: Curve[]): Rect | null {
 	const rects = curves.map((curve) => curveBoundingRect(curve));
 	return boundingRectOfRects(rects);
 }
