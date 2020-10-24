@@ -1,9 +1,12 @@
 import { CompositionState } from "~/composition/compositionReducer";
+import { CompositionLayer } from "~/composition/compositionTypes";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { TIMELINE_HEADER_HEIGHT, TIMELINE_LAYER_HEIGHT } from "~/constants";
+import { getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
-import { CompositionRenderValues, LayerType, NameToProperty, PropertyName } from "~/types";
-import { isVecInRect } from "~/util/math";
+import { LayerType, NameToProperty, PropertyName, PropertyValueMap } from "~/types";
+import { boundingRectOfRects, isVecInRect } from "~/util/math";
+import { pathBoundingRect } from "~/util/math/boundingRect";
 
 const layerTypeToName: { [key in keyof typeof LayerType]: string } = {
 	Ellipse: "Ellipse layer",
@@ -17,26 +20,56 @@ export const getLayerTypeName = (type: LayerType): string => {
 	return layerTypeToName[key];
 };
 
-export const getLayerDimensions = (
-	layerType: LayerType,
+type GetLayerDimensionsStateRequired = Pick<
+	ActionState,
+	"compositionState" | "shapeState" | "shapeSelectionState"
+>;
+
+const getShapeLayerBoundingRect = (
+	state: GetLayerDimensionsStateRequired,
+	layer: CompositionLayer,
+): Rect | null => {
+	const { compositionState, shapeState, shapeSelectionState } = state;
+
+	const pathIds = getShapeLayerPathIds(layer.id, compositionState);
+
+	const rects = pathIds
+		.map((pathId) => pathIdToCurves(pathId, shapeState, shapeSelectionState, Vec2.ORIGIN))
+		.filter(Boolean)
+		.map((curves) => pathBoundingRect(curves!));
+	return boundingRectOfRects(rects);
+};
+
+export const getLayerRectDimensionsAndOffset = (
+	layer: CompositionLayer,
 	nameToProperty: { [key in keyof typeof PropertyName]: any },
+	state: GetLayerDimensionsStateRequired,
 ) => {
 	let width: number;
 	let height: number;
+	let offX = 0;
+	let offY = 0;
 
-	switch (layerType) {
+	switch (layer.type) {
 		case LayerType.Composition: {
 			width = nameToProperty.Width;
 			height = nameToProperty.Height;
 			break;
 		}
 
-		/**
-		 * @todo calculate shape layer bounding box
-		 */
 		case LayerType.Shape: {
-			width = 100;
-			height = 100;
+			const rect = getShapeLayerBoundingRect(state, layer);
+
+			if (rect) {
+				width = rect.width;
+				height = rect.height;
+				offX = rect.left;
+				offY = rect.top;
+			} else {
+				width = 50;
+				height = 50;
+			}
+
 			break;
 		}
 
@@ -53,18 +86,18 @@ export const getLayerDimensions = (
 		}
 	}
 
-	return [width, height];
+	return [width, height, offX, offY];
 };
 
 export const getLayerNameToProperty = (
-	map: CompositionRenderValues,
+	propertyValueMap: PropertyValueMap,
 	compositionState: CompositionState,
 	layerId: string,
 ) => {
 	const properties = getLayerCompositionProperties(layerId, compositionState);
 
 	const nameToProperty = properties.reduce<NameToProperty>((obj, p) => {
-		const value = map.properties[p.id];
+		const value = propertyValueMap[p.id];
 		(obj as any)[PropertyName[p.name]] = value.computedValue;
 		return obj;
 	}, {} as any);

@@ -211,14 +211,16 @@ const TimelineNumberValueComponent: React.FC<Props> = (props) => {
 				tick={
 					property.name === PropertyName.ScaleX ||
 					property.name === PropertyName.ScaleY ||
-					property.name === PropertyName.Opacity
+					property.name === PropertyName.Opacity ||
+					property.name === PropertyName.ArrayModifier_RotationCorrection
 						? 0.01
 						: 1
 				}
 				decimalPlaces={
 					property.name === PropertyName.ScaleX ||
 					property.name === PropertyName.ScaleY ||
-					property.name === PropertyName.Opacity
+					property.name === PropertyName.Opacity ||
+					property.name === PropertyName.ArrayModifier_RotationCorrection
 						? 2
 						: 1
 				}

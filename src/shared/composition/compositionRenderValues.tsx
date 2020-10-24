@@ -13,6 +13,8 @@ import {
 } from "~/flow/flowTypes";
 import { computeNodeOutputArgs } from "~/flow/graph/computeNode";
 import { FlowState } from "~/flow/state/flowReducers";
+import { ShapeState } from "~/shape/shapeReducer";
+import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import { TimelineState } from "~/timeline/timelineReducer";
@@ -71,6 +73,8 @@ function getGraphNodesToCompute(
 interface Context {
 	compositionId: string;
 	compositionState: CompositionState;
+	shapeState: ShapeState;
+	shapeSelectionState: ShapeSelectionState;
 	container: {
 		width: number;
 		height: number;
@@ -323,7 +327,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			composition.id,
 			map.properties,
 			map.arrayModifierProperties,
-			compositionState,
+			context,
 			parentTransform,
 			options,
 		);
@@ -409,6 +413,8 @@ export const getCompositionRenderValues = (
 	const context: Context = {
 		compositionId,
 		compositionState: state.compositionState,
+		shapeState: state.shapeState,
+		shapeSelectionState: state.shapeSelectionState,
 		graphs: state.flowState.graphs,
 		timelineSelectionState: state.timelineSelectionState,
 		timelineState: state.timelineState,

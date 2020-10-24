@@ -110,6 +110,7 @@ export enum PropertyName {
 	// Array Modifier
 	ArrayModifier_Count = 15,
 	ArrayModifier_TransformBehavior = 16,
+	ArrayModifier_RotationCorrection = 26,
 
 	// Shape Layer
 	ShapeLayer_Path = 17,

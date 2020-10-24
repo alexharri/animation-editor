@@ -1,4 +1,7 @@
-import { getLayerDimensions, getLayerNameToProperty } from "~/composition/layer/layerUtils";
+import {
+	getLayerNameToProperty,
+	getLayerRectDimensionsAndOffset,
+} from "~/composition/layer/layerUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
 import { CompositionRenderValues, LayerType } from "~/types";
@@ -66,8 +69,8 @@ export const workspaceLayerBoundingBoxCorners = (
 		);
 	}
 
-	const nameToProperty = getLayerNameToProperty(map, compositionState, layerId);
-	const [width, height] = getLayerDimensions(layer.type, nameToProperty);
+	const nameToProperty = getLayerNameToProperty(map.properties, compositionState, layerId);
+	const [width, height] = getLayerRectDimensionsAndOffset(layer, nameToProperty, actionState);
 
 	const corners = [
 		[1, 0],

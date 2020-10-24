@@ -36,6 +36,7 @@ const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
 
 	ArrayModifier_Count: "Count",
 	ArrayModifier_TransformBehavior: "Transform Behavior",
+	ArrayModifier_RotationCorrection: "Rotation Correction",
 
 	ShapeLayer_Path: "Path",
 	RGBAColor: "Color",
@@ -140,6 +141,7 @@ export const getLayerArrayModifiers = (layerId: string, compositionState: Compos
 	const out: Array<{
 		modifierGroupId: string;
 		countId: string;
+		rotationCorrectionId: string;
 		transformBehaviorId: string;
 		transformGroupId: string;
 	}> = [];
@@ -165,12 +167,16 @@ export const getLayerArrayModifiers = (layerId: string, compositionState: Compos
 			(propertyId) => compositionState.properties[propertyId].name,
 		);
 		const countIndex = names.indexOf(PropertyName.ArrayModifier_Count);
+		const rotationCorrectionIndex = names.indexOf(
+			PropertyName.ArrayModifier_RotationCorrection,
+		);
 		const transformBehaviorIndex = names.indexOf(PropertyName.ArrayModifier_TransformBehavior);
 		const transformIndex = names.indexOf(PropertyGroupName.Transform);
 
 		out.push({
 			modifierGroupId: group.id,
 			countId: group.properties[countIndex],
+			rotationCorrectionId: group.properties[rotationCorrectionIndex],
 			transformBehaviorId: group.properties[transformBehaviorIndex],
 			transformGroupId: group.properties[transformIndex],
 		});

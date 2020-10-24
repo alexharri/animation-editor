@@ -23,7 +23,7 @@ const getTransformMap = (compositionId: string) => {
 		compositionId,
 		map.properties,
 		map.arrayModifierProperties,
-		compositionState,
+		actionState,
 		undefined,
 		{ recursive: false },
 	);
