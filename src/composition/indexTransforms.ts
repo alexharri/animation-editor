@@ -11,12 +11,10 @@ import {
 import { rotateVec2CCW } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
 
-type Correction = number;
-
 const applyIndexTransform = (
 	indexTransform: LayerTransform,
 	transform: LayerTransform,
-	correction: Correction = 0,
+	correction: number,
 ): LayerTransform => {
 	const { rotation, scaleX, scaleY, matrix } = transform;
 
@@ -50,7 +48,7 @@ const getIndexTransformMapRecursive = (
 	_transform: LayerTransform,
 	indexTransforms: LayerTransform[],
 	count: number,
-	correction: Correction,
+	correction: number,
 ): { [index: number]: LayerTransform } => {
 	let transform: LayerTransform = {
 		translate: Vec2.new(0, 0),
@@ -77,7 +75,7 @@ const getIndexTransformMapAbsoluteForComputed = (
 	indexTransforms: LayerTransform[],
 	count: number,
 	isComputedByIndex: { [key: string]: boolean },
-	correction: Correction,
+	correction: number,
 ): { [index: number]: LayerTransform } => {
 	let transform: LayerTransform = {
 		translate: Vec2.new(0, 0),

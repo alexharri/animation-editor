@@ -134,7 +134,7 @@ export const penToolHandlers = {
 				continue;
 			}
 
-			const rect = pathBoundingRect(curves);
+			const rect = pathBoundingRect(curves)!;
 			if (!isVecInRect(ctx.mousePosition.viewport, rect)) {
 				continue;
 			}
