@@ -4,6 +4,7 @@ import { DEG_TO_RAD_FAC } from "~/constants";
 import {
 	ArrayModifierPropertyValueMap,
 	LayerTransform,
+	OriginBehavior,
 	PropertyName,
 	PropertyValueMap,
 	TransformBehavior,
@@ -16,16 +17,21 @@ const applyIndexTransform = (
 	transform: LayerTransform,
 	correction: number,
 ): LayerTransform => {
-	const { rotation, scaleX, scaleY, matrix } = transform;
+	const relative = transform.originBehavior === "relative";
 
-	const anchor = indexTransform.anchor;
-	const origin = transform.translate.add(transform.anchor).sub(anchor);
+	const { matrix } = transform;
+	const { rotation, scaleX, scaleY } = relative ? transform : indexTransform;
 
-	const rt = 1 - correction;
+	const origin = relative
+		? transform.translate.add(transform.anchor).sub(indexTransform.anchor).add(transform.origin)
+		: transform.origin;
 
-	let translate = transform.translate.add(
-		indexTransform.translate.rotate(indexTransform.rotation * rt),
-	);
+	let translate = transform.translate;
+
+	if (relative) {
+		const rt = 1 - correction;
+		translate = translate.add(indexTransform.translate.rotate(indexTransform.rotation * rt));
+	}
 
 	if (rotation !== 0) {
 		translate = rotateVec2CCW(translate, rotation, origin);
@@ -35,11 +41,13 @@ const applyIndexTransform = (
 	}
 
 	return {
+		origin: transform.origin,
+		originBehavior: transform.originBehavior,
 		translate,
-		anchor,
-		rotation: indexTransform.rotation + rotation,
-		scaleX: indexTransform.scaleX * scaleX,
-		scaleY: indexTransform.scaleY * scaleY,
+		anchor: indexTransform.anchor,
+		rotation: indexTransform.rotation + transform.rotation,
+		scaleX: indexTransform.scaleX * transform.scaleX,
+		scaleY: indexTransform.scaleY * transform.scaleY,
 		matrix: matrix.multiply(indexTransform.matrix),
 	};
 };
@@ -51,6 +59,8 @@ const getIndexTransformMapRecursive = (
 	correction: number,
 ): { [index: number]: LayerTransform } => {
 	let transform: LayerTransform = {
+		origin: indexTransforms[0].origin,
+		originBehavior: indexTransforms[0].originBehavior,
 		translate: Vec2.new(0, 0),
 		anchor: indexTransforms[0].anchor,
 		rotation: 0,
@@ -76,9 +86,13 @@ const getIndexTransformMapAbsoluteForComputed = (
 	count: number,
 	isComputedByIndex: { [key: string]: boolean },
 	correction: number,
+	origin: Vec2,
+	originBehavior: OriginBehavior,
 ): { [index: number]: LayerTransform } => {
 	let transform: LayerTransform = {
-		translate: Vec2.new(0, 0),
+		origin,
+		originBehavior,
+		translate: Vec2.ORIGIN,
 		anchor: Vec2.new(0, 0),
 		rotation: 0,
 		scaleX: 1,
@@ -88,7 +102,9 @@ const getIndexTransformMapAbsoluteForComputed = (
 
 	const transforms: { [index: number]: LayerTransform } = {
 		[0]: {
-			translate: Vec2.new(0, 0),
+			origin,
+			originBehavior,
+			translate: Vec2.ORIGIN,
 			anchor: indexTransforms[0].anchor,
 			rotation: 0,
 			scaleX: 1,
@@ -173,6 +189,8 @@ const getIndexTransformMapAbsoluteForComputed = (
 
 		if (computedKeys.length) {
 			transform = {
+				origin: transform.origin.copy(),
+				originBehavior: transform.originBehavior,
 				anchor: transform.anchor.copy(),
 				translate: transform.translate.copy(),
 				rotation: transform.rotation,
@@ -197,6 +215,8 @@ export const getIndexTransformMap = (
 	correction: number,
 	isComputedByIndex: { [key: number]: boolean },
 	behavior: TransformBehavior,
+	origin: Vec2,
+	originBehavior: OriginBehavior,
 ): { [index: number]: LayerTransform } => {
 	switch (behavior) {
 		case "absolute_for_computed":
@@ -205,6 +225,8 @@ export const getIndexTransformMap = (
 				count,
 				isComputedByIndex,
 				correction,
+				origin,
+				originBehavior,
 			);
 
 		case "recursive":
@@ -220,13 +242,16 @@ const correctIndexTransform = (
 	correction: number,
 	dimensions: [width: number, height: number],
 ): LayerTransform => {
+	const origin =
+		indexTransform.originBehavior === "relative" ? indexTransform.origin : Vec2.ORIGIN;
+
 	const [width, height] = dimensions;
 	const atRot = indexTransform.translate
 		.sub(Vec2.new(width, height))
 		.scale(0.5)
 		.add(Vec2.new(width, height));
 	const diff = indexTransform.translate.sub(atRot);
-	const dr = diff.rotate(indexTransform.rotation);
+	const dr = diff.rotate(indexTransform.rotation, origin);
 	const sum = atRot.add(dr);
 
 	return {
@@ -245,6 +270,8 @@ export const getLayerArrayModifierIndexTransform = (
 	transform: LayerTransform,
 	transformGroupId: string,
 	behavior: TransformBehavior,
+	origin: Vec2,
+	originBehavior: OriginBehavior,
 ): { [index: number]: LayerTransform } => {
 	const transformGroup = compositionState.properties[
 		transformGroupId
@@ -254,7 +281,10 @@ export const getLayerArrayModifierIndexTransform = (
 	const isComputedByIndex: { [key: string]: boolean } = {};
 
 	for (let i = 0; i < count; i += 1) {
-		const transform: LayerTransform = {} as any;
+		const transform: LayerTransform = {
+			origin,
+			originBehavior,
+		} as any;
 
 		for (const propertyId of transformGroup.properties) {
 			const property = compositionState.properties[propertyId];
@@ -325,5 +355,7 @@ export const getLayerArrayModifierIndexTransform = (
 		correction,
 		isComputedByIndex,
 		behavior,
+		origin,
+		originBehavior,
 	);
 };

@@ -19,6 +19,8 @@ interface LayerTransformMap {
 }
 
 const defaultTransform: LayerTransform = {
+	origin: Vec2.ORIGIN,
+	originBehavior: "relative",
 	anchor: Vec2.new(0, 0),
 	rotation: 0,
 	scaleX: 1,
@@ -87,11 +89,32 @@ export const computeLayerTransformMap = (
 					rotationCorrectionId,
 					transformGroupId,
 					transformBehaviorId,
+					originBehaviorId,
+					xOriginId,
+					yOriginId,
 				} = arrMod;
 
 				const count = Math.max(1, propertyToValue[countId].computedValue);
-				const rotationCorrection = propertyToValue[rotationCorrectionId].computedValue;
+				let rotationCorrection = propertyToValue[rotationCorrectionId].computedValue;
 				const transformBehavior = propertyToValue[transformBehaviorId].computedValue;
+				const originBehavior = propertyToValue[originBehaviorId].computedValue;
+				const originX = propertyToValue[xOriginId].computedValue;
+				const originY = propertyToValue[yOriginId].computedValue;
+				let origin = Vec2.new(originX, originY);
+
+				if (originBehavior === "absolute") {
+					rotationCorrection = 0;
+					const transform = map[layer.id].transform;
+					origin = origin
+						.sub(transform.translate)
+						.add(
+							transform.anchor
+								.rotate(transform.rotation)
+								.scaleXY(transform.scaleX, transform.scaleY),
+						);
+				} else {
+					origin = Vec2.new(0, 0);
+				}
 
 				const indexTransform = getLayerArrayModifierIndexTransform(
 					compositionState,
@@ -103,6 +126,8 @@ export const computeLayerTransformMap = (
 					parentTransform,
 					transformGroupId,
 					transformBehavior,
+					origin,
+					originBehavior,
 				);
 				map[layer.id].indexTransforms.push(indexTransform);
 			}

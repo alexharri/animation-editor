@@ -4,6 +4,7 @@ import {
 	LayerType,
 	LineCap,
 	LineJoin,
+	OriginBehavior,
 	PropertyGroupName,
 	PropertyName,
 	RGBAColor,
@@ -90,6 +91,10 @@ export type CompositionProperty = {
 	| {
 			valueType: ValueType.TransformBehavior;
 			value: TransformBehavior;
+	  }
+	| {
+			valueType: ValueType.OriginBehavior;
+			value: OriginBehavior;
 	  }
 	| {
 			valueType: ValueType.Path;

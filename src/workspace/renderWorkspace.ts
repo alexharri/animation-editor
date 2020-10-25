@@ -6,7 +6,10 @@ import {
 	CompositionPropertyGroup,
 } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
-import { applyParentIndexTransform, applyParentTransform } from "~/composition/transformUtils";
+import {
+	applyIndexTransformToLayer,
+	applyParentIndexTransform,
+} from "~/composition/transformUtils";
 import {
 	getLayerArrayModifiers,
 	getLayerCompositionProperties,
@@ -44,7 +47,7 @@ const computeLayerTransform = (
 	parentIndexTransforms: ParentIndexTransform[],
 ) => {
 	for (let i = 0; i < indexTransforms.length; i += 1) {
-		transform = applyParentTransform(indexTransforms[i], transform, true);
+		transform = applyIndexTransformToLayer(transform, indexTransforms[i]);
 	}
 	for (let i = 0; i < parentIndexTransforms.length; i += 1) {
 		transform = applyParentIndexTransform(transform, parentIndexTransforms[i]);

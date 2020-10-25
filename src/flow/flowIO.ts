@@ -383,6 +383,7 @@ export const flowValidInputsToOutputsMap: { [key in ValueType]: ValueType[] } = 
 	[ValueType.RGBAColor]: [ValueType.Any, ValueType.RGBAColor, ValueType.RGBColor],
 	[ValueType.RGBColor]: [ValueType.Any, ValueType.RGBColor, ValueType.RGBAColor],
 	[ValueType.TransformBehavior]: [ValueType.TransformBehavior],
+	[ValueType.OriginBehavior]: [ValueType.OriginBehavior],
 	[ValueType.LineCap]: [ValueType.LineCap],
 	[ValueType.LineJoin]: [ValueType.LineJoin],
 	[ValueType.FillRule]: [ValueType.FillRule],

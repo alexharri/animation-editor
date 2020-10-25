@@ -20,6 +20,8 @@ export type RGBColor = [number, number, number];
 export type RGBAColor = [number, number, number, number];
 
 export interface LayerTransform {
+	origin: Vec2;
+	originBehavior: OriginBehavior;
 	translate: Vec2;
 	anchor: Vec2;
 	rotation: number; // Radians
@@ -40,6 +42,7 @@ export enum ValueType {
 	RGBAColor = "rgba",
 	RGBColor = "rgb",
 	TransformBehavior = "transform_behavior",
+	OriginBehavior = "origin_behavior",
 	Path = "path",
 	FillRule = "fill_rule",
 	LineCap = "line_cap",
@@ -111,6 +114,9 @@ export enum PropertyName {
 	ArrayModifier_Count = 15,
 	ArrayModifier_TransformBehavior = 16,
 	ArrayModifier_RotationCorrection = 26,
+	ArrayModifier_OriginX = 27,
+	ArrayModifier_OriginY = 28,
+	ArrayModifier_OriginBehavior = 29,
 
 	// Shape Layer
 	ShapeLayer_Path = 17,
@@ -158,6 +164,7 @@ export interface CompositionRenderValues {
 }
 
 export type TransformBehavior = "recursive" | "absolute_for_computed";
+export type OriginBehavior = "relative" | "absolute";
 export type FillRule = "evenodd" | "nonzero";
 export type LineCap = "butt" | "round" | "square";
 export type LineJoin = "miter" | "round" | "bevel";

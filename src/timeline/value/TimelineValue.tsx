@@ -5,7 +5,15 @@ import { connectActionState } from "~/state/stateUtils";
 import { TimelinePropertyColorValue } from "~/timeline/value/TimelineColorValue";
 import { TimelineNumberValue } from "~/timeline/value/TimelineNumberValue";
 import { TimelineSelectValue } from "~/timeline/value/TimelineSelectValue";
-import { FillRule, LineCap, LineJoin, RGBColor, TransformBehavior, ValueType } from "~/types";
+import {
+	FillRule,
+	LineCap,
+	LineJoin,
+	OriginBehavior,
+	RGBColor,
+	TransformBehavior,
+	ValueType,
+} from "~/types";
 
 interface OwnProps {
 	propertyId: string;
@@ -53,6 +61,20 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 				options={[
 					{ value: "absolute_for_computed", label: "Default" },
 					{ value: "recursive", label: "Recursive" },
+				]}
+			/>
+		);
+	}
+
+	if (props.valueType === ValueType.OriginBehavior) {
+		return (
+			<TimelineSelectValue<OriginBehavior>
+				propertyId={props.propertyId}
+				value={value.rawValue}
+				actionName=""
+				options={[
+					{ value: "relative", label: "Relative" },
+					{ value: "absolute", label: "Absolute" },
 				]}
 			/>
 		);
