@@ -106,15 +106,16 @@ export const applyIndexTransformToLayer = (
 	transform: LayerTransform,
 	indexTransform: LayerTransform,
 ): LayerTransform => {
-	let translate = transform.translate
-		.add(indexTransform.translate)
-		.sub(
-			transform.anchor.rotate(transform.rotation).scaleXY(transform.scaleX, transform.scaleY),
-		);
+	let translate = indexTransform.translate.add(transform.translate);
+
+	const origin = transform.translate;
+	translate = translate.sub(transform.anchor);
+	translate = translate.scaleXY(transform.scaleX, transform.scaleY, origin);
+	translate = rotateVec2CCW(translate, transform.rotation, origin);
 
 	return {
-		origin: transform.origin,
-		originBehavior: transform.originBehavior,
+		origin: indexTransform.origin,
+		originBehavior: indexTransform.originBehavior,
 		translate,
 		anchor: indexTransform.anchor,
 		rotation: transform.rotation + indexTransform.rotation,
