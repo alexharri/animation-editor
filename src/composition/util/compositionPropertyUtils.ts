@@ -37,6 +37,9 @@ const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
 	ArrayModifier_Count: "Count",
 	ArrayModifier_TransformBehavior: "Transform Behavior",
 	ArrayModifier_RotationCorrection: "Rotation Correction",
+	ArrayModifier_OriginX: "X Origin",
+	ArrayModifier_OriginY: "Y Origin",
+	ArrayModifier_OriginBehavior: "Origin Behavior",
 
 	ShapeLayer_Path: "Path",
 	RGBAColor: "Color",
@@ -142,6 +145,9 @@ export const getLayerArrayModifiers = (layerId: string, compositionState: Compos
 		modifierGroupId: string;
 		countId: string;
 		rotationCorrectionId: string;
+		xOriginId: string;
+		yOriginId: string;
+		originBehaviorId: string;
 		transformBehaviorId: string;
 		transformGroupId: string;
 	}> = [];
@@ -170,6 +176,9 @@ export const getLayerArrayModifiers = (layerId: string, compositionState: Compos
 		const rotationCorrectionIndex = names.indexOf(
 			PropertyName.ArrayModifier_RotationCorrection,
 		);
+		const xOriginIndex = names.indexOf(PropertyName.ArrayModifier_OriginX);
+		const yOriginIndex = names.indexOf(PropertyName.ArrayModifier_OriginY);
+		const originBehaviorIndex = names.indexOf(PropertyName.ArrayModifier_OriginBehavior);
 		const transformBehaviorIndex = names.indexOf(PropertyName.ArrayModifier_TransformBehavior);
 		const transformIndex = names.indexOf(PropertyGroupName.Transform);
 
@@ -177,6 +186,9 @@ export const getLayerArrayModifiers = (layerId: string, compositionState: Compos
 			modifierGroupId: group.id,
 			countId: group.properties[countIndex],
 			rotationCorrectionId: group.properties[rotationCorrectionIndex],
+			xOriginId: group.properties[xOriginIndex],
+			yOriginId: group.properties[yOriginIndex],
+			originBehaviorId: group.properties[originBehaviorIndex],
 			transformBehaviorId: group.properties[transformBehaviorIndex],
 			transformGroupId: group.properties[transformIndex],
 		});

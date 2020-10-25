@@ -42,6 +42,8 @@ export const getLayerBaseTransform = (
 	}, {} as any);
 
 	return {
+		origin: Vec2.ORIGIN,
+		originBehavior: "relative",
 		anchor: Vec2.new(props.AnchorX, props.AnchorY),
 		rotation: props.Rotation * DEG_TO_RAD_FAC,
 		scaleX: props.ScaleX,
@@ -65,6 +67,8 @@ export const applyParentIndexTransform = (
 		.add(indexTransform.translate.multiplyMat2(baseTransform.matrix));
 
 	return {
+		origin: t.origin,
+		originBehavior: t.originBehavior,
 		translate,
 		anchor: t.anchor,
 		rotation: t.rotation + indexTransform.rotation,
@@ -87,6 +91,8 @@ export const applyCompositionTransform = (
 		.add(ct.translate.rotate(ct.rotation).scaleXY(ct.scaleX, ct.scaleY));
 
 	return {
+		origin: t.origin,
+		originBehavior: t.originBehavior,
 		translate,
 		anchor: t.anchor,
 		rotation: t.rotation + ct.rotation,
@@ -96,32 +102,52 @@ export const applyCompositionTransform = (
 	};
 };
 
+export const applyIndexTransformToLayer = (
+	transform: LayerTransform,
+	indexTransform: LayerTransform,
+): LayerTransform => {
+	let translate = transform.translate
+		.add(indexTransform.translate)
+		.sub(
+			transform.anchor.rotate(transform.rotation).scaleXY(transform.scaleX, transform.scaleY),
+		);
+
+	return {
+		origin: transform.origin,
+		originBehavior: transform.originBehavior,
+		translate,
+		anchor: indexTransform.anchor,
+		rotation: transform.rotation + indexTransform.rotation,
+		scaleX: transform.scaleX * indexTransform.scaleX,
+		scaleY: transform.scaleY * indexTransform.scaleY,
+		matrix: transform.matrix.multiplyMat2(indexTransform.matrix),
+	};
+};
+
 export const applyParentTransform = (
 	transform: LayerTransform,
 	parentTransform: LayerTransform,
 	isBaseTransform: boolean,
 ): LayerTransform => {
-	let translate = transform.translate;
+	let translate = transform.translate.add(parentTransform.translate);
 
-	translate = translate.add(parentTransform.translate);
+	const origin = parentTransform.translate;
 
 	if (isBaseTransform) {
 		translate = translate.sub(parentTransform.anchor);
 	}
 
 	if (parentTransform.scaleX !== 1 || parentTransform.scaleY !== 1) {
-		translate = translate.scaleXY(
-			parentTransform.scaleX,
-			parentTransform.scaleY,
-			parentTransform.translate,
-		);
+		translate = translate.scaleXY(parentTransform.scaleX, parentTransform.scaleY, origin);
 	}
 
 	if (parentTransform.rotation !== 0) {
-		translate = rotateVec2CCW(translate, parentTransform.rotation, parentTransform.translate);
+		translate = rotateVec2CCW(translate, parentTransform.rotation, origin);
 	}
 
 	return {
+		origin: transform.origin,
+		originBehavior: transform.originBehavior,
 		translate,
 		anchor: transform.anchor,
 		rotation: transform.rotation + parentTransform.rotation,
@@ -149,6 +175,8 @@ export const adjustTransformToParent = (
 	const scaleY = transform.scaleY / parentTransform.scaleY;
 
 	return {
+		origin: transform.origin,
+		originBehavior: transform.originBehavior,
 		anchor,
 		translate,
 		rotation: rotation,

@@ -57,6 +57,23 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 	group.properties.push(transformBehavior.id);
 	propertiesToAdd.push(transformBehavior);
 
+	const originBehavior: CompositionProperty = {
+		type: "property",
+		id: opts.createId(),
+		compositionId: opts.compositionId,
+		layerId: opts.layerId,
+		name: PropertyName.ArrayModifier_OriginBehavior,
+		timelineId: "",
+		value: "relative",
+		valueType: ValueType.OriginBehavior,
+		color: TimelineColors.Height,
+		twinPropertyId: "",
+		shouldMaintainProportions: false,
+	};
+
+	group.properties.push(originBehavior.id);
+	propertiesToAdd.push(originBehavior);
+
 	const rotationCorrection: CompositionProperty = {
 		type: "property",
 		id: opts.createId(),
@@ -73,6 +90,36 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 
 	group.properties.push(rotationCorrection.id);
 	propertiesToAdd.push(rotationCorrection);
+
+	const originX: CompositionProperty = {
+		type: "property",
+		id: opts.createId(),
+		compositionId: opts.compositionId,
+		layerId: opts.layerId,
+		name: PropertyName.ArrayModifier_OriginX,
+		timelineId: "",
+		value: 0,
+		valueType: ValueType.Number,
+		color: TimelineColors.XPosition,
+		twinPropertyId: "",
+		shouldMaintainProportions: false,
+	};
+	const originY: CompositionProperty = {
+		type: "property",
+		id: opts.createId(),
+		compositionId: opts.compositionId,
+		layerId: opts.layerId,
+		name: PropertyName.ArrayModifier_OriginY,
+		timelineId: "",
+		value: 0,
+		valueType: ValueType.Number,
+		color: TimelineColors.XPosition,
+		twinPropertyId: "",
+		shouldMaintainProportions: false,
+	};
+
+	group.properties.push(originX.id, originY.id);
+	propertiesToAdd.push(originX, originY);
 
 	const transform = createLayerTransformProperties(opts);
 
