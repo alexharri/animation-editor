@@ -220,8 +220,9 @@ export const getIndexTransformMap = (
 const correctIndexTransform = (
 	indexTransform: LayerTransform,
 	correction: number,
-	[width, height]: [number, number],
+	dimensions: [width: number, height: number],
 ): LayerTransform => {
+	const [width, height] = dimensions;
 	const atRot = indexTransform.translate
 		.sub(Vec2.new(width, height))
 		.scale(0.5)
