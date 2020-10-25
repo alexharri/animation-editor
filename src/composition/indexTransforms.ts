@@ -45,9 +45,9 @@ const applyIndexTransform = (
 		originBehavior: transform.originBehavior,
 		translate,
 		anchor: indexTransform.anchor,
-		rotation: indexTransform.rotation + rotation,
-		scaleX: indexTransform.scaleX * scaleX,
-		scaleY: indexTransform.scaleY * scaleY,
+		rotation: indexTransform.rotation + transform.rotation,
+		scaleX: indexTransform.scaleX * transform.scaleX,
+		scaleY: indexTransform.scaleY * transform.scaleY,
 		matrix: matrix.multiply(indexTransform.matrix),
 	};
 };

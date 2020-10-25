@@ -48,7 +48,6 @@ const computeLayerTransform = (
 ) => {
 	for (let i = 0; i < indexTransforms.length; i += 1) {
 		transform = applyIndexTransformToLayer(transform, indexTransforms[i]);
-		// transform = applyParentTransform(indexTransforms[i], transform, true);
 	}
 	for (let i = 0; i < parentIndexTransforms.length; i += 1) {
 		transform = applyParentIndexTransform(transform, parentIndexTransforms[i]);
