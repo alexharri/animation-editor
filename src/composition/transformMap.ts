@@ -1,5 +1,8 @@
-import { CompositionState } from "~/composition/compositionReducer";
 import { getLayerArrayModifierIndexTransform } from "~/composition/indexTransforms";
+import {
+	getLayerNameToProperty,
+	getLayerRectDimensionsAndOffset,
+} from "~/composition/layer/layerUtils";
 import { applyParentTransform, getLayerBaseTransform } from "~/composition/transformUtils";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
@@ -28,11 +31,15 @@ export const computeLayerTransformMap = (
 	compositionId: string,
 	propertyToValue: PropertyValueMap,
 	arrayModifierPropertyToValue: ArrayModifierPropertyValueMap,
-	compositionState: CompositionState,
+	state: Pick<
+		ActionState,
+		"compositionState" | "compositionSelectionState" | "shapeState" | "shapeSelectionState"
+	>,
 	parentTransform: LayerTransform = defaultTransform,
 	options: { recursive: boolean },
 ): LayerTransformMap => {
 	const map: LayerTransformMap = {};
+	const { compositionState } = state;
 
 	const composition = compositionState.compositions[compositionId];
 
@@ -40,6 +47,8 @@ export const computeLayerTransformMap = (
 
 	for (const layerId of layerIds) {
 		const layer = compositionState.layers[layerId];
+		const nameToProperty = getLayerNameToProperty(propertyToValue, compositionState, layerId);
+		const [width, height] = getLayerRectDimensionsAndOffset(layer, nameToProperty, state);
 
 		map[layer.id] = {
 			transform: defaultTransform,
@@ -73,9 +82,15 @@ export const computeLayerTransformMap = (
 
 		if (options.recursive) {
 			for (const arrMod of arrMods) {
-				const { countId, transformGroupId, transformBehaviorId } = arrMod;
+				const {
+					countId,
+					rotationCorrectionId,
+					transformGroupId,
+					transformBehaviorId,
+				} = arrMod;
 
 				const count = Math.max(1, propertyToValue[countId].computedValue);
+				const rotationCorrection = propertyToValue[rotationCorrectionId].computedValue;
 				const transformBehavior = propertyToValue[transformBehaviorId].computedValue;
 
 				const indexTransform = getLayerArrayModifierIndexTransform(
@@ -83,6 +98,8 @@ export const computeLayerTransformMap = (
 					propertyToValue,
 					arrayModifierPropertyToValue,
 					count,
+					[width, height],
+					rotationCorrection,
 					parentTransform,
 					transformGroupId,
 					transformBehavior,

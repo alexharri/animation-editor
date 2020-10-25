@@ -81,8 +81,12 @@ export const rectsIntersect = (a: Rect, b: Rect): boolean => {
 	return true;
 };
 
-export const boundingRectOfRects = (rects: Rect[]): Rect =>
-	rects.slice(1).reduce<Rect>((a, b) => {
+export const boundingRectOfRects = (rects: Rect[]): Rect | null => {
+	if (!rects.length) {
+		return null;
+	}
+
+	return rects.slice(1).reduce<Rect>((a, b) => {
 		const xMin = Math.min(a.left, b.left);
 		const yMin = Math.min(a.top, b.top);
 		return {
@@ -92,6 +96,7 @@ export const boundingRectOfRects = (rects: Rect[]): Rect =>
 			width: Math.max(a.left + a.width, b.left + b.width) - xMin,
 		};
 	}, rects[0]);
+};
 
 /**
  * @param value - The value to interpolate

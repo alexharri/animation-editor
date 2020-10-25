@@ -1,9 +1,8 @@
-import { getLayerDimensions, getLayerNameToProperty } from "~/composition/layer/layerUtils";
-import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
+import {
+	getLayerNameToProperty,
+	getLayerRectDimensionsAndOffset,
+} from "~/composition/layer/layerUtils";
 import { CompositionRenderValues, LayerType } from "~/types";
-import { boundingRectOfRects, rectCorners } from "~/util/math";
-import { pathBoundingRect } from "~/util/math/boundingRect";
 
 export const globalToWorkspacePosition = (
 	globalPosition: Vec2,
@@ -23,30 +22,6 @@ export const globalToWorkspacePosition = (
 	return Vec2.new(x, y);
 };
 
-const getShapeLayerRect = (layerId: string, actionState: ActionState) => {
-	const {
-		compositionState,
-		compositionSelectionState,
-		shapeState,
-		shapeSelectionState,
-	} = actionState;
-	const layer = compositionState.layers[layerId];
-	const composition = compositionState.compositions[layer.compositionId];
-	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
-	const pathIds = getShapeLayerPathIds(layerId, compositionState);
-	const pathIdToShapeGroupId = getPathIdToShapeGroupId(layer.id, compositionState);
-	const rects = pathIds
-		.map((pathId) => {
-			const shapeGroupId = pathIdToShapeGroupId[pathId];
-			const shapeSelected = compositionSelection.properties[shapeGroupId];
-			const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
-			return pathIdToCurves(pathId, shapeState, shapeSelectionState, shapeMoveVector);
-		})
-		.filter(Boolean)
-		.map((curves) => pathBoundingRect(curves!));
-	return boundingRectOfRects(rects);
-};
-
 export const workspaceLayerBoundingBoxCorners = (
 	layerId: string,
 	map: CompositionRenderValues,
@@ -59,15 +34,9 @@ export const workspaceLayerBoundingBoxCorners = (
 	const transform = map.transforms[layerId].transform;
 
 	const layer = compositionState.layers[layerId];
-	if (layer.type === LayerType.Shape) {
-		const rect = getShapeLayerRect(layerId, actionState);
-		return rectCorners(rect).map((p) =>
-			transform.matrix.multiply(p).add(transform.translate).scale(scale).add(pan),
-		);
-	}
 
-	const nameToProperty = getLayerNameToProperty(map, compositionState, layerId);
-	const [width, height] = getLayerDimensions(layer.type, nameToProperty);
+	const nameToProperty = getLayerNameToProperty(map.properties, compositionState, layerId);
+	const [width, height] = getLayerRectDimensionsAndOffset(layer, nameToProperty, actionState);
 
 	const corners = [
 		[1, 0],

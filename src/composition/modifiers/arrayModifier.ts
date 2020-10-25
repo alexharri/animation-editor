@@ -57,6 +57,23 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 	group.properties.push(transformBehavior.id);
 	propertiesToAdd.push(transformBehavior);
 
+	const rotationCorrection: CompositionProperty = {
+		type: "property",
+		id: opts.createId(),
+		compositionId: opts.compositionId,
+		layerId: opts.layerId,
+		name: PropertyName.ArrayModifier_RotationCorrection,
+		timelineId: "",
+		value: 0,
+		valueType: ValueType.Number,
+		color: TimelineColors.Height,
+		twinPropertyId: "",
+		shouldMaintainProportions: false,
+	};
+
+	group.properties.push(rotationCorrection.id);
+	propertiesToAdd.push(rotationCorrection);
+
 	const transform = createLayerTransformProperties(opts);
 
 	group.properties.push(transform.group.id);
