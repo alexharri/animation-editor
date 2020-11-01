@@ -537,12 +537,20 @@ export const CompositionPropertyValuesProvider: React.FC<{
 		};
 	}, []);
 
-	const getValue = (propertyId: string): Value => {
+	const getValue = (propertyId: string, retry = false): Value => {
 		const map = lastMapRef.current;
 		const value = map.properties[propertyId];
 
-		if (!value) {
-			console.log(map, propertyId);
+		if (!value && !retry) {
+			// Property may have been rendered before the context updated.
+			//
+			// In that case, we attempt to render again with the current state
+			// and try to get the value again.
+			//
+			// If rendering does not result in a value, we allow the component
+			// calling to receive the invalid value and throw.
+			render();
+			return getValue(propertyId, true);
 		}
 
 		return value;

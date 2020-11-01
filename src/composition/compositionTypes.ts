@@ -45,6 +45,7 @@ export interface PropertyGroup {
 	name: PropertyGroupName;
 	id: string;
 	layerId: string;
+	compositionId: string;
 	properties: string[];
 	collapsed: boolean;
 	graphId: string; // Currently only ArrayModifier groups may have an associated graph

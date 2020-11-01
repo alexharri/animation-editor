@@ -168,6 +168,7 @@ export const createLayerTransformProperties = (
 		name: PropertyGroupName.Transform,
 		id: opts.createId(),
 		layerId,
+		compositionId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",

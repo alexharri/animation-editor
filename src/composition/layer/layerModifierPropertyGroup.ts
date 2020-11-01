@@ -9,8 +9,7 @@ import { PropertyGroupName } from "~/types";
 export const createLayerModifierProperties = (
 	opts: CreatePropertyOptions,
 ): CreateLayerPropertyGroup => {
-	const { layerId } = opts;
-
+	const { layerId, compositionId } = opts;
 	const properties: Property[] = [];
 
 	const group: PropertyGroup = {
@@ -18,6 +17,7 @@ export const createLayerModifierProperties = (
 		name: PropertyGroupName.Modifiers,
 		id: opts.createId(),
 		layerId,
+		compositionId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",

@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { NumberInput } from "~/components/common/NumberInput";
+import { LinkIcon } from "~/components/icons/LinkIcon";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition, CompoundProperty, Property } from "~/composition/compositionTypes";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
@@ -7,6 +8,7 @@ import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
 import TimelinePropertyStyles from "~/timeline/property/TimelineProperty.styles";
 import { timelineActions } from "~/timeline/timelineActions";
+import { timelineHandlers } from "~/timeline/timelineHandlers";
 import { TimelineKeyframe } from "~/timeline/timelineTypes";
 import {
 	createTimelineKeyframe,
@@ -204,6 +206,20 @@ const TimelineNumberValueComponent: React.FC<Props> = (props) => {
 
 	return (
 		<div className={s("value")}>
+			{compoundProperty &&
+				compoundProperty.separated &&
+				compoundProperty.allowMaintainProportions && (
+					<button
+						className={s("maintainProportionsButton", {
+							active: compoundProperty.maintainProportions,
+						})}
+						onClick={() =>
+							timelineHandlers.toggleMaintainPropertyProportions(compoundProperty.id)
+						}
+					>
+						<LinkIcon />
+					</button>
+				)}
 			<NumberInput
 				min={property.min}
 				max={property.max}

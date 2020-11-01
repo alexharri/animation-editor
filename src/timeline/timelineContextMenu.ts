@@ -1,5 +1,6 @@
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
+import { CompoundProperty } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
 import { createArrayModifier } from "~/composition/modifiers/arrayModifier";
@@ -38,7 +39,7 @@ export const createTimelineContextMenu = (
 			};
 
 			options.push({
-				label: "Add new layer",
+				label: "New layer",
 				options: [LayerType.Rect, LayerType.Ellipse, LayerType.Shape].map((type) => ({
 					label: getLayerTypeName(type),
 					onSelect: createAddLayerFn(type),
@@ -75,6 +76,44 @@ export const createTimelineContextMenu = (
 					},
 				],
 			});
+		}
+
+		if (propertyId) {
+			const { compositionState } = getActionState();
+
+			let compoundProperty: CompoundProperty | null = null;
+
+			const property = compositionState.properties[propertyId];
+			if (property.type === "compound") {
+				compoundProperty = property;
+			} else if (property.type === "property") {
+				if (property.compoundPropertyId) {
+					compoundProperty = compositionState.properties[
+						property.compoundPropertyId
+					] as CompoundProperty;
+				}
+			}
+
+			if (compoundProperty) {
+				const separated = !compoundProperty.separated;
+				const label = compoundProperty.separated
+					? "Join dimensions"
+					: "Separate dimensions";
+
+				options.push({
+					label,
+					onSelect: () => {
+						params.dispatch(
+							compositionActions.setCompoundPropertySeparated(
+								compoundProperty!.id,
+								separated,
+							),
+						);
+						params.dispatch(contextMenuActions.closeContextMenu());
+						params.submitAction("Toggle separate dimensions");
+					},
+				});
+			}
 		}
 
 		// Remove layer

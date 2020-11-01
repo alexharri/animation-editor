@@ -31,7 +31,7 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 	useEffect(() => {
 		const unsubscribe = ctx.subscribe(props.propertyId, setValue);
 		return unsubscribe;
-	}, []);
+	}, [ctx]);
 
 	if (props.valueType === ValueType.RGBColor) {
 		return (

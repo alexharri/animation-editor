@@ -206,6 +206,10 @@ export const compositionActions = {
 	clearViewProperties: createAction("comp/CLEAR_VIEW_PROPERTIES", (action) => {
 		return (layerId: string) => action({ layerId });
 	}),
+
+	setCompoundPropertySeparated: createAction("comp/SET_COMPOUND_SEPARATED", (action) => {
+		return (propertyId: string, separated: boolean) => action({ propertyId, separated });
+	}),
 };
 
 type Action = ActionType<typeof compositionActions>;
@@ -894,6 +898,20 @@ export const compositionReducer = (
 					toClear,
 					(group: PropertyGroup) => {
 						return { ...group, viewProperties: [], collapsed: true };
+					},
+				),
+			};
+		}
+
+		case getType(compositionActions.setCompoundPropertySeparated): {
+			const { propertyId, separated } = action.payload;
+			return {
+				...state,
+				properties: modifyItemsInUnionMap(
+					state.properties,
+					propertyId,
+					(property: CompoundProperty) => {
+						return { ...property, separated };
 					},
 				),
 			};

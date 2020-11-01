@@ -44,6 +44,7 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 		name: PropertyGroupName.Dimensions,
 		id: opts.createId(),
 		layerId,
+		compositionId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",

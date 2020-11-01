@@ -14,6 +14,7 @@ import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
 import styles from "~/timeline/property/TimelineProperty.styles";
+import { createTimelineContextMenu } from "~/timeline/timelineContextMenu";
 import { timelineHandlers } from "~/timeline/timelineHandlers";
 import { TimelineValue } from "~/timeline/value/TimelineValue";
 import { PropertyGroupName, ValueType } from "~/types";
@@ -51,6 +52,16 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 	const marginLeft = 32 + props.depth * 20;
 	const nameWidth = 180 - props.depth * 20;
 
+	const onRightClick = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		const { compositionId, layerId, id: propertyId } = property;
+		createTimelineContextMenu(Vec2.fromEvent(e), {
+			compositionId,
+			layerId,
+			propertyId,
+		});
+	};
+
 	if (property.type === "group") {
 		const { viewProperties } = property;
 		let { collapsed, properties } = property;
@@ -76,7 +87,10 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 
 		return (
 			<>
-				<div className={s("container")}>
+				<div
+					className={s("container")}
+					onMouseDown={separateLeftRightMouse({ right: onRightClick })}
+				>
 					<div className={s("contentContainer")} style={{ marginLeft }}>
 						<div
 							className={s("collapsedArrow", { open: !collapsed })}
@@ -194,7 +208,10 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 		}
 
 		return (
-			<div className={s("container")}>
+			<div
+				className={s("container")}
+				onMouseDown={separateLeftRightMouse({ right: onRightClick })}
+			>
 				<div className={s("contentContainer")} style={{ marginLeft }}>
 					<div
 						className={s("timelineIcon", { active: property.animated })}
@@ -252,7 +269,10 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 	}
 
 	return (
-		<div className={s("container")}>
+		<div
+			className={s("container")}
+			onMouseDown={separateLeftRightMouse({ right: onRightClick })}
+		>
 			<div className={s("contentContainer")} style={{ marginLeft }}>
 				<div
 					className={s("timelineIcon", { active: !!property.timelineId })}
