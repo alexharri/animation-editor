@@ -152,33 +152,34 @@ const PropertyComponent: React.FC<PropertyProps> = (props) => {
 	}
 
 	if (property.type === "compound") {
-		if (property.separated) {
-			return (
-				<>
-					{property.properties.map((propertyId) => (
-						<SingleProperty
-							selectedPropertyId={selectedPropertyId}
-							propertyId={propertyId}
-							onSelectProperty={props.onSelectProperty}
-							depth={depth}
-							key={propertyId}
-						/>
-					))}
-				</>
-			);
-		}
-
 		return (
-			<div className={s("container")} onClick={onClick}>
-				{activeDot}
-				<div
-					className={s("contentContainer")}
-					style={{ marginLeft: CONTEXT_MENU_OPTION_PADDING_LEFT + depthLeft }}
-				>
-					<div className={s("name")}>{getLayerCompoundPropertyLabel(property.name)}</div>
-				</div>
-			</div>
+			<>
+				{property.properties.map((propertyId) => (
+					<SingleProperty
+						selectedPropertyId={selectedPropertyId}
+						propertyId={propertyId}
+						onSelectProperty={props.onSelectProperty}
+						depth={depth}
+						key={propertyId}
+					/>
+				))}
+			</>
 		);
+
+		/**
+		 * @todo Select compound properties directly
+		 */
+		// return (
+		// 	<div className={s("container")} onClick={onClick}>
+		// 		{activeDot}
+		// 		<div
+		// 			className={s("contentContainer")}
+		// 			style={{ marginLeft: CONTEXT_MENU_OPTION_PADDING_LEFT + depthLeft }}
+		// 		>
+		// 			<div className={s("name")}>{getLayerCompoundPropertyLabel(property.name)}</div>
+		// 		</div>
+		// 	</div>
+		// );
 	}
 
 	return (
