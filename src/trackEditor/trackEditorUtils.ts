@@ -31,11 +31,12 @@ export const getTimelineTrackYPositions = (
 		const crawlProperty = (propertyId: string) => {
 			const property = compositionState.properties[propertyId];
 
-			yIndex++;
-
-			map.property[property.id] = getY();
-
 			if (property.type === "compound") {
+				if (!property.separated) {
+					yIndex++;
+					map.property[property.id] = getY();
+				}
+
 				for (const propertyId of property.properties) {
 					if (property.separated) {
 						crawlProperty(propertyId);
@@ -46,6 +47,9 @@ export const getTimelineTrackYPositions = (
 				}
 				return;
 			}
+
+			yIndex++;
+			map.property[property.id] = getY();
 
 			if (property.type === "group") {
 				let { collapsed, properties } = property;
