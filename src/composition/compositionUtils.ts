@@ -31,7 +31,7 @@ export const reduceVisibleLayerProperties = <T>(
 		}
 
 		if (property.type === "compound") {
-			properties.forEach(crawlProperty);
+			property.properties.forEach(crawlProperty);
 			return;
 		}
 

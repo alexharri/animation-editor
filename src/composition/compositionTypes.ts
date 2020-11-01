@@ -59,7 +59,6 @@ export interface CompoundProperty {
 	layerId: string;
 	compositionId: string;
 	properties: string[];
-	animated: boolean;
 	separated: boolean;
 	allowMaintainProportions: boolean;
 	maintainProportions: boolean;

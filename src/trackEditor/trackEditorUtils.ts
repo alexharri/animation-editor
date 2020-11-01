@@ -31,17 +31,21 @@ export const getTimelineTrackYPositions = (
 		const crawlProperty = (propertyId: string) => {
 			const property = compositionState.properties[propertyId];
 
-			// Separated compound properties are not rendered
-			if (property.type === "compound" && property.separated) {
-				for (const propertyId of property.properties) {
-					crawlProperty(propertyId);
-				}
-				return;
-			}
-
 			yIndex++;
 
 			map.property[property.id] = getY();
+
+			if (property.type === "compound") {
+				for (const propertyId of property.properties) {
+					if (property.separated) {
+						crawlProperty(propertyId);
+					} else {
+						const p = compositionState.properties[propertyId] as Property;
+						map.timeline[p.timelineId] = getY();
+					}
+				}
+				return;
+			}
 
 			if (property.type === "group") {
 				let { collapsed, properties } = property;
@@ -55,22 +59,6 @@ export const getTimelineTrackYPositions = (
 					for (let j = 0; j < properties.length; j += 1) {
 						crawlProperty(properties[j]);
 					}
-				}
-				return;
-			}
-
-			if (property.type === "compound") {
-				if (!property.animated) {
-					return;
-				}
-
-				// If a compound property is animated, every single sub-property has
-				// a timeline.
-				//
-				// In the track editor, they are displayed as a single timeline.
-				for (const propertyId of property.properties) {
-					const p = compositionState.properties[propertyId] as Property;
-					map.timeline[p.timelineId] = getY();
 				}
 				return;
 			}

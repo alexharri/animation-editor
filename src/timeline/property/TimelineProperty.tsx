@@ -43,6 +43,7 @@ interface OwnProps {
 interface StateProps {
 	property: Property | CompoundProperty | PropertyGroup;
 	isSelected: boolean;
+	animated: boolean;
 }
 type Props = OwnProps & StateProps;
 
@@ -214,7 +215,7 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 			>
 				<div className={s("contentContainer")} style={{ marginLeft }}>
 					<div
-						className={s("timelineIcon", { active: property.animated })}
+						className={s("timelineIcon", { active: props.animated })}
 						onMouseDown={separateLeftRightMouse({
 							left: (e) =>
 								timelineHandlers.onCompoundPropertyKeyframeIconMouseDown(
@@ -222,12 +223,6 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 									property.id,
 								),
 						})}
-						// style={
-						// 	property.valueType === ValueType.RGBAColor ||
-						// 	property.valueType === ValueType.RGBColor
-						// 		? { pointerEvents: "none", opacity: "0" }
-						// 		: {}
-						// }
 					>
 						<StopwatchIcon />
 					</div>
@@ -249,6 +244,9 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 						<button
 							className={s("maintainProportionsButton", {
 								active: property.maintainProportions,
+							})}
+							onMouseDown={separateLeftRightMouse({
+								left: (e) => e.stopPropagation(),
 							})}
 							onClick={() =>
 								timelineHandlers.toggleMaintainPropertyProportions(property.id)
@@ -321,9 +319,18 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 	const isSelected = !!compositionSelection.properties[id];
 
+	let animated = false;
+
+	if (property.type === "compound") {
+		animated = property.properties.some((propertyId) => {
+			return (compositionState.properties[propertyId] as Property).timelineId;
+		});
+	}
+
 	return {
 		isSelected,
 		property,
+		animated,
 	};
 };
 

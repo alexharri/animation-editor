@@ -16,6 +16,7 @@ import {
 	splitKeyframesAtIndex,
 } from "~/timeline/timelineUtils";
 import { PropertyName } from "~/types";
+import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const usePropertyNumberInput = (
@@ -213,6 +214,7 @@ const TimelineNumberValueComponent: React.FC<Props> = (props) => {
 						className={s("maintainProportionsButton", {
 							active: compoundProperty.maintainProportions,
 						})}
+						onMouseDown={separateLeftRightMouse({ left: (e) => e.stopPropagation() })}
 						onClick={() =>
 							timelineHandlers.toggleMaintainPropertyProportions(compoundProperty.id)
 						}

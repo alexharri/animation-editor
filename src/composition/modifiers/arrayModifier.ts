@@ -17,6 +17,7 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		name: PropertyGroupName.ArrayModifier,
 		id: propertyId,
 		layerId: opts.layerId,
+		compositionId: opts.compositionId,
 		properties: [],
 		collapsed: true,
 		graphId: "",
@@ -98,7 +99,6 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 	};
 	const origin: CompoundProperty = {
 		type: "compound",
-		animated: false,
 		id: opts.createId(),
 		layerId: opts.layerId,
 		compositionId: opts.compositionId,

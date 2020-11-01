@@ -218,14 +218,20 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			};
 
 			if (property.type === "compound") {
-				if (!property.animated) {
-					return;
+				for (const propertyId of property.properties) {
+					const { timelineId } = compositionState.properties[propertyId] as Property;
+
+					if (!timelineId) {
+						continue;
+					}
+
+					renderTimeline(timelineId);
 				}
 
-				const { timelineId } = compositionState.properties[
-					property.properties[0]
-				] as Property;
-				renderTimeline(timelineId);
+				// const { timelineId } = compositionState.properties[
+				// 	property.properties[0]
+				// ] as Property;
+				// renderTimeline(timelineId);
 				return;
 			}
 

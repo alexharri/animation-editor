@@ -46,7 +46,6 @@ export const createLayerTransformProperties = (
 	};
 	const position: CompoundProperty = {
 		type: "compound",
-		animated: false,
 		id: positionId,
 		layerId,
 		compositionId: opts.compositionId,
@@ -83,7 +82,6 @@ export const createLayerTransformProperties = (
 	};
 	const anchor: CompoundProperty = {
 		type: "compound",
-		animated: false,
 		id: anchorId,
 		layerId,
 		compositionId: opts.compositionId,
@@ -120,7 +118,6 @@ export const createLayerTransformProperties = (
 	};
 	const scale: CompoundProperty = {
 		type: "compound",
-		animated: false,
 		id: scaleId,
 		layerId,
 		compositionId: opts.compositionId,

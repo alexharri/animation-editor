@@ -1,7 +1,7 @@
 import { areaActions } from "~/area/state/areaActions";
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { Property } from "~/composition/compositionTypes";
+import { CompoundProperty, Property } from "~/composition/compositionTypes";
 import {
 	getTimelineIdsReferencedByComposition,
 	getTimelineIdsReferencedByLayer,
@@ -14,6 +14,7 @@ import {
 } from "~/composition/util/compSelectionUtils";
 import { AreaType, TIMELINE_LAYER_HEIGHT, TIMELINE_TRACK_START_END_X_MARGIN } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
+import { createOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
@@ -85,6 +86,120 @@ const actions = {
 						compSelectionActions.addPropertyToSelection(compositionId, property.id),
 					);
 				}
+			},
+			mouseMove: (params, { moveVector }) => {
+				const moveX = Math.round(moveVector.normal.x);
+
+				params.dispatch(
+					timelineIds.map((id) => timelineActions.setIndexAndValueShift(id, moveX, 0)),
+				);
+			},
+			mouseUp: (params, hasMoved) => {
+				if (!hasMoved) {
+					params.submitAction("Modify selection");
+					return;
+				}
+
+				params.dispatch(
+					timelineIds.reduce<any[]>((arr, id) => {
+						arr.push(
+							timelineActions.setYBounds(id, null),
+							timelineActions.setYPan(id, 0),
+							timelineActions.submitIndexAndValueShift(id, getTimelineSelection(id)),
+						);
+						return arr;
+					}, []),
+				);
+				params.submitAction("Move selected keyframes", { allowIndexShift: true });
+			},
+			moveTreshold: 5,
+		});
+	},
+
+	compoundKeyframesMouseDown: (
+		e: React.MouseEvent,
+		klist: Array<{ timelineId: string; keyframeIndex: number }>,
+		options: {
+			compositionId: string;
+			timelineAreaId: string;
+			panY: number;
+			compositionLength: number;
+			viewBounds: [number, number];
+			viewport: Rect;
+		},
+	) => {
+		const { compositionState, timelineState } = getActionState();
+
+		const { compositionId } = options;
+		const timelineIds = getTimelineIdsReferencedByComposition(compositionId, compositionState);
+
+		const properties = reduceCompProperties<Property[]>(
+			compositionId,
+			compositionState,
+			(acc, property) => {
+				if (property.timelineId) {
+					acc.push(property);
+				}
+				return acc;
+			},
+			[],
+		);
+
+		const commandKeyDownAtMouseDown = isKeyDown("Command");
+		const shiftKeyDownAtMouseDown = isKeyDown("Shift");
+		const additiveSelection = commandKeyDownAtMouseDown || shiftKeyDownAtMouseDown;
+
+		mouseDownMoveAction(e, {
+			keys: [],
+			translateX: (value) => graphEditorGlobalToNormal(value, options),
+			beforeMove: (params) => {
+				const anyNotSelected = klist.some(({ keyframeIndex, timelineId }) => {
+					const timeline = timelineState[timelineId];
+					const k = timeline.keyframes[keyframeIndex];
+					const selection = getTimelineSelection(timelineId);
+					return !selection.keyframes[k.id];
+				});
+
+				const op = createOperation();
+
+				if (!additiveSelection && anyNotSelected) {
+					op.add(
+						compSelectionActions.clearCompositionSelection(compositionId),
+						...timelineIds.map((id) => timelineSelectionActions.clear(id)),
+					);
+				}
+
+				for (const { timelineId, keyframeIndex } of klist) {
+					const timeline = timelineState[timelineId];
+					const keyframe = timeline.keyframes[keyframeIndex];
+
+					if (additiveSelection) {
+						op.add(
+							anyNotSelected
+								? timelineSelectionActions.addKeyframes(timeline.id, [keyframe.id])
+								: timelineSelectionActions.removeKeyframes(timeline.id, [
+										keyframe.id,
+								  ]),
+						);
+					} else if (anyNotSelected) {
+						const property = properties.find((p) => p.timelineId === timelineId)!;
+
+						op.add(
+							timelineSelectionActions.addKeyframes(timeline.id, [keyframe.id]),
+							compSelectionActions.addLayerToSelection(
+								compositionId,
+								property.layerId,
+							),
+							compSelectionActions.addPropertyToSelection(compositionId, property.id),
+							compSelectionActions.addPropertyToSelection(
+								compositionId,
+								property.compoundPropertyId,
+							),
+						);
+					}
+				}
+
+				params.dispatch(op.actions);
 			},
 			mouseMove: (params, { moveVector }) => {
 				const moveX = Math.round(moveVector.normal.x);
@@ -404,7 +519,35 @@ export const trackHandlers = {
 					}
 
 					if (property.type === "compound") {
-						console.warn("Not implemented");
+						const klist: Array<{ timelineId: string; keyframeIndex: number }> = [];
+
+						for (const propertyId of property.properties) {
+							const { timelineId } = compositionState.properties[
+								propertyId
+							] as Property;
+
+							if (!timelineId) {
+								continue;
+							}
+
+							const timeline = timelineState[timelineId];
+							const layerId = timelineIdToLayerId[timeline.id];
+							const layer = compositionState.layers[layerId];
+
+							for (let i = 0; i < timeline.keyframes.length; i += 1) {
+								const keyframeIndex = timeline.keyframes[i].index + layer.index;
+
+								if (globalXDistance(keyframeIndex, posTranslated.x) < 5) {
+									klist.push({ timelineId, keyframeIndex: i });
+								}
+							}
+						}
+
+						if (klist.length) {
+							actions.compoundKeyframesMouseDown(e, klist, options);
+							return;
+						}
+
 						break hitTest;
 					}
 
@@ -554,9 +697,25 @@ export const trackHandlers = {
 				);
 
 				// Select all affected properties
-				const affectedPropertyIds = affectedTimelines.map(
-					({ timelineId }) => timelineToPropertyId[timelineId],
-				);
+				const affectedPropertyIds: string[] = [];
+
+				affectedTimelines.forEach(({ timelineId }) => {
+					const property = compositionState.properties[
+						timelineToPropertyId[timelineId]
+					] as Property;
+
+					if (property.compoundPropertyId) {
+						const compound = compositionState.properties[
+							property.compoundPropertyId
+						] as CompoundProperty;
+						if (!compound.separated) {
+							affectedPropertyIds.push(compound.id);
+							return;
+						}
+					}
+
+					affectedPropertyIds.push(property.id);
+				});
 				params.dispatch(
 					affectedPropertyIds.map((propertyId) => {
 						return compSelectionActions.addPropertyToSelection(

@@ -849,15 +849,17 @@ export const timelineHandlers = {
 		requestAction(
 			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
 			(params) => {
+				const op = createOperation();
+
 				if (!additiveSelection) {
 					// Clear other properties and timeline keyframes
-					params.dispatch(compSelectionActions.clearCompositionSelection(compositionId));
+					op.add(compSelectionActions.clearCompositionSelection(compositionId));
 
 					const timelineIds = getTimelineIdsReferencedByComposition(
 						compositionId,
 						compositionState,
 					);
-					params.dispatch(timelineIds.map((id) => timelineSelectionActions.clear(id)));
+					op.add(...timelineIds.map((id) => timelineSelectionActions.clear(id)));
 				}
 
 				const willBeSelected = !compositionSelection.properties[propertyId];
@@ -879,7 +881,7 @@ export const timelineHandlers = {
 						// Only selected property of layer is being deselected.
 						//
 						// Deselect the layer
-						params.dispatch(
+						op.add(
 							compSelectionActions.removeLayersFromSelection(compositionId, [
 								property.layerId,
 							]),
@@ -887,33 +889,52 @@ export const timelineHandlers = {
 					}
 
 					// Remove property and timeline keyframes from selection
-					params.dispatch(
+					op.add(
 						compSelectionActions.removePropertiesFromSelection(compositionId, [
 							propertyId,
 						]),
 					);
 
 					if (property.type === "property" && property.timelineId) {
-						params.dispatch(timelineSelectionActions.clear(property.timelineId));
+						op.add(timelineSelectionActions.clear(property.timelineId));
+					} else if (property.type === "compound") {
+						for (const propertyId of property.properties) {
+							const p = compositionState.properties[propertyId] as Property;
+
+							if (!p.timelineId) {
+								continue;
+							}
+
+							op.add(timelineSelectionActions.clear(p.timelineId));
+						}
 					}
 				} else {
 					// Add property and timeline keyframes to selection
-					params.dispatch(
-						compSelectionActions.addPropertyToSelection(compositionId, propertyId),
-					);
-					params.dispatch(
+					op.add(compSelectionActions.addPropertyToSelection(compositionId, propertyId));
+					op.add(
 						compSelectionActions.addLayerToSelection(compositionId, property.layerId),
 					);
 
 					if (property.type === "property" && property.timelineId) {
 						const timeline = timelineState[property.timelineId];
 						const keyframeIds = timeline.keyframes.map((k) => k.id);
-						params.dispatch(
-							timelineSelectionActions.addKeyframes(timeline.id, keyframeIds),
-						);
+						op.add(timelineSelectionActions.addKeyframes(timeline.id, keyframeIds));
+					} else if (property.type === "compound") {
+						for (const propertyId of property.properties) {
+							const p = compositionState.properties[propertyId] as Property;
+
+							if (!p.timelineId) {
+								continue;
+							}
+
+							const timeline = timelineState[p.timelineId];
+							const keyframeIds = timeline.keyframes.map((k) => k.id);
+							op.add(timelineSelectionActions.addKeyframes(timeline.id, keyframeIds));
+						}
 					}
 				}
 
+				params.dispatch(op.actions);
 				params.submitAction("Select property");
 			},
 		);
