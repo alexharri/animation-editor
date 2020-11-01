@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
-import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { Property, PropertyGroup } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
 import { computeLayerTransformMap } from "~/composition/transformMap";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
@@ -101,10 +101,10 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 		frameIndex,
 	} = context;
 
-	const _compProperties: { [compositionId: string]: CompositionProperty[] } = {};
+	const _compProperties: { [compositionId: string]: Property[] } = {};
 	const getCompositionProperties = (compositionId: string) => {
 		if (!_compProperties[compositionId]) {
-			_compProperties[compositionId] = reduceCompProperties<CompositionProperty[]>(
+			_compProperties[compositionId] = reduceCompProperties<Property[]>(
 				compositionId,
 				compositionState,
 				(acc, property) => {
@@ -206,7 +206,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 						? selectedProperty.properties
 								.map((id) => context.compositionState.properties[id])
 								.filter(
-									(property): property is CompositionProperty =>
+									(property): property is Property =>
 										property.type === "property",
 								)
 						: [selectedProperty];
@@ -237,7 +237,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			for (const modifier of arrayModifiers) {
 				const modifierGroup = compositionState.properties[
 					modifier.modifierGroupId
-				] as CompositionPropertyGroup;
+				] as PropertyGroup;
 
 				if (!modifierGroup.graphId) {
 					continue;
@@ -295,7 +295,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 								? selectedProperty.properties
 										.map((id) => context.compositionState.properties[id])
 										.filter(
-											(property): property is CompositionProperty =>
+											(property): property is Property =>
 												property.type === "property",
 										)
 								: [selectedProperty];
@@ -537,12 +537,20 @@ export const CompositionPropertyValuesProvider: React.FC<{
 		};
 	}, []);
 
-	const getValue = (propertyId: string): Value => {
+	const getValue = (propertyId: string, retry = false): Value => {
 		const map = lastMapRef.current;
 		const value = map.properties[propertyId];
 
-		if (!value) {
-			console.log(map, propertyId);
+		if (!value && !retry) {
+			// Property may have been rendered before the context updated.
+			//
+			// In that case, we attempt to render again with the current state
+			// and try to get the value again.
+			//
+			// If rendering does not result in a value, we allow the component
+			// calling to receive the invalid value and throw.
+			render();
+			return getValue(propertyId, true);
 		}
 
 		return value;

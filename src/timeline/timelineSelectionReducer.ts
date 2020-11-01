@@ -77,6 +77,16 @@ export function timelineSelectionReducer(
 			};
 		}
 
+		case getType(timelineSelectionActions.removeKeyframes): {
+			const { timelineId, keyframeIds } = action.payload;
+			return {
+				...state,
+				[timelineId]: {
+					keyframes: removeKeysFromMap(state[timelineId]?.keyframes || {}, keyframeIds),
+				},
+			};
+		}
+
 		default:
 			return state;
 	}

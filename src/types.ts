@@ -82,6 +82,13 @@ export enum PropertyGroupName {
 	ArrayModifier = 5005,
 }
 
+export enum CompoundPropertyName {
+	Anchor = 1000,
+	Scale = 1001,
+	Position = 1002,
+	ArrayModifier_Origin = 1003,
+}
+
 export enum PropertyName {
 	// Transform Properties
 	AnchorX = 0,

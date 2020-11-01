@@ -1,7 +1,7 @@
 import React, { useContext, useRef } from "react";
 import { AreaIdContext } from "~/area/util/AreaIdContext";
 import { PickWhipIcon } from "~/components/icons/PickWhipIcon";
-import { CompositionLayer } from "~/composition/compositionTypes";
+import { Layer } from "~/composition/compositionTypes";
 import { getValidLayerParentLayerIds } from "~/composition/layer/layerUtils";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import {
@@ -172,7 +172,7 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 const mapState: MapActionState<StateProps, OwnProps> = ({ compositionState }, { layerId }) => {
 	const layer = compositionState.layers[layerId];
 
-	const parentLayer: CompositionLayer | undefined = compositionState.layers[layer.parentLayerId];
+	const parentLayer: Layer | undefined = compositionState.layers[layer.parentLayerId];
 
 	return {
 		parentLayerId: layer.parentLayerId,

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { PropertyGroup } from "~/composition/compositionTypes";
 import {
 	getLayerModifierPropertyGroupId,
 	getLayerPropertyGroupLabel,
@@ -113,9 +113,7 @@ const SelectArrayModifierComponent: React.FC<Props> = (props) => {
 			return;
 		}
 
-		const modifierGroup = compositionState.properties[
-			modifierGroupId
-		] as CompositionPropertyGroup;
+		const modifierGroup = compositionState.properties[modifierGroupId] as PropertyGroup;
 
 		const _propertyIds: string[] = [];
 

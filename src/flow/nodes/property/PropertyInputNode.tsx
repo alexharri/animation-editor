@@ -1,5 +1,5 @@
 import React from "react";
-import { CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
+import { Layer, Property } from "~/composition/compositionTypes";
 import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
 import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeState } from "~/flow/flowNodeState";
@@ -79,7 +79,7 @@ function PropertyInputNodeComponent(props: Props) {
 			const outputs = propertyIds
 				.filter((id) => properties[id].type === "property")
 				.map<FlowNodeOutput>((id) => {
-					const property = properties[id] as CompositionProperty;
+					const property = properties[id] as Property;
 					return {
 						name: getLayerPropertyLabel(property.name),
 						type: property.valueType,
@@ -140,7 +140,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	const node = graph.nodes[nodeId];
 	const state = node.state as StateProps["state"];
 
-	let layer: CompositionLayer;
+	let layer: Layer;
 
 	if (graph.type === "layer_graph") {
 		layer = compositionState.layers[graph.layerId];

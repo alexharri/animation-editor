@@ -2,7 +2,7 @@ import React from "react";
 import { GraphIcon } from "~/components/icons/GraphIcon";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
 import { compositionActions } from "~/composition/compositionReducer";
-import { CompositionLayer } from "~/composition/compositionTypes";
+import { Layer } from "~/composition/compositionTypes";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState } from "~/state/stateUtils";
@@ -22,7 +22,7 @@ interface OwnProps {
 	layerWrapper: React.RefObject<HTMLDivElement>;
 }
 interface StateProps {
-	layer: CompositionLayer;
+	layer: Layer;
 	isSelected: boolean;
 }
 type Props = OwnProps & StateProps;

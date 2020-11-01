@@ -1,4 +1,4 @@
-import { CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { PropertyGroup } from "~/composition/compositionTypes";
 import { AreaType } from "~/constants";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
@@ -37,7 +37,7 @@ export const getFlowGraphContextMenuOptions = (options: Options) => {
 	const layer = compositionState.layers[layerId];
 
 	const propertyGroups = layer.properties.map((id) => compositionState.properties[id]);
-	const transformGroup = propertyGroups.find((group): group is CompositionPropertyGroup => {
+	const transformGroup = propertyGroups.find((group): group is PropertyGroup => {
 		return group.type === "group" && group.name === PropertyGroupName.Transform;
 	});
 

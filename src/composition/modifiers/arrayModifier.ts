@@ -1,21 +1,23 @@
 import {
-	CompositionProperty,
-	CompositionPropertyGroup,
+	CompoundProperty,
 	CreatePropertyOptions,
+	Property,
+	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
 import { TimelineColors } from "~/constants";
-import { PropertyGroupName, PropertyName, ValueType } from "~/types";
+import { CompoundPropertyName, PropertyGroupName, PropertyName, ValueType } from "~/types";
 
 export const createArrayModifier = (opts: CreatePropertyOptions) => {
 	const propertyId = opts.createId();
-	const propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup> = [];
+	const propertiesToAdd: Array<Property | CompoundProperty | PropertyGroup> = [];
 
-	const group: CompositionPropertyGroup = {
+	const group: PropertyGroup = {
 		type: "group",
 		name: PropertyGroupName.ArrayModifier,
 		id: propertyId,
 		layerId: opts.layerId,
+		compositionId: opts.compositionId,
 		properties: [],
 		collapsed: true,
 		graphId: "",
@@ -23,24 +25,7 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 	};
 	propertiesToAdd.push(group);
 
-	const count: CompositionProperty = {
-		type: "property",
-		id: opts.createId(),
-		compositionId: opts.compositionId,
-		layerId: opts.layerId,
-		name: PropertyName.ArrayModifier_Count,
-		timelineId: "",
-		value: 1,
-		valueType: ValueType.Number,
-		color: TimelineColors.Height,
-		twinPropertyId: "",
-		shouldMaintainProportions: false,
-	};
-
-	group.properties.push(count.id);
-	propertiesToAdd.push(count);
-
-	const transformBehavior: CompositionProperty = {
+	const transformBehavior: Property = {
 		type: "property",
 		id: opts.createId(),
 		compositionId: opts.compositionId,
@@ -50,14 +35,13 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		value: "absolute_for_computed",
 		valueType: ValueType.TransformBehavior,
 		color: TimelineColors.Height,
-		twinPropertyId: "",
-		shouldMaintainProportions: false,
+		compoundPropertyId: "",
 	};
 
 	group.properties.push(transformBehavior.id);
 	propertiesToAdd.push(transformBehavior);
 
-	const originBehavior: CompositionProperty = {
+	const originBehavior: Property = {
 		type: "property",
 		id: opts.createId(),
 		compositionId: opts.compositionId,
@@ -67,14 +51,13 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		value: "relative",
 		valueType: ValueType.OriginBehavior,
 		color: TimelineColors.Height,
-		twinPropertyId: "",
-		shouldMaintainProportions: false,
+		compoundPropertyId: "",
 	};
 
 	group.properties.push(originBehavior.id);
 	propertiesToAdd.push(originBehavior);
 
-	const rotationCorrection: CompositionProperty = {
+	const rotationCorrection: Property = {
 		type: "property",
 		id: opts.createId(),
 		compositionId: opts.compositionId,
@@ -84,14 +67,13 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		value: 0,
 		valueType: ValueType.Number,
 		color: TimelineColors.Height,
-		twinPropertyId: "",
-		shouldMaintainProportions: false,
+		compoundPropertyId: "",
 	};
 
 	group.properties.push(rotationCorrection.id);
 	propertiesToAdd.push(rotationCorrection);
 
-	const originX: CompositionProperty = {
+	const originX: Property = {
 		type: "property",
 		id: opts.createId(),
 		compositionId: opts.compositionId,
@@ -101,10 +83,9 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		value: 0,
 		valueType: ValueType.Number,
 		color: TimelineColors.XPosition,
-		twinPropertyId: "",
-		shouldMaintainProportions: false,
+		compoundPropertyId: "",
 	};
-	const originY: CompositionProperty = {
+	const originY: Property = {
 		type: "property",
 		id: opts.createId(),
 		compositionId: opts.compositionId,
@@ -114,12 +95,38 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 		value: 0,
 		valueType: ValueType.Number,
 		color: TimelineColors.XPosition,
-		twinPropertyId: "",
-		shouldMaintainProportions: false,
+		compoundPropertyId: "",
+	};
+	const origin: CompoundProperty = {
+		type: "compound",
+		id: opts.createId(),
+		layerId: opts.layerId,
+		compositionId: opts.compositionId,
+		name: CompoundPropertyName.ArrayModifier_Origin,
+		properties: [originX.id, originY.id],
+		separated: false,
+		allowMaintainProportions: false,
+		maintainProportions: false,
 	};
 
-	group.properties.push(originX.id, originY.id);
-	propertiesToAdd.push(originX, originY);
+	group.properties.push(origin.id);
+	propertiesToAdd.push(origin, originX, originY);
+
+	const count: Property = {
+		type: "property",
+		id: opts.createId(),
+		compositionId: opts.compositionId,
+		layerId: opts.layerId,
+		name: PropertyName.ArrayModifier_Count,
+		timelineId: "",
+		value: 1,
+		valueType: ValueType.Number,
+		color: TimelineColors.Height,
+		compoundPropertyId: "",
+	};
+
+	group.properties.push(count.id);
+	propertiesToAdd.push(count);
 
 	const transform = createLayerTransformProperties(opts);
 

@@ -1,6 +1,11 @@
 import React, { useEffect, useRef } from "react";
-import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
 import {
+	CompoundProperty,
+	Property as IProperty,
+	PropertyGroup,
+} from "~/composition/compositionTypes";
+import {
+	getLayerCompoundPropertyLabel,
 	getLayerPropertyGroupLabel,
 	getLayerPropertyLabel,
 } from "~/composition/util/compositionPropertyUtils";
@@ -104,7 +109,7 @@ interface PropertyOwnProps {
 	depth: number;
 }
 interface PropertyStateProps {
-	property: CompositionProperty | CompositionPropertyGroup;
+	property: IProperty | CompoundProperty | PropertyGroup;
 }
 type PropertyProps = PropertyOwnProps & PropertyStateProps;
 
@@ -134,7 +139,7 @@ const PropertyComponent: React.FC<PropertyProps> = (props) => {
 					</div>
 				</div>
 				{property.properties.map((propertyId) => (
-					<Property
+					<SingleProperty
 						selectedPropertyId={selectedPropertyId}
 						propertyId={propertyId}
 						onSelectProperty={props.onSelectProperty}
@@ -144,6 +149,37 @@ const PropertyComponent: React.FC<PropertyProps> = (props) => {
 				))}
 			</>
 		);
+	}
+
+	if (property.type === "compound") {
+		return (
+			<>
+				{property.properties.map((propertyId) => (
+					<SingleProperty
+						selectedPropertyId={selectedPropertyId}
+						propertyId={propertyId}
+						onSelectProperty={props.onSelectProperty}
+						depth={depth}
+						key={propertyId}
+					/>
+				))}
+			</>
+		);
+
+		/**
+		 * @todo Select compound properties directly
+		 */
+		// return (
+		// 	<div className={s("container")} onClick={onClick}>
+		// 		{activeDot}
+		// 		<div
+		// 			className={s("contentContainer")}
+		// 			style={{ marginLeft: CONTEXT_MENU_OPTION_PADDING_LEFT + depthLeft }}
+		// 		>
+		// 			<div className={s("name")}>{getLayerCompoundPropertyLabel(property.name)}</div>
+		// 		</div>
+		// 	</div>
+		// );
 	}
 
 	return (
@@ -166,7 +202,7 @@ const mapPropertyState: MapActionState<PropertyStateProps, PropertyOwnProps> = (
 	property: compositionState.properties[propertyId],
 });
 
-const Property = connectActionState(mapPropertyState)(PropertyComponent);
+const SingleProperty = connectActionState(mapPropertyState)(PropertyComponent);
 
 interface LayerOwnProps {
 	selectedLayerId: string;
@@ -291,7 +327,7 @@ const PropertyNodeSelectPropertyComponent: React.FC<Props> = (props) => {
 				return (
 					<div className={s("dropdownContainer")} ref={ref}>
 						{props.selectFromPropertyIds!.map((propertyId) => (
-							<Property
+							<SingleProperty
 								selectedPropertyId={props.selectedPropertyId}
 								propertyId={propertyId}
 								depth={0}
@@ -361,10 +397,23 @@ const mapState: MapActionState<StateProps, OwnProps> = (
 
 	if (selectedPropertyId) {
 		const property = compositionState.properties[selectedPropertyId];
-		selectedPropertyName =
-			property.type === "property"
-				? getLayerPropertyLabel(property.name)
-				: getLayerPropertyGroupLabel(property.name);
+
+		switch (property.type) {
+			case "group": {
+				selectedPropertyName = getLayerPropertyGroupLabel(property.name);
+				break;
+			}
+
+			case "compound": {
+				selectedPropertyName = getLayerCompoundPropertyLabel(property.name);
+				break;
+			}
+
+			case "property": {
+				selectedPropertyName = getLayerPropertyLabel(property.name);
+				break;
+			}
+		}
 	}
 
 	return {

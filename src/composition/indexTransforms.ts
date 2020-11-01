@@ -1,8 +1,9 @@
 import { CompositionState } from "~/composition/compositionReducer";
-import { CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { PropertyGroup } from "~/composition/compositionTypes";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import {
 	ArrayModifierPropertyValueMap,
+	CompoundPropertyName,
 	LayerTransform,
 	OriginBehavior,
 	PropertyName,
@@ -273,9 +274,7 @@ export const getLayerArrayModifierIndexTransform = (
 	origin: Vec2,
 	originBehavior: OriginBehavior,
 ): { [index: number]: LayerTransform } => {
-	const transformGroup = compositionState.properties[
-		transformGroupId
-	] as CompositionPropertyGroup;
+	const transformGroup = compositionState.properties[transformGroupId] as PropertyGroup;
 
 	const indexTransforms: LayerTransform[] = [];
 	const isComputedByIndex: { [key: string]: boolean } = {};
@@ -290,53 +289,62 @@ export const getLayerArrayModifierIndexTransform = (
 			const property = compositionState.properties[propertyId];
 			const hasComputedByIndex = !!arrayModifierPropertyToValue[propertyId];
 
-			const value = hasComputedByIndex
-				? arrayModifierPropertyToValue[propertyId][i]
-				: propertyToValue[propertyId].computedValue;
-
 			if (property.type === "property") {
 				isComputedByIndex[property.name] = hasComputedByIndex;
 			}
 
 			switch (property.name) {
-				case PropertyName.PositionX: {
-					if (!transform.translate) {
-						transform.translate = Vec2.new(0, 0);
-					}
-					transform.translate.x = value;
+				case CompoundPropertyName.Position: {
+					const [xId, yId] = property.properties;
+
+					const xValue = hasComputedByIndex
+						? arrayModifierPropertyToValue[xId][i]
+						: propertyToValue[xId].computedValue;
+
+					const yValue = hasComputedByIndex
+						? arrayModifierPropertyToValue[yId][i]
+						: propertyToValue[yId].computedValue;
+
+					transform.translate = Vec2.new(xValue, yValue);
 					break;
 				}
-				case PropertyName.PositionY: {
-					if (!transform.translate) {
-						transform.translate = Vec2.new(0, 0);
-					}
-					transform.translate.y = value;
+
+				case CompoundPropertyName.Anchor: {
+					const [xId, yId] = property.properties;
+
+					const xValue = hasComputedByIndex
+						? arrayModifierPropertyToValue[xId][i]
+						: propertyToValue[xId].computedValue;
+
+					const yValue = hasComputedByIndex
+						? arrayModifierPropertyToValue[yId][i]
+						: propertyToValue[yId].computedValue;
+
+					transform.anchor = Vec2.new(xValue, yValue);
 					break;
 				}
-				case PropertyName.AnchorX: {
-					if (!transform.anchor) {
-						transform.anchor = Vec2.new(0, 0);
-					}
-					transform.anchor.x = value;
+
+				case CompoundPropertyName.Scale: {
+					const [xId, yId] = property.properties;
+
+					const xValue = hasComputedByIndex
+						? arrayModifierPropertyToValue[xId][i]
+						: propertyToValue[xId].computedValue;
+
+					const yValue = hasComputedByIndex
+						? arrayModifierPropertyToValue[yId][i]
+						: propertyToValue[yId].computedValue;
+
+					transform.scaleX = xValue;
+					transform.scaleY = yValue;
 					break;
 				}
-				case PropertyName.AnchorY: {
-					if (!transform.anchor) {
-						transform.anchor = Vec2.new(0, 0);
-					}
-					transform.anchor.y = value;
-					break;
-				}
+
 				case PropertyName.Rotation: {
+					const value = hasComputedByIndex
+						? arrayModifierPropertyToValue[propertyId][i]
+						: propertyToValue[propertyId].computedValue;
 					transform.rotation = value * DEG_TO_RAD_FAC;
-					break;
-				}
-				case PropertyName.ScaleX: {
-					transform.scaleX = value;
-					break;
-				}
-				case PropertyName.ScaleY: {
-					transform.scaleY = value;
 					break;
 				}
 			}

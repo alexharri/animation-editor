@@ -1,5 +1,5 @@
 import { CompositionState } from "~/composition/compositionReducer";
-import { CompositionProperty } from "~/composition/compositionTypes";
+import { Property } from "~/composition/compositionTypes";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { LayerTransform, ParentIndexTransform, PropertyName, PropertyValueMap } from "~/types";
@@ -11,7 +11,7 @@ export const getLayerTransformProperties = (
 	compositionState: CompositionState,
 ) => {
 	const props = getLayerCompositionProperties(layerId, compositionState).reduce<
-		{ [key in keyof typeof PropertyName]: CompositionProperty }
+		{ [key in keyof typeof PropertyName]: Property }
 	>((obj, p) => {
 		(obj as any)[PropertyName[p.name]] = p;
 		return obj;

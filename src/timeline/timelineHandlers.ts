@@ -5,7 +5,7 @@ import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { CompositionLayer, CompositionProperty } from "~/composition/compositionTypes";
+import { CompoundProperty, Layer, Property } from "~/composition/compositionTypes";
 import {
 	getTimelineIdsReferencedByComposition,
 	reduceLayerPropertiesAndGroups,
@@ -29,6 +29,7 @@ import {
 	RequestActionParams,
 	ShouldAddToStackFn,
 } from "~/listener/requestAction";
+import { createOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
@@ -323,11 +324,81 @@ export const timelineHandlers = {
 		requestAction({ history: false }, fn);
 	},
 
+	onCompoundPropertyKeyframeIconMouseDown: (e: React.MouseEvent, compoundPropertyId: string) => {
+		e.stopPropagation();
+
+		const {
+			compositionState,
+			timelineState,
+			timelineSelectionState: timelineSelection,
+		} = getActionState();
+
+		const property = compositionState.properties[compoundPropertyId] as CompoundProperty;
+		const composition = compositionState.compositions[property.compositionId];
+		const layer = compositionState.layers[property.layerId];
+
+		const properties = property.properties.map(
+			(id) => compositionState.properties[id],
+		) as Property[];
+
+		let anyHasTimeline = false;
+
+		for (const property of properties) {
+			if (property.timelineId) {
+				anyHasTimeline = true;
+				break;
+			}
+		}
+
+		requestAction({ history: true }, ({ dispatch, submitAction }) => {
+			const op = createOperation();
+
+			for (const property of properties) {
+				if (anyHasTimeline) {
+					if (!property.timelineId) {
+						continue;
+					}
+
+					const timeline = timelineState[property.timelineId];
+					const value = getTimelineValueAtIndex({
+						timeline,
+						frameIndex: composition.frameIndex,
+						layerIndex: layer.index,
+						selection: timelineSelection[timeline.id],
+					});
+
+					op.add(
+						timelineActions.removeTimeline(property.timelineId),
+						compositionActions.setPropertyValue(property.id, value),
+						compositionActions.setPropertyTimelineId(property.id, ""),
+					);
+					continue;
+				}
+
+				const timeline = createTimelineForLayerProperty(
+					property.value,
+					composition.frameIndex,
+				);
+				op.add(
+					timelineActions.setTimeline(timeline.id, timeline),
+					compositionActions.setPropertyTimelineId(property.id, timeline.id),
+				);
+			}
+
+			dispatch(op.actions);
+
+			if (anyHasTimeline) {
+				submitAction("Remove timelines from properties");
+			} else {
+				submitAction("Add timelines to properties");
+			}
+		});
+	},
+
 	onPropertyKeyframeIconMouseDown: (
 		e: React.MouseEvent,
 		compositionId: string,
 		propertyId: string,
-		timelineId: string,
 	): void => {
 		e.stopPropagation();
 
@@ -336,8 +407,10 @@ export const timelineHandlers = {
 			timelineState,
 			timelineSelectionState: timelineSelection,
 		} = getActionState();
+
 		const composition = compositionState.compositions[compositionId];
-		const property = compositionState.properties[propertyId] as CompositionProperty;
+		const property = compositionState.properties[propertyId] as Property;
+		const { timelineId } = property;
 		const layer = compositionState.layers[property.layerId];
 
 		if (timelineId) {
@@ -399,7 +472,7 @@ export const timelineHandlers = {
 		createTimelineContextMenu(position, { compositionId });
 	},
 
-	onLayerRightClick: (e: React.MouseEvent, layer: CompositionLayer): void => {
+	onLayerRightClick: (e: React.MouseEvent, layer: Layer): void => {
 		const position = Vec2.fromEvent(e);
 		createTimelineContextMenu(position, {
 			compositionId: layer.compositionId,
@@ -776,15 +849,17 @@ export const timelineHandlers = {
 		requestAction(
 			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
 			(params) => {
+				const op = createOperation();
+
 				if (!additiveSelection) {
 					// Clear other properties and timeline keyframes
-					params.dispatch(compSelectionActions.clearCompositionSelection(compositionId));
+					op.add(compSelectionActions.clearCompositionSelection(compositionId));
 
 					const timelineIds = getTimelineIdsReferencedByComposition(
 						compositionId,
 						compositionState,
 					);
-					params.dispatch(timelineIds.map((id) => timelineSelectionActions.clear(id)));
+					op.add(...timelineIds.map((id) => timelineSelectionActions.clear(id)));
 				}
 
 				const willBeSelected = !compositionSelection.properties[propertyId];
@@ -806,7 +881,7 @@ export const timelineHandlers = {
 						// Only selected property of layer is being deselected.
 						//
 						// Deselect the layer
-						params.dispatch(
+						op.add(
 							compSelectionActions.removeLayersFromSelection(compositionId, [
 								property.layerId,
 							]),
@@ -814,33 +889,52 @@ export const timelineHandlers = {
 					}
 
 					// Remove property and timeline keyframes from selection
-					params.dispatch(
+					op.add(
 						compSelectionActions.removePropertiesFromSelection(compositionId, [
 							propertyId,
 						]),
 					);
 
 					if (property.type === "property" && property.timelineId) {
-						params.dispatch(timelineSelectionActions.clear(property.timelineId));
+						op.add(timelineSelectionActions.clear(property.timelineId));
+					} else if (property.type === "compound") {
+						for (const propertyId of property.properties) {
+							const p = compositionState.properties[propertyId] as Property;
+
+							if (!p.timelineId) {
+								continue;
+							}
+
+							op.add(timelineSelectionActions.clear(p.timelineId));
+						}
 					}
 				} else {
 					// Add property and timeline keyframes to selection
-					params.dispatch(
-						compSelectionActions.addPropertyToSelection(compositionId, propertyId),
-					);
-					params.dispatch(
+					op.add(compSelectionActions.addPropertyToSelection(compositionId, propertyId));
+					op.add(
 						compSelectionActions.addLayerToSelection(compositionId, property.layerId),
 					);
 
 					if (property.type === "property" && property.timelineId) {
 						const timeline = timelineState[property.timelineId];
 						const keyframeIds = timeline.keyframes.map((k) => k.id);
-						params.dispatch(
-							timelineSelectionActions.addKeyframes(timeline.id, keyframeIds),
-						);
+						op.add(timelineSelectionActions.addKeyframes(timeline.id, keyframeIds));
+					} else if (property.type === "compound") {
+						for (const propertyId of property.properties) {
+							const p = compositionState.properties[propertyId] as Property;
+
+							if (!p.timelineId) {
+								continue;
+							}
+
+							const timeline = timelineState[p.timelineId];
+							const keyframeIds = timeline.keyframes.map((k) => k.id);
+							op.add(timelineSelectionActions.addKeyframes(timeline.id, keyframeIds));
+						}
 					}
 				}
 
+				params.dispatch(op.actions);
 				params.submitAction("Select property");
 			},
 		);
@@ -856,19 +950,12 @@ export const timelineHandlers = {
 	toggleMaintainPropertyProportions: (propertyId: string) => {
 		requestAction({ history: true }, (params) => {
 			const { compositionState } = getActionState();
-			const property = compositionState.properties[propertyId] as CompositionProperty;
+			const property = compositionState.properties[propertyId] as CompoundProperty;
 
-			const shouldMaintainProportions = !property.shouldMaintainProportions;
+			const maintainProportions = !property.maintainProportions;
 
 			params.dispatch(
-				compositionActions.setPropertyMaintainProportions(
-					propertyId,
-					shouldMaintainProportions,
-				),
-				compositionActions.setPropertyMaintainProportions(
-					property.twinPropertyId,
-					shouldMaintainProportions,
-				),
+				compositionActions.setPropertyMaintainProportions(propertyId, maintainProportions),
 			);
 			params.submitAction("Toggle maintain proportions");
 		});

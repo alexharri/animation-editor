@@ -1,4 +1,5 @@
 import { CompositionState } from "~/composition/compositionReducer";
+import { Property } from "~/composition/compositionTypes";
 import { TIMELINE_BETWEEN_LAYERS, TIMELINE_ITEM_HEIGHT, TIMELINE_LAYER_HEIGHT } from "~/constants";
 
 type TrackYPositions = {
@@ -28,10 +29,26 @@ export const getTimelineTrackYPositions = (
 		map.layer[layer.id] = getY();
 
 		const crawlProperty = (propertyId: string) => {
-			yIndex++;
-
 			const property = compositionState.properties[propertyId];
 
+			if (property.type === "compound") {
+				if (!property.separated) {
+					yIndex++;
+					map.property[property.id] = getY();
+				}
+
+				for (const propertyId of property.properties) {
+					if (property.separated) {
+						crawlProperty(propertyId);
+					} else {
+						const p = compositionState.properties[propertyId] as Property;
+						map.timeline[p.timelineId] = getY();
+					}
+				}
+				return;
+			}
+
+			yIndex++;
 			map.property[property.id] = getY();
 
 			if (property.type === "group") {

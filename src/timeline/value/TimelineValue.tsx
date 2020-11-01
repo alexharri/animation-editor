@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { CompositionProperty } from "~/composition/compositionTypes";
+import { Property } from "~/composition/compositionTypes";
 import { CompositionPropertyValuesContext } from "~/shared/composition/compositionRenderValues";
 import { connectActionState } from "~/state/stateUtils";
 import { TimelinePropertyColorValue } from "~/timeline/value/TimelineColorValue";
@@ -31,7 +31,7 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 	useEffect(() => {
 		const unsubscribe = ctx.subscribe(props.propertyId, setValue);
 		return unsubscribe;
-	}, []);
+	}, [ctx]);
 
 	if (props.valueType === ValueType.RGBColor) {
 		return (
@@ -131,7 +131,7 @@ const mapState: MapActionState<StateProps, OwnProps> = (
 	{ compositionState: compositions },
 	{ propertyId },
 ) => ({
-	valueType: (compositions.properties[propertyId] as CompositionProperty).valueType,
+	valueType: (compositions.properties[propertyId] as Property).valueType,
 });
 
 export const TimelineValue = connectActionState(mapState)(TimelineValueComponent);

@@ -1,11 +1,10 @@
 import { compositionKeyboardShortcuts } from "~/composition/compositionShortcuts";
-import { reduceCompProperties } from "~/composition/compositionUtils";
-import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { areaActionStateFromState, getActionState } from "~/state/stateUtils";
 import { timelineOperations } from "~/timeline/operations/timelineOperations";
+import { getSelectedTimelineIdsInComposition } from "~/timeline/timelineUtils";
 import { KeyboardShortcut, ShouldAddShortcutToStackFn } from "~/types";
 
 const getAreaActionState = (areaId: string, actionState = getActionState()) =>
@@ -15,21 +14,11 @@ const getSelectedTimelineIds = (areaId: string, actionState = getActionState()) 
 	const { compositionId } = getAreaActionState(areaId, actionState);
 	const { compositionState, compositionSelectionState } = actionState;
 
-	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
-
-	// All selected timeline ids in the composition
-	const timelineIds = reduceCompProperties<string[]>(
+	return getSelectedTimelineIdsInComposition(
 		compositionId,
 		compositionState,
-		(acc, property) => {
-			if (property.timelineId && compositionSelection.properties[property.id]) {
-				acc.push(property.timelineId);
-			}
-			return acc;
-		},
-		[],
+		compositionSelectionState,
 	);
-	return timelineIds;
 };
 
 export const timelineShortcuts = {

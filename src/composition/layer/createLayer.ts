@@ -1,10 +1,11 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import {
-	CompositionLayer,
-	CompositionProperty,
-	CompositionPropertyGroup,
+	CompoundProperty,
 	CreateLayerPropertyGroup,
 	CreatePropertyOptions,
+	Layer,
+	Property,
+	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { createCompLayerProperties } from "~/composition/layer/compLayerProperties";
 import { createEllipseLayerProperties } from "~/composition/layer/ellipseLayerProperties";
@@ -65,8 +66,8 @@ export const createLayer = (
 		createId: createGenMapIdFn(compositionState.properties),
 	});
 
-	const nestedProperties: CompositionProperty[] = [];
-	const topLevelProperties: CompositionPropertyGroup[] = [];
+	const nestedProperties: Array<Property | CompoundProperty> = [];
+	const topLevelProperties: PropertyGroup[] = [];
 
 	for (let i = 0; i < propertyGroups.length; i += 1) {
 		const { properties, group } = propertyGroups[i];
@@ -76,7 +77,7 @@ export const createLayer = (
 
 	const defaultName = options.defaultName ?? getLayerTypeName(type);
 
-	const layer: CompositionLayer = {
+	const layer: Layer = {
 		compositionId,
 		graphId: "",
 		id: layerId,

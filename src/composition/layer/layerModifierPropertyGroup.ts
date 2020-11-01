@@ -1,23 +1,23 @@
 import {
-	CompositionProperty,
-	CompositionPropertyGroup,
 	CreateLayerPropertyGroup,
 	CreatePropertyOptions,
+	Property,
+	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { PropertyGroupName } from "~/types";
 
 export const createLayerModifierProperties = (
 	opts: CreatePropertyOptions,
 ): CreateLayerPropertyGroup => {
-	const { layerId } = opts;
+	const { layerId, compositionId } = opts;
+	const properties: Property[] = [];
 
-	const properties: CompositionProperty[] = [];
-
-	const group: CompositionPropertyGroup = {
+	const group: PropertyGroup = {
 		type: "group",
 		name: PropertyGroupName.Modifiers,
 		id: opts.createId(),
 		layerId,
+		compositionId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",

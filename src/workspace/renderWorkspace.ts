@@ -1,10 +1,6 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
-import {
-	CompositionLayer,
-	CompositionProperty,
-	CompositionPropertyGroup,
-} from "~/composition/compositionTypes";
+import { Layer, Property, PropertyGroup } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
 import {
 	applyIndexTransformToLayer,
@@ -122,7 +118,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 	function renderRectLayer(
 		map: CompositionRenderValues,
-		layer: CompositionLayer,
+		layer: Layer,
 		indexTransforms: LayerTransform[],
 		parentIndexTransforms: ParentIndexTransform[],
 	) {
@@ -173,7 +169,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 	function renderEllipse(
 		map: CompositionRenderValues,
-		layer: CompositionLayer,
+		layer: Layer,
 		indexTransforms: LayerTransform[],
 		parentIndexTransforms: ParentIndexTransform[],
 	) {
@@ -244,11 +240,11 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 	function renderShapeLayer(
 		map: CompositionRenderValues,
-		layer: CompositionLayer,
+		layer: Layer,
 		indexTransforms: LayerTransform[],
 		parentIndexTransforms: ParentIndexTransform[],
 	) {
-		const shapeGroups = reduceLayerPropertiesAndGroups<CompositionPropertyGroup[]>(
+		const shapeGroups = reduceLayerPropertiesAndGroups<PropertyGroup[]>(
 			layer.id,
 			compositionState,
 			(acc, property) => {
@@ -295,7 +291,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 					return obj;
 				}
 				const pathPropertyId = group.properties[pathIndex];
-				const property = compositionState.properties[pathPropertyId] as CompositionProperty;
+				const property = compositionState.properties[pathPropertyId] as Property;
 				const pathId = property.value;
 				obj[pathId] = group.id;
 				return obj;
@@ -303,7 +299,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			{},
 		);
 
-		const onPath = (property: CompositionProperty) => {
+		const onPath = (property: Property) => {
 			const pathId = property.value;
 			const shapeGroupId = pathIdToShapeGroupId[pathId];
 			const shapeSelected = compositionSelection.properties[shapeGroupId];
@@ -325,13 +321,13 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			}
 		};
 
-		const onFill = (group: CompositionPropertyGroup) => {
+		const onFill = (group: PropertyGroup) => {
 			const { color, opacity, fillRule } = getShapeFillGroupValues(group, compositionState);
 			ctx.fillStyle = rgbToString(color, opacity);
 			ctx.fill(fillRule);
 		};
 
-		const onStroke = (group: CompositionPropertyGroup) => {
+		const onStroke = (group: PropertyGroup) => {
 			const {
 				color,
 				opacity,
@@ -387,7 +383,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		const layers = composition.layers.map((layerId) => compositionState.layers[layerId]);
 
 		const renderLayer = (
-			layer: CompositionLayer,
+			layer: Layer,
 			indexTransforms: LayerTransform[],
 			parentIndexTransforms: ParentIndexTransform[],
 		) => {

@@ -1,18 +1,19 @@
 import {
-	CompositionPropertyGroup,
 	CreateLayerPropertyGroup,
 	CreatePropertyOptions,
+	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { PropertyGroupName } from "~/types";
 
 const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
-	const { createId, layerId } = opts;
+	const { createId, layerId, compositionId } = opts;
 
-	const group: CompositionPropertyGroup = {
+	const group: PropertyGroup = {
 		type: "group",
 		name: PropertyGroupName.Content,
 		id: createId(),
 		layerId,
+		compositionId,
 		properties: [],
 		collapsed: true,
 		graphId: "",

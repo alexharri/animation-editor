@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { CompoundProperty } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType, TimelineColors } from "~/constants";
@@ -70,11 +71,24 @@ export const GraphEditor: React.FC<Props> = (props) => {
 					compositionId,
 					compositionState,
 					(acc, property) => {
-						if (property.timelineId && compositionSelection.properties[property.id]) {
+						if (!property.timelineId) {
+							return acc;
+						}
+
+						const compoundProperty: CompoundProperty | undefined = compositionState
+							.properties[property.compoundPropertyId] as CompoundProperty;
+
+						if (
+							compositionSelection.properties[property.id] ||
+							(compoundProperty &&
+								!compoundProperty.separated &&
+								compositionSelection.properties[compoundProperty.id])
+						) {
 							acc.timelineIds.push(property.timelineId);
 							acc.colors[property.timelineId] =
 								property.color || TimelineColors.XPosition;
 						}
+
 						return acc;
 					},
 					{ timelineIds: [], colors: {} },

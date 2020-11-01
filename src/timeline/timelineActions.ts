@@ -90,6 +90,10 @@ export const timelineSelectionActions = {
 		return (timelineId: string, keyframeIds: string[]) => action({ timelineId, keyframeIds });
 	}),
 
+	removeKeyframes: createAction("timeline_selection/REMOVE_KEYFRAMES", (action) => {
+		return (timelineId: string, keyframeIds: string[]) => action({ timelineId, keyframeIds });
+	}),
+
 	toggleKeyframe: createAction("timeline_selection/TOGGLE_KEYFRAME_SELECTION", (resolve) => {
 		return (timelineId: string, keyframeId: string) => resolve({ timelineId, keyframeId });
 	}),

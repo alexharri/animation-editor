@@ -1,5 +1,5 @@
 import { CompositionState } from "~/composition/compositionReducer";
-import { CompositionLayer } from "~/composition/compositionTypes";
+import { Layer } from "~/composition/compositionTypes";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { TIMELINE_HEADER_HEIGHT, TIMELINE_LAYER_HEIGHT } from "~/constants";
@@ -28,7 +28,7 @@ type GetLayerDimensionsStateRequired = Pick<
 
 const getShapeLayerBoundingRect = (
 	state: GetLayerDimensionsStateRequired,
-	layer: CompositionLayer,
+	layer: Layer,
 ): Rect | null => {
 	const { compositionState, compositionSelectionState, shapeState, shapeSelectionState } = state;
 
@@ -52,7 +52,7 @@ const getShapeLayerBoundingRect = (
 };
 
 export const getLayerRectDimensionsAndOffset = (
-	layer: CompositionLayer,
+	layer: Layer,
 	nameToProperty: { [key in keyof typeof PropertyName]: any },
 	state: GetLayerDimensionsStateRequired,
 ) => {

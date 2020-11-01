@@ -2,8 +2,7 @@ import React, { useRef } from "react";
 import { NumberInput } from "~/components/common/NumberInput";
 import { LinkIcon } from "~/components/icons/LinkIcon";
 import { compositionActions } from "~/composition/compositionReducer";
-import { Composition, CompositionProperty } from "~/composition/compositionTypes";
-import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { Composition, CompoundProperty, Property } from "~/composition/compositionTypes";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
@@ -17,9 +16,14 @@ import {
 	splitKeyframesAtIndex,
 } from "~/timeline/timelineUtils";
 import { PropertyName } from "~/types";
+import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
-const usePropertyNumberInput = (property: CompositionProperty, composition: Composition) => {
+const usePropertyNumberInput = (
+	property: Property,
+	compoundProperty: CompoundProperty | null,
+	composition: Composition,
+) => {
 	const paramsRef = useRef<RequestActionParams | null>(null);
 	const proportionRef = useRef(1);
 	const onValueChangeFn = useRef<((value: number) => void) | null>(null);
@@ -34,17 +38,24 @@ const usePropertyNumberInput = (property: CompositionProperty, composition: Comp
 		requestAction({ history: true }, (params) => {
 			paramsRef.current = params;
 
-			const updateTwin = property.twinPropertyId && property.shouldMaintainProportions;
+			let otherPropertyId = "";
 
-			if (updateTwin) {
+			if (compoundProperty && compoundProperty.maintainProportions) {
+				const { compositionState } = getActionState();
+				otherPropertyId = compoundProperty.properties.find((id) => {
+					const p = compositionState.properties[id] as Property;
+					return p.id !== property.id;
+				})!;
+			}
+
+			if (otherPropertyId) {
 				const {
 					compositionState,
 					timelineState,
 					timelineSelectionState,
 				} = getActionState();
-				const twinProperty = compositionState.properties[
-					property.twinPropertyId
-				] as CompositionProperty;
+
+				const twinProperty = compositionState.properties[otherPropertyId] as Property;
 				const composition = compositionState.compositions[property.compositionId];
 				const layer = compositionState.layers[property.layerId];
 				const { frameIndex } = composition;
@@ -76,7 +87,7 @@ const usePropertyNumberInput = (property: CompositionProperty, composition: Comp
 				const { compositionState, timelineState } = getActionState();
 
 				const update = (propertyId: string, value: number) => {
-					const property = compositionState.properties[propertyId] as CompositionProperty;
+					const property = compositionState.properties[propertyId] as Property;
 					const timeline = timelineState[property.timelineId];
 
 					let keyframe: TimelineKeyframe | null = null;
@@ -146,9 +157,9 @@ const usePropertyNumberInput = (property: CompositionProperty, composition: Comp
 
 				update(property.id, value);
 
-				if (updateTwin) {
+				if (otherPropertyId) {
 					const proportion = proportionRef.current;
-					update(property.twinPropertyId, proportion * value);
+					update(otherPropertyId, proportion * value);
 				}
 				params.dispatch(op.actions);
 			};
@@ -179,28 +190,38 @@ interface OwnProps {
 	computedValue: number;
 }
 interface StateProps {
-	property: CompositionProperty;
+	property: Property;
 	composition: Composition;
+	compoundProperty: CompoundProperty | null;
 }
 type Props = OwnProps & StateProps;
 
 const TimelineNumberValueComponent: React.FC<Props> = (props) => {
-	const { composition, property } = props;
+	const { composition, property, compoundProperty } = props;
 
-	const [onValueChange, onValueChangeEnd] = usePropertyNumberInput(property, composition);
+	const [onValueChange, onValueChangeEnd] = usePropertyNumberInput(
+		property,
+		compoundProperty,
+		composition,
+	);
 
 	return (
 		<div className={s("value")}>
-			{property.twinPropertyId && (
-				<button
-					className={s("maintainProportionsButton", {
-						active: property.shouldMaintainProportions,
-					})}
-					onClick={() => timelineHandlers.toggleMaintainPropertyProportions(property.id)}
-				>
-					<LinkIcon />
-				</button>
-			)}
+			{compoundProperty &&
+				compoundProperty.separated &&
+				compoundProperty.allowMaintainProportions && (
+					<button
+						className={s("maintainProportionsButton", {
+							active: compoundProperty.maintainProportions,
+						})}
+						onMouseDown={separateLeftRightMouse({ left: (e) => e.stopPropagation() })}
+						onClick={() =>
+							timelineHandlers.toggleMaintainPropertyProportions(compoundProperty.id)
+						}
+					>
+						<LinkIcon />
+					</button>
+				)}
 			<NumberInput
 				min={property.min}
 				max={property.max}
@@ -230,18 +251,24 @@ const TimelineNumberValueComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ compositionState, compositionSelectionState },
+	{ compositionState },
 	{ propertyId },
 ) => {
-	const property = compositionState.properties[propertyId] as CompositionProperty;
+	const property = compositionState.properties[propertyId] as Property;
 	const composition = compositionState.compositions[property.compositionId];
-	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
-	const isSelected = !!compositionSelection.properties[propertyId];
+
+	let compoundProperty: CompoundProperty | null = null;
+
+	if (property.compoundPropertyId) {
+		compoundProperty = compositionState.properties[
+			property.compoundPropertyId
+		] as CompoundProperty;
+	}
 
 	return {
 		composition,
-		isSelected,
 		property,
+		compoundProperty,
 	};
 };
 

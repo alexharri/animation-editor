@@ -2,6 +2,7 @@ import Bezier from "bezier-easing";
 import uuid from "uuid/v4";
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
+import { CompoundProperty } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
@@ -714,13 +715,28 @@ export const getSelectedTimelineIdsInComposition = (
 	compositionSelectionState: CompositionSelectionState,
 ) => {
 	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
+
 	return reduceCompProperties<string[]>(
 		compositionId,
 		compositionState,
 		(acc, property) => {
-			if (property.timelineId && compositionSelection.properties[property.id]) {
+			if (!property.timelineId) {
+				return acc;
+			}
+
+			const compoundProperty: CompoundProperty | undefined = compositionState.properties[
+				property.compoundPropertyId
+			] as CompoundProperty;
+
+			if (
+				compositionSelection.properties[property.id] ||
+				(compoundProperty &&
+					!compoundProperty.separated &&
+					compositionSelection.properties[compoundProperty.id])
+			) {
 				acc.push(property.timelineId);
 			}
+
 			return acc;
 		},
 		[],

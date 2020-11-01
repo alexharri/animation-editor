@@ -1,8 +1,8 @@
 import {
-	CompositionProperty,
-	CompositionPropertyGroup,
 	CreateLayerPropertyGroup,
 	CreatePropertyOptions,
+	Property,
+	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { TimelineColors } from "~/constants";
 import { PropertyGroupName, PropertyName, ValueType } from "~/types";
@@ -10,7 +10,7 @@ import { PropertyGroupName, PropertyName, ValueType } from "~/types";
 const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
 
-	const properties: CompositionProperty[] = [
+	const properties: Property[] = [
 		{
 			type: "property",
 			id: createId(),
@@ -22,8 +22,7 @@ const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			color: TimelineColors.Width,
 			value: 50,
 			min: 0,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -36,16 +35,16 @@ const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			color: TimelineColors.Width,
 			value: 0,
 			min: 0,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 	];
 
-	const group: CompositionPropertyGroup = {
+	const group: PropertyGroup = {
 		type: "group",
 		name: PropertyGroupName.Structure,
 		id: opts.createId(),
 		layerId,
+		compositionId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",
@@ -58,7 +57,7 @@ const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
 
-	const properties: CompositionProperty[] = [
+	const properties: Property[] = [
 		{
 			type: "property",
 			id: createId(),
@@ -70,8 +69,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			color: TimelineColors.Width,
 			value: [255, 0, 0],
 			min: 0,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -84,8 +82,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			color: TimelineColors.Height,
 			value: 0,
 			min: 0,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -98,16 +95,16 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			color: TimelineColors.Height,
 			value: [0, 0, 255],
 			min: 0,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 	];
 
-	const group: CompositionPropertyGroup = {
+	const group: PropertyGroup = {
 		type: "group",
 		name: PropertyGroupName.Content,
 		id: opts.createId(),
 		layerId,
+		compositionId,
 		properties: properties.map((p) => p.id),
 		collapsed: true,
 		graphId: "",

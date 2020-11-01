@@ -1,6 +1,6 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
-import { Composition } from "~/composition/compositionTypes";
+import { Composition, Property } from "~/composition/compositionTypes";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import {
 	TIMELINE_BETWEEN_LAYERS,
@@ -137,9 +137,17 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 		// Render layer properties
 		const renderProperty = (propertyId: string) => {
+			const property = compositionState.properties[propertyId];
+
+			if (property.type === "compound" && property.separated) {
+				for (const propertyId of property.properties) {
+					renderProperty(propertyId);
+				}
+				return;
+			}
+
 			yIndex++;
 
-			const property = compositionState.properties[propertyId];
 			const selected = compositionSelection.properties[propertyId];
 
 			renderRect(
@@ -165,51 +173,73 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 				return;
 			}
 
+			const renderTimeline = (timelineId: string) => {
+				const timeline = timelines[timelineId];
+
+				for (let j = 0; j < timeline.keyframes.length; j += 1) {
+					const k = timeline.keyframes[j];
+
+					const left = toTimelineX(layerIndex + k.index + keyframeIndexShift);
+					const top = getY() + TIMELINE_LAYER_HEIGHT / 2;
+
+					const selected = options.timelineSelection[timeline.id]?.keyframes[k.id];
+
+					const W = TIMELINE_TRACK_KEYFRAME_HEIGHT / 2;
+
+					ctx.beginPath();
+					ctx.moveTo(left, top - W);
+
+					const traceHalf = (hasControlPoint: boolean, fac: number) => {
+						const W = (fac * TIMELINE_TRACK_KEYFRAME_HEIGHT) / 2;
+						const O = fac * 1;
+						const C = fac * 1.5;
+
+						if (hasControlPoint) {
+							ctx.lineTo(left + W, top - W);
+							ctx.lineTo(left + W, top - W + C);
+							ctx.lineTo(left + O, top - O);
+							ctx.lineTo(left + O, top + O);
+							ctx.lineTo(left + W, top + W - C);
+							ctx.lineTo(left + W, top + W);
+							ctx.lineTo(left, top + W);
+						} else {
+							ctx.lineTo(left + W, top);
+							ctx.lineTo(left, top + W);
+						}
+					};
+
+					traceHalf(!!k.controlPointRight, 1);
+					traceHalf(!!k.controlPointLeft, -1);
+
+					ctx.fillStyle = selected ? cssVariables.primary500 : cssVariables.light500;
+					ctx.fill();
+					ctx.closePath();
+				}
+			};
+
+			if (property.type === "compound") {
+				for (const propertyId of property.properties) {
+					const { timelineId } = compositionState.properties[propertyId] as Property;
+
+					if (!timelineId) {
+						continue;
+					}
+
+					renderTimeline(timelineId);
+				}
+
+				// const { timelineId } = compositionState.properties[
+				// 	property.properties[0]
+				// ] as Property;
+				// renderTimeline(timelineId);
+				return;
+			}
+
 			if (!property.timelineId) {
 				return;
 			}
 
-			const timeline = timelines[property.timelineId];
-
-			for (let j = 0; j < timeline.keyframes.length; j += 1) {
-				const k = timeline.keyframes[j];
-
-				const left = toTimelineX(layerIndex + k.index + keyframeIndexShift);
-				const top = getY() + TIMELINE_LAYER_HEIGHT / 2;
-
-				const selected = options.timelineSelection[timeline.id]?.keyframes[k.id];
-
-				const W = TIMELINE_TRACK_KEYFRAME_HEIGHT / 2;
-
-				ctx.beginPath();
-				ctx.moveTo(left, top - W);
-
-				const traceHalf = (hasControlPoint: boolean, fac: number) => {
-					const W = (fac * TIMELINE_TRACK_KEYFRAME_HEIGHT) / 2;
-					const O = fac * 1;
-					const C = fac * 1.5;
-
-					if (hasControlPoint) {
-						ctx.lineTo(left + W, top - W);
-						ctx.lineTo(left + W, top - W + C);
-						ctx.lineTo(left + O, top - O);
-						ctx.lineTo(left + O, top + O);
-						ctx.lineTo(left + W, top + W - C);
-						ctx.lineTo(left + W, top + W);
-						ctx.lineTo(left, top + W);
-					} else {
-						ctx.lineTo(left + W, top);
-						ctx.lineTo(left, top + W);
-					}
-				};
-
-				traceHalf(!!k.controlPointRight, 1);
-				traceHalf(!!k.controlPointLeft, -1);
-
-				ctx.fillStyle = selected ? cssVariables.primary500 : cssVariables.light500;
-				ctx.fill();
-				ctx.closePath();
-			}
+			renderTimeline(property.timelineId);
 		};
 
 		let { collapsed, properties } = layer;
