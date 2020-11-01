@@ -113,7 +113,7 @@ export const createTimelineContextMenu = (
 				function crawl(propertyId: string) {
 					const property = compositionState.properties[propertyId];
 
-					if (property.type === "group") {
+					if (property.type === "group" || property.type === "compound") {
 						property.properties.forEach(crawl);
 						return;
 					}

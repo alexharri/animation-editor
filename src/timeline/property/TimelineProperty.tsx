@@ -1,10 +1,12 @@
 import React from "react";
 import { GraphIcon } from "~/components/icons/GraphIcon";
+import { LinkIcon } from "~/components/icons/LinkIcon";
 import { OpenInAreaIcon } from "~/components/icons/OpenInAreaIcon";
 import { StopwatchIcon } from "~/components/icons/StopwatchIcon";
 import { compositionActions } from "~/composition/compositionReducer";
-import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
 import {
+	getLayerCompoundPropertyLabel,
 	getLayerPropertyGroupLabel,
 	getLayerPropertyLabel,
 } from "~/composition/util/compositionPropertyUtils";
@@ -38,7 +40,7 @@ interface OwnProps {
 	canBeReordered: boolean;
 }
 interface StateProps {
-	property: CompositionProperty | CompositionPropertyGroup;
+	property: Property | CompoundProperty | PropertyGroup;
 	isSelected: boolean;
 }
 type Props = OwnProps & StateProps;
@@ -174,6 +176,81 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 		);
 	}
 
+	if (property.type === "compound") {
+		if (property.separated) {
+			return (
+				<>
+					{property.properties.map((id) => (
+						<TimelineLayerProperty
+							compositionId={props.compositionId}
+							id={id}
+							key={id}
+							depth={props.depth}
+							canBeReordered={false}
+						/>
+					))}
+				</>
+			);
+		}
+
+		return (
+			<div className={s("container")}>
+				<div className={s("contentContainer")} style={{ marginLeft }}>
+					<div
+						className={s("timelineIcon", { active: property.animated })}
+						onMouseDown={separateLeftRightMouse({
+							left: (e) =>
+								timelineHandlers.onCompoundPropertyKeyframeIconMouseDown(
+									e,
+									property.id,
+								),
+						})}
+						// style={
+						// 	property.valueType === ValueType.RGBAColor ||
+						// 	property.valueType === ValueType.RGBColor
+						// 		? { pointerEvents: "none", opacity: "0" }
+						// 		: {}
+						// }
+					>
+						<StopwatchIcon />
+					</div>
+					<div
+						className={s("name", { active: props.isSelected })}
+						style={{ width: nameWidth }}
+						onMouseDown={separateLeftRightMouse({
+							left: (e) =>
+								timelineHandlers.onPropertyNameMouseDown(
+									e,
+									props.compositionId,
+									property.id,
+								),
+						})}
+					>
+						{getLayerCompoundPropertyLabel(property.name)}
+					</div>
+					{property.allowMaintainProportions && (
+						<button
+							className={s("maintainProportionsButton", {
+								active: property.maintainProportions,
+							})}
+							onClick={() =>
+								timelineHandlers.toggleMaintainPropertyProportions(property.id)
+							}
+						>
+							<LinkIcon />
+						</button>
+					)}
+					{property.properties.map((propertyId, i) => (
+						<React.Fragment key={propertyId}>
+							<TimelineValue propertyId={propertyId} />
+							{i !== property.properties.length - 1 ? "," : ""}
+						</React.Fragment>
+					))}
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className={s("container")}>
 			<div className={s("contentContainer")} style={{ marginLeft }}>
@@ -185,7 +262,6 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 								e,
 								props.compositionId,
 								property.id,
-								property.timelineId,
 							),
 					})}
 					style={
@@ -221,7 +297,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ compositionState, compositionSelectionState },
 	{ id, compositionId },
 ) => {
-	const property = compositionState.properties[id] as CompositionProperty;
+	const property = compositionState.properties[id];
 	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 	const isSelected = !!compositionSelection.properties[id];
 

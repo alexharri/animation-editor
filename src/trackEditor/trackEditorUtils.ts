@@ -1,4 +1,5 @@
 import { CompositionState } from "~/composition/compositionReducer";
+import { Property } from "~/composition/compositionTypes";
 import { TIMELINE_BETWEEN_LAYERS, TIMELINE_ITEM_HEIGHT, TIMELINE_LAYER_HEIGHT } from "~/constants";
 
 type TrackYPositions = {
@@ -28,9 +29,17 @@ export const getTimelineTrackYPositions = (
 		map.layer[layer.id] = getY();
 
 		const crawlProperty = (propertyId: string) => {
-			yIndex++;
-
 			const property = compositionState.properties[propertyId];
+
+			// Separated compound properties are not rendered
+			if (property.type === "compound" && property.separated) {
+				for (const propertyId of property.properties) {
+					crawlProperty(propertyId);
+				}
+				return;
+			}
+
+			yIndex++;
 
 			map.property[property.id] = getY();
 
@@ -46,6 +55,22 @@ export const getTimelineTrackYPositions = (
 					for (let j = 0; j < properties.length; j += 1) {
 						crawlProperty(properties[j]);
 					}
+				}
+				return;
+			}
+
+			if (property.type === "compound") {
+				if (!property.animated) {
+					return;
+				}
+
+				// If a compound property is animated, every single sub-property has
+				// a timeline.
+				//
+				// In the track editor, they are displayed as a single timeline.
+				for (const propertyId of property.properties) {
+					const p = compositionState.properties[propertyId] as Property;
+					map.timeline[p.timelineId] = getY();
 				}
 				return;
 			}

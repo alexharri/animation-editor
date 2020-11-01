@@ -3,13 +3,13 @@ import { RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { areaActionStateFromState, getActionState } from "~/state/stateUtils";
 import { timelineOperations } from "~/timeline/operations/timelineOperations";
-import { KeyboardShortcut, PropertyName } from "~/types";
+import { CompoundPropertyName, KeyboardShortcut, PropertyName } from "~/types";
 
 const getAreaActionState = (areaId: string, actionState = getActionState()) =>
 	areaActionStateFromState<AreaType.Timeline | AreaType.Workspace>(areaId, actionState);
 
 const compositionShortcuts = {
-	viewTransformProperties: (propertyNames: PropertyName[]) => (
+	viewTransformProperties: (propertyNames: Array<PropertyName | CompoundPropertyName>) => (
 		areaId: string,
 		params: RequestActionParams,
 	) => {
@@ -40,10 +40,7 @@ export const compositionKeyboardShortcuts: KeyboardShortcut[] = [
 	{
 		name: "View position property",
 		key: "P",
-		fn: compositionShortcuts.viewTransformProperties([
-			PropertyName.PositionX,
-			PropertyName.PositionY,
-		]),
+		fn: compositionShortcuts.viewTransformProperties([CompoundPropertyName.Position]),
 		optionalModifierKeys: ["Shift"],
 	},
 	{
@@ -55,19 +52,13 @@ export const compositionKeyboardShortcuts: KeyboardShortcut[] = [
 	{
 		name: "View scale property",
 		key: "S",
-		fn: compositionShortcuts.viewTransformProperties([
-			PropertyName.ScaleX,
-			PropertyName.ScaleY,
-		]),
+		fn: compositionShortcuts.viewTransformProperties([CompoundPropertyName.Scale]),
 		optionalModifierKeys: ["Shift"],
 	},
 	{
 		name: "View anchor property",
 		key: "A",
-		fn: compositionShortcuts.viewTransformProperties([
-			PropertyName.AnchorX,
-			PropertyName.AnchorY,
-		]),
+		fn: compositionShortcuts.viewTransformProperties([CompoundPropertyName.Anchor]),
 		optionalModifierKeys: ["Shift"],
 	},
 ];

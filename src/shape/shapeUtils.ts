@@ -1,6 +1,6 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
-import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { Property, PropertyGroup } from "~/composition/compositionTypes";
 import {
 	reduceLayerProperties,
 	reduceLayerPropertiesAndGroups,
@@ -337,11 +337,11 @@ export const getShapeLayerPathIds = (
 	);
 	const groupIndex = names.indexOf(PropertyGroupName.Content);
 	const contentsGroupId = layer.properties[groupIndex];
-	const contentsGroup = compositionState.properties[contentsGroupId] as CompositionPropertyGroup;
+	const contentsGroup = compositionState.properties[contentsGroupId] as PropertyGroup;
 
 	// Find all shape groups within contents group
 	const shapeGroupIds = contentsGroup.properties.filter((propertyId) => {
-		const property = compositionState.properties[propertyId] as CompositionPropertyGroup;
+		const property = compositionState.properties[propertyId] as PropertyGroup;
 		return property.name === PropertyGroupName.Shape;
 	});
 
@@ -349,10 +349,10 @@ export const getShapeLayerPathIds = (
 
 	// Find all shapes within all the shapes
 	for (const shapeGroupId of shapeGroupIds) {
-		const shapeGroup = compositionState.properties[shapeGroupId] as CompositionPropertyGroup;
+		const shapeGroup = compositionState.properties[shapeGroupId] as PropertyGroup;
 
 		for (const propertyId of shapeGroup.properties) {
-			const property = compositionState.properties[propertyId] as CompositionProperty;
+			const property = compositionState.properties[propertyId] as Property;
 
 			if (property.name === PropertyName.ShapeLayer_Path) {
 				shapeIds.push(property.value); // Value is shapeId
@@ -657,7 +657,7 @@ export const getLayerPathPropertyId = (
 };
 
 export const getShapeStrokeGroupValues = (
-	group: CompositionPropertyGroup,
+	group: PropertyGroup,
 	compositionState: CompositionState,
 ) => {
 	let lineWidth!: number;
@@ -701,7 +701,7 @@ export const getShapeStrokeGroupValues = (
 };
 
 export const getShapeFillGroupValues = (
-	group: CompositionPropertyGroup,
+	group: PropertyGroup,
 	compositionState: CompositionState,
 ) => {
 	let color!: RGBColor;
@@ -751,7 +751,7 @@ export const getPathIdToShapeGroupId = (layerId: string, compositionState: Compo
 				return obj;
 			}
 			const pathPropertyId = group.properties[pathIndex];
-			const property = compositionState.properties[pathPropertyId] as CompositionProperty;
+			const property = compositionState.properties[pathPropertyId] as Property;
 			const pathId = property.value;
 			obj[pathId] = group.id;
 			return obj;

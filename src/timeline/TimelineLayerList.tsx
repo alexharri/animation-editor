@@ -78,7 +78,19 @@ const TimelineLayerListComponent: React.FC<Props> = (props) => {
 			// Find last property
 			function crawl(propertyId: string): number {
 				const property = compositionState.properties[propertyId];
+
 				if (property.type === "property") {
+					return yPosMap.property[property.id] + TIMELINE_LAYER_HEIGHT;
+				}
+
+				if (property.type === "compound") {
+					if (property.separated) {
+						return (
+							yPosMap.property[property.properties[property.properties.length - 1]] +
+							TIMELINE_LAYER_HEIGHT
+						);
+					}
+
 					return yPosMap.property[property.id] + TIMELINE_LAYER_HEIGHT;
 				}
 

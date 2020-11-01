@@ -1,6 +1,6 @@
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { Property, PropertyGroup } from "~/composition/compositionTypes";
 import {
 	findLayerProperty,
 	getChildPropertyIdsRecursive,
@@ -187,9 +187,7 @@ export const penToolHandlers = {
 				);
 
 				for (const shapeGroupId of shapeGroupIds) {
-					const group = compositionState.properties[
-						shapeGroupId
-					] as CompositionPropertyGroup;
+					const group = compositionState.properties[shapeGroupId] as PropertyGroup;
 
 					const propertyNames = group.properties.map(
 						(id) => compositionState.properties[id].name,
@@ -253,7 +251,7 @@ export const penToolHandlers = {
 		);
 
 		for (const groupId of shapeGroupIds) {
-			const group = compositionState.properties[groupId] as CompositionPropertyGroup;
+			const group = compositionState.properties[groupId] as PropertyGroup;
 
 			const propertyNames = group.properties.map(
 				(id) => compositionState.properties[id].name,
@@ -266,7 +264,7 @@ export const penToolHandlers = {
 			}
 
 			const pathPropertyId = group.properties[pathIndex];
-			const property = compositionState.properties[pathPropertyId] as CompositionProperty;
+			const property = compositionState.properties[pathPropertyId] as Property;
 			if (property.value === pathId) {
 				shapeGroupId = group.id;
 			}
@@ -371,7 +369,7 @@ export const penToolHandlers = {
 							const pathPropertyId = group.properties[pathIndex];
 							const property = compositionState.properties[
 								pathPropertyId
-							] as CompositionProperty;
+							] as Property;
 							const pathId = property.value;
 							const { shapeId } = shapeState.paths[pathId];
 							acc.push(shapeId);
@@ -553,9 +551,7 @@ export const penToolHandlers = {
 				);
 
 				for (const shapeGroupId of shapeGroupIds) {
-					const group = compositionState.properties[
-						shapeGroupId
-					] as CompositionPropertyGroup;
+					const group = compositionState.properties[shapeGroupId] as PropertyGroup;
 
 					const propertyNames = group.properties.map(
 						(id) => compositionState.properties[id].name,

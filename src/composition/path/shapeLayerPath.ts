@@ -1,7 +1,8 @@
 import {
-	CompositionProperty,
-	CompositionPropertyGroup,
+	CompoundProperty,
 	CreatePropertyOptions,
+	Property,
+	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
 import { TimelineColors } from "~/constants";
@@ -11,9 +12,9 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 	const { compositionId, layerId } = opts;
 
 	const propertyId = opts.createId();
-	const propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup> = [];
+	const propertiesToAdd: Array<Property | CompoundProperty | PropertyGroup> = [];
 
-	const group: CompositionPropertyGroup = {
+	const group: PropertyGroup = {
 		type: "group",
 		name: PropertyGroupName.Shape,
 		id: propertyId,
@@ -25,7 +26,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 	};
 	propertiesToAdd.push(group);
 
-	const path: CompositionProperty = {
+	const path: Property = {
 		type: "property",
 		name: PropertyName.ShapeLayer_Path,
 		valueType: ValueType.Path,
@@ -35,14 +36,13 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 		layerId,
 		timelineId: "",
 		color: TimelineColors.Height,
-		twinPropertyId: "",
-		shouldMaintainProportions: false,
+		compoundPropertyId: "",
 	};
 
 	group.properties.push(path.id);
 	propertiesToAdd.push(path);
 
-	const fillProperties: CompositionProperty[] = [
+	const fillProperties: Property[] = [
 		{
 			type: "property",
 			name: PropertyName.RGBAColor,
@@ -53,8 +53,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -66,8 +65,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -82,12 +80,11 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 	];
 
-	const fillGroup: CompositionPropertyGroup = {
+	const fillGroup: PropertyGroup = {
 		type: "group",
 		name: PropertyGroupName.Fill,
 		id: opts.createId(),
@@ -101,7 +98,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 	group.properties.push(fillGroup.id);
 	propertiesToAdd.push(fillGroup, ...fillProperties);
 
-	const strokeProperties: CompositionProperty[] = [
+	const strokeProperties: Property[] = [
 		{
 			type: "property",
 			name: PropertyName.RGBAColor,
@@ -112,8 +109,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -126,8 +122,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -142,8 +137,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -155,8 +149,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -168,8 +161,7 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 		{
 			type: "property",
@@ -182,12 +174,11 @@ export const createShapeLayerShapeGroup = (pathId: string, opts: CreatePropertyO
 			layerId,
 			timelineId: "",
 			color: TimelineColors.Height,
-			twinPropertyId: "",
-			shouldMaintainProportions: false,
+			compoundPropertyId: "",
 		},
 	];
 
-	const strokeGroup: CompositionPropertyGroup = {
+	const strokeGroup: PropertyGroup = {
 		type: "group",
 		name: PropertyGroupName.Stroke,
 		id: opts.createId(),

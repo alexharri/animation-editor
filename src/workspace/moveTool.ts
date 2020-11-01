@@ -1,6 +1,6 @@
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { CompositionProperty } from "~/composition/compositionTypes";
+import { Property } from "~/composition/compositionTypes";
 import {
 	getTimelineIdsReferencedByComposition,
 	reduceCompProperties,
@@ -178,9 +178,7 @@ export const moveToolHandlers = {
 		const layerInitialPositions: { [layerId: string]: Vec2 } = {};
 		const layerPositionPropertyIds: { [layerId: string]: [string, string] } = {};
 
-		const doAxis = (name: PropertyName, axis: "x" | "y", i: 0 | 1) => (
-			property: CompositionProperty,
-		) => {
+		const doAxis = (name: PropertyName, axis: "x" | "y", i: 0 | 1) => (property: Property) => {
 			if (property.name === name) {
 				const timelineId = property.timelineId;
 				const layer = compositionState.layers[property.layerId];
@@ -327,9 +325,7 @@ export const moveToolHandlers = {
 						const initialValue = layerInitialPositions[layerId][axis];
 						const value = initialValue + moveVector[axis];
 
-						const property = compositionState.properties[
-							propertyId
-						] as CompositionProperty;
+						const property = compositionState.properties[propertyId] as Property;
 
 						if (!property.timelineId) {
 							toDispatch.push(compositionActions.setPropertyValue(propertyId, value));

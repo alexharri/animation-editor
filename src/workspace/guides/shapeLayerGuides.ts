@@ -1,4 +1,4 @@
-import { CompositionLayer } from "~/composition/compositionTypes";
+import { Layer } from "~/composition/compositionTypes";
 import { Tool } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { ShapeState } from "~/shape/shapeReducer";
@@ -517,7 +517,7 @@ export function renderShapeLayerGuides(
 	opts: RenderGuidesContext,
 	ctx: Ctx,
 	map: CompositionRenderValues,
-	layer: CompositionLayer,
+	layer: Layer,
 ) {
 	const { compositionSelection, scale, pan } = opts;
 

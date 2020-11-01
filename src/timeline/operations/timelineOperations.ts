@@ -1,5 +1,5 @@
 import { compositionActions } from "~/composition/compositionReducer";
-import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { Property, PropertyGroup } from "~/composition/compositionTypes";
 import { findCompProperty } from "~/composition/compositionUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { isKeyDown } from "~/listener/keyboard";
@@ -7,7 +7,7 @@ import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
 import { TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
 import { getTimelineValueAtIndex, timelineSelectionFromState } from "~/timeline/timelineUtils";
-import { Operation, PropertyGroupName, PropertyName } from "~/types";
+import { CompoundPropertyName, Operation, PropertyGroupName, PropertyName } from "~/types";
 import { areSetsEqual } from "~/util/setUtils";
 
 const removeTimeline = (op: Operation, timelineId: string, compositionId: string): void => {
@@ -103,7 +103,7 @@ const easyEaseSelectedKeyframes = (op: Operation, timelineIds: string[]): void =
 const viewTransformProperties = (
 	op: Operation,
 	compositionId: string,
-	propertyNames: PropertyName[],
+	propertyNames: Array<PropertyName | CompoundPropertyName>,
 ): void => {
 	const { compositionState, compositionSelectionState } = getActionState();
 
@@ -127,16 +127,14 @@ const viewTransformProperties = (
 			const group = compositionState.properties[propertyId];
 			return group.name === PropertyGroupName.Transform;
 		})!;
-		const transformGroup = compositionState.properties[
-			transformGroupId
-		] as CompositionPropertyGroup;
+		const transformGroup = compositionState.properties[transformGroupId] as PropertyGroup;
 
 		if (additive) {
 			const active = layer.viewProperties;
 			const toggled: string[] = [];
 
 			for (const propertyId of transformGroup.properties) {
-				const property = compositionState.properties[propertyId] as CompositionProperty;
+				const property = compositionState.properties[propertyId] as Property;
 				if (nameSet.has(property.name)) {
 					toggled.push(propertyId);
 					op.add(compositionActions.toggleLayerViewProperty(layerId, propertyId));
@@ -153,7 +151,7 @@ const viewTransformProperties = (
 		const propertyIds: string[] = [];
 
 		for (const propertyId of transformGroup.properties) {
-			const property = compositionState.properties[propertyId] as CompositionProperty;
+			const property = compositionState.properties[propertyId] as Property;
 			if (nameSet.has(property.name)) {
 				propertyIds.push(propertyId);
 			}
@@ -234,7 +232,7 @@ const viewAnimatedProperties = (op: Operation, compositionId: string): void => {
 	for (const groupId of groupIds) {
 		const curr = new Set(groupToVisibleProperties[groupId] || []);
 		const prev = new Set(
-			(compositionState.properties[groupId] as CompositionPropertyGroup).viewProperties,
+			(compositionState.properties[groupId] as PropertyGroup).viewProperties,
 		);
 
 		if (!areSetsEqual(curr, prev)) {

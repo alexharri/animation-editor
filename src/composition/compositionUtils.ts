@@ -1,11 +1,11 @@
 import { CompositionState } from "~/composition/compositionReducer";
-import { CompositionProperty, CompositionPropertyGroup } from "~/composition/compositionTypes";
+import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
 import { LayerType } from "~/types";
 
 export const reduceVisibleLayerProperties = <T>(
 	layerId: string,
 	compositionState: CompositionState,
-	fn: (acc: T, property: CompositionProperty) => T,
+	fn: (acc: T, property: Property) => T,
 	initialState: T,
 ): T => {
 	let acc = initialState;
@@ -27,6 +27,11 @@ export const reduceVisibleLayerProperties = <T>(
 					crawlProperty(properties[j]);
 				}
 			}
+			return;
+		}
+
+		if (property.type === "compound") {
+			properties.forEach(crawlProperty);
 			return;
 		}
 
@@ -54,7 +59,7 @@ export const reduceVisibleLayerProperties = <T>(
 export const reduceLayerPropertiesAndGroups = <T>(
 	layerId: string,
 	compositionState: CompositionState,
-	fn: (acc: T, property: CompositionProperty | CompositionPropertyGroup) => T,
+	fn: (acc: T, property: Property | PropertyGroup) => T,
 	initialState: T,
 ): T => {
 	let acc = initialState;
@@ -71,6 +76,11 @@ export const reduceLayerPropertiesAndGroups = <T>(
 			return;
 		}
 
+		if (property.type === "compound") {
+			property.properties.forEach(crawlProperty);
+			return;
+		}
+
 		acc = fn(acc, property);
 	};
 
@@ -84,7 +94,7 @@ export const reduceLayerPropertiesAndGroups = <T>(
 export function reduceLayerProperties<T>(
 	layerId: string,
 	compositionState: CompositionState,
-	fn: (acc: T, property: CompositionProperty) => T,
+	fn: (acc: T, property: Property) => T,
 	initialState: T,
 	options: Partial<{ recursive: boolean }> = {},
 ): T {
@@ -112,7 +122,7 @@ export function reduceLayerProperties<T>(
 export function reduceCompProperties<T>(
 	compositionId: string,
 	compositionState: CompositionState,
-	fn: (acc: T, property: CompositionProperty) => T,
+	fn: (acc: T, property: Property) => T,
 	initialState: T,
 	options: Partial<{ recursive: boolean }> = {},
 ): T {
@@ -130,14 +140,14 @@ export function reduceCompProperties<T>(
 export function findCompProperty(
 	compositionId: string,
 	compositionState: CompositionState,
-	fn: (property: CompositionProperty) => boolean,
-): CompositionProperty | null {
+	fn: (property: Property) => boolean,
+): Property | null {
 	const composition = compositionState.compositions[compositionId];
 
-	function crawl(propertyId: string): CompositionProperty | null {
+	function crawl(propertyId: string): Property | null {
 		const property = compositionState.properties[propertyId];
 
-		if (property.type === "group") {
+		if (property.type === "group" || property.type === "compound") {
 			for (const propertyId of property.properties) {
 				const property = crawl(propertyId);
 				if (property) {
@@ -167,7 +177,7 @@ export function findCompProperty(
 export function reduceCompPropertiesAndGroups<T>(
 	compositionId: string,
 	compositionState: CompositionState,
-	fn: (acc: T, property: CompositionProperty | CompositionPropertyGroup) => T,
+	fn: (acc: T, property: Property | PropertyGroup) => T,
 	initialState: T,
 ): T {
 	const composition = compositionState.compositions[compositionId];
@@ -184,7 +194,7 @@ export function reduceCompPropertiesAndGroups<T>(
 export const reduceVisibleCompProperties = <T>(
 	compositionId: string,
 	compositionState: CompositionState,
-	fn: (acc: T, property: CompositionProperty) => T,
+	fn: (acc: T, property: Property) => T,
 	initialState: T,
 ): T => {
 	const composition = compositionState.compositions[compositionId];
@@ -244,10 +254,10 @@ export const getPropertyIdsRecursive = (
 	return propertyIds;
 };
 
-export const findLayerProperty = <T extends CompositionProperty | CompositionPropertyGroup>(
+export const findLayerProperty = <T extends Property | CompoundProperty | PropertyGroup>(
 	layerId: string,
 	compositionState: CompositionState,
-	fn: (property: CompositionProperty | CompositionPropertyGroup) => boolean,
+	fn: (property: Property | CompoundProperty | PropertyGroup) => boolean,
 ): T | null => {
 	const layer = compositionState.layers[layerId];
 
@@ -306,7 +316,7 @@ export const getParentPropertyInLayer = (
 	layerId: string,
 	propertyId: string,
 	compositionState: CompositionState,
-): CompositionPropertyGroup | null => {
+): PropertyGroup | null => {
 	return findLayerProperty(layerId, compositionState, (group) => {
 		return group.type === "group" && group.properties.indexOf(propertyId) !== -1;
 	});

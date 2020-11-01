@@ -71,7 +71,6 @@ export default ({ css }: StyleParams) => ({
 	`,
 
 	container: css`
-		width: 50px;
 		height: 16px;
 		display: inline-block;
 		vertical-align: top;

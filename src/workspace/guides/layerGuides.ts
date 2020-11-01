@@ -1,4 +1,4 @@
-import { CompositionLayer } from "~/composition/compositionTypes";
+import { Layer } from "~/composition/compositionTypes";
 import {
 	getLayerNameToProperty,
 	getLayerRectDimensionsAndOffset,
@@ -19,7 +19,7 @@ const SOFF = 1;
 
 const getCorners = (
 	opts: RenderGuidesContext,
-	layer: CompositionLayer,
+	layer: Layer,
 	nameToProperty: NameToProperty,
 	scale: number,
 	pan: Vec2,
@@ -149,7 +149,7 @@ export function renderLayerGuides(
 	opts: RenderGuidesContext,
 	ctx: Ctx,
 	map: CompositionRenderValues,
-	layer: CompositionLayer,
+	layer: Layer,
 ) {
 	const {
 		compositionSelection: selection,

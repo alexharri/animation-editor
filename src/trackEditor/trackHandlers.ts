@@ -1,7 +1,7 @@
 import { areaActions } from "~/area/state/areaActions";
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { CompositionProperty } from "~/composition/compositionTypes";
+import { Property } from "~/composition/compositionTypes";
 import {
 	getTimelineIdsReferencedByComposition,
 	getTimelineIdsReferencedByLayer,
@@ -45,7 +45,7 @@ const actions = {
 		const { compositionId } = options;
 		const timelineIds = getTimelineIdsReferencedByComposition(compositionId, compositionState);
 
-		const properties = reduceCompProperties<CompositionProperty[]>(
+		const properties = reduceCompProperties<Property[]>(
 			compositionId,
 			compositionState,
 			(acc, property) => {
@@ -399,7 +399,16 @@ export const trackHandlers = {
 					// Mouse landed on this property track. Check whether a keyframe was hit.
 					const property = compositionState.properties[propertyId];
 
-					if (property.type === "group" || !property.timelineId) {
+					if (property.type === "group") {
+						break hitTest;
+					}
+
+					if (property.type === "compound") {
+						console.warn("Not implemented");
+						break hitTest;
+					}
+
+					if (!property.timelineId) {
 						break hitTest;
 					}
 
@@ -561,9 +570,7 @@ export const trackHandlers = {
 				const affectedLayerIds = [
 					...new Set<string>(
 						affectedPropertyIds.map((propertyId) => {
-							const property = compositionState.properties[
-								propertyId
-							] as CompositionProperty;
+							const property = compositionState.properties[propertyId] as Property;
 							return property.layerId;
 						}),
 					),

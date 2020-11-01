@@ -1,4 +1,5 @@
 import {
+	CompoundPropertyName,
 	FillRule,
 	KeySelectionMap,
 	LayerType,
@@ -25,7 +26,7 @@ export interface Composition {
 	shapeMoveVector: Vec2;
 }
 
-export interface CompositionLayer {
+export interface Layer {
 	id: string;
 	compositionId: string;
 	graphId: string;
@@ -39,7 +40,7 @@ export interface CompositionLayer {
 	viewProperties: string[];
 }
 
-export interface CompositionPropertyGroup {
+export interface PropertyGroup {
 	type: "group";
 	name: PropertyGroupName;
 	id: string;
@@ -50,7 +51,20 @@ export interface CompositionPropertyGroup {
 	viewProperties: string[];
 }
 
-export type CompositionProperty = {
+export interface CompoundProperty {
+	type: "compound";
+	name: CompoundPropertyName;
+	id: string;
+	layerId: string;
+	compositionId: string;
+	properties: string[];
+	animated: boolean;
+	separated: boolean;
+	allowMaintainProportions: boolean;
+	maintainProportions: boolean;
+}
+
+export type Property = {
 	type: "property";
 	id: string;
 	layerId: string;
@@ -61,8 +75,7 @@ export type CompositionProperty = {
 	color?: string;
 	min?: number;
 	max?: number;
-	twinPropertyId: string;
-	shouldMaintainProportions: boolean;
+	compoundPropertyId: string;
 } & (
 	| {
 			valueType: ValueType.Any;
@@ -128,8 +141,13 @@ export interface CreatePropertyOptions {
 }
 
 export interface CreateLayerPropertyGroup {
-	group: CompositionPropertyGroup;
-	properties: CompositionProperty[];
+	group: PropertyGroup;
+	properties: Array<Property | CompoundProperty>;
+}
+
+export interface CreateLayerCompoundProperty {
+	compoundProperty: CompoundProperty;
+	properties: Property[];
 }
 
 export interface CompositionSelection {

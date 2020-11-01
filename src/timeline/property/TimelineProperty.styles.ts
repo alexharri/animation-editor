@@ -20,6 +20,7 @@ export default ({ css }: StyleParams) => ({
 		height: 16px;
 		display: flex;
 		align-items: stretch;
+		color: ${cssVariables.light500};
 	`,
 
 	graphWrapper: css`

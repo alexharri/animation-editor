@@ -2,9 +2,10 @@ import { ActionType, createAction, getType } from "typesafe-actions";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import {
 	Composition,
-	CompositionLayer,
-	CompositionProperty,
-	CompositionPropertyGroup,
+	CompoundProperty,
+	Layer,
+	Property,
+	PropertyGroup,
 } from "~/composition/compositionTypes";
 import {
 	findLayerProperty,
@@ -30,10 +31,10 @@ export interface CompositionState {
 		[compositionId: string]: Composition;
 	};
 	layers: {
-		[layerId: string]: CompositionLayer;
+		[layerId: string]: Layer;
 	};
 	properties: {
-		[propertyId: string]: CompositionProperty | CompositionPropertyGroup;
+		[propertyId: string]: Property | CompoundProperty | PropertyGroup;
 	};
 	compositionLayerIdToComposition: {
 		[layerId: string]: string;
@@ -164,7 +165,7 @@ export const compositionActions = {
 		return (
 			layerId: string,
 			propertyId: string,
-			propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup>,
+			propertiesToAdd: Array<Property | CompoundProperty | PropertyGroup>,
 		) => action({ layerId, propertyId, propertiesToAdd });
 	}),
 
@@ -172,7 +173,7 @@ export const compositionActions = {
 		return (
 			addToPropertyGroup: string,
 			propertyId: string,
-			propertiesToAdd: Array<CompositionProperty | CompositionPropertyGroup>,
+			propertiesToAdd: Array<Property | CompoundProperty | PropertyGroup>,
 		) => action({ addToPropertyGroup, propertyId, propertiesToAdd });
 	}),
 
@@ -186,8 +187,8 @@ export const compositionActions = {
 	}),
 
 	setPropertyMaintainProportions: createAction("comp/SET_PROP_MAINTAIN_PROPORTIONS", (action) => {
-		return (propertyId: string, shouldMaintainProportions: boolean) =>
-			action({ propertyId, shouldMaintainProportions });
+		return (propertyId: string, maintainProportions: boolean) =>
+			action({ propertyId, maintainProportions });
 	}),
 
 	toggleLayerViewProperty: createAction("comp/TOGGLE_LAYER_VIEW_PROPERTY", (action) => {
@@ -465,7 +466,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
-					(item: CompositionProperty) => ({
+					(item: Property) => ({
 						...item,
 						value: value as any,
 					}),
@@ -480,7 +481,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
-					(item: CompositionPropertyGroup) => ({
+					(item: PropertyGroup) => ({
 						...item,
 						collapsed,
 						viewProperties: [],
@@ -496,7 +497,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
-					(item: CompositionProperty) => ({
+					(item: Property) => ({
 						...item,
 						timelineId,
 					}),
@@ -599,7 +600,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					removeKeysFromMap(state.properties, propertyIdsToRemove),
 					parentProperty!.id,
-					(group: CompositionPropertyGroup) => ({
+					(group: PropertyGroup) => ({
 						...group,
 						properties: group.properties.filter((id) => propertyId !== id),
 					}),
@@ -625,7 +626,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
-					(property: CompositionPropertyGroup) => ({
+					(property: PropertyGroup) => ({
 						...property,
 						graphId,
 					}),
@@ -675,7 +676,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					toClear,
-					(group: CompositionPropertyGroup) => {
+					(group: PropertyGroup) => {
 						return { ...group, viewProperties: [], collapsed: true };
 					},
 				),
@@ -729,7 +730,7 @@ export const compositionReducer = (
 			newState.properties = modifyItemsInUnionMap(
 				newState.properties,
 				layer.properties[groupIndex],
-				(group: CompositionPropertyGroup) => ({
+				(group: PropertyGroup) => ({
 					...group,
 					properties: [...group.properties, propertyId],
 				}),
@@ -748,7 +749,7 @@ export const compositionReducer = (
 			newState.properties = modifyItemsInUnionMap(
 				newState.properties,
 				addToPropertyGroup,
-				(group: CompositionPropertyGroup) => ({
+				(group: PropertyGroup) => ({
 					...group,
 					properties: [...group.properties, propertyId],
 				}),
@@ -769,7 +770,7 @@ export const compositionReducer = (
 				throw new Error("Cannot move modfier. No Modifier group found.");
 			}
 
-			const modifierGroup = state.properties[modifierGroupId] as CompositionPropertyGroup;
+			const modifierGroup = state.properties[modifierGroupId] as PropertyGroup;
 
 			const index = modifierGroup.properties.indexOf(modifierId);
 
@@ -788,7 +789,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					modifierGroupId,
-					(item: CompositionPropertyGroup) => ({
+					(item: PropertyGroup) => ({
 						...item,
 						properties,
 					}),
@@ -812,16 +813,13 @@ export const compositionReducer = (
 		}
 
 		case getType(compositionActions.setPropertyMaintainProportions): {
-			const { shouldMaintainProportions, propertyId } = action.payload;
+			const { maintainProportions, propertyId } = action.payload;
 			return {
 				...state,
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					propertyId,
-					(item: CompositionProperty) => ({
-						...item,
-						shouldMaintainProportions,
-					}),
+					(item: CompoundProperty) => ({ ...item, maintainProportions }),
 				),
 			};
 		}
@@ -860,7 +858,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					groupId,
-					(group: CompositionPropertyGroup) => {
+					(group: PropertyGroup) => {
 						return { ...group, viewProperties: propertyIds };
 					},
 				),
@@ -894,7 +892,7 @@ export const compositionReducer = (
 				properties: modifyItemsInUnionMap(
 					state.properties,
 					toClear,
-					(group: CompositionPropertyGroup) => {
+					(group: PropertyGroup) => {
 						return { ...group, viewProperties: [], collapsed: true };
 					},
 				),
