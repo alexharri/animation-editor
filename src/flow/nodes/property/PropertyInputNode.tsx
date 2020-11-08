@@ -1,6 +1,9 @@
 import React from "react";
-import { Layer, Property } from "~/composition/compositionTypes";
-import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
+import { CompoundProperty, Layer, Property } from "~/composition/compositionTypes";
+import {
+	getLayerCompoundPropertyLabel,
+	getLayerPropertyLabel,
+} from "~/composition/util/compositionPropertyUtils";
 import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps, FlowNodeType } from "~/flow/flowTypes";
@@ -10,6 +13,7 @@ import { PropertyNodeSelectProperty } from "~/flow/nodes/property/PropertyNodeSe
 import { flowActions } from "~/flow/state/flowActions";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState, getActionState } from "~/state/stateUtils";
+import { ValueType } from "~/types";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
@@ -67,19 +71,38 @@ function PropertyInputNodeComponent(props: Props) {
 			);
 
 			const properties = getActionState().compositionState.properties;
+			const property = properties[propertyId];
+
+			let outputs: FlowNodeOutput[];
 			let propertyIds: string[];
 
-			const property = properties[propertyId];
-			if (property.type === "group") {
-				propertyIds = property.properties;
-			} else {
-				propertyIds = [property.id];
+			switch (property.type) {
+				case "group": {
+					propertyIds = property.properties;
+					break;
+				}
+				case "compound": {
+					propertyIds = [property.id, ...property.properties];
+					break;
+				}
+				case "property": {
+					propertyIds = [property.id];
+					break;
+				}
 			}
 
-			const outputs = propertyIds
-				.filter((id) => properties[id].type === "property")
+			outputs = propertyIds
+				.filter((id) => properties[id].type !== "group")
 				.map<FlowNodeOutput>((id) => {
-					const property = properties[id] as Property;
+					const property = properties[id] as Property | CompoundProperty;
+
+					if (property.type === "compound") {
+						return {
+							name: getLayerCompoundPropertyLabel(property.name),
+							type: ValueType.Vec2,
+						};
+					}
+
 					return {
 						name: getLayerPropertyLabel(property.name),
 						type: property.valueType,

@@ -377,7 +377,7 @@ export const getFlowNodeDefaultOutputs = (type: FlowNodeType): FlowNodeOutput[] 
 
 export const flowValidInputsToOutputsMap: { [key in ValueType]: ValueType[] } = {
 	[ValueType.Any]: [ValueType.Any, ValueType.Number, ValueType.Rect, ValueType.Vec2],
-	[ValueType.Number]: [ValueType.Any, ValueType.Number],
+	[ValueType.Number]: [ValueType.Any, ValueType.Number, ValueType.Vec2],
 	[ValueType.Rect]: [ValueType.Any, ValueType.Rect],
 	[ValueType.Vec2]: [ValueType.Any, ValueType.Vec2],
 	[ValueType.RGBAColor]: [ValueType.Any, ValueType.RGBAColor, ValueType.RGBColor],
