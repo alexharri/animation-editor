@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
-import { Property, PropertyGroup } from "~/composition/compositionTypes";
+import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
 import { computeLayerTransformMap } from "~/composition/transformMap";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
@@ -201,15 +201,29 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 					continue;
 				}
 
-				const properties =
-					selectedProperty.type === "group"
-						? selectedProperty.properties
-								.map((id) => context.compositionState.properties[id])
-								.filter(
-									(property): property is Property =>
-										property.type === "property",
-								)
-						: [selectedProperty];
+				let propertyIds: string[];
+
+				switch (selectedProperty.type) {
+					case "group": {
+						propertyIds = selectedProperty.properties;
+						break;
+					}
+					case "compound": {
+						propertyIds = [selectedProperty.id, ...selectedProperty.properties];
+						break;
+					}
+					case "property": {
+						propertyIds = [selectedProperty.id];
+						break;
+					}
+				}
+
+				const properties = propertyIds
+					.map((id) => context.compositionState.properties[id])
+					.filter(
+						(property): property is Property | CompoundProperty =>
+							property.type !== "group",
+					);
 
 				for (let i = 0; i < properties.length; i += 1) {
 					const property = properties[i];
@@ -221,6 +235,14 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 					// both reference Transform but modify different properties of the
 					// Transform group.
 					if (!outputNode.inputs[i].pointer) {
+						continue;
+					}
+
+					if (property.type === "compound") {
+						const value = computed[outputNode.id][i].value as Vec2;
+						const [xId, yId] = property.properties;
+						map.properties[xId].computedValue = value.x;
+						map.properties[yId].computedValue = value.y;
 						continue;
 					}
 
@@ -291,7 +313,8 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 						}
 
 						const properties =
-							selectedProperty.type === "group"
+							selectedProperty.type === "group" ||
+							selectedProperty.type === "compound"
 								? selectedProperty.properties
 										.map((id) => context.compositionState.properties[id])
 										.filter(

@@ -126,7 +126,12 @@ const PropertyComponent: React.FC<PropertyProps> = (props) => {
 		/>
 	);
 
-	if (property.type === "group") {
+	if (property.type === "group" || property.type === "compound") {
+		const label =
+			property.type === "group"
+				? getLayerPropertyGroupLabel(property.name)
+				: getLayerCompoundPropertyLabel(property.name);
+
 		return (
 			<>
 				<div className={s("container")} onClick={onClick}>
@@ -135,51 +140,21 @@ const PropertyComponent: React.FC<PropertyProps> = (props) => {
 						className={s("contentContainer")}
 						style={{ marginLeft: CONTEXT_MENU_OPTION_PADDING_LEFT + depthLeft }}
 					>
-						<div className={s("name")}>{getLayerPropertyGroupLabel(property.name)}</div>
+						<div className={s("name")}>{label}</div>
 					</div>
 				</div>
-				{property.properties.map((propertyId) => (
-					<SingleProperty
-						selectedPropertyId={selectedPropertyId}
-						propertyId={propertyId}
-						onSelectProperty={props.onSelectProperty}
-						depth={depth + 1}
-						key={propertyId}
-					/>
-				))}
+				{property.type === "group" &&
+					property.properties.map((propertyId) => (
+						<SingleProperty
+							selectedPropertyId={selectedPropertyId}
+							propertyId={propertyId}
+							onSelectProperty={props.onSelectProperty}
+							depth={depth + 1}
+							key={propertyId}
+						/>
+					))}
 			</>
 		);
-	}
-
-	if (property.type === "compound") {
-		return (
-			<>
-				{property.properties.map((propertyId) => (
-					<SingleProperty
-						selectedPropertyId={selectedPropertyId}
-						propertyId={propertyId}
-						onSelectProperty={props.onSelectProperty}
-						depth={depth}
-						key={propertyId}
-					/>
-				))}
-			</>
-		);
-
-		/**
-		 * @todo Select compound properties directly
-		 */
-		// return (
-		// 	<div className={s("container")} onClick={onClick}>
-		// 		{activeDot}
-		// 		<div
-		// 			className={s("contentContainer")}
-		// 			style={{ marginLeft: CONTEXT_MENU_OPTION_PADDING_LEFT + depthLeft }}
-		// 		>
-		// 			<div className={s("name")}>{getLayerCompoundPropertyLabel(property.name)}</div>
-		// 		</div>
-		// 	</div>
-		// );
 	}
 
 	return (

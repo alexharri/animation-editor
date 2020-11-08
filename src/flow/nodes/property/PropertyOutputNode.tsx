@@ -1,6 +1,9 @@
 import React from "react";
-import { Property, PropertyGroup } from "~/composition/compositionTypes";
-import { getLayerPropertyLabel } from "~/composition/util/compositionPropertyUtils";
+import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
+import {
+	getLayerCompoundPropertyLabel,
+	getLayerPropertyLabel,
+} from "~/composition/util/compositionPropertyUtils";
 import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps, FlowNodeType } from "~/flow/flowTypes";
@@ -11,7 +14,7 @@ import { flowActions } from "~/flow/state/flowActions";
 import { useMemoActionState } from "~/hook/useActionState";
 import { requestAction } from "~/listener/requestAction";
 import { connectActionState, getActionState } from "~/state/stateUtils";
-import { PropertyGroupName } from "~/types";
+import { PropertyGroupName, ValueType } from "~/types";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
@@ -45,19 +48,41 @@ function PropertyOutputNodeComponent(props: Props) {
 			);
 
 			const properties = getActionState().compositionState.properties;
+			const property = properties[propertyId];
+
+			let inputs: FlowNodeInput[];
+
 			let propertyIds: string[];
 
-			const property = properties[propertyId];
-			if (property.type === "group") {
-				propertyIds = property.properties;
-			} else {
-				propertyIds = [property.id];
+			switch (property.type) {
+				case "group": {
+					propertyIds = property.properties;
+					break;
+				}
+				case "compound": {
+					propertyIds = [property.id, ...property.properties];
+					break;
+				}
+				case "property": {
+					propertyIds = [property.id];
+					break;
+				}
 			}
 
-			const inputs = propertyIds
-				.filter((id) => properties[id].type === "property")
+			inputs = propertyIds
+				.filter((id) => properties[id].type !== "group")
 				.map<FlowNodeInput>((id) => {
-					const property = properties[id] as Property;
+					const property = properties[id] as Property | CompoundProperty;
+
+					if (property.type === "compound") {
+						return {
+							name: getLayerCompoundPropertyLabel(property.name),
+							type: ValueType.Vec2,
+							pointer: null,
+							value: null,
+						};
+					}
+
 					return {
 						name: getLayerPropertyLabel(property.name),
 						type: property.valueType,

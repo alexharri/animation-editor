@@ -68,6 +68,12 @@ const parseVec2 = (arg: FlowComputeNodeArg): Vec2 => {
 	switch (arg.type) {
 		case ValueType.Vec2:
 			return arg.value;
+		case ValueType.Number: {
+			// Converting a number N to Vec2(N, N) is useful when, for
+			// example, providing a number to the Scale field (which has
+			// an X and Y scale).
+			return Vec2.new(arg.value, arg.value);
+		}
 		case ValueType.Any: {
 			const v = arg.value;
 
@@ -139,6 +145,12 @@ const parseRect = (arg: FlowComputeNodeArg): Rect => {
 		default:
 			throw new Error(`Unexpected Arg Type '${arg.type}'`);
 	}
+};
+
+const parsers: Partial<Record<ValueType, (arg: FlowComputeNodeArg) => any>> = {
+	[ValueType.Vec2]: parseVec2,
+	[ValueType.Number]: parseNum,
+	[ValueType.Rect]: parseRect,
 };
 
 const createArgFn = (
@@ -381,6 +393,13 @@ const compute: {
 			return [];
 		}
 
+		if (selectedProperty.type === "compound") {
+			const [x, y] = selectedProperty.properties.map((propertyId) => {
+				return ctx.propertyToValue[propertyId].computedValue;
+			});
+			return [toArg.vec2(Vec2.new(x, y)), toArg.number(x), toArg.number(y)];
+		}
+
 		return (selectedProperty.type === "group"
 			? selectedProperty.properties
 					.filter(
@@ -391,8 +410,44 @@ const compute: {
 		).map((value) => toArg.number(value));
 	},
 
-	[Type.property_output]: (args) => {
-		return args;
+	[Type.property_output]: (args, _ctx, node) => {
+		for (let i = 0; i < node.inputs.length; i++) {
+			const input = node.inputs[i];
+
+			if (!input.pointer) {
+				continue;
+			}
+
+			const valueType = input.type;
+			const parser = parsers[valueType];
+
+			if (!parser) {
+				continue;
+			}
+
+			parser(args[i]);
+		}
+
+		return args.map<FlowComputeNodeArg>((arg, i) => {
+			const input = node.inputs[i];
+
+			if (!input.pointer) {
+				return arg;
+			}
+
+			const valueType = input.type;
+			const parser = parsers[valueType];
+
+			if (!parser) {
+				return arg;
+			}
+
+			const parsed = parser(args[i]);
+			return {
+				type: input.type,
+				value: parsed,
+			};
+		});
 	},
 
 	[Type.empty]: () => {
