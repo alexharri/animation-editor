@@ -146,6 +146,10 @@ export const shapeActions = {
 	removeControlPoint: createAction("shape/REMOVE_CP", (action) => {
 		return (cpId: string) => action({ cpId });
 	}),
+
+	addObjects: createAction("shape/ADD_OBJECTS", (action) => {
+		return (fields: Partial<ShapeState>) => action({ fields });
+	}),
 };
 
 type ShapeAction = ActionType<typeof shapeActions>;
@@ -611,6 +615,17 @@ export const shapeReducer = (
 			return {
 				...state,
 				controlPoints: removeKeysFromMap(state.controlPoints, [cpId]),
+			};
+		}
+
+		case getType(shapeActions.addObjects): {
+			const { fields } = action.payload;
+			return {
+				shapes: { ...state.shapes, ...(fields.shapes || {}) },
+				edges: { ...state.edges, ...(fields.edges || {}) },
+				nodes: { ...state.nodes, ...(fields.nodes || {}) },
+				controlPoints: { ...state.controlPoints, ...(fields.controlPoints || {}) },
+				paths: { ...state.paths, ...(fields.paths || {}) },
 			};
 		}
 

@@ -337,6 +337,10 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 				miterLimit,
 			} = getShapeStrokeGroupValues(group, compositionState);
 
+			if (lineWidth === 0) {
+				return;
+			}
+
 			ctx.strokeStyle = rgbToString(color, opacity);
 			ctx.lineWidth =
 				lineWidth *

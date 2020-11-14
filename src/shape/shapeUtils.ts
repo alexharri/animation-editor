@@ -19,11 +19,11 @@ import {
 	RGBColor,
 } from "~/types";
 import {
+	completeCubicBezier,
 	expandRect,
 	getAngleRadians,
 	getDistance,
 	isVecInRect,
-	quadraticToCubicBezier,
 	rectOfVecs,
 } from "~/util/math";
 import { closestPointOnPath } from "~/util/math/closestPoint";
@@ -156,7 +156,7 @@ export const pathIdToCurves = (
 		if (p1 && p2) {
 			curve = [p0, p1, p2, p3];
 		} else if (p1 || p2) {
-			curve = quadraticToCubicBezier(p0, p1, p2, p3);
+			curve = completeCubicBezier(p0, p1, p2, p3);
 		} else {
 			curve = [p0, p3];
 		}

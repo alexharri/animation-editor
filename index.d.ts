@@ -19,3 +19,5 @@ declare interface GlobalState {
 declare interface MapOf<T> {
 	[key: string]: T;
 }
+
+declare module "svg-arc-to-cubic-bezier";

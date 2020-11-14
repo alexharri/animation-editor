@@ -165,6 +165,10 @@ export class Vec2 {
 		return getDistance(Vec2.ORIGIN, this);
 	}
 
+	public eq(vec: Vec2): boolean {
+		return vec.x === this.x && vec.y === this.y;
+	}
+
 	// @ts-ignore
 	private toJSON() {
 		return {
@@ -206,5 +210,6 @@ declare global {
 		public round(): Vec2;
 		public apply(fn: (vec2: Vec2) => Vec2): Vec2;
 		public length(): number;
+		public eq(vec: Vec2): boolean;
 	}
 }

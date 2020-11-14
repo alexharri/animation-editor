@@ -1,0 +1,8 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="white" />
+    <path fill-rule="evenodd" clip-rule="evenodd"
+        d="M190 100C190 149.706 149.706 190 100 190C50.2944 190 10 149.706 10 100C10 50.2944 50.2944 10 100 10C149.706 10 190 50.2944 190 100ZM168.389 115C161.522 146.452 133.511 170 100 170C66.4888 170 38.4776 146.452 31.6109 115H168.389ZM168.389 85H31.6109C38.4776 53.5482 66.4888 30 100 30C133.511 30 161.522 53.5482 168.389 85Z"
+        fill="#55D17F" />
+    <rect x="100" y="61.8162" width="54" height="54" transform="rotate(45 100 61.8162)" fill="#C4C4C4" stroke="#FF0000"
+        stroke-width="4" />
+</svg>

@@ -12,6 +12,7 @@ const getCurrentStateFromApplicationState = (_state: ApplicationState): ActionSt
 		if (state[key].list) {
 			const s = state[key] as HistoryState<any>;
 			const shiftForward =
+				s.index > 0 &&
 				s.type === "selection" &&
 				s.indexDirection === -1 &&
 				s.list[s.index + 1].modifiedRelated &&

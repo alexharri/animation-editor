@@ -8,65 +8,91 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { createCompLayerProperties } from "~/composition/layer/compLayerProperties";
-import { createEllipseLayerProperties } from "~/composition/layer/ellipseLayerProperties";
+import {
+	createEllipseLayerProperties,
+	EllipseProperties,
+} from "~/composition/layer/ellipseLayerProperties";
 import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
 import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
-import { createRectLayerProperties } from "~/composition/layer/rectLayerProperties";
-import { createShapeLayerProperties } from "~/composition/layer/shapeLayerProperties";
-import { LayerType } from "~/types";
+import { createRectLayerProperties, RectProperties } from "~/composition/layer/rectLayerProperties";
+import {
+	createShapeLayerProperties,
+	ShapeProperties,
+} from "~/composition/layer/shapeLayerProperties";
+import { LayerTransform, LayerType } from "~/types";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
 import { getNonDuplicateName } from "~/util/names";
 
-const getLayerTypeSpecificProperties = (
-	type: LayerType,
+const getLayerTypeSpecificProperties = <T extends LayerType>(
+	type: T,
 	opts: CreatePropertyOptions,
+	props: Partial<TypeToProps[T]>,
 ): CreateLayerPropertyGroup[] => {
+	console.log(props);
 	switch (type) {
 		case LayerType.Composition:
 			return createCompLayerProperties(opts);
 		case LayerType.Shape:
-			return createShapeLayerProperties(opts);
+			return createShapeLayerProperties(opts, props);
 		case LayerType.Rect:
-			return createRectLayerProperties(opts);
+			return createRectLayerProperties(opts, props);
 		case LayerType.Ellipse:
-			return createEllipseLayerProperties(opts);
+			return createEllipseLayerProperties(opts, props);
+		default:
+			throw new Error(`Invalid layer type '${type}'`);
 	}
 };
 
-const getLayerProperties = (
-	type: LayerType,
+const getLayerProperties = <T extends LayerType>(
+	type: T,
 	opts: CreatePropertyOptions,
+	props: Partial<TypeToProps[T]>,
+	transform?: LayerTransform,
 ): CreateLayerPropertyGroup[] => {
 	return [
 		createLayerModifierProperties(opts),
-		...getLayerTypeSpecificProperties(type, opts),
-		createLayerTransformProperties(opts),
+		...getLayerTypeSpecificProperties(type, opts, props),
+		createLayerTransformProperties(opts, transform),
 	];
 };
 
-interface Options {
-	defaultName: string;
+interface TypeToProps {
+	[LayerType.Rect]: RectProperties;
+	[LayerType.Ellipse]: EllipseProperties;
+	[LayerType.Composition]: {};
+	[LayerType.Shape]: ShapeProperties;
 }
 
-export const createLayer = (
-	compositionState: CompositionState,
-	type: LayerType,
-	compositionId: string,
-	options: Partial<Options> = {},
-) => {
+interface Options<T extends LayerType> {
+	type: T;
+	compositionId: string;
+	compositionState: CompositionState;
+	defaultName?: string;
+	transform?: LayerTransform;
+	props?: Partial<TypeToProps[T]>;
+}
+
+export const createLayer = <T extends LayerType>(options: Options<T>) => {
+	const { compositionId, compositionState, type } = options;
+
 	const composition = compositionState.compositions[compositionId];
 	const existingLayerNames = composition.layers.map((id) => compositionState.layers[id].name);
 
 	const layerId = createMapNumberId(compositionState.layers);
 
-	const propertyGroups = getLayerProperties(type, {
-		compositionId,
-		layerId,
-		createId: createGenMapIdFn(compositionState.properties),
-	});
+	const propertyGroups = getLayerProperties(
+		type,
+		{
+			compositionId,
+			layerId,
+			createId: createGenMapIdFn(compositionState.properties),
+		},
+		options.props || {},
+		options.transform,
+	);
 
-	const nestedProperties: Array<Property | CompoundProperty> = [];
+	const nestedProperties: Array<Property | CompoundProperty | PropertyGroup> = [];
 	const topLevelProperties: PropertyGroup[] = [];
 
 	for (let i = 0; i < propertyGroups.length; i += 1) {

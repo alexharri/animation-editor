@@ -5,10 +5,22 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { TimelineColors } from "~/constants";
-import { PropertyGroupName, PropertyName, ValueType } from "~/types";
+import { PropertyGroupName, PropertyName, RGBColor, ValueType } from "~/types";
 
-const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
+export interface RectProperties {
+	fill: RGBColor;
+	strokeColor: RGBColor;
+	strokeWidth: number;
+	width: number;
+	height: number;
+}
+
+const dimensionProperties = (
+	opts: CreatePropertyOptions,
+	props: Partial<RectProperties>,
+): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
+	const { width = 100, height = 100 } = props;
 
 	const properties: Property[] = [
 		{
@@ -20,7 +32,7 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			timelineId: "",
 			valueType: ValueType.Number,
 			color: TimelineColors.Width,
-			value: 100,
+			value: width,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -33,7 +45,7 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			timelineId: "",
 			valueType: ValueType.Number,
 			color: TimelineColors.Height,
-			value: 100,
+			value: height,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -54,8 +66,12 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 	return { properties, group };
 };
 
-const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
+const contentProperties = (
+	opts: CreatePropertyOptions,
+	props: Partial<RectProperties>,
+): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
+	const { fill = [255, 0, 0], strokeWidth = 0, strokeColor = [0, 0, 255] } = props;
 
 	const properties: Property[] = [
 		{
@@ -67,7 +83,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			timelineId: "",
 			valueType: ValueType.RGBColor,
 			color: TimelineColors.Width,
-			value: [255, 0, 0],
+			value: fill,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -80,7 +96,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			timelineId: "",
 			valueType: ValueType.Number,
 			color: TimelineColors.Height,
-			value: 0,
+			value: strokeWidth,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -93,7 +109,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			timelineId: "",
 			valueType: ValueType.RGBColor,
 			color: TimelineColors.Height,
-			value: [0, 0, 255],
+			value: strokeColor,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -129,6 +145,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 
 export const createRectLayerProperties = (
 	opts: CreatePropertyOptions,
+	props: Partial<RectProperties> = {},
 ): CreateLayerPropertyGroup[] => {
-	return [dimensionProperties(opts), contentProperties(opts)];
+	return [dimensionProperties(opts, props), contentProperties(opts, props)];
 };

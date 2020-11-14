@@ -142,7 +142,7 @@ export interface CreatePropertyOptions {
 
 export interface CreateLayerPropertyGroup {
 	group: PropertyGroup;
-	properties: Array<Property | CompoundProperty>;
+	properties: Array<Property | CompoundProperty | PropertyGroup>;
 }
 
 export interface CreateLayerCompoundProperty {

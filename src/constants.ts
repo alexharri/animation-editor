@@ -1,3 +1,9 @@
+import { LayerTransform } from "~/types";
+import { Mat2 } from "~/util/math/mat";
+
+export const hexColorRegex = /^#?([a-f\d]{6})$/i;
+export const shortHexColorRegex = /^#?([a-f\d]{3})$/i;
+
 export const keys = {
 	Backspace: 8,
 	Tab: 9,
@@ -144,3 +150,14 @@ export const EXPR_TEXTAREA_LINE_HEIGHT = 16;
 export const EXPR_TEXTAREA_MIN_WIDTH = DEFAULT_FLOW_NODE_WIDTH - EXPR_TEXTAREA_H_PADDING * 2;
 export const EXPR_TEXTAREA_MIN_HEIGHT = EXPR_TEXTAREA_LINE_HEIGHT + EXPR_TEXTAREA_V_PADDING * 2;
 export const EXPR_TEXTAREA_HEIGHT_BUFFER = 8;
+
+export const DEFAULT_LAYER_TRANSFORM: LayerTransform = {
+	origin: Vec2.new(0, 0),
+	originBehavior: "relative",
+	anchor: Vec2.new(0, 0),
+	translate: Vec2.new(0, 0),
+	rotation: 0,
+	scaleX: 1,
+	scaleY: 1,
+	matrix: Mat2.identity(),
+};

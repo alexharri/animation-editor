@@ -5,13 +5,25 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { TimelineColors } from "~/constants";
-import { CompoundPropertyName, PropertyGroupName, PropertyName, ValueType } from "~/types";
+import { DEFAULT_LAYER_TRANSFORM, TimelineColors } from "~/constants";
+import {
+	CompoundPropertyName,
+	LayerTransform,
+	PropertyGroupName,
+	PropertyName,
+	ValueType,
+} from "~/types";
+
+export interface TransformProperties {
+	position: Vec2;
+}
 
 export const createLayerTransformProperties = (
 	opts: CreatePropertyOptions,
+	props: LayerTransform = DEFAULT_LAYER_TRANSFORM,
 ): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
+	const transform = props;
 
 	const positionId = opts.createId();
 	const anchorId = opts.createId();
@@ -28,7 +40,7 @@ export const createLayerTransformProperties = (
 		name: PropertyName.PositionX,
 		timelineId: "",
 		valueType: ValueType.Number,
-		value: 0,
+		value: transform.translate.x,
 		color: TimelineColors.XPosition,
 		compoundPropertyId: positionId,
 	};
@@ -40,7 +52,7 @@ export const createLayerTransformProperties = (
 		name: PropertyName.PositionY,
 		timelineId: "",
 		valueType: ValueType.Number,
-		value: 0,
+		value: transform.translate.y,
 		color: TimelineColors.YPosition,
 		compoundPropertyId: positionId,
 	};
@@ -64,7 +76,7 @@ export const createLayerTransformProperties = (
 		name: PropertyName.AnchorX,
 		timelineId: "",
 		valueType: ValueType.Number,
-		value: 0,
+		value: transform.anchor.x,
 		color: TimelineColors.XPosition,
 		compoundPropertyId: anchorId,
 	};
@@ -76,7 +88,7 @@ export const createLayerTransformProperties = (
 		name: PropertyName.AnchorY,
 		timelineId: "",
 		valueType: ValueType.Number,
-		value: 0,
+		value: transform.anchor.y,
 		color: TimelineColors.YPosition,
 		compoundPropertyId: anchorId,
 	};
@@ -100,7 +112,7 @@ export const createLayerTransformProperties = (
 		name: PropertyName.ScaleX,
 		timelineId: "",
 		valueType: ValueType.Number,
-		value: 1,
+		value: transform.scaleX,
 		color: TimelineColors.YPosition,
 		compoundPropertyId: scaleId,
 	};
@@ -112,7 +124,7 @@ export const createLayerTransformProperties = (
 		name: PropertyName.ScaleY,
 		timelineId: "",
 		valueType: ValueType.Number,
-		value: 1,
+		value: transform.scaleY,
 		color: TimelineColors.YPosition,
 		compoundPropertyId: scaleId,
 	};
@@ -140,7 +152,7 @@ export const createLayerTransformProperties = (
 			name: PropertyName.Rotation,
 			timelineId: "",
 			valueType: ValueType.Number,
-			value: 0,
+			value: transform.rotation,
 			color: TimelineColors.YPosition,
 			compoundPropertyId: "",
 		},

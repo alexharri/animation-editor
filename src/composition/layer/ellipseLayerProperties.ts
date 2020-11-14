@@ -5,10 +5,21 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { TimelineColors } from "~/constants";
-import { PropertyGroupName, PropertyName, ValueType } from "~/types";
+import { PropertyGroupName, PropertyName, RGBColor, ValueType } from "~/types";
 
-const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
+export interface EllipseProperties {
+	fill: RGBColor;
+	strokeColor: RGBColor;
+	strokeWidth: number;
+	radius: number;
+}
+
+const structureProperties = (
+	opts: CreatePropertyOptions,
+	props: Partial<EllipseProperties>,
+): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
+	const { radius = 50 } = props;
 
 	const properties: Property[] = [
 		{
@@ -20,7 +31,7 @@ const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			timelineId: "",
 			valueType: ValueType.Number,
 			color: TimelineColors.Width,
-			value: 50,
+			value: radius,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -54,8 +65,12 @@ const structureProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 	return { properties, group };
 };
 
-const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
+const contentProperties = (
+	opts: CreatePropertyOptions,
+	props: Partial<EllipseProperties>,
+): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
+	const { fill = [255, 0, 0], strokeWidth = 0, strokeColor = [0, 0, 255] } = props;
 
 	const properties: Property[] = [
 		{
@@ -67,7 +82,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			timelineId: "",
 			valueType: ValueType.RGBColor,
 			color: TimelineColors.Width,
-			value: [255, 0, 0],
+			value: fill,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -80,7 +95,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			timelineId: "",
 			valueType: ValueType.Number,
 			color: TimelineColors.Height,
-			value: 0,
+			value: strokeWidth,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -93,7 +108,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 			timelineId: "",
 			valueType: ValueType.RGBColor,
 			color: TimelineColors.Height,
-			value: [0, 0, 255],
+			value: strokeColor,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -116,6 +131,7 @@ const contentProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGrou
 
 export const createEllipseLayerProperties = (
 	opts: CreatePropertyOptions,
+	props: Partial<EllipseProperties> = {},
 ): CreateLayerPropertyGroup[] => {
-	return [structureProperties(opts), contentProperties(opts)];
+	return [structureProperties(opts, props), contentProperties(opts, props)];
 };
