@@ -30,7 +30,10 @@ export const shapeLayerObjectsFromPolygon = (
 		items: [],
 	};
 
-	const points = pointString.split(/[ ,]+/).map((str) => parseFloat(str));
+	const points = pointString
+		.split(/[ ,]+/)
+		.filter(Boolean)
+		.map((str) => parseFloat(str));
 
 	for (let i = 0; i < points.length; i++) {
 		if (isNaN(points[i])) {

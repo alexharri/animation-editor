@@ -29,7 +29,6 @@ const getLayerTypeSpecificProperties = <T extends LayerType>(
 	opts: CreatePropertyOptions,
 	props: Partial<TypeToProps[T]>,
 ): CreateLayerPropertyGroup[] => {
-	console.log(props);
 	switch (type) {
 		case LayerType.Composition:
 			return createCompLayerProperties(opts);

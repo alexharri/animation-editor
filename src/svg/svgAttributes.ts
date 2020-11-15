@@ -1,5 +1,5 @@
 import { ElementNode } from "svg-parser";
-import { DEFAULT_LAYER_TRANSFORM } from "~/constants";
+import { DEFAULT_LAYER_TRANSFORM, DEG_TO_RAD_FAC } from "~/constants";
 import { parseSvgTransform } from "~/svg/parseSvgTransform";
 import { FillRule, LayerTransform, LayerType, LineCap, LineJoin, RGBColor } from "~/types";
 import { hexToRGB } from "~/util/color/convertColor";
@@ -87,9 +87,14 @@ export const getSvgAttr = {
 		return undefined;
 	},
 	miterLimit: createNumberGetter("miter-limit"),
-	transform: (node: ElementNode, layerType: LayerType): LayerTransform => {
+	transform: (
+		node: ElementNode,
+		layerType: LayerType,
+		boundingBox: [width: number, height: number],
+	): LayerTransform => {
 		const position = getSvgAttr.position(node, layerType);
 		const transformString = getProperty<string>(node, "transform");
+		const transformOriginString = getProperty<string>(node, "transform-origin");
 
 		if (!transformString) {
 			return {
@@ -98,7 +103,21 @@ export const getSvgAttr = {
 			};
 		}
 
-		const transform = parseSvgTransform(position, transformString);
+		const transform = parseSvgTransform(
+			position,
+			boundingBox,
+			transformString,
+			transformOriginString,
+		);
+
+		// Place anchor closer to element
+
+		transform.translate = transform.translate
+			.add(transform.anchor.scale(-1))
+			.scaleXY(transform.scaleX, transform.scaleY, transform.translate)
+			.rotate(transform.rotation * DEG_TO_RAD_FAC, transform.translate);
+		transform.anchor = Vec2.ORIGIN;
+
 		return transform;
 	},
 };

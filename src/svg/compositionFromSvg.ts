@@ -2,6 +2,7 @@ import { ElementNode, Node, parse } from "svg-parser";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition } from "~/composition/compositionTypes";
 import { createLayer } from "~/composition/layer/createLayer";
+import { DEG_TO_RAD_FAC } from "~/constants";
 import { requestAction } from "~/listener/requestAction";
 import { projectActions } from "~/project/projectReducer";
 import { shapeActions } from "~/shape/shapeReducer";
@@ -13,6 +14,7 @@ import { createSvgContext, SvgContext } from "~/svg/svgContext";
 import { svgPathElementLayerProps } from "~/svg/svgElementLayerProps";
 import { LayerType } from "~/types";
 import { createMapNumberId } from "~/util/mapUtils";
+import { interpolate } from "~/util/math";
 import { getNonDuplicateName } from "~/util/names";
 
 function handleSvg(node: ElementNode) {
@@ -39,7 +41,7 @@ function handleSvg(node: ElementNode) {
 		params.dispatch(compositionActions.setComposition(composition));
 		params.dispatch(projectActions.addComposition(composition));
 
-		const ctx = createSvgContext(composition.id, getActionState());
+		const ctx = createSvgContext(composition.id, getActionState(), [width, height]);
 
 		for (const child of [...node.children].reverse()) {
 			if (typeof child === "string") {
@@ -65,7 +67,7 @@ function rect(ctx: SvgContext, node: ElementNode) {
 	const width = getSvgAttr.width(node);
 	const height = getSvgAttr.height(node);
 
-	const transform = getSvgAttr.transform(node, LayerType.Rect);
+	const transform = getSvgAttr.transform(node, LayerType.Rect, ctx.boundingBox);
 
 	ctx.op.add(
 		compositionActions.createNonCompositionLayer(
@@ -86,9 +88,7 @@ function circle(ctx: SvgContext, node: ElementNode) {
 	const strokeWidth = getSvgAttr.strokeWidth(node);
 	const radius = getSvgAttr.radius(node);
 
-	const transform = getSvgAttr.transform(node, LayerType.Ellipse);
-
-	console.log({ radius });
+	const transform = getSvgAttr.transform(node, LayerType.Ellipse, ctx.boundingBox);
 
 	ctx.op.add(
 		compositionActions.createNonCompositionLayer(
@@ -111,11 +111,37 @@ function path(ctx: SvgContext, node: ElementNode) {
 		return;
 	}
 
-	const transform = getSvgAttr.transform(node, LayerType.Shape);
-
+	const transform = getSvgAttr.transform(node, LayerType.Shape, ctx.boundingBox);
 	const shapeLayerObjects = shapeLayerObjectsFromPathD(ctx, d, Vec2.new(0, 0));
 
-	transform.translate = transform.translate;
+	const nodes = shapeLayerObjects.shapeState.nodes || {};
+
+	const xArr: number[] = [];
+	const yArr: number[] = [];
+
+	for (const nodeId in nodes) {
+		const node = nodes[nodeId];
+		xArr.push(node.position.x);
+		yArr.push(node.position.y);
+	}
+
+	const xMin = Math.min(...xArr);
+	const yMin = Math.min(...yArr);
+
+	const xMax = Math.max(...xArr);
+	const yMax = Math.max(...yArr);
+
+	const cx = interpolate(xMin, xMax, 0.5);
+	const cy = interpolate(yMin, yMax, 0.5);
+
+	for (const nodeId in nodes) {
+		const node = nodes[nodeId];
+		node.position = node.position.sub(Vec2.new(cx, cy));
+	}
+	transform.translate = transform.translate
+		.add(Vec2.new(cx, cy))
+		.scaleXY(transform.scaleX, transform.scaleY, transform.translate)
+		.rotate(transform.rotation * DEG_TO_RAD_FAC, transform.translate);
 
 	ctx.op.add(
 		shapeActions.addObjects(shapeLayerObjects.shapeState),
@@ -139,7 +165,7 @@ function polygon(ctx: SvgContext, node: ElementNode) {
 		return;
 	}
 
-	const transform = getSvgAttr.transform(node, LayerType.Shape);
+	const transform = getSvgAttr.transform(node, LayerType.Shape, ctx.boundingBox);
 	const shapeLayerObjects = shapeLayerObjectsFromPolygon(ctx, points);
 
 	ctx.op.add(

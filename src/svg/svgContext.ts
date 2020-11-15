@@ -14,9 +14,14 @@ export interface SvgContext {
 	createEdgeId: () => string;
 	createNodeId: () => string;
 	createControlPointId: () => string;
+	boundingBox: [width: number, height: number];
 }
 
-export const createSvgContext = (compositionId: string, actionState: ActionState): SvgContext => {
+export const createSvgContext = (
+	compositionId: string,
+	actionState: ActionState,
+	boundingBox: [width: number, height: number],
+): SvgContext => {
 	const { compositionState, shapeState } = actionState;
 
 	const ctx: SvgContext = {
@@ -30,6 +35,7 @@ export const createSvgContext = (compositionId: string, actionState: ActionState
 		createPathId: createGenMapIdFn(shapeState.paths),
 		createShapeId: createGenMapIdFn(shapeState.shapes),
 		op: createOperation(),
+		boundingBox,
 	};
 	return ctx;
 };
