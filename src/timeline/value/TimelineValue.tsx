@@ -5,15 +5,7 @@ import { connectActionState } from "~/state/stateUtils";
 import { TimelinePropertyColorValue } from "~/timeline/value/TimelineColorValue";
 import { TimelineNumberValue } from "~/timeline/value/TimelineNumberValue";
 import { TimelineSelectValue } from "~/timeline/value/TimelineSelectValue";
-import {
-	FillRule,
-	LineCap,
-	LineJoin,
-	OriginBehavior,
-	RGBColor,
-	TransformBehavior,
-	ValueType,
-} from "~/types";
+import { FillRule, LineCap, LineJoin, OriginBehavior, TransformBehavior, ValueType } from "~/types";
 
 interface OwnProps {
 	propertyId: string;
@@ -33,12 +25,9 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 		return unsubscribe;
 	}, [ctx]);
 
-	if (props.valueType === ValueType.RGBColor) {
+	if (props.valueType === ValueType.RGBAColor) {
 		return (
-			<TimelinePropertyColorValue
-				propertyId={props.propertyId}
-				value={value.computedValue as RGBColor}
-			/>
+			<TimelinePropertyColorValue propertyId={props.propertyId} value={value.computedValue} />
 		);
 	}
 

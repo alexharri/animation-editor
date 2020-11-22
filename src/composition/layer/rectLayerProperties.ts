@@ -5,11 +5,11 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { TimelineColors } from "~/constants";
-import { PropertyGroupName, PropertyName, RGBColor, ValueType } from "~/types";
+import { PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
 
 export interface RectProperties {
-	fill: RGBColor;
-	strokeColor: RGBColor;
+	fill: RGBAColor;
+	strokeColor: RGBAColor;
 	strokeWidth: number;
 	width: number;
 	height: number;
@@ -71,7 +71,7 @@ const contentProperties = (
 	props: Partial<RectProperties>,
 ): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
-	const { fill = [255, 0, 0], strokeWidth = 0, strokeColor = [0, 0, 255] } = props;
+	const { fill = [255, 0, 0, 1], strokeWidth = 0, strokeColor = [0, 0, 0, 1] } = props;
 
 	const properties: Property[] = [
 		{
@@ -81,7 +81,7 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.Fill,
 			timelineId: "",
-			valueType: ValueType.RGBColor,
+			valueType: ValueType.RGBAColor,
 			color: TimelineColors.Width,
 			value: fill,
 			min: 0,
@@ -107,7 +107,7 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeColor,
 			timelineId: "",
-			valueType: ValueType.RGBColor,
+			valueType: ValueType.RGBAColor,
 			color: TimelineColors.Height,
 			value: strokeColor,
 			min: 0,

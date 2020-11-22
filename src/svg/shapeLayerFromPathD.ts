@@ -173,7 +173,7 @@ export const shapeLayerObjectsFromPathD = (
 	ctx: SvgContext,
 	d: string,
 	position: Vec2,
-): { pathIds: string[]; shapeState: Partial<ShapeState> } => {
+): { pathIds: string[]; shapeState: ShapeState } => {
 	const shapes: ShapeGraph[] = [];
 	const paths: ShapePath[] = [];
 	let nodes: Record<string, ShapeNode> = {};
@@ -418,7 +418,7 @@ export const shapeLayerObjectsFromPathD = (
 		}
 	}
 
-	const shapeState: Partial<ShapeState> = {
+	const shapeState: ShapeState = {
 		controlPoints,
 		edges,
 		nodes,

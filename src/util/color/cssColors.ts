@@ -1,4 +1,6 @@
 import { hexColorRegex, shortHexColorRegex } from "~/constants";
+import { RGBAColor } from "~/types";
+import { hexToRGBA } from "~/util/color/convertColor";
 
 const cssColorNameToHex: Record<string, string> = {
 	aliceblue: "#f0f8ff",
@@ -151,13 +153,18 @@ const cssColorNameToHex: Record<string, string> = {
 	yellowgreen: "#9acd32",
 };
 
-export const getHexFromCssColor = (color: string) => {
+export const getRgbaFromCssColor = (color: string | undefined): RGBAColor | undefined => {
+	if (!color) {
+		return undefined;
+	}
+
 	if (cssColorNameToHex[color]) {
-		return cssColorNameToHex[color];
+		const hex = cssColorNameToHex[color];
+		return hexToRGBA(hex);
 	}
 
 	if (hexColorRegex.test(color)) {
-		return color;
+		return hexToRGBA(color);
 	}
 
 	if (shortHexColorRegex.test(color)) {
@@ -168,8 +175,13 @@ export const getHexFromCssColor = (color: string) => {
 		for (const c of color.split("")) {
 			out += c + c;
 		}
-		return "#" + out;
+		return hexToRGBA("#" + out);
 	}
 
+	if (color.toLowerCase() === "none") {
+		return undefined;
+	}
+
+	console.log(color);
 	throw new Error("Only hex and CSS name colors are supported yet.");
 };

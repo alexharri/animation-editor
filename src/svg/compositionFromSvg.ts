@@ -7,17 +7,33 @@ import { requestAction } from "~/listener/requestAction";
 import { projectActions } from "~/project/projectReducer";
 import { shapeActions } from "~/shape/shapeReducer";
 import { getActionState } from "~/state/stateUtils";
+import { pathifySvgElement } from "~/svg/pathifySvgElement";
 import { shapeLayerObjectsFromPathD } from "~/svg/shapeLayerFromPathD";
 import { shapeLayerObjectsFromPolygon } from "~/svg/shapeLayerFromPolygon";
-import { getSvgAttr } from "~/svg/svgAttributes";
 import { createSvgContext, SvgContext } from "~/svg/svgContext";
 import { svgPathElementLayerProps } from "~/svg/svgElementLayerProps";
+import { constructSvgStylesheet } from "~/svg/svgStylesheet";
+import { getPathNodesBoundingBoxCenter } from "~/svg/svgUtils";
 import { LayerType } from "~/types";
 import { createMapNumberId } from "~/util/mapUtils";
-import { interpolate } from "~/util/math";
 import { getNonDuplicateName } from "~/util/names";
 
+export function shouldPathifyNode(ctx: SvgContext, node: ElementNode): boolean {
+	const transformString = ctx.attr.transformString(node);
+
+	const tests = ["matrix", "skew", "skewX", "skewY"];
+	for (const test of tests) {
+		if (transformString.indexOf(test) !== -1) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 function handleSvg(node: ElementNode) {
+	const svgStylesheet = constructSvgStylesheet(node);
+
 	const { width = 100, height = 100 } = (node.properties || {}) as Partial<{
 		width: number;
 		height: number;
@@ -41,7 +57,10 @@ function handleSvg(node: ElementNode) {
 		params.dispatch(compositionActions.setComposition(composition));
 		params.dispatch(projectActions.addComposition(composition));
 
-		const ctx = createSvgContext(composition.id, getActionState(), [width, height]);
+		const ctx = createSvgContext(composition.id, getActionState(), svgStylesheet, [
+			width,
+			height,
+		]);
 
 		for (const child of [...node.children].reverse()) {
 			if (typeof child === "string") {
@@ -61,13 +80,13 @@ function handleSvg(node: ElementNode) {
 }
 
 function rect(ctx: SvgContext, node: ElementNode) {
-	const fill = getSvgAttr.fill(node);
-	const strokeColor = getSvgAttr.strokeColor(node);
-	const strokeWidth = getSvgAttr.strokeWidth(node);
-	const width = getSvgAttr.width(node);
-	const height = getSvgAttr.height(node);
+	const fill = ctx.attr.fill(node) || [255, 0, 0, 0];
+	const strokeColor = ctx.attr.strokeColor(node) || [0, 0, 0, 1];
+	const strokeWidth = ctx.attr.strokeWidth(node);
+	const width = ctx.attr.width(node);
+	const height = ctx.attr.height(node);
 
-	const transform = getSvgAttr.transform(node, LayerType.Rect, ctx.boundingBox);
+	const transform = ctx.attr.transform(node, LayerType.Rect);
 
 	ctx.op.add(
 		compositionActions.createNonCompositionLayer(
@@ -83,12 +102,12 @@ function rect(ctx: SvgContext, node: ElementNode) {
 }
 
 function circle(ctx: SvgContext, node: ElementNode) {
-	const fill = getSvgAttr.fill(node);
-	const strokeColor = getSvgAttr.strokeColor(node);
-	const strokeWidth = getSvgAttr.strokeWidth(node);
-	const radius = getSvgAttr.radius(node);
+	const fill = ctx.attr.fill(node) || [0, 0, 0, 0];
+	const strokeColor = ctx.attr.strokeColor(node) || [0, 0, 0, 0];
+	const strokeWidth = ctx.attr.strokeWidth(node);
+	const radius = ctx.attr.radius(node);
 
-	const transform = getSvgAttr.transform(node, LayerType.Ellipse, ctx.boundingBox);
+	const transform = ctx.attr.transform(node, LayerType.Ellipse);
 
 	ctx.op.add(
 		compositionActions.createNonCompositionLayer(
@@ -104,40 +123,25 @@ function circle(ctx: SvgContext, node: ElementNode) {
 }
 
 function path(ctx: SvgContext, node: ElementNode) {
-	const d = getSvgAttr.d(node);
+	const d = ctx.attr.d(node);
 
 	if (!d) {
 		// Path does not specify anything to draw. Ignore it.
 		return;
 	}
 
-	const transform = getSvgAttr.transform(node, LayerType.Shape, ctx.boundingBox);
+	const transform = ctx.attr.transform(node, LayerType.Shape);
 	const shapeLayerObjects = shapeLayerObjectsFromPathD(ctx, d, Vec2.new(0, 0));
 
-	const nodes = shapeLayerObjects.shapeState.nodes || {};
+	const nodes = shapeLayerObjects.shapeState.nodes;
 
-	const xArr: number[] = [];
-	const yArr: number[] = [];
-
-	for (const nodeId in nodes) {
-		const node = nodes[nodeId];
-		xArr.push(node.position.x);
-		yArr.push(node.position.y);
-	}
-
-	const xMin = Math.min(...xArr);
-	const yMin = Math.min(...yArr);
-
-	const xMax = Math.max(...xArr);
-	const yMax = Math.max(...yArr);
-
-	const cx = interpolate(xMin, xMax, 0.5);
-	const cy = interpolate(yMin, yMax, 0.5);
+	const [cx, cy] = getPathNodesBoundingBoxCenter(nodes);
 
 	for (const nodeId in nodes) {
 		const node = nodes[nodeId];
 		node.position = node.position.sub(Vec2.new(cx, cy));
 	}
+
 	transform.translate = transform.translate
 		.add(Vec2.new(cx, cy))
 		.scaleXY(transform.scaleX, transform.scaleY, transform.translate)
@@ -151,21 +155,21 @@ function path(ctx: SvgContext, node: ElementNode) {
 				compositionState: ctx.compositionState,
 				type: LayerType.Shape,
 				transform,
-				props: svgPathElementLayerProps(node, shapeLayerObjects.pathIds),
+				props: svgPathElementLayerProps(ctx, node, shapeLayerObjects.pathIds),
 			}),
 		),
 	);
 }
 
 function polygon(ctx: SvgContext, node: ElementNode) {
-	const points = getSvgAttr.points(node);
+	const points = ctx.attr.points(node);
 
 	if (!points) {
 		// Path does not specify anything to draw. Ignore it.
 		return;
 	}
 
-	const transform = getSvgAttr.transform(node, LayerType.Shape, ctx.boundingBox);
+	const transform = ctx.attr.transform(node, LayerType.Shape);
 	const shapeLayerObjects = shapeLayerObjectsFromPolygon(ctx, points);
 
 	ctx.op.add(
@@ -176,7 +180,7 @@ function polygon(ctx: SvgContext, node: ElementNode) {
 				compositionState: ctx.compositionState,
 				type: LayerType.Shape,
 				transform,
-				props: svgPathElementLayerProps(node, shapeLayerObjects.pathIds),
+				props: svgPathElementLayerProps(ctx, node, shapeLayerObjects.pathIds),
 			}),
 		),
 	);
@@ -189,6 +193,11 @@ function direct(ctx: SvgContext, node: Node) {
 		}
 
 		case "element": {
+			if (shouldPathifyNode(ctx, node)) {
+				pathifySvgElement(ctx, node);
+				break;
+			}
+
 			switch (node.tagName) {
 				case "rect": {
 					rect(ctx, node);
@@ -211,6 +220,8 @@ function direct(ctx: SvgContext, node: Node) {
 					console.warn(`Unknown SVG element tag name '${node.tagName}'`);
 				}
 			}
+
+			break;
 		}
 	}
 }

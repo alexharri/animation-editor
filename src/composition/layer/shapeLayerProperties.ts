@@ -6,15 +6,15 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { createShapeLayerShapeGroup } from "~/composition/path/shapeLayerPath";
-import { FillRule, LineCap, LineJoin, PropertyGroupName, RGBColor } from "~/types";
+import { FillRule, LineCap, LineJoin, PropertyGroupName, RGBAColor } from "~/types";
 
 export interface ShapeProperties {
 	shapes: Array<{
 		pathIds: string[];
-		fill?: RGBColor;
+		fill?: RGBAColor;
 		fillOpacity?: number;
 		fillRule?: FillRule;
-		strokeColor?: RGBColor;
+		strokeColor?: RGBAColor;
 		strokeWidth?: number;
 		lineCap?: LineCap;
 		lineJoin?: LineJoin;

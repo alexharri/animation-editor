@@ -31,7 +31,7 @@ import {
 	PropertyName,
 } from "~/types";
 import { traceCurve } from "~/util/canvas/renderPrimitives";
-import { rgbToString } from "~/util/color/convertColor";
+import { rgbaToString } from "~/util/color/convertColor";
 import { interpolate } from "~/util/math";
 import { renderLayerGuides } from "~/workspace/guides/layerGuides";
 import { renderShapeLayerGuides } from "~/workspace/guides/shapeLayerGuides";
@@ -301,6 +301,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		const onPath = (property: Property) => {
 			const pathId = property.value;
+			const path = shapeState.paths[pathId];
 			const shapeGroupId = pathIdToShapeGroupId[pathId];
 			const shapeSelected = compositionSelection.properties[shapeGroupId];
 			const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
@@ -319,29 +320,30 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			for (let i = 0; i < pathList.length; i++) {
 				traceCurve(ctx, pathList[i], { move: i === 0 });
 			}
+
+			// If items[0] has a left edge, the the path loops.
+			if (path.items[0].left && path.items[0].left.edgeId) {
+				ctx.closePath();
+			}
 		};
 
 		const onFill = (group: PropertyGroup) => {
-			const { color, opacity, fillRule } = getShapeFillGroupValues(group, compositionState);
-			ctx.fillStyle = rgbToString(color, opacity);
+			const { color, fillRule } = getShapeFillGroupValues(group, compositionState);
+			ctx.fillStyle = rgbaToString(color);
 			ctx.fill(fillRule);
 		};
 
 		const onStroke = (group: PropertyGroup) => {
-			const {
-				color,
-				opacity,
-				lineCap,
-				lineJoin,
-				lineWidth,
-				miterLimit,
-			} = getShapeStrokeGroupValues(group, compositionState);
+			const { color, lineCap, lineJoin, lineWidth, miterLimit } = getShapeStrokeGroupValues(
+				group,
+				compositionState,
+			);
 
 			if (lineWidth === 0) {
 				return;
 			}
 
-			ctx.strokeStyle = rgbToString(color, opacity);
+			ctx.strokeStyle = rgbaToString(color);
 			ctx.lineWidth =
 				lineWidth *
 				scale *

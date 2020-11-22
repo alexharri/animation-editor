@@ -16,7 +16,7 @@ import {
 	LineJoin,
 	PropertyGroupName,
 	PropertyName,
-	RGBColor,
+	RGBAColor,
 } from "~/types";
 import {
 	completeCubicBezier,
@@ -661,7 +661,7 @@ export const getShapeStrokeGroupValues = (
 	compositionState: CompositionState,
 ) => {
 	let lineWidth!: number;
-	let color!: RGBColor;
+	let color!: RGBAColor;
 	let opacity!: number;
 	let lineJoin!: LineJoin;
 	let lineCap!: LineCap;
@@ -704,7 +704,7 @@ export const getShapeFillGroupValues = (
 	group: PropertyGroup,
 	compositionState: CompositionState,
 ) => {
-	let color!: RGBColor;
+	let color!: RGBAColor;
 	let opacity!: number;
 	let fillRule!: FillRule;
 

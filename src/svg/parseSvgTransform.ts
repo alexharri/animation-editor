@@ -1,27 +1,6 @@
+import { DEG_TO_RAD_FAC } from "~/constants";
 import { LayerTransform } from "~/types";
 import { Mat2 } from "~/util/math/mat";
-
-const svgns = "http://www.w3.org/2000/svg";
-
-type Transform =
-	| {
-			type: "translate";
-			x: number;
-			y: number;
-	  }
-	| {
-			type: "scale";
-			x: number;
-			y: number;
-	  }
-	| {
-			type: "rotate";
-			rotation: number;
-	  }
-	| {
-			type: "matrix";
-			mat: Mat2;
-	  };
 
 function applyTransformOrigin(
 	boundingBox: [width: number, height: number],
@@ -94,8 +73,8 @@ function applyTransformOrigin(
 	return `translate(${x}, ${y}) ${transformString} translate(${-x}, ${-y})`;
 }
 
-export function parseSvgTransform(
-	coords: Vec2,
+export function layerTransformFromSvgTransform(
+	position: Vec2,
 	boundingBox: [width: number, height: number],
 	originalTransformString: string,
 	transformOriginString: string | undefined,
@@ -109,10 +88,10 @@ export function parseSvgTransform(
 	const reg = /[a-z]+\([-0-9\ \,\.]*\)/g;
 	const matches: string[] = [...(transformString.match(reg) || [])];
 
-	let position = Vec2.new(0, 0);
+	let translate = Vec2.new(0, 0);
 	let rotation = 0;
 	let scale = 1;
-	const anchor = coords.scale(-1);
+	const anchor = position.scale(-1);
 
 	for (const transformStr of matches) {
 		const pStart = transformStr.indexOf("(");
@@ -131,14 +110,11 @@ export function parseSvgTransform(
 
 		switch (command) {
 			case "translate": {
-				if (transformString === "translate(-356.89697 15.51816) rotate(-20.59468)") {
-					console.log(command, values);
-				}
 				const [x, y] = values;
 				if (typeof x !== "number" || typeof y !== "number") {
 					console.warn(`Invalid translate transform '${transformStr}'`);
 				}
-				position = position.add(Vec2.new(x, y));
+				translate = translate.add(Vec2.new(x, y));
 				break;
 			}
 			case "rotate": {
@@ -147,7 +123,6 @@ export function parseSvgTransform(
 					console.warn(`Invalid rotate transform '${transformStr}'`);
 				}
 				rotation += angleDeg;
-				// position = position.rotate(angleDeg * DEG_TO_RAD_FAC);
 				break;
 			}
 			case "scale": {
@@ -155,7 +130,7 @@ export function parseSvgTransform(
 				if (typeof scale !== "number") {
 					console.warn(`Invalid rotate transform '${transformStr}'`);
 				}
-				position = position.scale(scale);
+				translate = translate.scale(scale);
 				break;
 			}
 		}
@@ -169,90 +144,85 @@ export function parseSvgTransform(
 		rotation,
 		scaleX: scale,
 		scaleY: scale,
-		translate: position,
+		translate: translate,
 	};
 }
 
-export const old_parseSvgTransform = (transformStr: string) => {
-	const rect = document.createElementNS(svgns, "rect");
-	rect.setAttribute("transform", transformStr);
+export function matrixAndTranslateFromSvgTransform(
+	position: Vec2,
+	boundingBox: [width: number, height: number],
+	originalTransformString: string,
+	transformOriginString: string | undefined,
+): { matrix: Mat2; translate: Vec2 } {
+	let transformString = originalTransformString;
 
-	const transforms: Transform[] = [];
-
-	let m: DOMMatrix;
-
-	{
-		const [[a, b], [c, d]] = Mat2.identity().matrix;
-		m = new DOMMatrix([a, b, c, d, 0, 0]);
+	if (transformOriginString) {
+		transformString = applyTransformOrigin(boundingBox, transformString, transformOriginString);
 	}
 
-	const list = rect.transform.baseVal;
+	const reg = /[a-z]+\([-0-9e\ \,\.]*\)/g;
+	const matches: string[] = [...(transformString.match(reg) || [])];
 
-	for (let i = 0; i < list.numberOfItems; i++) {
-		const transform = list.getItem(i);
-		m = m.multiply(transform.matrix);
+	let translate = Vec2.new(0, 0);
+	let matrix = Mat2.identity();
 
-		switch (transform.type) {
-			case 2: {
-				transforms.push({
-					type: "translate",
-					x: m.e,
-					y: -m.f,
-				});
+	for (const transformStr of matches) {
+		const pStart = transformStr.indexOf("(");
+		const pEnd = transformStr.indexOf(")");
+
+		const command = transformStr.substr(0, pStart);
+		const content = transformStr.substr(pStart + 1, pEnd - pStart - 1);
+
+		const values = content.split(/[ ,]+/).map((n) => parseFloat(n));
+
+		for (let i = 0; i < values.length; i++) {
+			if (isNaN(values[i])) {
+				throw new Error(`NaN value at index ${i} from transform '${transformStr}'.`);
+			}
+		}
+
+		switch (command) {
+			case "translate": {
+				const [x, y] = values;
+				if (typeof x !== "number" || typeof y !== "number") {
+					console.warn(`Invalid translate transform '${transformStr}'`);
+				}
+				translate = translate.add(Vec2.new(x, y));
 				break;
 			}
-
-			// 	case 3: {
-			// 		transforms.push({
-			// 			type: "scale",
-			// 			x: m.a,
-			// 			y: m.d,
-			// 		});
-			// 	}
-
-			// 	case 4: {
-			// 		transforms.push({
-			// 			type: "rotate",
-			// 			rotation: transform.angle,
-			// 		});
-			// 	}
-
-			// 	case 1:
-			// 	default:
-			// 		const { a, b, c, d, e, f } = m.flipY();
-			// 		transforms.push(
-			// 			{
-			// 				type: "translate",
-			// 				x: e,
-			// 				y: -f,
-			// 			},
-			// 			{
-			// 				type: "matrix",
-			// 				mat: Mat2.new([
-			// 					[a, b],
-			// 					[c, d],
-			// 				]),
-			// 			},
-			// 		);
-			// 		break;
+			case "rotate": {
+				const [angleDeg] = values;
+				if (typeof angleDeg !== "number") {
+					console.warn(`Invalid rotate transform '${transformStr}'`);
+				}
+				matrix = matrix.rotate(angleDeg * DEG_TO_RAD_FAC);
+				break;
+			}
+			case "scale": {
+				const [s] = values;
+				if (typeof s !== "number") {
+					console.warn(`Invalid rotate transform '${transformStr}'`);
+				}
+				matrix = matrix.scale(s);
+				break;
+			}
+			case "matrix": {
+				const [a, b, c, d, translateX, translateY] = values;
+				matrix = matrix.multiplyMat2(
+					Mat2.new([
+						[a, b],
+						[c, d],
+					]),
+				);
+				translate = translate
+					.add(Vec2.new(translateX, translateY))
+					.add(position.multiplyMat2(matrix));
+			}
 		}
 	}
 
-	const { a, b, c, d } = m;
-	transforms.push(
-		{
-			type: "matrix",
-			mat: Mat2.new([
-				[a, b],
-				[c, d],
-			]),
-		},
-		// {
-		// 	type: "translate",
-		// 	x: e,
-		// 	y: -f,
-		// },
-	);
-
-	return transforms;
-};
+	return {
+		matrix,
+		translate,
+	};
+}

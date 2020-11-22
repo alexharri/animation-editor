@@ -1,19 +1,20 @@
 import { ElementNode } from "svg-parser";
 import { ShapeProperties } from "~/composition/layer/shapeLayerProperties";
-import { getSvgAttr } from "~/svg/svgAttributes";
+import { SvgContext } from "~/svg/svgContext";
 
 export const svgPathElementLayerProps = (
+	ctx: SvgContext,
 	node: ElementNode,
 	pathIds: string[],
 ): Partial<ShapeProperties> => {
-	const fill = getSvgAttr.fill(node);
-	const fillOpacity = getSvgAttr.fillOpacity(node);
-	const strokeColor = getSvgAttr.strokeColor(node);
-	const fillRule = getSvgAttr.fillRule(node);
-	const lineCap = getSvgAttr.lineCap(node);
-	const lineJoin = getSvgAttr.lineJoin(node);
-	const miterLimit = getSvgAttr.miterLimit(node);
-	const strokeWidth = getSvgAttr.strokeWidth(node);
+	const fill = ctx.attr.fill(node);
+	const fillOpacity = ctx.attr.fillOpacity(node);
+	const strokeColor = ctx.attr.strokeColor(node);
+	const fillRule = ctx.attr.fillRule(node);
+	const lineCap = ctx.attr.lineCap(node);
+	const lineJoin = ctx.attr.lineJoin(node);
+	const miterLimit = ctx.attr.miterLimit(node);
+	const strokeWidth = ctx.attr.strokeWidth(node);
 
 	return {
 		shapes: [

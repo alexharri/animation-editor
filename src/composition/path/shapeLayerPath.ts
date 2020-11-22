@@ -12,16 +12,16 @@ import {
 	LineJoin,
 	PropertyGroupName,
 	PropertyName,
-	RGBColor,
+	RGBAColor,
 	ValueFormat,
 	ValueType,
 } from "~/types";
 
 interface Options {
-	fill: RGBColor;
+	fill: RGBAColor;
 	fillOpacity: number;
 	fillRule: FillRule;
-	strokeColor: RGBColor;
+	strokeColor: RGBAColor;
 	strokeWidth: number;
 	lineCap: LineCap;
 	lineJoin: LineJoin;
@@ -36,9 +36,9 @@ export const createShapeLayerShapeGroup = (
 	const { compositionId, layerId } = opts;
 
 	const {
-		fill = [255, 0, 0],
+		fill = [255, 0, 0, 1],
 		fillOpacity = 1,
-		strokeColor = [0, 0, 0],
+		strokeColor = [0, 0, 0, 1],
 		strokeWidth = 1,
 		fillRule = "nonzero",
 		lineCap = "butt",
@@ -97,7 +97,7 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.RGBAColor,
-				valueType: ValueType.RGBColor,
+				valueType: ValueType.RGBAColor,
 				value: fill,
 				id: opts.createId(),
 				compositionId,
@@ -156,7 +156,7 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.RGBAColor,
-				valueType: ValueType.RGBColor,
+				valueType: ValueType.RGBAColor,
 				value: strokeColor,
 				id: opts.createId(),
 				compositionId,

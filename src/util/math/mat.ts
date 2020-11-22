@@ -74,6 +74,21 @@ export class Mat2 {
 		return this.multiplyMat2(Mat2.rotation(rad));
 	}
 
+	public skewX(rad: number) {
+		const matrix: Matrix2x2 = [
+			[1, Math.tan(rad)],
+			[0, 1],
+		];
+		return this.multiplyMat2(Mat2.new(matrix));
+	}
+	public skewY(rad: number) {
+		const matrix: Matrix2x2 = [
+			[1, 0],
+			[Math.tan(rad), 1],
+		];
+		return this.multiplyMat2(Mat2.new(matrix));
+	}
+
 	public multiply<T extends Mat2 | Vec2>(matOrVec: T): T {
 		if (matOrVec instanceof Mat2) {
 			return this.multiplyMat2(matOrVec) as T;
