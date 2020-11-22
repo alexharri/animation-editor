@@ -40,10 +40,12 @@ export const createTimelineContextMenu = (
 
 			options.push({
 				label: "New layer",
-				options: [LayerType.Rect, LayerType.Ellipse, LayerType.Shape].map((type) => ({
-					label: getLayerTypeName(type),
-					onSelect: createAddLayerFn(type),
-				})),
+				options: [LayerType.Rect, LayerType.Ellipse, LayerType.Shape, LayerType.Line].map(
+					(type) => ({
+						label: getLayerTypeName(type),
+						onSelect: createAddLayerFn(type),
+					}),
+				),
 			});
 		}
 

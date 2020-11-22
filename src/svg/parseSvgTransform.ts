@@ -1,4 +1,5 @@
 import { DEG_TO_RAD_FAC } from "~/constants";
+import { SVGNodeBase } from "~/svg/svgTypes";
 import { LayerTransform } from "~/types";
 import { Mat2 } from "~/util/math/mat";
 
@@ -145,6 +146,77 @@ export function layerTransformFromSvgTransform(
 		scaleX: scale,
 		scaleY: scale,
 		translate: translate,
+	};
+}
+
+export function svgNodeBaseFromTransform(
+	position: Vec2,
+	boundingBox: [width: number, height: number],
+	originalTransformString: string,
+	transformOriginString: string | undefined,
+): SVGNodeBase {
+	let transformString = originalTransformString;
+
+	if (transformOriginString) {
+		transformString = applyTransformOrigin(boundingBox, transformString, transformOriginString);
+	}
+
+	const reg = /[a-z]+\([-0-9\ \,\.]*\)/g;
+	const matches: string[] = [...(transformString.match(reg) || [])];
+
+	let translate = Vec2.new(0, 0);
+	let rotation = 0;
+	let scale = 1;
+	const anchor = position.scale(-1);
+
+	for (const transformStr of matches) {
+		const pStart = transformStr.indexOf("(");
+		const pEnd = transformStr.indexOf(")");
+
+		const command = transformStr.substr(0, pStart);
+		const content = transformStr.substr(pStart + 1, pEnd - pStart - 1);
+
+		const values = content.split(/[ ,]+/).map((n) => parseFloat(n));
+
+		for (let i = 0; i < values.length; i++) {
+			if (isNaN(values[i])) {
+				throw new Error(`NaN value at index ${i} from transform '${transformStr}'.`);
+			}
+		}
+
+		switch (command) {
+			case "translate": {
+				const [x, y] = values;
+				if (typeof x !== "number" || typeof y !== "number") {
+					console.warn(`Invalid translate transform '${transformStr}'`);
+				}
+				translate = translate.add(Vec2.new(x, y));
+				break;
+			}
+			case "rotate": {
+				const [angleDeg] = values;
+				if (typeof angleDeg !== "number") {
+					console.warn(`Invalid rotate transform '${transformStr}'`);
+				}
+				rotation += angleDeg;
+				break;
+			}
+			case "scale": {
+				const [scale] = values;
+				if (typeof scale !== "number") {
+					console.warn(`Invalid rotate transform '${transformStr}'`);
+				}
+				translate = translate.scale(scale);
+				break;
+			}
+		}
+	}
+
+	return {
+		anchor,
+		rotation,
+		scale: Vec2.new(scale, scale),
+		position: translate,
 	};
 }
 

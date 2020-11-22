@@ -1,4 +1,5 @@
 import { CompositionState } from "~/composition/compositionReducer";
+import { RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { createSvgAttrGetter } from "~/svg/svgAttributes";
 import { SvgStylesheet } from "~/svg/svgTypes";
@@ -6,6 +7,7 @@ import { Operation } from "~/types";
 import { createGenMapIdFn } from "~/util/mapUtils";
 
 export interface SvgContext {
+	params: RequestActionParams;
 	op: Operation;
 	compositionState: CompositionState;
 	compositionId: string;
@@ -22,6 +24,7 @@ export interface SvgContext {
 }
 
 export const createSvgContext = (
+	params: RequestActionParams,
 	compositionId: string,
 	actionState: ActionState,
 	stylesheet: SvgStylesheet,
@@ -30,6 +33,7 @@ export const createSvgContext = (
 	const { compositionState, shapeState } = actionState;
 
 	const ctx: SvgContext = {
+		params,
 		compositionId,
 		compositionState,
 		createId: createGenMapIdFn(compositionState.properties),

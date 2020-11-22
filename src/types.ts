@@ -61,6 +61,7 @@ export enum LayerType {
 	Ellipse = 1,
 	Composition = 2,
 	Shape = 3,
+	Line = 4,
 }
 
 // Property group names start at 5000 so they don't overlap with property names.

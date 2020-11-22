@@ -2,7 +2,7 @@ import { ElementNode, Node, parse } from "svg-parser";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition } from "~/composition/compositionTypes";
 import { createLayer } from "~/composition/layer/createLayer";
-import { DEG_TO_RAD_FAC } from "~/constants";
+import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
 import { requestAction } from "~/listener/requestAction";
 import { projectActions } from "~/project/projectReducer";
 import { shapeActions } from "~/shape/shapeReducer";
@@ -16,6 +16,7 @@ import { constructSvgStylesheet } from "~/svg/svgStylesheet";
 import { getPathNodesBoundingBoxCenter } from "~/svg/svgUtils";
 import { LayerType } from "~/types";
 import { createMapNumberId } from "~/util/mapUtils";
+import { getAngleRadians, getDistance } from "~/util/math";
 import { getNonDuplicateName } from "~/util/names";
 
 export function shouldPathifyNode(ctx: SvgContext, node: ElementNode): boolean {
@@ -57,7 +58,7 @@ function handleSvg(node: ElementNode) {
 		params.dispatch(compositionActions.setComposition(composition));
 		params.dispatch(projectActions.addComposition(composition));
 
-		const ctx = createSvgContext(composition.id, getActionState(), svgStylesheet, [
+		const ctx = createSvgContext(params, composition.id, getActionState(), svgStylesheet, [
 			width,
 			height,
 		]);
@@ -117,6 +118,33 @@ function circle(ctx: SvgContext, node: ElementNode) {
 				type: LayerType.Ellipse,
 				transform,
 				props: { radius, fill, strokeColor, strokeWidth },
+			}),
+		),
+	);
+}
+
+function line(ctx: SvgContext, node: ElementNode) {
+	const strokeColor = ctx.attr.strokeColor(node) || [0, 0, 0, 0];
+	const strokeWidth = ctx.attr.strokeWidth(node);
+	const lineCap = ctx.attr.lineCap(node);
+	const p1 = ctx.attr.p1(node);
+	const p2 = ctx.attr.p2(node);
+
+	const rotation = getAngleRadians(p1, p2) * RAD_TO_DEG_FAC;
+	const width = getDistance(p1, p2);
+
+	const transform = ctx.attr.transform(node, LayerType.Line);
+	transform.translate = p1;
+	transform.rotation += rotation;
+
+	ctx.op.add(
+		compositionActions.createNonCompositionLayer(
+			createLayer({
+				compositionId: ctx.compositionId,
+				compositionState: ctx.compositionState,
+				type: LayerType.Line,
+				transform,
+				props: { width, strokeColor, strokeWidth, lineCap },
 			}),
 		),
 	);
@@ -213,6 +241,29 @@ function direct(ctx: SvgContext, node: Node) {
 				}
 				case "circle": {
 					circle(ctx, node);
+					break;
+				}
+				case "line": {
+					line(ctx, node);
+					break;
+				}
+				case "g": {
+					for (const child of [...node.children].reverse()) {
+						if (typeof child === "string") {
+							// I don't know when the children are strings
+							continue;
+						}
+
+						direct(ctx, child);
+
+						ctx.params.dispatch(ctx.op.actions);
+						ctx.op.clear();
+						ctx.compositionState = getActionState().compositionState;
+					}
+					break;
+				}
+				case "style": {
+					// Style elements are parsed in a separate pass.
 					break;
 				}
 				default: {

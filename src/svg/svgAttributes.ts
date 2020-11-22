@@ -67,6 +67,32 @@ export const createSvgAttrGetter = (ctx: SvgContext) => {
 		width: createNumberGetter("width"),
 		height: createNumberGetter("height"),
 		radius: createNumberGetter("r"),
+		p1: (node: ElementNode): Vec2 => {
+			let x1 = getProperty<number>(node, "x1");
+			let y1 = getProperty<number>(node, "y1");
+
+			if (typeof x1 !== "number" || isNaN(x1)) {
+				x1 = 0;
+			}
+			if (typeof y1 !== "number" || isNaN(y1)) {
+				y1 = 0;
+			}
+
+			return Vec2.new(x1, y1);
+		},
+		p2: (node: ElementNode): Vec2 => {
+			let x2 = getProperty<number>(node, "x2");
+			let y2 = getProperty<number>(node, "y2");
+
+			if (typeof x2 !== "number" || isNaN(x2)) {
+				x2 = 0;
+			}
+			if (typeof y2 !== "number" || isNaN(y2)) {
+				y2 = 0;
+			}
+
+			return Vec2.new(x2, y2);
+		},
 		cx: createNumberGetter("cx"),
 		cy: createNumberGetter("cy"),
 		d: (node: ElementNode): string | undefined => getProperty(node, "d"),

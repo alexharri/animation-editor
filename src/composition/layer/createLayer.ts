@@ -15,6 +15,7 @@ import {
 import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
 import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
+import { createLineLayerProperties, LineProperties } from "~/composition/layer/lineLayerProperties";
 import { createRectLayerProperties, RectProperties } from "~/composition/layer/rectLayerProperties";
 import {
 	createShapeLayerProperties,
@@ -38,6 +39,8 @@ const getLayerTypeSpecificProperties = <T extends LayerType>(
 			return createRectLayerProperties(opts, props);
 		case LayerType.Ellipse:
 			return createEllipseLayerProperties(opts, props);
+		case LayerType.Line:
+			return createLineLayerProperties(opts, props);
 		default:
 			throw new Error(`Invalid layer type '${type}'`);
 	}
@@ -61,6 +64,7 @@ interface TypeToProps {
 	[LayerType.Ellipse]: EllipseProperties;
 	[LayerType.Composition]: {};
 	[LayerType.Shape]: ShapeProperties;
+	[LayerType.Line]: LineProperties;
 }
 
 interface Options<T extends LayerType> {

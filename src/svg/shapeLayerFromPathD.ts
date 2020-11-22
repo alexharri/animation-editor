@@ -162,10 +162,6 @@ const parseD = (d: string, position: Vec2) => {
 		}
 	}
 
-	const out = [...commands];
-
-	// console.log({ in: inn, out });
-
 	return commands;
 };
 

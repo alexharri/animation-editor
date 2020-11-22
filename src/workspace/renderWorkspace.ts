@@ -116,6 +116,51 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	ctx.rect(pan.x, pan.y, composition.width * scale, composition.height * scale);
 	ctx.fill();
 
+	function renderLine(
+		map: CompositionRenderValues,
+		layer: Layer,
+		indexTransforms: LayerTransform[],
+		parentIndexTransforms: ParentIndexTransform[],
+	) {
+		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
+
+		const { Width, StrokeWidth, StrokeColor, LineCap } = nameToProperty;
+
+		if (StrokeWidth === 0) {
+			return;
+		}
+
+		const strokeColor = `rgba(${StrokeColor.join(",")})`;
+
+		const transform = computeLayerTransform(
+			map.transforms[layer.id].transform,
+			indexTransforms,
+			parentIndexTransforms,
+		);
+
+		const mat2 = transform.matrix;
+
+		const [p0, p1] = [
+			[0, 0],
+			[1, 0],
+		].map(([tx, ty]) => {
+			const x = tx * Width - transform.anchor.x;
+			const y = ty * 0 - transform.anchor.y;
+			return mat2.multiply(Vec2.new(x, y)).add(transform.translate).scale(scale).add(pan);
+		});
+
+		ctx.beginPath();
+		ctx.moveTo(p0.x, p0.y);
+		ctx.lineTo(p1.x, p1.y);
+		ctx.lineCap = LineCap;
+		ctx.strokeStyle = strokeColor;
+		ctx.lineWidth =
+			StrokeWidth *
+			scale *
+			interpolate(Math.abs(transform.scaleX), Math.abs(transform.scaleY), 0.5);
+		ctx.stroke();
+	}
+
 	function renderRectLayer(
 		map: CompositionRenderValues,
 		layer: Layer,
@@ -402,19 +447,20 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 					);
 					break;
 				}
-
 				case LayerType.Shape: {
 					renderShapeLayer(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
-
 				case LayerType.Rect: {
 					renderRectLayer(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
-
 				case LayerType.Ellipse: {
 					renderEllipse(map, layer, indexTransforms, parentIndexTransforms);
+					break;
+				}
+				case LayerType.Line: {
+					renderLine(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
 			}
