@@ -38,7 +38,7 @@ const _emptySelection: FlowGraphSelection = { nodes: {} };
 
 export const initialFlowSelectionState: FlowSelectionState = {};
 
-export function singleFlowGraphSelectionReducer(
+function singleFlowGraphSelectionReducer(
 	state: FlowGraphSelection,
 	action: Action,
 ): FlowGraphSelection {

@@ -14,7 +14,7 @@ export const closestPointOnPath = (
 	return closestPointOnCubicBezier(path, vec);
 };
 
-export const closestPointOnLine = ([a, b]: Line, vec: Vec2): { t: number; point: Vec2 } => {
+const closestPointOnLine = ([a, b]: Line, vec: Vec2): { t: number; point: Vec2 } => {
 	const a_to_p: [number, number] = [vec.x - a.x, vec.y - a.y];
 	const a_to_b: [number, number] = [b.x - a.x, b.y - a.y];
 	const atb2 = a_to_b[0] ** 2 + a_to_b[1] ** 2;
@@ -24,7 +24,7 @@ export const closestPointOnLine = ([a, b]: Line, vec: Vec2): { t: number; point:
 	return { point, t };
 };
 
-export const closestPointOnCubicBezier = (bezier: CubicBezier, vec: Vec2) => {
+const closestPointOnCubicBezier = (bezier: CubicBezier, vec: Vec2) => {
 	const { out, localMinimum } = _closestPointOnBezier(bezier, vec);
 	return { point: out, t: localMinimum as number };
 };

@@ -1,28 +1,14 @@
-import { ElementNode } from "svg-parser";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition } from "~/composition/compositionTypes";
 import { requestAction } from "~/listener/requestAction";
 import { projectActions } from "~/project/projectReducer";
 import { getActionState } from "~/state/stateUtils";
 import { constructSvgTree } from "~/svg/parse/parseSvgTree";
-import { createSvgContext, SvgContext } from "~/svg/svgContext";
+import { createSvgContext } from "~/svg/svgContext";
 import { svgLayerFactory } from "~/svg/svgLayerFactory";
 import { SVGSvgNode } from "~/svg/svgTypes";
 import { createMapNumberId } from "~/util/mapUtils";
 import { getNonDuplicateName } from "~/util/names";
-
-export function canRepresentTransform(ctx: SvgContext, node: ElementNode): boolean {
-	const transformString = ctx.attr.transformString(node);
-
-	const tests = ["matrix", "skew", "skewX", "skewY"];
-	for (const test of tests) {
-		if (transformString.indexOf(test) !== -1) {
-			return false;
-		}
-	}
-
-	return true;
-}
 
 function handleSvg(node: SVGSvgNode) {
 	const { width = 100, height = 100 } = node.properties;
@@ -68,7 +54,7 @@ function handleSvg(node: SVGSvgNode) {
 
 export const compositionFromSvg = (svg: string) => {
 	const parsed = constructSvgTree(svg, {
-		toPathify: ["polygon", "polyline", "rect", "ellipse", "line"],
+		toPathify: ["polygon", "polyline", "ellipse"],
 	});
 
 	handleSvg(parsed);

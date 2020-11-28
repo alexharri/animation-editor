@@ -1,4 +1,4 @@
-export interface LineLineIntersection {
+interface LineLineIntersection {
 	intersects: boolean;
 	x: number;
 	y: number;

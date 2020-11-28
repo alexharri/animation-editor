@@ -1,4 +1,5 @@
 import { ElementNode } from "svg-parser";
+import { RAD_TO_DEG_FAC } from "~/constants";
 import { constructParseSvgContext, ParseSvgContext } from "~/svg/parse/parseSvgContext";
 import { svgAttr } from "~/svg/parse/svgAttributes";
 import {
@@ -13,7 +14,7 @@ import {
 	SVGRectNode,
 } from "~/svg/svgTypes";
 import { LayerType } from "~/types";
-import { getDistance } from "~/util/math";
+import { getAngleRadians, getDistance } from "~/util/math";
 
 function getBasicShapeProperties(ctx: ParseSvgContext, node: ElementNode) {
 	const fill = svgAttr.fill(ctx, node) || [0, 0, 0, 0];
@@ -30,9 +31,12 @@ function line(ctx: ParseSvgContext, node: ElementNode): SVGLineNode {
 	const strokeColor = svgAttr.strokeColor(ctx, node);
 	const strokeWidth = svgAttr.strokeWidth(ctx, node);
 	const lineCap = svgAttr.lineCap(ctx, node);
+	const lineAngle = getAngleRadians(line[0], line[1]);
+	const base = svgAttr.base(ctx, node, LayerType.Line);
+	base.rotation += lineAngle * RAD_TO_DEG_FAC;
 	return {
 		tagName: "line",
-		...svgAttr.base(ctx, node, LayerType.Rect),
+		...base,
 		properties: { length, line, strokeColor, strokeWidth, lineCap },
 	};
 }

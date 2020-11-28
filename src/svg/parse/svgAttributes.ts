@@ -57,6 +57,9 @@ export const svgAttr = {
 		if (layerType === LayerType.Ellipse) {
 			x = getProperty<number>(ctx, node, "cx");
 			y = getProperty<number>(ctx, node, "cy");
+		} else if (layerType === LayerType.Line) {
+			x = getProperty<number>(ctx, node, "x1");
+			y = getProperty<number>(ctx, node, "y1");
 		} else {
 			x = getProperty<number>(ctx, node, "x");
 			y = getProperty<number>(ctx, node, "y");
