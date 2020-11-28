@@ -1,12 +1,26 @@
 import { ElementNode, parse } from "svg-parser";
 import { constructParseSvgContext, ParseSvgContext } from "~/svg/parse/parseSvgContext";
 import { svgNodeFactory } from "~/svg/parse/svgNodeFactory";
+import { pathifySvgNode } from "~/svg/parse/svgPathifyNode";
 import { constructSvgStylesheet } from "~/svg/svgStylesheet";
-import { SVGNode, SVGSvgNode } from "~/svg/svgTypes";
+import { SVGNode, SVGNodeBase, SVGSvgNode } from "~/svg/svgTypes";
 
-const svgNodeBase = {
-	anchor: Vec2.ORIGIN,
+function canRepresentTransform(transformString: string): boolean {
+	const tests = ["matrix", "skew", "skewX", "skewY"];
+	for (const test of tests) {
+		if (transformString.indexOf(test) !== -1) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+const svgNodeBase: SVGNodeBase = {
+	transform: "",
+	transformOrigin: "",
 	position: Vec2.ORIGIN,
+	anchor: Vec2.ORIGIN,
 	rotation: 0,
 	scale: Vec2.new(1, 1),
 };
@@ -22,7 +36,11 @@ function parseChild(parentContext: ParseSvgContext, node: ElementNode): SVGNode 
 	return null;
 }
 
-export const constructSvgTree = (svg: string): SVGSvgNode => {
+interface Options {
+	toPathify: Array<SVGNode["tagName"]>;
+}
+
+export const constructSvgTree = (svg: string, options: Options): SVGSvgNode => {
 	const parsed = parse(svg);
 
 	const node = parsed.children[0];
@@ -40,6 +58,7 @@ export const constructSvgTree = (svg: string): SVGSvgNode => {
 		boundingBox: [width, height],
 		stylesheet: constructSvgStylesheet(node),
 		computed: {},
+		toPathify: options.toPathify,
 	};
 
 	const svgNode: SVGSvgNode = {
@@ -55,5 +74,30 @@ export const constructSvgTree = (svg: string): SVGSvgNode => {
 			})
 			.filter((node): node is SVGNode => Boolean(node)),
 	};
-	return svgNode;
+
+	return pathify(svgNode, options.toPathify);
 };
+
+function pathify(svg: SVGSvgNode, toPathify: Array<SVGNode["tagName"]>): SVGSvgNode {
+	function parse(node: SVGNode): SVGNode {
+		if (toPathify.includes(node.tagName) || !canRepresentTransform(node.transform)) {
+			return pathifySvgNode[node.tagName](node);
+		}
+
+		switch (node.tagName) {
+			case "g": {
+				return {
+					...node,
+					children: node.children.map(parse),
+				};
+			}
+		}
+
+		return node;
+	}
+
+	return {
+		...svg,
+		children: svg.children.map(parse),
+	};
+}

@@ -12,6 +12,17 @@ import { FillRule, LayerType, LineCap, LineJoin, RGBAColor } from "~/types";
 import { getRgbaFromCssColor } from "~/util/color/cssColors";
 import { Mat2 } from "~/util/math/mat";
 
+function canRepresentTransform(transformString: string): boolean {
+	const tests = ["matrix", "skew", "skewX", "skewY"];
+	for (const test of tests) {
+		if (transformString.indexOf(test) !== -1) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 const getProperty = <T extends string | number>(
 	ctx: ParseSvgContext,
 	node: ElementNode,
@@ -144,17 +155,23 @@ export const svgAttr = {
 		const transformString = getProperty<string>(ctx, node, "transform");
 		return transformString || "";
 	},
+	transformOriginString: (ctx: ParseSvgContext, node: ElementNode): string => {
+		const transformString = getProperty<string>(ctx, node, "transform-origin");
+		return transformString || "";
+	},
 	base: (ctx: ParseSvgContext, node: ElementNode, layerType: LayerType): SVGNodeBase => {
 		const position = svgAttr.position(ctx, node, layerType);
 		const transformString = getProperty<string>(ctx, node, "transform");
 		const transformOriginString = getProperty<string>(ctx, node, "transform-origin");
 
-		if (!transformString) {
+		if (!transformString || !canRepresentTransform(transformString)) {
 			return {
 				anchor: Vec2.ORIGIN,
 				rotation: 0,
 				scale: Vec2.new(1, 1),
 				position,
+				transform: transformString || "",
+				transformOrigin: transformOriginString || "",
 			};
 		}
 

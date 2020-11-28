@@ -49,7 +49,7 @@ export function pathifySvgElement(ctx: SvgContext, node: ElementNode) {
 					...DEFAULT_LAYER_TRANSFORM,
 					translate: translate.add(Vec2.new(cx, cy)),
 				},
-				props: svgPathElementLayerProps(ctx, node, shapeLayerObjects.pathIds),
+				props: svgPathElementLayerProps(node, shapeLayerObjects.pathIds),
 			}),
 		),
 	);

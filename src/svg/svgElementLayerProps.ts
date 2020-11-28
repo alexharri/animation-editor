@@ -1,20 +1,20 @@
-import { ElementNode } from "svg-parser";
 import { ShapeProperties } from "~/composition/layer/shapeLayerProperties";
-import { SvgContext } from "~/svg/svgContext";
+import { SVGPathNode, SVGPolygonNode, SVGPolylineNode } from "~/svg/svgTypes";
 
 export const svgPathElementLayerProps = (
-	ctx: SvgContext,
-	node: ElementNode,
+	node: SVGPathNode | SVGPolygonNode | SVGPolylineNode,
 	pathIds: string[],
 ): Partial<ShapeProperties> => {
-	const fill = ctx.attr.fill(node);
-	const fillOpacity = ctx.attr.fillOpacity(node);
-	const strokeColor = ctx.attr.strokeColor(node);
-	const fillRule = ctx.attr.fillRule(node);
-	const lineCap = ctx.attr.lineCap(node);
-	const lineJoin = ctx.attr.lineJoin(node);
-	const miterLimit = ctx.attr.miterLimit(node);
-	const strokeWidth = ctx.attr.strokeWidth(node);
+	const {
+		fill,
+		strokeColor,
+		strokeWidth,
+		fillRule,
+		lineCap,
+		lineJoin,
+		miterLimit,
+	} = node.properties;
+	const fillOpacity = fill ? fill[3] : 0;
 
 	return {
 		shapes: [

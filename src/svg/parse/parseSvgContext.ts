@@ -1,11 +1,12 @@
 import { ElementNode } from "svg-parser";
 import { parseStyleString } from "~/svg/svgStylesheet";
-import { SvgStyles, SvgStylesheet } from "~/svg/svgTypes";
+import { SVGNode, SvgStyles, SvgStylesheet } from "~/svg/svgTypes";
 
 export interface ParseSvgContext {
 	stylesheet: SvgStylesheet;
 	boundingBox: [width: number, height: number];
 	computed: SvgStyles;
+	toPathify: Array<SVGNode["tagName"]>;
 }
 
 export const constructParseSvgContext = (
@@ -37,5 +38,6 @@ export const constructParseSvgContext = (
 		boundingBox: parentContext.boundingBox,
 		stylesheet: parentContext.stylesheet,
 		computed,
+		toPathify: parentContext.toPathify,
 	};
 };

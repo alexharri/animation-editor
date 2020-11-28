@@ -217,6 +217,8 @@ export function svgNodeBaseFromTransform(
 		rotation,
 		scale: Vec2.new(scale, scale),
 		position: translate,
+		transform: originalTransformString,
+		transformOrigin: transformOriginString || "",
 	};
 }
 

@@ -1,6 +1,8 @@
 import { FillRule, LineCap, LineJoin, RGBAColor } from "~/types";
 
 export interface SVGNodeBase {
+	transform: string;
+	transformOrigin: string;
 	position: Vec2;
 	anchor: Vec2;
 	rotation: number;
@@ -19,8 +21,10 @@ export interface SVGSvgNode extends SVGNodeBase {
 export interface SVGRectNode extends SVGNodeBase {
 	tagName: "rect";
 	properties: {
+		width: number;
+		height: number;
 		fill?: RGBAColor;
-		stroke?: RGBAColor;
+		strokeColor?: RGBAColor;
 		strokeWidth?: number;
 		lineJoin?: LineJoin;
 	};
@@ -31,6 +35,9 @@ export interface SVGLineNode extends SVGNodeBase {
 	properties: {
 		line: [Vec2, Vec2];
 		length: number;
+		strokeColor?: RGBAColor;
+		strokeWidth?: number;
+		lineCap?: LineCap;
 	};
 }
 
@@ -38,7 +45,7 @@ export interface SVGEllipseNode extends SVGNodeBase {
 	tagName: "ellipse";
 	properties: {
 		fill?: RGBAColor;
-		stroke?: RGBAColor;
+		strokeColor?: RGBAColor;
 		strokeWidth?: number;
 		radius: Vec2;
 	};
@@ -48,7 +55,7 @@ export interface SVGCircleNode extends SVGNodeBase {
 	tagName: "circle";
 	properties: {
 		fill?: RGBAColor;
-		stroke?: RGBAColor;
+		strokeColor?: RGBAColor;
 		strokeWidth?: number;
 		radius: number;
 	};
@@ -57,9 +64,9 @@ export interface SVGCircleNode extends SVGNodeBase {
 export interface SVGPathNode extends SVGNodeBase {
 	tagName: "path";
 	properties: {
-		d?: Array<{ curves: Curve[]; closed: boolean }>;
+		d: Array<{ curves: Curve[]; closed: boolean }>;
 		fill?: RGBAColor;
-		stroke?: RGBAColor;
+		strokeColor?: RGBAColor;
 		strokeWidth?: number;
 		fillRule?: FillRule;
 		lineCap?: LineCap;
@@ -73,7 +80,7 @@ export interface SVGPolygonNode extends SVGNodeBase {
 	properties: {
 		points: Vec2[];
 		fill?: RGBAColor;
-		stroke?: RGBAColor;
+		strokeColor?: RGBAColor;
 		strokeWidth?: number;
 		fillRule?: FillRule;
 		lineCap?: LineCap;
@@ -87,7 +94,7 @@ export interface SVGPolylineNode extends SVGNodeBase {
 	properties: {
 		points: Vec2[];
 		fill?: RGBAColor;
-		stroke?: RGBAColor;
+		strokeColor?: RGBAColor;
 		strokeWidth?: number;
 		fillRule?: FillRule;
 		lineCap?: LineCap;
