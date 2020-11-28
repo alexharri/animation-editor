@@ -6,6 +6,7 @@ import { addListener } from "~/listener/addListener";
 import { isKeyCodeOf, isKeyDown } from "~/listener/keyboard";
 import { historyActions } from "~/state/history/historyActions";
 import { store } from "~/state/store";
+import "~/svg";
 import { App } from "./App";
 
 const Root = () => (

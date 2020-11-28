@@ -23,7 +23,7 @@ import {
 	traceLine,
 	traceRect,
 } from "~/util/canvas/renderPrimitives";
-import { isVecInRect, quadraticToCubicBezier, reflectVectorAngle } from "~/util/math";
+import { completeCubicBezier, isVecInRect, reflectVectorAngle } from "~/util/math";
 import { pathBoundingRect, pathControlPointsBoundingRect } from "~/util/math/boundingRect";
 import { RenderGuidesContext } from "~/workspace/renderTypes";
 
@@ -136,7 +136,7 @@ const renderContinueFrom = (
 	} else {
 		const cp = shapeState.controlPoints[part.controlPointId]!;
 		const p1 = toViewport(node.position.add(cp.position));
-		const bezier = quadraticToCubicBezier(p0, p1, null, p3);
+		const bezier = completeCubicBezier(p0, p1, null, p3);
 		traceCubicBezier(ctx, bezier, { move: true });
 	}
 
@@ -182,7 +182,7 @@ const renderContinueClosePath = (
 	if (p1 && p2) {
 		curve = [p0, p1, p2, p3];
 	} else if (p1 || p2) {
-		curve = quadraticToCubicBezier(p0, p1, p2, p3);
+		curve = completeCubicBezier(p0, p1, p2, p3);
 	} else {
 		curve = [p0, p3];
 	}

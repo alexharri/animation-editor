@@ -36,7 +36,11 @@ export const workspaceLayerBoundingBoxCorners = (
 	const layer = compositionState.layers[layerId];
 
 	const nameToProperty = getLayerNameToProperty(map.properties, compositionState, layerId);
-	const [width, height] = getLayerRectDimensionsAndOffset(layer, nameToProperty, actionState);
+	const [width, height, offX, offY] = getLayerRectDimensionsAndOffset(
+		layer,
+		nameToProperty,
+		actionState,
+	);
 
 	const corners = [
 		[1, 0],
@@ -44,8 +48,8 @@ export const workspaceLayerBoundingBoxCorners = (
 		[0, 1],
 		[0, 0],
 	].map(([tx, ty]) => {
-		let x = tx * width - transform.anchor.x;
-		let y = ty * height - transform.anchor.y;
+		let x = offX + tx * width - transform.anchor.x;
+		let y = offY + ty * height - transform.anchor.y;
 
 		if (layer.type === LayerType.Ellipse) {
 			const r = nameToProperty.OuterRadius;

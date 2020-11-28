@@ -7,6 +7,11 @@ export const hexToRGB = (hex: string): RGBColor => {
 	return [r, g, b].map((c) => parseInt(c, 16)) as RGBColor;
 };
 
+export const hexToRGBA = (hex: string): RGBAColor => {
+	const [r, g, b] = hexToRGB(hex);
+	return [r, g, b, 1];
+};
+
 export const hexToRGBAString = (hex: string, alpha = 1): string =>
 	`rgba(${hexToRGB(hex).join(",")},${alpha})`;
 

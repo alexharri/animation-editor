@@ -31,7 +31,7 @@ import {
 	PropertyName,
 } from "~/types";
 import { traceCurve } from "~/util/canvas/renderPrimitives";
-import { rgbToString } from "~/util/color/convertColor";
+import { rgbaToString } from "~/util/color/convertColor";
 import { interpolate } from "~/util/math";
 import { renderLayerGuides } from "~/workspace/guides/layerGuides";
 import { renderShapeLayerGuides } from "~/workspace/guides/shapeLayerGuides";
@@ -115,6 +115,51 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 	ctx.fillStyle = cssVariables.gray700;
 	ctx.rect(pan.x, pan.y, composition.width * scale, composition.height * scale);
 	ctx.fill();
+
+	function renderLine(
+		map: CompositionRenderValues,
+		layer: Layer,
+		indexTransforms: LayerTransform[],
+		parentIndexTransforms: ParentIndexTransform[],
+	) {
+		const nameToProperty = getNameToProperty(map, compositionState, layer.id);
+
+		const { Width, StrokeWidth, StrokeColor, LineCap } = nameToProperty;
+
+		if (StrokeWidth === 0) {
+			return;
+		}
+
+		const strokeColor = `rgba(${StrokeColor.join(",")})`;
+
+		const transform = computeLayerTransform(
+			map.transforms[layer.id].transform,
+			indexTransforms,
+			parentIndexTransforms,
+		);
+
+		const mat2 = transform.matrix;
+
+		const [p0, p1] = [
+			[0, 0],
+			[1, 0],
+		].map(([tx, ty]) => {
+			const x = tx * Width - transform.anchor.x;
+			const y = ty * 0 - transform.anchor.y;
+			return mat2.multiply(Vec2.new(x, y)).add(transform.translate).scale(scale).add(pan);
+		});
+
+		ctx.beginPath();
+		ctx.moveTo(p0.x, p0.y);
+		ctx.lineTo(p1.x, p1.y);
+		ctx.lineCap = LineCap;
+		ctx.strokeStyle = strokeColor;
+		ctx.lineWidth =
+			StrokeWidth *
+			scale *
+			interpolate(Math.abs(transform.scaleX), Math.abs(transform.scaleY), 0.5);
+		ctx.stroke();
+	}
 
 	function renderRectLayer(
 		map: CompositionRenderValues,
@@ -301,6 +346,7 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 
 		const onPath = (property: Property) => {
 			const pathId = property.value;
+			const path = shapeState.paths[pathId];
 			const shapeGroupId = pathIdToShapeGroupId[pathId];
 			const shapeSelected = compositionSelection.properties[shapeGroupId];
 			const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
@@ -319,25 +365,30 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 			for (let i = 0; i < pathList.length; i++) {
 				traceCurve(ctx, pathList[i], { move: i === 0 });
 			}
+
+			// If items[0] has a left edge, the the path loops.
+			if (path.items[0].left && path.items[0].left.edgeId) {
+				ctx.closePath();
+			}
 		};
 
 		const onFill = (group: PropertyGroup) => {
-			const { color, opacity, fillRule } = getShapeFillGroupValues(group, compositionState);
-			ctx.fillStyle = rgbToString(color, opacity);
+			const { color, fillRule } = getShapeFillGroupValues(group, compositionState);
+			ctx.fillStyle = rgbaToString(color);
 			ctx.fill(fillRule);
 		};
 
 		const onStroke = (group: PropertyGroup) => {
-			const {
-				color,
-				opacity,
-				lineCap,
-				lineJoin,
-				lineWidth,
-				miterLimit,
-			} = getShapeStrokeGroupValues(group, compositionState);
+			const { color, lineCap, lineJoin, lineWidth, miterLimit } = getShapeStrokeGroupValues(
+				group,
+				compositionState,
+			);
 
-			ctx.strokeStyle = rgbToString(color, opacity);
+			if (lineWidth === 0) {
+				return;
+			}
+
+			ctx.strokeStyle = rgbaToString(color);
 			ctx.lineWidth =
 				lineWidth *
 				scale *
@@ -396,19 +447,20 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 					);
 					break;
 				}
-
 				case LayerType.Shape: {
 					renderShapeLayer(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
-
 				case LayerType.Rect: {
 					renderRectLayer(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
-
 				case LayerType.Ellipse: {
 					renderEllipse(map, layer, indexTransforms, parentIndexTransforms);
+					break;
+				}
+				case LayerType.Line: {
+					renderLine(map, layer, indexTransforms, parentIndexTransforms);
 					break;
 				}
 			}

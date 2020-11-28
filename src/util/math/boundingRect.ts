@@ -102,7 +102,7 @@ function lineBoundingRect(line: Line) {
 	return rectOfTwoVecs(line[0], line[1]);
 }
 
-export function curveBoundingRect(curve: Curve) {
+function curveBoundingRect(curve: Curve) {
 	if (curve.length === 2) {
 		return lineBoundingRect(curve);
 	}

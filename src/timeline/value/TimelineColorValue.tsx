@@ -43,7 +43,7 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 
 					let value: RGBColor | RGBAColor = rgbColor;
 					if (props.value.length === 4) {
-						value = [...rgbColor, 1] as RGBAColor;
+						value = [...rgbColor, props.value[3]] as RGBAColor;
 					}
 
 					params.dispatch(compositionActions.setPropertyValue(props.propertyId, value));

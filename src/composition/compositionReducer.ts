@@ -129,6 +129,11 @@ export const compositionActions = {
 			action({ compositionId, type, options });
 	}),
 
+	createNonCompositionLayer: createAction("comp/CREATE_NON_COMP_LAYER", (action) => {
+		return ({ layer, propertiesToAdd }: ReturnType<typeof createLayer>) =>
+			action({ layer, propertiesToAdd });
+	}),
+
 	createCompositionLayerReference: createAction("comp/CREATE_COMP_LAYER_REF", (action) => {
 		return (layerId: string, compositionId: string) => action({ compositionId, layerId });
 	}),
@@ -522,14 +527,14 @@ export const compositionReducer = (
 				);
 			}
 
-			const { layer, propertiesToAdd } = createLayer(
-				state,
-				type,
+			const { layer, propertiesToAdd } = createLayer({
 				compositionId,
-				type === LayerType.Composition
+				type,
+				compositionState: state,
+				...(type === LayerType.Composition
 					? { defaultName: state.compositions[compositionLayerReferenceId!].name }
-					: undefined,
-			);
+					: {}),
+			});
 
 			const layers = [...composition.layers];
 			layers.splice(options?.insertLayerIndex ?? 0, 0, layer.id);
@@ -549,6 +554,24 @@ export const compositionReducer = (
 								[layer.id]: compositionLayerReferenceId!,
 						  }
 						: state.compositionLayerIdToComposition,
+			};
+		}
+
+		case getType(compositionActions.createNonCompositionLayer): {
+			const { layer, propertiesToAdd } = action.payload;
+
+			return {
+				...state,
+				compositions: modifyItemsInMap(
+					state.compositions,
+					layer.compositionId,
+					(composition) => ({
+						...composition,
+						layers: [...composition.layers, layer.id],
+					}),
+				),
+				layers: addListToMap(state.layers, [layer], "id"),
+				properties: addListToMap(state.properties, propertiesToAdd, "id"),
 			};
 		}
 

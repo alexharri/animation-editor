@@ -298,23 +298,29 @@ export const isVecInPoly = (vec: Vec2, poly: Vec2[]) => {
 	return inside;
 };
 
-function _quadraticToCubicBezierCalcP2(p3: Vec2, p1: Vec2): Vec2 {
+function _completeCubicBezierCalcP2(p3: Vec2, p1: Vec2): Vec2 {
 	return Vec2.new(p1.x + (p3.x - p1.x) * 0.4, p1.y + (p3.y - p1.y) * 0.4);
 }
 
-export function quadraticToCubicBezier(
+export function completeCubicBezier(
 	p0: Vec2,
 	p1: Vec2 | null,
 	p2: Vec2 | null,
 	p3: Vec2,
 ): CubicBezier {
 	if (p1 === null) {
-		const newP1 = _quadraticToCubicBezierCalcP2(p2!, p0);
+		const newP1 = _completeCubicBezierCalcP2(p2!, p0);
 		return [p0, newP1, p2!, p3];
 	} else {
-		const newP2 = _quadraticToCubicBezierCalcP2(p1!, p3);
+		const newP2 = _completeCubicBezierCalcP2(p1!, p3);
 		return [p0, p1, newP2, p3];
 	}
+}
+
+export function quadraticToCubicBezier(p0: Vec2, p1: Vec2, p2: Vec2): CubicBezier {
+	const cp0 = p0.add(p1.sub(p0).scale(2 / 3));
+	const cp1 = p2.add(p1.sub(p2).scale(2 / 3));
+	return [p0, cp0, cp1, p2];
 }
 
 export const rectCorners = (rect: Rect): Vec2[] => {

@@ -14,6 +14,7 @@ const layerTypeToName: { [key in keyof typeof LayerType]: string } = {
 	Rect: "Rect layer",
 	Composition: "Composition layer",
 	Shape: "Shape layer",
+	Line: "Line layer",
 };
 
 export const getLayerTypeName = (type: LayerType): string => {
@@ -94,6 +95,12 @@ export const getLayerRectDimensionsAndOffset = (
 			width = nameToProperty.OuterRadius * 2;
 			height = nameToProperty.OuterRadius * 2;
 			break;
+		}
+
+		case LayerType.Line: {
+			width = nameToProperty.Width;
+			height = 2;
+			offY -= 1;
 		}
 	}
 

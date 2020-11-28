@@ -10,6 +10,7 @@ export type ToDispatch = Action[];
 export interface Operation {
 	actions: Action[];
 	add: (...actions: Action[]) => void;
+	clear: () => void;
 }
 
 export type CardinalDirection = "n" | "w" | "s" | "e";
@@ -60,6 +61,7 @@ export enum LayerType {
 	Ellipse = 1,
 	Composition = 2,
 	Shape = 3,
+	Line = 4,
 }
 
 // Property group names start at 5000 so they don't overlap with property names.

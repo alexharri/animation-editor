@@ -16,14 +16,14 @@ import {
 	LineJoin,
 	PropertyGroupName,
 	PropertyName,
-	RGBColor,
+	RGBAColor,
 } from "~/types";
 import {
+	completeCubicBezier,
 	expandRect,
 	getAngleRadians,
 	getDistance,
 	isVecInRect,
-	quadraticToCubicBezier,
 	rectOfVecs,
 } from "~/util/math";
 import { closestPointOnPath } from "~/util/math/closestPoint";
@@ -156,7 +156,7 @@ export const pathIdToCurves = (
 		if (p1 && p2) {
 			curve = [p0, p1, p2, p3];
 		} else if (p1 || p2) {
-			curve = quadraticToCubicBezier(p0, p1, p2, p3);
+			curve = completeCubicBezier(p0, p1, p2, p3);
 		} else {
 			curve = [p0, p3];
 		}
@@ -661,7 +661,7 @@ export const getShapeStrokeGroupValues = (
 	compositionState: CompositionState,
 ) => {
 	let lineWidth!: number;
-	let color!: RGBColor;
+	let color!: RGBAColor;
 	let opacity!: number;
 	let lineJoin!: LineJoin;
 	let lineCap!: LineCap;
@@ -704,7 +704,7 @@ export const getShapeFillGroupValues = (
 	group: PropertyGroup,
 	compositionState: CompositionState,
 ) => {
-	let color!: RGBColor;
+	let color!: RGBAColor;
 	let opacity!: number;
 	let fillRule!: FillRule;
 

@@ -21,7 +21,7 @@ const getSelectedTimelineIds = (areaId: string, actionState = getActionState()) 
 	);
 };
 
-export const timelineShortcuts = {
+const timelineShortcuts = {
 	removeSelectedKeyframes: (areaId: string, params: RequestActionParams) => {
 		const { compositionId } = getAreaActionState(areaId);
 		const timelineIds = getSelectedTimelineIds(areaId);

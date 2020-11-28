@@ -5,22 +5,21 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { TimelineColors } from "~/constants";
-import { PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
+import { LineCap, PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
 
-export interface RectProperties {
-	fill: RGBAColor;
+export interface LineProperties {
 	strokeColor: RGBAColor;
 	strokeWidth: number;
 	width: number;
-	height: number;
+	lineCap: LineCap;
 }
 
-const dimensionProperties = (
+const contentProperties = (
 	opts: CreatePropertyOptions,
-	props: Partial<RectProperties>,
+	props: Partial<LineProperties>,
 ): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
-	const { width = 100, height = 100 } = props;
+	const { strokeWidth = 0, strokeColor = [0, 0, 0, 1], lineCap = "butt", width = 100 } = props;
 
 	const properties: Property[] = [
 		{
@@ -33,57 +32,6 @@ const dimensionProperties = (
 			valueType: ValueType.Number,
 			color: TimelineColors.Width,
 			value: width,
-			min: 0,
-			compoundPropertyId: "",
-		},
-		{
-			type: "property",
-			id: createId(),
-			layerId,
-			compositionId,
-			name: PropertyName.Height,
-			timelineId: "",
-			valueType: ValueType.Number,
-			color: TimelineColors.Height,
-			value: height,
-			min: 0,
-			compoundPropertyId: "",
-		},
-	];
-
-	const group: PropertyGroup = {
-		type: "group",
-		name: PropertyGroupName.Dimensions,
-		id: opts.createId(),
-		layerId,
-		compositionId,
-		properties: properties.map((p) => p.id),
-		collapsed: true,
-		graphId: "",
-		viewProperties: [],
-	};
-
-	return { properties, group };
-};
-
-const contentProperties = (
-	opts: CreatePropertyOptions,
-	props: Partial<RectProperties>,
-): CreateLayerPropertyGroup => {
-	const { compositionId, createId, layerId } = opts;
-	const { fill = [255, 0, 0, 1], strokeWidth = 0, strokeColor = [0, 0, 0, 1] } = props;
-
-	const properties: Property[] = [
-		{
-			type: "property",
-			id: createId(),
-			layerId,
-			compositionId,
-			name: PropertyName.Fill,
-			timelineId: "",
-			valueType: ValueType.RGBAColor,
-			color: TimelineColors.Width,
-			value: fill,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -118,12 +66,11 @@ const contentProperties = (
 			id: createId(),
 			layerId,
 			compositionId,
-			name: PropertyName.BorderRadius,
+			name: PropertyName.LineCap,
 			timelineId: "",
-			valueType: ValueType.Number,
+			valueType: ValueType.LineCap,
 			color: TimelineColors.Height,
-			value: 0,
-			min: 0,
+			value: lineCap,
 			compoundPropertyId: "",
 		},
 	];
@@ -143,9 +90,9 @@ const contentProperties = (
 	return { properties, group };
 };
 
-export const createRectLayerProperties = (
+export const createLineLayerProperties = (
 	opts: CreatePropertyOptions,
-	props: Partial<RectProperties> = {},
+	props: Partial<LineProperties> = {},
 ): CreateLayerPropertyGroup[] => {
-	return [dimensionProperties(opts, props), contentProperties(opts, props)];
+	return [contentProperties(opts, props)];
 };

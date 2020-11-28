@@ -39,10 +39,10 @@ import { LayerType, PropertyGroupName, PropertyName, ToDispatch } from "~/types"
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
 import {
+	completeCubicBezier,
 	interpolateCubicBezier,
 	isVecInRect,
 	projectVecTo45DegAngle,
-	quadraticToCubicBezier,
 	rectOfTwoVecs,
 	splitLine,
 } from "~/util/math";
@@ -697,7 +697,7 @@ export const penToolHandlers = {
 				[curve0, curve1] = splitCubicBezier(cubicBezier, t);
 				position = interpolateCubicBezier(cubicBezier, t);
 			} else if (p1 || p2) {
-				const cubicBezier = quadraticToCubicBezier(p0, p1, p2, p3);
+				const cubicBezier = completeCubicBezier(p0, p1, p2, p3);
 				[curve0, curve1] = splitCubicBezier(cubicBezier, t);
 				position = interpolateCubicBezier(cubicBezier, t);
 			} else {
