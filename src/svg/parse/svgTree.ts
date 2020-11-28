@@ -5,6 +5,10 @@ import { pathifySvgNode } from "~/svg/parse/svgPathifyNode";
 import { constructSvgStylesheet } from "~/svg/svgStylesheet";
 import { SVGNode, SVGNodeBase, SVGSvgNode } from "~/svg/svgTypes";
 
+/**
+ * If the transform includes a matrix or skew, we cannot represent
+ * the transform via a LayerTransform.
+ */
 function canRepresentTransform(transformString: string): boolean {
 	const tests = ["matrix", "skew", "skewX", "skewY"];
 	for (const test of tests) {
@@ -37,10 +41,14 @@ function parseChild(parentContext: ParseSvgContext, node: ElementNode): SVGNode 
 }
 
 interface Options {
+	/**
+	 * The svg element types listed in `toPathify` will be converted to
+	 * path elements.
+	 */
 	toPathify: Array<SVGNode["tagName"]>;
 }
 
-export const constructSvgTree = (svg: string, options: Options): SVGSvgNode => {
+export const svgTreeFromSvgString = (svg: string, options: Options): SVGSvgNode => {
 	const parsed = parse(svg);
 
 	const node = parsed.children[0];
@@ -78,6 +86,11 @@ export const constructSvgTree = (svg: string, options: Options): SVGSvgNode => {
 	return pathify(svgNode, options.toPathify);
 };
 
+/**
+ * Converts the element types specified by `toPathify` and the
+ * nodes whose transform cannot be represented by a LayerTransform
+ * into path elements.
+ */
 function pathify(svg: SVGSvgNode, toPathify: Array<SVGNode["tagName"]>): SVGSvgNode {
 	function parse(node: SVGNode): SVGNode {
 		if (toPathify.includes(node.tagName) || !canRepresentTransform(node.transform)) {

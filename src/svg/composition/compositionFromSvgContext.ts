@@ -4,7 +4,7 @@ import { createOperation } from "~/state/operation";
 import { Operation } from "~/types";
 import { createGenMapIdFn } from "~/util/mapUtils";
 
-export interface SvgContext {
+export interface CompositionFromSvgContext {
 	params: RequestActionParams;
 	op: Operation;
 	compositionState: CompositionState;
@@ -19,15 +19,15 @@ export interface SvgContext {
 	boundingBox: [width: number, height: number];
 }
 
-export const createSvgContext = (
+export const createCompositionFromSvgContext = (
 	params: RequestActionParams,
 	compositionId: string,
 	actionState: ActionState,
 	boundingBox: [width: number, height: number],
-): SvgContext => {
+): CompositionFromSvgContext => {
 	const { compositionState, shapeState } = actionState;
 
-	const ctx: SvgContext = {
+	const ctx: CompositionFromSvgContext = {
 		params,
 		compositionId,
 		compositionState,

@@ -1,4 +1,4 @@
-import { matrixAndTranslateFromSvgTransform } from "~/svg/parseSvgTransform";
+import { matrixAndTranslateFromSvgTransform } from "~/svg/svgTransform";
 import { SVGNode } from "~/svg/svgTypes";
 import { Mat2 } from "~/util/math/mat";
 

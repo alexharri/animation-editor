@@ -3,9 +3,9 @@ import { Composition } from "~/composition/compositionTypes";
 import { requestAction } from "~/listener/requestAction";
 import { projectActions } from "~/project/projectReducer";
 import { getActionState } from "~/state/stateUtils";
-import { constructSvgTree } from "~/svg/parse/parseSvgTree";
-import { createSvgContext } from "~/svg/svgContext";
-import { svgLayerFactory } from "~/svg/svgLayerFactory";
+import { createCompositionFromSvgContext } from "~/svg/composition/compositionFromSvgContext";
+import { svgLayerFactory } from "~/svg/composition/svgLayerFactory";
+import { svgTreeFromSvgString } from "~/svg/parse/svgTree";
 import { SVGSvgNode } from "~/svg/svgTypes";
 import { createMapNumberId } from "~/util/mapUtils";
 import { getNonDuplicateName } from "~/util/names";
@@ -31,7 +31,10 @@ function handleSvg(node: SVGSvgNode) {
 		params.dispatch(compositionActions.setComposition(composition));
 		params.dispatch(projectActions.addComposition(composition));
 
-		const ctx = createSvgContext(params, composition.id, getActionState(), [width, height]);
+		const ctx = createCompositionFromSvgContext(params, composition.id, getActionState(), [
+			width,
+			height,
+		]);
 
 		for (const child of [...node.children].reverse()) {
 			if (typeof child === "string") {
@@ -53,7 +56,7 @@ function handleSvg(node: SVGSvgNode) {
 }
 
 export const compositionFromSvg = (svg: string) => {
-	const parsed = constructSvgTree(svg, {
+	const parsed = svgTreeFromSvgString(svg, {
 		toPathify: ["polygon", "polyline", "ellipse"],
 	});
 

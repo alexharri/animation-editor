@@ -3,10 +3,7 @@ import { DEG_TO_RAD_FAC } from "~/constants";
 import { dToPaths } from "~/svg/parse/dToCurves";
 import { ParseSvgContext } from "~/svg/parse/parseSvgContext";
 import { pointStringToPoints } from "~/svg/parse/polyToPoints";
-import {
-	matrixAndTranslateFromSvgTransform,
-	svgNodeBaseFromTransform,
-} from "~/svg/parseSvgTransform";
+import { matrixAndTranslateFromSvgTransform, svgNodeBaseFromTransform } from "~/svg/svgTransform";
 import { SVGNodeBase } from "~/svg/svgTypes";
 import { FillRule, LayerType, LineCap, LineJoin, RGBAColor } from "~/types";
 import { getRgbaFromCssColor } from "~/util/color/cssColors";

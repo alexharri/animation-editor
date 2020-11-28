@@ -3,9 +3,9 @@ import { createLayer } from "~/composition/layer/createLayer";
 import { DEFAULT_LAYER_TRANSFORM, DEG_TO_RAD_FAC } from "~/constants";
 import { shapeActions } from "~/shape/shapeReducer";
 import { getActionState } from "~/state/stateUtils";
+import { CompositionFromSvgContext } from "~/svg/composition/compositionFromSvgContext";
+import { svgPathElementLayerProps } from "~/svg/composition/svgElementLayerProps";
 import { shapeLayerFromCurves } from "~/svg/parse/shapeLayerFromCurves";
-import { SvgContext } from "~/svg/svgContext";
-import { svgPathElementLayerProps } from "~/svg/svgElementLayerProps";
 import {
 	SVGCircleNode,
 	SVGGNode,
@@ -30,7 +30,7 @@ const transformFromNode = (node: SVGNode): LayerTransform => {
 	};
 };
 
-function rect(ctx: SvgContext, _node: SVGNode) {
+function rect(ctx: CompositionFromSvgContext, _node: SVGNode) {
 	const node = _node as SVGRectNode;
 	const transform = transformFromNode(node);
 	const { width, height, fill, strokeColor, strokeWidth } = node.properties;
@@ -48,7 +48,7 @@ function rect(ctx: SvgContext, _node: SVGNode) {
 	);
 }
 
-function circle(ctx: SvgContext, _node: SVGNode) {
+function circle(ctx: CompositionFromSvgContext, _node: SVGNode) {
 	const node = _node as SVGCircleNode;
 	const transform = transformFromNode(node);
 	const { radius, fill, strokeColor, strokeWidth } = node.properties;
@@ -66,7 +66,7 @@ function circle(ctx: SvgContext, _node: SVGNode) {
 	);
 }
 
-function line(ctx: SvgContext, _node: SVGNode) {
+function line(ctx: CompositionFromSvgContext, _node: SVGNode) {
 	const node = _node as SVGLineNode;
 	const transform = transformFromNode(node);
 	const { line, lineCap, strokeColor, strokeWidth } = node.properties;
@@ -85,7 +85,7 @@ function line(ctx: SvgContext, _node: SVGNode) {
 	);
 }
 
-function path(ctx: SvgContext, _node: SVGNode) {
+function path(ctx: CompositionFromSvgContext, _node: SVGNode) {
 	const node = _node as SVGPathNode;
 	const transform = transformFromNode(node);
 	const shapeLayerObjects = shapeLayerFromCurves(ctx, node.properties.d);
@@ -118,7 +118,7 @@ function path(ctx: SvgContext, _node: SVGNode) {
 	);
 }
 
-function g(ctx: SvgContext, _node: SVGNode) {
+function g(ctx: CompositionFromSvgContext, _node: SVGNode) {
 	const node = _node as SVGGNode;
 
 	for (const child of [...node.children].reverse()) {
@@ -134,7 +134,7 @@ function g(ctx: SvgContext, _node: SVGNode) {
 
 export const svgLayerFactory: Partial<Record<
 	SVGNode["tagName"],
-	(ctx: SvgContext, node: SVGNode) => void
+	(ctx: CompositionFromSvgContext, node: SVGNode) => void
 >> = {
 	circle,
 	line,

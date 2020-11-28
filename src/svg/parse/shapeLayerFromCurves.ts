@@ -7,11 +7,11 @@ import {
 	ShapePath,
 	ShapePathItem,
 } from "~/shape/shapeTypes";
-import { SvgContext } from "~/svg/svgContext";
+import { CompositionFromSvgContext } from "~/svg/composition/compositionFromSvgContext";
 import { addListToMap, removeKeysFromMap } from "~/util/mapUtils";
 
 export const shapeLayerFromCurves = (
-	ctx: SvgContext,
+	ctx: CompositionFromSvgContext,
 	pathCurves: Array<{ curves: Curve[]; closed: boolean }>,
 ): { pathIds: string[]; shapeState: ShapeState } => {
 	const shapes: ShapeGraph[] = [];
