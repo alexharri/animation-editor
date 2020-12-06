@@ -7,7 +7,7 @@ import { workspaceOperations } from "~/workspace/workspaceOperations";
 
 const workspaceShortcuts = {
 	selectTool: (tool: Tool) => (_: string, params: RequestActionParams) => {
-		const op = createOperation();
+		const op = createOperation(params);
 		workspaceOperations.selectTool(op, tool);
 
 		params.dispatch(op.actions);

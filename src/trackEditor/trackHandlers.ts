@@ -160,7 +160,7 @@ const actions = {
 					return !selection.keyframes[k.id];
 				});
 
-				const op = createOperation();
+				const op = createOperation(params);
 
 				if (!additiveSelection && anyNotSelected) {
 					op.add(

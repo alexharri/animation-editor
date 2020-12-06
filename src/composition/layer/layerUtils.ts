@@ -1,13 +1,24 @@
 import { CompositionState } from "~/composition/compositionReducer";
-import { Layer } from "~/composition/compositionTypes";
+import { CompoundProperty, Layer, Property, PropertyGroup } from "~/composition/compositionTypes";
+import { propertyUtil } from "~/composition/property/propertyUtil";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { TIMELINE_HEADER_HEIGHT, TIMELINE_LAYER_HEIGHT } from "~/constants";
 import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
+import { getActionState } from "~/state/stateUtils";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
-import { LayerType, NameToProperty, PropertyName, PropertyValueMap } from "~/types";
+import {
+	CompoundPropertyName,
+	LayerTransform,
+	LayerType,
+	NameToProperty,
+	PropertyGroupName,
+	PropertyName,
+	PropertyValueMap,
+} from "~/types";
 import { boundingRectOfRects, isVecInRect } from "~/util/math";
 import { pathBoundingRect } from "~/util/math/boundingRect";
+import { Mat2 } from "~/util/math/mat";
 
 const layerTypeToName: { [key in keyof typeof LayerType]: string } = {
 	Ellipse: "Ellipse layer",
@@ -184,4 +195,119 @@ export const getValidLayerParentLayerIds = (
 	};
 
 	return layerIds.filter((layerId) => !isReferencedBy(layerId));
+};
+
+export const layerUtils = {
+	findLayerProperty: <T extends Property | CompoundProperty | PropertyGroup>(
+		inGroup: PropertyGroupName,
+		layerId: string,
+		compositionState: CompositionState,
+		fn: (property: Property | CompoundProperty | PropertyGroup) => boolean,
+	): T | null => {
+		const layer = compositionState.layers[layerId];
+
+		function crawl(propertyId: string): T | null {
+			const property = compositionState.properties[propertyId];
+
+			if (fn(property)) {
+				return property as T;
+			}
+
+			if (property.type === "group") {
+				for (const propertyId of property.properties) {
+					const property = crawl(propertyId);
+					if (property) {
+						return property;
+					}
+				}
+			}
+
+			return null;
+		}
+
+		for (const propertyId of layer.properties) {
+			const group = compositionState.properties[propertyId];
+			if (group.name !== inGroup) {
+				continue;
+			}
+
+			const property = crawl(propertyId);
+			return property || null;
+		}
+
+		return null;
+	},
+
+	getPosition: (layerId: string): Vec2 => {
+		const { compositionState } = getActionState();
+		const property = layerUtils.findLayerProperty<CompoundProperty>(
+			PropertyGroupName.Transform,
+			layerId,
+			compositionState,
+			(property) => {
+				return property.name === CompoundPropertyName.Position;
+			},
+		)!;
+		const [xId, yId] = property.properties;
+		const x = propertyUtil.getValue(xId);
+		const y = propertyUtil.getValue(yId);
+		return Vec2.new(x, y);
+	},
+
+	getTransform: (layerId: string): LayerTransform => {
+		const { compositionState } = getActionState();
+		const layer = compositionState.layers[layerId];
+
+		let transformGroup!: PropertyGroup;
+
+		for (const propertyId of layer.properties) {
+			const group = compositionState.properties[propertyId];
+			if (group.name === PropertyGroupName.Transform) {
+				transformGroup = group;
+				break;
+			}
+		}
+
+		const transform: LayerTransform = {
+			anchor: Vec2.new(0, 0),
+			matrix: Mat2.identity(),
+			origin: Vec2.ORIGIN,
+			originBehavior: "relative",
+			rotation: 0,
+			scaleX: 0,
+			scaleY: 0,
+			translate: Vec2.new(0, 0),
+		};
+
+		const propertyIds = [...transformGroup.properties];
+		for (let i = 0; i < propertyIds.length; i++) {
+			const propertyId = propertyIds[i];
+			const property = compositionState.properties[propertyId];
+
+			switch (property.name) {
+				case CompoundPropertyName.Position: {
+					const [x, y] = property.properties.map(propertyUtil.getValue);
+					transform.translate = Vec2.new(x, y);
+					break;
+				}
+				case CompoundPropertyName.Anchor: {
+					const [x, y] = property.properties.map(propertyUtil.getValue);
+					transform.anchor = Vec2.new(x, y);
+					break;
+				}
+				case CompoundPropertyName.Scale: {
+					const [x, y] = property.properties.map(propertyUtil.getValue);
+					transform.scaleX = x;
+					transform.scaleY = y;
+					break;
+				}
+				case PropertyName.Rotation: {
+					const rotation = propertyUtil.getValue(property.id);
+					transform.rotation = rotation;
+				}
+			}
+		}
+
+		return transform;
+	},
 };

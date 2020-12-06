@@ -110,9 +110,13 @@ export function svgNodeBaseFromTransform(
 
 		switch (command) {
 			case "translate": {
-				const [x, y] = values;
-				if (typeof x !== "number" || typeof y !== "number") {
+				let [x, y] = values;
+				if (typeof y !== "number") {
+					y = 0;
+				}
+				if (typeof x !== "number") {
 					console.warn(`Invalid translate transform '${transformStr}'`);
+					break;
 				}
 				translate = translate.add(Vec2.new(x, y));
 				break;
@@ -121,6 +125,7 @@ export function svgNodeBaseFromTransform(
 				const [angleDeg] = values;
 				if (typeof angleDeg !== "number") {
 					console.warn(`Invalid rotate transform '${transformStr}'`);
+					break;
 				}
 				rotation += angleDeg;
 				break;
@@ -129,6 +134,7 @@ export function svgNodeBaseFromTransform(
 				const [scale] = values;
 				if (typeof scale !== "number") {
 					console.warn(`Invalid rotate transform '${transformStr}'`);
+					break;
 				}
 				translate = translate.scale(scale);
 				break;

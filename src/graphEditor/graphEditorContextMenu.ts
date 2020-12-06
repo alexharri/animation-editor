@@ -18,7 +18,7 @@ export const openGraphEditorContextMenu = (position: Vec2, opts: Options) => {
 		(params) => {
 			const { timelineIds, compositionId } = opts;
 
-			const op = createOperation();
+			const op = createOperation(params);
 
 			const options: ContextMenuOption[] = [];
 

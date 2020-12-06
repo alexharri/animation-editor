@@ -366,6 +366,12 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 				traceCurve(ctx, pathList[i], { move: i === 0 });
 			}
 
+			if (!path.items.length) {
+				console.log(path);
+				console.warn("Path with no items.");
+				return;
+			}
+
 			// If items[0] has a left edge, the the path loops.
 			if (path.items[0].left && path.items[0].left.edgeId) {
 				ctx.closePath();

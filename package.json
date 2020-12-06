@@ -2,11 +2,13 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "@pixi/app": "^5.3.3",
     "@types/svg-parser": "^2.0.1",
     "bezier-easing": "^2.1.0",
     "css": "^3.0.0",
     "emotion": "^10.0.27",
     "mathjs": "^6.6.4",
+    "pixi.js": "^5.3.3",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-redux": "^7.1.3",

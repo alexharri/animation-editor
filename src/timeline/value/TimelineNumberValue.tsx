@@ -29,6 +29,8 @@ const usePropertyNumberInput = (
 	const onValueChangeFn = useRef<((value: number) => void) | null>(null);
 	const onValueChangeEndFn = useRef<(() => void) | null>(null);
 
+	const { layerId } = property;
+
 	const onValueChange = (value: number): void => {
 		if (onValueChangeFn.current) {
 			onValueChangeFn.current(value);
@@ -83,7 +85,7 @@ const usePropertyNumberInput = (
 			}
 
 			onValueChangeFn.current = (value) => {
-				const op = createOperation();
+				const op = createOperation(params);
 				const { compositionState, timelineState } = getActionState();
 
 				const update = (propertyId: string, value: number) => {
@@ -161,11 +163,14 @@ const usePropertyNumberInput = (
 					const proportion = proportionRef.current;
 					update(otherPropertyId, proportion * value);
 				}
-				params.dispatch(op.actions);
+
+				op.performDiff((diff) => diff.modifyLayer(layerId));
+				op.submit();
 			};
 			onValueChangeFn.current(value);
 
 			onValueChangeEndFn.current = () => {
+				params.addDiff((diff) => diff.modifyLayer(layerId));
 				paramsRef.current?.submitAction("Update value");
 			};
 		});

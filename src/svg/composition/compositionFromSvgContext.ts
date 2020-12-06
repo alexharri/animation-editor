@@ -38,7 +38,7 @@ export const createCompositionFromSvgContext = (
 		createNodeId: createGenMapIdFn(shapeState.nodes),
 		createPathId: createGenMapIdFn(shapeState.paths),
 		createShapeId: createGenMapIdFn(shapeState.shapes),
-		op: createOperation(),
+		op: createOperation(params),
 		boundingBox,
 	};
 

@@ -6,6 +6,21 @@ export const hexToRGB = (hex: string): RGBColor => {
 	const [, r, g, b] = hexRegex.exec(hex)!;
 	return [r, g, b].map((c) => parseInt(c, 16)) as RGBColor;
 };
+export const hexToBinary = (hex: string): number => {
+	if (hex.substr(0, 1) === "#") {
+		hex = hex.substr(1);
+	}
+	return parseInt(hex, 16);
+};
+
+export const rgbToBinary = (rgb: RGBColor): number => {
+	const [r, g, b] = rgb;
+	let n = r * 256;
+	n += g;
+	n *= 256;
+	n += b;
+	return n;
+};
 
 export const hexToRGBA = (hex: string): RGBAColor => {
 	const [r, g, b] = hexToRGB(hex);

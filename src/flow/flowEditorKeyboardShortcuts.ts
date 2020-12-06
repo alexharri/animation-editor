@@ -10,7 +10,7 @@ const getAreaActionState = (areaId: string, actionState = getActionState()) =>
 
 const flowShortcuts = {
 	removeSelectedNodes: (areaId: string, params: RequestActionParams) => {
-		const op = createOperation();
+		const op = createOperation(params);
 		const { graphId } = getAreaActionState(areaId);
 		flowOperations.removeSelectedNodesInGraph(op, graphId);
 		params.dispatch(op.actions);

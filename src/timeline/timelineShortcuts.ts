@@ -26,7 +26,7 @@ const timelineShortcuts = {
 		const { compositionId } = getAreaActionState(areaId);
 		const timelineIds = getSelectedTimelineIds(areaId);
 
-		const op = createOperation();
+		const op = createOperation(params);
 		timelineOperations.removeSelectedKeyframes(op, timelineIds, compositionId);
 
 		params.dispatch(op.actions);
@@ -35,7 +35,7 @@ const timelineShortcuts = {
 	easeEaseSelectedKeyframes: (areaId: string, params: RequestActionParams) => {
 		const timelineIds = getSelectedTimelineIds(areaId);
 
-		const op = createOperation();
+		const op = createOperation(params);
 		timelineOperations.easyEaseSelectedKeyframes(op, timelineIds);
 
 		params.dispatch(op.actions);

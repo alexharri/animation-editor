@@ -1,5 +1,7 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { getActionState } from "~/state/stateUtils";
 import { LayerType } from "~/types";
 
 export const reduceVisibleLayerProperties = <T>(
@@ -320,4 +322,16 @@ export const getParentPropertyInLayer = (
 	return findLayerProperty(layerId, compositionState, (group) => {
 		return group.type === "group" && group.properties.indexOf(propertyId) !== -1;
 	});
+};
+
+export const compUtil = {
+	getSelectedLayers: (compositionId: string) => {
+		const { compositionState, compositionSelectionState } = getActionState();
+		const composition = compositionState.compositions[compositionId];
+		const compositionSelection = compSelectionFromState(
+			compositionId,
+			compositionSelectionState,
+		);
+		return composition.layers.filter((layerId) => compositionSelection.layers[layerId]);
+	},
 };

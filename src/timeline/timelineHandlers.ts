@@ -350,8 +350,9 @@ export const timelineHandlers = {
 			}
 		}
 
-		requestAction({ history: true }, ({ dispatch, submitAction }) => {
-			const op = createOperation();
+		requestAction({ history: true }, (params) => {
+			const { dispatch, submitAction } = params;
+			const op = createOperation(params);
 
 			for (const property of properties) {
 				if (anyHasTimeline) {
@@ -849,7 +850,7 @@ export const timelineHandlers = {
 		requestAction(
 			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
 			(params) => {
-				const op = createOperation();
+				const op = createOperation(params);
 
 				if (!additiveSelection) {
 					// Clear other properties and timeline keyframes

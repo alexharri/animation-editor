@@ -2,9 +2,9 @@ import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
 import { Property } from "~/composition/compositionTypes";
 import {
+	compUtil,
 	getTimelineIdsReferencedByComposition,
 	reduceCompProperties,
-	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
 import {
 	compSelectionFromState,
@@ -12,9 +12,10 @@ import {
 } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
-import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { requestAction } from "~/listener/requestAction";
 import { getShapeLayerSelectedPathIds, getSingleSelectedShapeLayerId } from "~/shape/shapeUtils";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
+import { createOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import {
@@ -25,6 +26,7 @@ import {
 import { PropertyName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { isVecInPoly } from "~/util/math";
+import { moveToolUtil } from "~/workspace/moveTool/moveToolUtil";
 import { penToolHandlers } from "~/workspace/penTool/penTool";
 import {
 	globalToWorkspacePosition,
@@ -121,59 +123,59 @@ export const moveToolHandlers = {
 		const willBeSelected = !compositionSelection.layers[layerId];
 		const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
 
-		const addLayerToSelection = (params: RequestActionParams) => {
-			params.dispatch(compSelectionActions.addLayerToSelection(compositionId, layerId));
-		};
+		// const addLayerToSelection = (params: RequestActionParams) => {
+		// 	params.dispatch(compSelectionActions.addLayerToSelection(compositionId, layerId));
+		// };
 
-		const removeLayerFromSelection = (params: RequestActionParams) => {
-			params.dispatch(
-				compSelectionActions.removeLayersFromSelection(compositionId, [layerId]),
-			);
-		};
+		// const removeLayerFromSelection = (params: RequestActionParams) => {
+		// 	params.dispatch(
+		// 		compSelectionActions.removeLayersFromSelection(compositionId, [layerId]),
+		// 	);
+		// };
 
-		const clearCompositionSelection = (params: RequestActionParams) => {
-			// Clear composition selection
-			params.dispatch(compSelectionActions.clearCompositionSelection(compositionId));
+		// const clearCompositionSelection = (params: RequestActionParams) => {
+		// 	// Clear composition selection
+		// 	params.dispatch(compSelectionActions.clearCompositionSelection(compositionId));
 
-			// Clear timeline selection of selected properties
-			const timelineIds = getTimelineIdsReferencedByComposition(
-				compositionId,
-				compositionState,
-			);
-			params.dispatch(
-				timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
-			);
-		};
+		// 	// Clear timeline selection of selected properties
+		// 	const timelineIds = getTimelineIdsReferencedByComposition(
+		// 		compositionId,
+		// 		compositionState,
+		// 	);
+		// 	params.dispatch(
+		// 		timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
+		// 	);
+		// };
 
-		const deselectLayerProperties = (params: RequestActionParams) => {
-			// Deselect all properties and timeline keyframes
-			const propertyIds = reduceLayerPropertiesAndGroups<string[]>(
-				layerId,
-				compositionState,
-				(acc, property) => {
-					acc.push(property.id);
-					return acc;
-				},
-				[],
-			).filter((propertyId) => compositionSelection.properties[propertyId]);
+		// const deselectLayerProperties = (params: RequestActionParams) => {
+		// 	// Deselect all properties and timeline keyframes
+		// 	const propertyIds = reduceLayerPropertiesAndGroups<string[]>(
+		// 		layerId,
+		// 		compositionState,
+		// 		(acc, property) => {
+		// 			acc.push(property.id);
+		// 			return acc;
+		// 		},
+		// 		[],
+		// 	).filter((propertyId) => compositionSelection.properties[propertyId]);
 
-			const timelineIds = propertyIds.reduce<string[]>((acc, propertyId) => {
-				const property = compositionState.properties[propertyId];
+		// 	const timelineIds = propertyIds.reduce<string[]>((acc, propertyId) => {
+		// 		const property = compositionState.properties[propertyId];
 
-				if (property.type === "property" && property.timelineId) {
-					acc.push(property.timelineId);
-				}
+		// 		if (property.type === "property" && property.timelineId) {
+		// 			acc.push(property.timelineId);
+		// 		}
 
-				return acc;
-			}, []);
+		// 		return acc;
+		// 	}, []);
 
-			params.dispatch(
-				compSelectionActions.removePropertiesFromSelection(compositionId, propertyIds),
-			);
-			params.dispatch(
-				timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
-			);
-		};
+		// 	params.dispatch(
+		// 		compSelectionActions.removePropertiesFromSelection(compositionId, propertyIds),
+		// 	);
+		// 	params.dispatch(
+		// 		timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
+		// 	);
+		// };
 
 		const layerInitialPositions: { [layerId: string]: Vec2 } = {};
 		const layerPositionPropertyIds: { [layerId: string]: [string, string] } = {};
@@ -238,12 +240,15 @@ export const moveToolHandlers = {
 			shouldAddToStack: [didCompSelectionChange(compositionId), () => didMove],
 			translate: (vec) => globalToWorkspacePosition(vec, viewport, scale, pan),
 			beforeMove: (params) => {
+				const op = createOperation(params);
+
 				if (!additiveSelection && willBeSelected) {
 					// The selection is non-additive and the layer will be selected.
 					//
 					// Clear the composition selection and then add the layer to selection.
-					clearCompositionSelection(params);
-					addLayerToSelection(params);
+					moveToolUtil.clearCompositionSelection(op, compositionId);
+					moveToolUtil.addLayerToSelection(op, layerId);
+					op.submit();
 					return;
 				}
 
@@ -251,13 +256,18 @@ export const moveToolHandlers = {
 					// The selection is additive and the layer will NOT be selected.
 					//
 					// Deselect the layer and its properties.
-					deselectLayerProperties(params);
-					removeLayerFromSelection(params);
+					moveToolUtil.deselectLayerProperties(op, layerId);
+					moveToolUtil.removeLayerFromSelection(op, layerId);
 				} else {
-					addLayerToSelection(params);
+					// Layer will be selected and the selection is additive.
+					moveToolUtil.addLayerToSelection(op, layerId);
 				}
+
+				op.submit();
 			},
 			mouseMove: (params, { moveVector: _moveVector, keyDown }) => {
+				const op = createOperation(params);
+
 				// Layer was deselected, do not move selected layers.
 				if (additiveSelection && !willBeSelected) {
 					return;
@@ -267,21 +277,14 @@ export const moveToolHandlers = {
 					didMove = true;
 				}
 
-				const {
-					timelineState: timelines,
-					compositionState,
-					compositionSelectionState,
-				} = getActionState();
+				const { timelineState, compositionState, compositionSelectionState } = op.state;
 				const compositionSelection = compSelectionFromState(
 					compositionId,
 					compositionSelectionState,
 				);
 
-				const toDispatch: any[] = [];
-
-				const layerIds = composition.layers.filter(
-					(layerId) => compositionSelection.layers[layerId],
-				);
+				const layerIds = compUtil.getSelectedLayers(compositionId);
+				op.performDiff((diff) => diff.moveLayer(layerIds));
 
 				for (const layerId of layerIds) {
 					const layer = compositionState.layers[layerId];
@@ -328,18 +331,18 @@ export const moveToolHandlers = {
 						const property = compositionState.properties[propertyId] as Property;
 
 						if (!property.timelineId) {
-							toDispatch.push(compositionActions.setPropertyValue(propertyId, value));
+							op.add(compositionActions.setPropertyValue(propertyId, value));
 							continue;
 						}
 
-						const timeline = timelines[property.timelineId];
+						const timeline = timelineState[property.timelineId];
 						const keyframes = timeline.keyframes;
 
 						const { frameIndex } = composition;
 
 						// Frame index before first timeline keyframe
 						if (frameIndex < keyframes[0].index) {
-							toDispatch.push(
+							op.add(
 								timelineActions.setKeyframe(
 									timeline.id,
 									createTimelineKeyframe(value, frameIndex),
@@ -350,7 +353,7 @@ export const moveToolHandlers = {
 
 						// Frame index after last timeline keyframe
 						if (frameIndex > keyframes[keyframes.length - 1].index) {
-							toDispatch.push(
+							op.add(
 								timelineActions.setKeyframe(
 									timeline.id,
 									createTimelineKeyframe(value, frameIndex),
@@ -363,7 +366,7 @@ export const moveToolHandlers = {
 
 						// Frame index exactly at a specific keyframe
 						if (kIndex !== -1) {
-							toDispatch.push(
+							op.add(
 								timelineActions.setKeyframe(timeline.id, {
 									...keyframes[kIndex],
 									value,
@@ -386,31 +389,38 @@ export const moveToolHandlers = {
 								keyframes[j + 1],
 								frameIndex,
 							);
-							toDispatch.push(timelineActions.setKeyframe(timeline.id, k0));
-							toDispatch.push(timelineActions.setKeyframe(timeline.id, k));
-							toDispatch.push(timelineActions.setKeyframe(timeline.id, k1));
+							op.add(
+								timelineActions.setKeyframe(timeline.id, k0),
+								timelineActions.setKeyframe(timeline.id, k),
+								timelineActions.setKeyframe(timeline.id, k1),
+							);
 						}
 					}
 				}
 
-				params.dispatch(toDispatch);
+				op.submit();
 			},
-			mouseUp: (params) => {
+			mouseUp: (params, didMove) => {
 				if (additiveSelection && !willBeSelected) {
 					params.submitAction("Remove layer from selection");
 					return;
 				}
 
+				const op = createOperation(params);
+
 				if (didMove) {
+					const layerIds = compUtil.getSelectedLayers(compositionId);
+					params.addDiff((diff) => diff.moveLayer(layerIds));
 					params.submitAction("Move selected layers", { allowIndexShift: true });
 					return;
 				}
 
 				if (!additiveSelection) {
-					clearCompositionSelection(params);
-					addLayerToSelection(params);
+					moveToolUtil.clearCompositionSelection(op, compositionId);
+					moveToolUtil.addLayerToSelection(op, layerId);
 				}
 
+				op.submit();
 				params.submitAction("Add layer to selection");
 			},
 		});

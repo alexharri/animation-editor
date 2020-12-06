@@ -1,11 +1,18 @@
 import { ActionType } from "typesafe-actions";
+import { Diff } from "~/diff/diffs";
 import { historyActions } from "~/state/history/historyActions";
 
 type HistoryAction = ActionType<typeof historyActions>;
 
 export interface HistoryState<S> {
 	type: "normal" | "selection";
-	list: Array<{ state: S; name: string; modifiedRelated: boolean; allowIndexShift: boolean }>;
+	list: Array<{
+		state: S;
+		name: string;
+		modifiedRelated: boolean;
+		allowIndexShift: boolean;
+		diffs: Diff[];
+	}>;
 	index: number;
 	indexDirection: -1 | 1;
 	action: null | {
@@ -33,6 +40,7 @@ export function createReducerWithHistory<S>(
 				name: "Initial state",
 				modifiedRelated: false,
 				allowIndexShift: false,
+				diffs: [],
 			},
 		],
 		index: 0,
@@ -157,6 +165,7 @@ export function createReducerWithHistory<S>(
 					modifiesHistory,
 					modifiedKeys,
 					allowIndexShift,
+					diffs,
 				} = action.payload;
 
 				if (!modifiesHistory) {
@@ -185,6 +194,7 @@ export function createReducerWithHistory<S>(
 							name,
 							modifiedRelated: modifiedKeys.indexOf(selectionForKey) !== -1,
 							allowIndexShift,
+							diffs,
 						},
 					],
 					index: state.index + 1,

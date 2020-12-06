@@ -65,33 +65,6 @@ export const createShapeLayerShapeGroup = (
 	};
 	propertiesToAdd.push(group);
 
-	const pathIds = typeof pathIdOrPathIds === "string" ? [pathIdOrPathIds] : pathIdOrPathIds;
-
-	let pathPropertyId!: string;
-
-	for (let i = 0; i < pathIds.length; i++) {
-		const pathId = pathIds[i];
-		const path: Property = {
-			type: "property",
-			name: PropertyName.ShapeLayer_Path,
-			valueType: ValueType.Path,
-			value: pathId,
-			id: opts.createId(),
-			compositionId,
-			layerId,
-			timelineId: "",
-			color: TimelineColors.Height,
-			compoundPropertyId: "",
-		};
-
-		group.properties.push(path.id);
-		propertiesToAdd.push(path);
-
-		if (i === 0) {
-			pathPropertyId = path.id;
-		}
-	}
-
 	if (shouldIncludeFill) {
 		const fillProperties: Property[] = [
 			{
@@ -246,6 +219,33 @@ export const createShapeLayerShapeGroup = (
 
 		group.properties.push(strokeGroup.id);
 		propertiesToAdd.push(strokeGroup, ...strokeProperties);
+	}
+
+	const pathIds = typeof pathIdOrPathIds === "string" ? [pathIdOrPathIds] : pathIdOrPathIds;
+
+	let pathPropertyId!: string;
+
+	for (let i = 0; i < pathIds.length; i++) {
+		const pathId = pathIds[i];
+		const path: Property = {
+			type: "property",
+			name: PropertyName.ShapeLayer_Path,
+			valueType: ValueType.Path,
+			value: pathId,
+			id: opts.createId(),
+			compositionId,
+			layerId,
+			timelineId: "",
+			color: TimelineColors.Height,
+			compoundPropertyId: "",
+		};
+
+		group.properties.push(path.id);
+		propertiesToAdd.push(path);
+
+		if (i === 0) {
+			pathPropertyId = path.id;
+		}
 	}
 
 	const transform = createLayerTransformProperties(opts);

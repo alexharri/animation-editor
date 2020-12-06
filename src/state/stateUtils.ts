@@ -66,7 +66,15 @@ export const createApplicationStateFromActionState = (
 		action: null,
 		index: 0,
 		indexDirection: 1,
-		list: [{ state, modifiedRelated: false, name: "Initial state", allowIndexShift: false }],
+		list: [
+			{
+				state,
+				modifiedRelated: false,
+				name: "Initial state",
+				allowIndexShift: false,
+				diffs: [],
+			},
+		],
 		type,
 	});
 

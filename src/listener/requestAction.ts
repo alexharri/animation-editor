@@ -1,5 +1,8 @@
 import { areaActions } from "~/area/state/areaActions";
+import { diffFactory, DiffFactoryFn } from "~/diff/diffFactory";
+import { Diff } from "~/diff/diffs";
 import { addListener as _addListener, removeListener } from "~/listener/addListener";
+import { sendDiffsToSubscribers } from "~/listener/diffListener";
 import { historyActions } from "~/state/history/historyActions";
 import { HistoryState } from "~/state/history/historyReducer";
 import { getActionId, getActionState, getCurrentState } from "~/state/stateUtils";
@@ -38,6 +41,8 @@ export interface RequestActionParams {
 	removeListener: typeof removeListener;
 	execOnComplete: (callback: () => void) => void;
 	done: () => boolean;
+	addDiff: (fn: DiffFactoryFn) => void;
+	performDiff: (fn: DiffFactoryFn) => void;
 }
 
 export interface RequestActionCallback {
@@ -110,6 +115,15 @@ const performRequestedAction = (
 		store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 	};
 
+	const diffs: Diff[] = [];
+	// const diff = Object.keys(genDiff).reduce<any>((obj, key) => {
+	// 	obj[key] = (...args: any[]) => {
+	// 		const item = (genDiff as any)[key](...args);
+	// 		diffs.push(item);
+	// 	};
+	// 	return obj;
+	// }, {}) as typeof genDiff;
+
 	const params: RequestActionParams = {
 		done,
 
@@ -174,7 +188,14 @@ const performRequestedAction = (
 			}
 
 			store.dispatch(
-				historyActions.submitAction(actionId, name, history, modifiedKeys, allowIndexShift),
+				historyActions.submitAction(
+					actionId,
+					name,
+					history,
+					modifiedKeys,
+					allowIndexShift,
+					diffs,
+				),
 			);
 			onComplete();
 		},
@@ -187,6 +208,17 @@ const performRequestedAction = (
 
 		execOnComplete: (cb) => {
 			onCompleteCallback = cb;
+		},
+
+		addDiff: (fn) => {
+			const diff = fn(diffFactory);
+			diffs.push(diff);
+			sendDiffsToSubscribers([diff]);
+		},
+
+		performDiff: (fn) => {
+			const diff = fn(diffFactory);
+			sendDiffsToSubscribers([diff]);
 		},
 	};
 

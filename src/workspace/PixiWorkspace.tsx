@@ -1,13 +1,12 @@
-import React, { useEffect, useRef } from "react";
+import * as PIXI from "pixi.js";
+import React, { useCallback, useEffect, useRef } from "react";
 import { getCompositionPlayback, useCompositionPlayback } from "~/composition/compositionPlayback";
 import { Tool } from "~/constants";
 import { cssCursors, cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
-import {
-	renderCompositionWorkspaceGuides as renderWorkspaceGuides,
-	renderWorkspace,
-} from "~/render/renderWorkspace";
+import { manageComposition } from "~/render/pixi/compositionManager";
+import { renderCompositionWorkspaceGuides as renderWorkspaceGuides } from "~/render/renderWorkspace";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionId, getActionState } from "~/state/stateUtils";
 import { AreaComponentProps } from "~/types/areaTypes";
@@ -146,6 +145,91 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 		})();
 	});
 
+	const appRef = useRef<PIXI.Application | null>(null);
+
+	useEffect(() => {
+		const canvas = canvasRef.current;
+
+		if (!canvas) {
+			return;
+		}
+
+		const unsubscribe = manageComposition(props.areaState.compositionId, props.areaId, canvas);
+		return unsubscribe;
+	}, []);
+
+	// useEffect(() => {
+	// 	const canvas = canvasRef.current;
+	// 	if (!canvas) {
+	// 		return;
+	// 	}
+	// 	const app = new PIXI.Application({
+	// 		width: canvas.width,
+	// 		height: canvas.height,
+	// 		view: canvas,
+	// 		transparent: true,
+	// 		antialias: true,
+	// 	});
+	// 	appRef.current = app;
+
+	// 	const shapes: PIXI.Container[] = [];
+
+	// 	const actionState = getActionState();
+	// 	const { compositionState } = actionState;
+
+	// 	const { compositionId } = props.areaState;
+	// 	const composition = compositionState.compositions[compositionId];
+
+	// 	for (const layerId of composition.layers) {
+	// 		const layer = compositionState.layers[layerId];
+	// 		const node = layerToPixi(actionState, layer);
+	// 		shapes.push(node);
+	// 	}
+
+	// 	// const N = 200;
+	// 	// for (let i = 0; i < N; i++) {
+	// 	// 	const shape = new PIXI.Graphics()
+	// 	// 		.beginFill(0x7700ff)
+	// 	// 		.lineStyle(2, 0xff0000, 1)
+	// 	// 		.moveTo(100, 100)
+	// 	// 		.bezierCurveTo(150, 100, 200, 150, 200, 200)
+	// 	// 		.lineTo(180, 200)
+	// 	// 		.bezierCurveTo(180, 120, 120, 120, 100, 120)
+	// 	// 		.closePath();
+	// 	// 	// shape.scale.set(interpolate(0.1, 4, i / N));
+	// 	// 	shape.pivot.set(200, 200);
+	// 	// 	shapes.push(shape);
+	// 	// }
+
+	// 	const tick = () => {
+	// 		requestAnimationFrame(tick);
+
+	// 		for (let i = 0; i < shapes.length; i++) {
+	// 			const shape = shapes[i];
+	// 			shape.position.set(500 + i * 50, 500 + i * 50);
+	// 			shape.rotation += 0.01;
+	// 		}
+	// 	};
+	// 	tick();
+
+	// 	app.stage.addChild(...shapes);
+	// }, []);
+
+	const renderWorkspace = useCallback((options: ReturnType<typeof getOptions>) => {
+		const props = propsRef.current;
+		const app = appRef.current;
+
+		if (!app) {
+			return;
+		}
+
+		if (app.screen.width !== props.width || app.screen.height !== props.height) {
+			console.log("updating size");
+			app.screen.width = props.width;
+			app.screen.height = props.height;
+		}
+	}, []);
+
 	const keyDownRef = useRef({ Shift: false, Command: false });
 
 	useEffect(() => {
@@ -156,10 +240,10 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				requestAnimationFrame(tick);
 			}
 
-			const mainCtx = canvasRef.current?.getContext("2d");
+			// const mainCtx = canvasRef.current?.getContext("2d");
 			const guidesCtx = guideCanvasRef.current?.getContext("2d");
 
-			if (!mainCtx || !guidesCtx) {
+			if (!guidesCtx) {
 				return;
 			}
 
@@ -169,7 +253,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				renderWorkspace(
 					getOptions(
 						propsRef.current,
-						mainCtx,
+						null as any,
 						undefined,
 						keyDownRef.current,
 						playback.frameIndex,
@@ -184,7 +268,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 			if (render) {
 				shouldRenderRef.current = false;
 				renderWorkspace(
-					getOptions(propsRef.current, mainCtx, undefined, keyDownRef.current),
+					getOptions(propsRef.current, null as any, undefined, keyDownRef.current),
 				);
 			}
 
@@ -300,4 +384,4 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 	);
 };
 
-export const Workspace = WorkspaceComponent;
+export const PixiWorkspace = WorkspaceComponent;

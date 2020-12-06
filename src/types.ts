@@ -1,4 +1,5 @@
 import { keys } from "~/constants";
+import { DiffFactoryFn } from "~/diff/diffFactory";
 import { RequestActionParams } from "~/listener/requestAction";
 import { Mat2 } from "~/util/math/mat";
 
@@ -11,6 +12,10 @@ export interface Operation {
 	actions: Action[];
 	add: (...actions: Action[]) => void;
 	clear: () => void;
+	addDiff: (fn: DiffFactoryFn) => void;
+	performDiff: (fn: DiffFactoryFn) => void;
+	submit: () => void;
+	state: ActionState;
 }
 
 export type CardinalDirection = "n" | "w" | "s" | "e";
