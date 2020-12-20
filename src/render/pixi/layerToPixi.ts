@@ -13,10 +13,9 @@ import {
 } from "~/shape/shapeUtils";
 import { LayerType, PropertyGroupName, PropertyName } from "~/types";
 import { rgbToBinary } from "~/util/color/convertColor";
+import { newTess } from "~/util/math/newTess";
 
-const shapeLayerToPixi = (actionState: ActionState, layer: Layer): PIXI.Container => {
-	const graphic = new PIXI.Graphics();
-
+const shapeLayerToPixi = (actionState: ActionState, layer: Layer, graphic: PIXI.Graphics) => {
 	const {
 		shapeState,
 		shapeSelectionState,
@@ -72,50 +71,77 @@ const shapeLayerToPixi = (actionState: ActionState, layer: Layer): PIXI.Containe
 
 	const onPath = (property: Property) => {
 		const pathId = property.value;
-		const path = shapeState.paths[pathId];
 		const shapeGroupId = pathIdToShapeGroupId[pathId];
 		const shapeSelected = compositionSelection.properties[shapeGroupId];
 		const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
-		const pathList = pathIdToCurves(pathId, shapeState, shapeSelectionState, shapeMoveVector);
+		const curves = pathIdToCurves(pathId, shapeState, shapeSelectionState, shapeMoveVector);
 
-		if (!pathList) {
+		// const item0 = path.items[0];
+		// const item1 = path.items[path.items.length - 1];
+
+		if (curves) {
+			// const closed =
+			// 	(item0.left && item0.left.edgeId) === (item1.right && item1.right.edgeId);
+			// tesselateCurves(curves!, closed);
+		}
+
+		if (!curves || curves.length === 0) {
 			return;
 		}
 
-		const firstPath = pathList[0];
+		// const closed = (item0.left && item0.left.edgeId) === (item1.right && item1.right.edgeId);
+		// console.log(newTess(curves, closed));
+		// const { closedPaths, openPaths } = tesselateCurves(graphic, curves, closed);
+		const closedPaths = newTess(curves);
 
-		if (firstPath) {
-			graphic.moveTo(firstPath[0].x, firstPath[0].y);
-		}
-
-		for (let i = 0; i < pathList.length; i++) {
-			const path = pathList[i];
-			if (path.length === 2) {
-				const [, p1] = path;
-				graphic.lineTo(p1.x, p1.y);
-			} else {
-				const [, p1, p2, p3] = path;
-				graphic.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+		// console.log({ paths: [...paths] });
+		for (const path of closedPaths) {
+			const first = path[0];
+			if (first) {
+				const [x, y] = first;
+				graphic.moveTo(x, y);
 			}
-		}
 
-		if (!path.items.length) {
-			console.log(path);
-			console.warn("Path with no items.");
-			return;
-		}
+			for (const [x, y] of path.slice(1)) {
+				graphic.lineTo(x, y);
+			}
 
-		// If items[0] has a left edge, the the path loops.
-		if (path.items[0].left && path.items[0].left.edgeId) {
 			graphic.closePath();
 		}
+
+		// const firstPath = curves[0];
+
+		// if (firstPath) {
+		// 	graphic.moveTo(firstPath[0].x, firstPath[0].y);
+		// }
+
+		// for (let i = 0; i < curves.length; i++) {
+		// 	const path = curves[i];
+		// 	if (path.length === 2) {
+		// 		const [, p1] = path;
+		// 		graphic.lineTo(p1.x, p1.y);
+		// 	} else {
+		// 		const [, p1, p2, p3] = path;
+		// 		graphic.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+		// 	}
+		// }
+
+		// if (!path.items.length) {
+		// 	console.log(path);
+		// 	console.warn("Path with no items.");
+		// 	return;
+		// }
+
+		// // If items[0] has a left edge, the the path loops.
+		// if (path.items[0].left && path.items[0].left.edgeId) {
+		// 	graphic.closePath();
+		// }
 	};
 
 	const onFill = (group: PropertyGroup) => {
 		const { color } = getShapeFillGroupValues(group, compositionState);
 		const [r, g, b, a] = color;
 		graphic.beginFill(rgbToBinary([r, g, b]), a);
-		graphic.fill;
 	};
 
 	const onStroke = (group: PropertyGroup) => {
@@ -163,12 +189,9 @@ const shapeLayerToPixi = (actionState: ActionState, layer: Layer): PIXI.Containe
 			}
 		}
 	}
-	return graphic;
 };
 
-const rectLayerToPixi = (actionState: ActionState, layer: Layer): PIXI.Container => {
-	const graphic = new PIXI.Graphics();
-
+const rectLayerToPixi = (actionState: ActionState, layer: Layer, graphic: PIXI.Graphics) => {
 	const { compositionState } = actionState;
 
 	const wp = layerUtils.findLayerProperty(
@@ -206,22 +229,32 @@ const rectLayerToPixi = (actionState: ActionState, layer: Layer): PIXI.Container
 	return graphic;
 };
 
-const createGraphic = (actionState: ActionState, layer: Layer): PIXI.Container => {
+const setGraphicContent = (actionState: ActionState, layer: Layer, graphic: PIXI.Graphics) => {
 	switch (layer.type) {
 		case LayerType.Shape:
-			return shapeLayerToPixi(actionState, layer);
+			return shapeLayerToPixi(actionState, layer, graphic);
 		case LayerType.Rect:
-			return rectLayerToPixi(actionState, layer);
+			return rectLayerToPixi(actionState, layer, graphic);
 	}
 	throw new Error("Not implemented");
 };
 
-export const layerToPixi = (actionState: ActionState, layer: Layer): PIXI.Container => {
-	const graphic = createGraphic(actionState, layer);
+export const layerToPixi = (actionState: ActionState, layer: Layer): PIXI.Graphics => {
+	const graphic = new PIXI.Graphics();
+	setGraphicContent(actionState, layer, graphic);
 	const transform = layerUtils.getTransform(layer.id);
 	graphic.scale.set(transform.scaleX, transform.scaleY);
 	graphic.rotation = transform.rotation * DEG_TO_RAD_FAC;
 	graphic.position.set(transform.translate.x, transform.translate.y);
 	graphic.pivot.set(transform.anchor.x, transform.anchor.y);
 	return graphic;
+};
+
+export const updatePixiLayerContent = (
+	actionState: ActionState,
+	layer: Layer,
+	graphic: PIXI.Graphics,
+) => {
+	graphic.clear();
+	setGraphicContent(actionState, layer, graphic);
 };

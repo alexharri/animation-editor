@@ -7,7 +7,7 @@ export const diffFactory = {
 		return { type: DiffType.MoveLayer, layerIds };
 	},
 	layer: (...layerIds: string[]): Diff => {
-		return { type: DiffType.ModifyLayer, layerIds };
+		return { type: DiffType.Layer, layerIds };
 	},
 	compositionView: (compositionId: string): Diff => {
 		return { type: DiffType.ModifyCompositionView, compositionId };
@@ -19,7 +19,7 @@ export const diffFactory = {
 		return { type: DiffType.RemoveLayer, layerIds: [layerId] };
 	},
 	modifyLayer: (layerId: string): Diff => {
-		return { type: DiffType.ModifyLayer, layerIds: [layerId] };
+		return { type: DiffType.Layer, layerIds: [layerId] };
 	},
 	layerTransform: (layerId: string): Diff => {
 		return { type: DiffType.LayerTransform, layerIds: [layerId] };

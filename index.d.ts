@@ -20,4 +20,9 @@ declare interface MapOf<T> {
 	[key: string]: T;
 }
 
+declare const ClipperLib: any;
+
 declare module "svg-arc-to-cubic-bezier";
+declare module "kld-contours";
+declare module "kld-affine";
+declare module "simplepolygon";

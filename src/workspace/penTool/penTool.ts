@@ -293,6 +293,7 @@ export const penToolHandlers = {
 		};
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyLayer(layerId),
 			keys: ["Shift"],
 			translate: ctx.globalToNormal,
 			beforeMove: (params) => {
@@ -903,6 +904,7 @@ export const penToolHandlers = {
 		};
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyLayer(ctx.layerId),
 			keys: ["Shift"],
 			translate: ctx.globalToNormal,
 			beforeMove: (params) => {
@@ -1371,6 +1373,7 @@ export const penToolHandlers = {
 		let rcpr: string;
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyLayer(ctx.layerId),
 			keys: ["Shift"],
 			translate: ctx.globalToNormal,
 			beforeMove: () => {},
@@ -1599,6 +1602,7 @@ export const penToolHandlers = {
 		};
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyLayer(layerId),
 			keys: ["Shift"],
 			translate: ctx.globalToNormal,
 			beforeMove: (params) => {
@@ -1709,6 +1713,7 @@ export const penToolHandlers = {
 		let nextcp0Id!: string;
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyLayer(ctx.layerId),
 			translate: ctx.globalToNormal,
 			keys: ["Shift"],
 			beforeMove: (params, { mousePosition }) => {
@@ -1966,6 +1971,7 @@ export const penToolHandlers = {
 		let rcpr: string;
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyLayer(ctx.layerId),
 			translate: ctx.globalToNormal,
 			keys: ["Shift"],
 			beforeMove: (params) => {
@@ -2135,6 +2141,7 @@ export const penToolHandlers = {
 		const e1cpId = createCpId();
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyLayer(layerId),
 			translate: ctx.globalToNormal,
 			keys: ["Shift"],
 			beforeMove: (params, { mousePosition }) => {

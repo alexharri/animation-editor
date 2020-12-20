@@ -1,10 +1,9 @@
 import * as PIXI from "pixi.js";
-import { Composition } from "~/composition/compositionTypes";
 import { layerUtils } from "~/composition/layer/layerUtils";
 import { AreaType } from "~/constants";
 import { DiffType } from "~/diff/diffs";
 import { subscribeToDiffs, unsubscribeToDiffs } from "~/listener/diffListener";
-import { layerToPixi } from "~/render/pixi/layerToPixi";
+import { layerToPixi, updatePixiLayerContent } from "~/render/pixi/layerToPixi";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import { Area } from "~/types/areaTypes";
@@ -31,7 +30,7 @@ export const manageComposition = (
 		antialias: true,
 	});
 
-	const graphics: Record<string, PIXI.Container> = {};
+	const graphics: Record<string, PIXI.Graphics> = {};
 
 	const getHalfStage = () => Vec2.new(canvas.width, canvas.height).scale(0.5);
 
@@ -51,9 +50,9 @@ export const manageComposition = (
 		}
 
 		const area = prevState.area.areas[areaId] as Area<AreaType.Workspace>;
-		const { scale } = area.state;
+		const { scale = 1, pan: _pan = Vec2.ORIGIN } = area ? area.state : {};
 
-		const pan = area.state.pan.add(getHalfStage());
+		const pan = _pan.add(getHalfStage());
 
 		compContainer.scale.set(scale, scale);
 		compContainer.position.set(pan.x, pan.y);
@@ -117,9 +116,16 @@ export const manageComposition = (
 					onRemoveLayers(diff.layerIds);
 					break;
 				}
-				case DiffType.ModifyLayer: {
-					onRemoveLayers(diff.layerIds);
-					onAddLayers(diff.layerIds);
+				case DiffType.Layer: {
+					const { compositionState } = actionState;
+					for (const layerId of diff.layerIds) {
+						const layer = compositionState.layers[layerId];
+						const graphic = graphics[layerId];
+						if (!graphic) {
+							continue;
+						}
+						updatePixiLayerContent(actionState, layer, graphic);
+					}
 				}
 			}
 		}

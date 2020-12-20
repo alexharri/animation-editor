@@ -9,7 +9,7 @@ export enum DiffType {
 	MoveLayer = 0,
 	RemoveLayer = 2,
 	AddLayer = 3,
-	ModifyLayer = 4,
+	Layer = 4,
 	ResizeComposition = 5,
 	ModifyCompositionView = 6,
 	LayerTransform = 7,
@@ -53,8 +53,8 @@ export interface AddLayerDiff extends _L {
  *  - Shapes
  *  - Flows
  */
-export interface ModifyLayerDiff extends _L {
-	type: DiffType.ModifyLayer;
+export interface LayerDiff extends _L {
+	type: DiffType.Layer;
 }
 
 export interface LayerTransformDiff extends _L {
@@ -67,5 +67,5 @@ export type Diff =
 	| MoveLayerDiff
 	| RemoveLayerDiff
 	| AddLayerDiff
-	| ModifyLayerDiff
+	| LayerDiff
 	| LayerTransformDiff;
