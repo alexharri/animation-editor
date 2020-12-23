@@ -10,22 +10,23 @@ export enum DiffType {
 	RemoveLayer = 2,
 	AddLayer = 3,
 	Layer = 4,
-	ResizeComposition = 5,
+	ModifyCompositionDimensions = 5,
 	ModifyCompositionView = 6,
 	LayerTransform = 7,
+	ResizeAreas = 8,
 }
 
-/**
- * Composition width or height was modified
- */
-export interface ResizeCompositionDiff extends _C {
-	type: DiffType.ResizeComposition;
-}
 /**
  * Pan or Scale of composition was modified
  */
 export interface ModifyCompositionViewDiff extends _C {
 	type: DiffType.ModifyCompositionView;
+}
+/**
+ * Composition width or height was modified
+ */
+export interface ModifyCompositionDimensions extends _C {
+	type: DiffType.ModifyCompositionDimensions;
 }
 /**
  * Layers within a composition were moved
@@ -61,11 +62,16 @@ export interface LayerTransformDiff extends _L {
 	type: DiffType.LayerTransform;
 }
 
+export interface ResizeAreasDiff {
+	type: DiffType.ResizeAreas;
+}
+
 export type Diff =
-	| ResizeCompositionDiff
+	| ModifyCompositionDimensions
 	| ModifyCompositionViewDiff
 	| MoveLayerDiff
 	| RemoveLayerDiff
 	| AddLayerDiff
 	| LayerDiff
-	| LayerTransformDiff;
+	| LayerTransformDiff
+	| ResizeAreasDiff;

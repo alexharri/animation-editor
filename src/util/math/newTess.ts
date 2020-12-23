@@ -23,6 +23,11 @@ export const newTess = (curves: Array<Line | CubicBezier>) => {
 		points.push(..._points.map(({ x, y }) => [x, y] as [number, number]));
 	}
 
+	// `simplepolygon` requires that polygons have 4 or more points
+	if (points.length < 4) {
+		return [points];
+	}
+
 	for (let i = 1; i < points.length; i++) {
 		const a = points[i - 1];
 		const b = points[i];

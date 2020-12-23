@@ -7,7 +7,7 @@ import { AreaType } from "~/constants";
 import { requestAction } from "~/listener/requestAction";
 import { getActionState } from "~/state/stateUtils";
 import { getDistance } from "~/util/math";
-import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
+import { WorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 
 interface Options {
 	compositionId: string;
@@ -21,7 +21,7 @@ export const dragProjectWorkspaceToArea = (e: React.MouseEvent, options: Options
 	requestAction({ history: false }, (params) => {
 		const { dispatch, cancelAction, submitAction, addListener } = params;
 
-		const initialState: CompositionWorkspaceAreaState = {
+		const initialState: WorkspaceAreaState = {
 			...areaInitialStates[AreaType.Workspace],
 			compositionId,
 		};

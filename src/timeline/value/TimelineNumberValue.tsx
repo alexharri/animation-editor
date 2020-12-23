@@ -3,6 +3,7 @@ import { NumberInput } from "~/components/common/NumberInput";
 import { LinkIcon } from "~/components/icons/LinkIcon";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition, CompoundProperty, Property } from "~/composition/compositionTypes";
+import { getPropertyDiff } from "~/diff/propertyDiff";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
@@ -164,13 +165,13 @@ const usePropertyNumberInput = (
 					update(otherPropertyId, proportion * value);
 				}
 
-				op.performDiff((diff) => diff.modifyLayer(layerId));
+				op.performDiff(() => getPropertyDiff(layerId, property.name));
 				op.submit();
 			};
 			onValueChangeFn.current(value);
 
 			onValueChangeEndFn.current = () => {
-				params.addDiff((diff) => diff.modifyLayer(layerId));
+				params.addDiff(() => getPropertyDiff(layerId, property.name));
 				paramsRef.current?.submitAction("Update value");
 			};
 		});

@@ -113,7 +113,6 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 	}, [containerRef.current]);
 
 	if (!graph) {
-		console.log(props);
 		return null;
 	}
 

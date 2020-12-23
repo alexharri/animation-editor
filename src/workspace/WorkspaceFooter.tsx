@@ -65,10 +65,12 @@ const WorkspaceFooterComponent = (props: Props) => {
 				params.dispatch(
 					compositionActions.setCompositionDimension(compositionId, which, value),
 				);
+				paramsRef.current?.performDiff((diff) => diff.compositionDimensions(compositionId));
 			};
 			onValueChangeFn.current(value);
 
 			onValueChangeEndFn.current = () => {
+				paramsRef.current?.addDiff((diff) => diff.compositionDimensions(compositionId));
 				paramsRef.current?.submitAction("Update composition dimensions");
 			};
 		});

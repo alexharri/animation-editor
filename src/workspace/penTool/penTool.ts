@@ -2440,6 +2440,7 @@ export const penToolHandlers = {
 				}
 			},
 			mouseUp: (params) => {
+				params.addDiff((diff) => diff.addLayer(layerId));
 				params.submitAction("Create shape layer");
 			},
 		});

@@ -12,6 +12,9 @@ export const diffFactory = {
 	compositionView: (compositionId: string): Diff => {
 		return { type: DiffType.ModifyCompositionView, compositionId };
 	},
+	compositionDimensions: (compositionId: string): Diff => {
+		return { type: DiffType.ModifyCompositionDimensions, compositionId };
+	},
 	addLayer: (layerId: string): Diff => {
 		return { type: DiffType.AddLayer, layerIds: [layerId] };
 	},
@@ -23,5 +26,8 @@ export const diffFactory = {
 	},
 	layerTransform: (layerId: string): Diff => {
 		return { type: DiffType.LayerTransform, layerIds: [layerId] };
+	},
+	resizeAreas: (): Diff => {
+		return { type: DiffType.ResizeAreas };
 	},
 };

@@ -8,7 +8,7 @@ import {
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
-import { ShapeGraph, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
+import { ShapeGraph, ShapePath, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
 import {
 	FillRule,
 	LayerType,
@@ -758,4 +758,19 @@ export const getPathIdToShapeGroupId = (layerId: string, compositionState: Compo
 		},
 		{},
 	);
+};
+
+export const isShapePathClosed = (path: ShapePath): boolean => {
+	if (path.items.length === 1) {
+		return false;
+	}
+
+	const item0 = path.items[0];
+	const item1 = path.items[path.items.length - 1];
+
+	if (!item0.left || !item0.left.edgeId || !item1.right || !item1.right.edgeId) {
+		return false;
+	}
+
+	return item0.left.edgeId === item1.right.edgeId;
 };

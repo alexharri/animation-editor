@@ -2,7 +2,9 @@ import { compositionActions } from "~/composition/compositionReducer";
 import { requestAction } from "~/listener/requestAction";
 import { getDragCompositionEligibleTargets } from "~/project/dragCompositionEligibleTargets";
 import { projectActions } from "~/project/projectReducer";
+import { getActionState } from "~/state/stateUtils";
 import { LayerType } from "~/types";
+import { createMapNumberId } from "~/util/mapUtils";
 import { getDistance, isVecInRect } from "~/util/math";
 
 export const dragProjectComp = (e: React.MouseEvent, compositionId: string) => {
@@ -61,6 +63,8 @@ export const dragProjectComp = (e: React.MouseEvent, compositionId: string) => {
 				return;
 			}
 
+			const { compositionState } = getActionState();
+			const expectedLayerId = createMapNumberId(compositionState.layers);
 			params.dispatch(
 				compositionActions.createLayer(targetCompositionId, LayerType.Composition, {
 					compositionLayerReferenceId: compositionId,
@@ -68,6 +72,7 @@ export const dragProjectComp = (e: React.MouseEvent, compositionId: string) => {
 				}),
 			);
 			params.dispatch(projectActions.clearDragComposition());
+			params.addDiff((diff) => diff.addLayer(expectedLayerId));
 			params.submitAction("Create Composition Layer");
 		});
 	});

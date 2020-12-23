@@ -6,6 +6,7 @@ import { ContextMenuBaseProps, OpenCustomContextMenuOptions } from "~/contextMen
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { useGetRefRectFn, useRefRect } from "~/hook/useRefRect";
 import { requestAction } from "~/listener/requestAction";
+import { getActionState } from "~/state/stateUtils";
 import styles from "~/timeline/property/TimelineProperty.styles";
 import { RGBAColor, RGBColor } from "~/types";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -29,6 +30,9 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 		const rgb: RGBColor = [r, g, b];
 
 		requestAction({ history: true }, (params) => {
+			const { compositionState } = getActionState();
+			const property = compositionState.properties[props.propertyId];
+
 			const Component: React.FC<ContextMenuBaseProps> = ({ updateRect }) => {
 				const ref = useRef(null);
 				const rect = useRefRect(ref);
@@ -46,6 +50,7 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 						value = [...rgbColor, props.value[3]] as RGBAColor;
 					}
 
+					params.performDiff((diff) => diff.modifyLayer(property.layerId));
 					params.dispatch(compositionActions.setPropertyValue(props.propertyId, value));
 				};
 
@@ -70,6 +75,7 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 					}
 
 					params.dispatch(contextMenuActions.closeContextMenu());
+					params.addDiff((diff) => diff.modifyLayer(property.layerId));
 					params.submitAction("Update color");
 				});
 

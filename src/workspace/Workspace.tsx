@@ -17,7 +17,7 @@ import { moveToolHandlers } from "~/workspace/moveTool/moveTool";
 import { penToolHandlers } from "~/workspace/penTool/penTool";
 import { useWorkspaceCursor } from "~/workspace/useWorkspaceCursor";
 import WorkspaceStyles from "~/workspace/Workspace.styles";
-import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
+import { WorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 import { WorkspaceFooter } from "~/workspace/WorkspaceFooter";
 import { workspaceHandlers } from "~/workspace/workspaceHandlers";
 
@@ -77,7 +77,7 @@ const getOptions = (
 
 const s = compileStylesheetLabelled(WorkspaceStyles);
 
-type OwnProps = AreaComponentProps<CompositionWorkspaceAreaState>;
+type OwnProps = AreaComponentProps<WorkspaceAreaState>;
 interface StateProps {}
 type Props = OwnProps & StateProps;
 
