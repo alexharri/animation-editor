@@ -172,6 +172,7 @@ export const graphEditorHandlers = {
 		let yPan = 0;
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyMultipleLayerProperties(ctx.modified),
 			keys: ["Shift"],
 			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {
@@ -320,6 +321,7 @@ export const graphEditorHandlers = {
 		let direction!: "left" | "right";
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyMultipleLayerProperties(ctx.modified),
 			keys: ["Shift"],
 			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {
@@ -444,6 +446,7 @@ export const graphEditorHandlers = {
 		let yPan = 0;
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyMultipleLayerProperties(ctx.modified),
 			keys: ["Shift"],
 			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {

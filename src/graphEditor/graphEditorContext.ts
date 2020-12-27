@@ -18,6 +18,7 @@ import { interpolate } from "~/util/math";
 
 export interface GraphEditorContext {
 	timelines: Timeline[];
+	propertyIds: string[];
 	mousePosition: MousePosition;
 	compositionId: string;
 	composition: Composition;
@@ -31,6 +32,7 @@ export interface GraphEditorContext {
 	normalToViewportY: (number: number) => number;
 	globalToNormal: (vec: Vec2) => Vec2;
 	yFac: number;
+	modified: Array<{ layerId: string; propertyIds: string[] }>;
 }
 
 export const constructGraphEditorContext = (
@@ -47,7 +49,7 @@ export const constructGraphEditorContext = (
 	} = getActionState();
 
 	const composition = compositionState.compositions[compositionId];
-	const timelineIds = getSelectedTimelineIdsInComposition(
+	const { timelineIds, propertyIds } = getSelectedTimelineIdsInComposition(
 		compositionId,
 		compositionState,
 		compositionSelectionState,
@@ -102,9 +104,28 @@ export const constructGraphEditorContext = (
 		normal: globalToNormal(globalMousePosition),
 	};
 
+	const layerToModifiedProperties: Record<string, string[]> = {};
+
+	for (const propertyId of propertyIds) {
+		const property = compositionState.properties[propertyId];
+		if (!layerToModifiedProperties[property.layerId]) {
+			layerToModifiedProperties[property.layerId] = [];
+		}
+		layerToModifiedProperties[property.layerId].push(property.id);
+	}
+
+	const modified = Object.keys(layerToModifiedProperties).map<{
+		layerId: string;
+		propertyIds: string[];
+	}>((layerId) => {
+		const propertyIds = layerToModifiedProperties[layerId];
+		return { layerId, propertyIds };
+	});
+
 	const ctx: GraphEditorContext = {
 		mousePosition,
 		timelines,
+		propertyIds,
 		compositionId,
 		composition,
 		normalToViewport,
@@ -117,6 +138,7 @@ export const constructGraphEditorContext = (
 		viewBounds,
 		yBounds,
 		yFac,
+		modified,
 	};
 	return ctx;
 };

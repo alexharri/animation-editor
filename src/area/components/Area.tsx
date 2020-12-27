@@ -69,8 +69,8 @@ export const AreaComponent: React.FC<Props> = (props) => {
 
 	const openSelectArea = (_: React.MouseEvent) => {
 		const pos = Vec2.new(viewport.left + 4, viewport.top + 4);
-		requestAction({}, ({ cancelAction, dispatch, submitAction }) => {
-			dispatch(
+		requestAction({}, (params) => {
+			params.dispatch(
 				contextMenuActions.openContextMenu(
 					"Area type",
 					[
@@ -98,13 +98,13 @@ export const AreaComponent: React.FC<Props> = (props) => {
 						// icon: item.icon,
 						label: item.label,
 						onSelect: () => {
-							dispatch(areaActions.setAreaType(id, item.type));
-							dispatch(contextMenuActions.closeContextMenu());
-							submitAction("Update area type");
+							params.dispatch(areaActions.setAreaType(id, item.type));
+							params.dispatch(contextMenuActions.closeContextMenu());
+							params.submitAction("Update area type");
 						},
 					})),
 					pos,
-					cancelAction,
+					params.cancelAction,
 				),
 			);
 		});

@@ -4,6 +4,9 @@ interface _C {
 interface _L {
 	layerIds: string[];
 }
+interface _P {
+	propertyId: string;
+}
 
 export enum DiffType {
 	MoveLayer = 0,
@@ -12,8 +15,12 @@ export enum DiffType {
 	Layer = 4,
 	ModifyCompositionDimensions = 5,
 	ModifyCompositionView = 6,
-	LayerTransform = 7,
 	ResizeAreas = 8,
+	FrameIndex = 9,
+	ModifyProperty = 10,
+	LayerPropertyStructure = 11,
+	TogglePropertyAnimated = 12,
+	ModifyMultipleLayerProperties = 13,
 }
 
 /**
@@ -58,12 +65,25 @@ export interface LayerDiff extends _L {
 	type: DiffType.Layer;
 }
 
-export interface LayerTransformDiff extends _L {
-	type: DiffType.LayerTransform;
-}
-
 export interface ResizeAreasDiff {
 	type: DiffType.ResizeAreas;
+}
+
+export interface FrameIndexDiff extends _C {
+	type: DiffType.FrameIndex;
+}
+
+export interface ModifyPropertyDiff extends _P {
+	type: DiffType.ModifyProperty;
+}
+
+export interface TogglePropertyAnimatedDiff extends _P {
+	type: DiffType.TogglePropertyAnimated;
+}
+
+export interface ModifyMultipleLayerPropertiesDiff {
+	type: DiffType.ModifyMultipleLayerProperties;
+	modified: Array<{ layerId: string; propertyIds: string[] }>;
 }
 
 export type Diff =
@@ -73,5 +93,8 @@ export type Diff =
 	| RemoveLayerDiff
 	| AddLayerDiff
 	| LayerDiff
-	| LayerTransformDiff
-	| ResizeAreasDiff;
+	| ResizeAreasDiff
+	| FrameIndexDiff
+	| ModifyPropertyDiff
+	| TogglePropertyAnimatedDiff
+	| ModifyMultipleLayerPropertiesDiff;

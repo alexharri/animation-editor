@@ -121,6 +121,72 @@ export function reduceLayerProperties<T>(
 	return acc;
 }
 
+export function forEachLayerProperty(
+	layerId: string,
+	compositionState: CompositionState,
+	fn: (property: Property) => void,
+): void {
+	const toIterateOver = [...compositionState.layers[layerId].properties];
+	while (toIterateOver.length) {
+		const propertyId = toIterateOver[0];
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "property") {
+			fn(property);
+		} else {
+			toIterateOver.push(...property.properties);
+		}
+		toIterateOver.shift();
+	}
+}
+
+export function forEachSubProperty(
+	propertyId: string,
+	compositionState: CompositionState,
+	fn: (property: Property) => void,
+): void {
+	const property = compositionState.properties[propertyId];
+
+	if (property.type === "property") {
+		throw new Error(`Property of type "property" has no sub-properties.`);
+	}
+
+	const toIterateOver = [...property.properties];
+	while (toIterateOver.length) {
+		const propertyId = toIterateOver[0];
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "property") {
+			fn(property);
+		} else {
+			toIterateOver.push(...property.properties);
+		}
+		toIterateOver.shift();
+	}
+}
+
+export function forEachLayerPropertyAndCompoundProperty(
+	layerId: string,
+	compositionState: CompositionState,
+	fn: (property: Property | CompoundProperty) => void,
+): void {
+	const toIterateOver = [...compositionState.layers[layerId].properties];
+	while (toIterateOver.length) {
+		const propertyId = toIterateOver[0];
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "property") {
+			fn(property);
+		} else if (property.type === "compound") {
+			fn(property);
+			toIterateOver.push(...property.properties);
+		} else {
+			toIterateOver.push(...property.properties);
+		}
+		toIterateOver.shift();
+	}
+}
+
 export function reduceCompProperties<T>(
 	compositionId: string,
 	compositionState: CompositionState,

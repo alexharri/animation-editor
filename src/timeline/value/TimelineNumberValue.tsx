@@ -3,7 +3,6 @@ import { NumberInput } from "~/components/common/NumberInput";
 import { LinkIcon } from "~/components/icons/LinkIcon";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition, CompoundProperty, Property } from "~/composition/compositionTypes";
-import { getPropertyDiff } from "~/diff/propertyDiff";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
@@ -29,8 +28,6 @@ const usePropertyNumberInput = (
 	const proportionRef = useRef(1);
 	const onValueChangeFn = useRef<((value: number) => void) | null>(null);
 	const onValueChangeEndFn = useRef<(() => void) | null>(null);
-
-	const { layerId } = property;
 
 	const onValueChange = (value: number): void => {
 		if (onValueChangeFn.current) {
@@ -165,13 +162,13 @@ const usePropertyNumberInput = (
 					update(otherPropertyId, proportion * value);
 				}
 
-				op.performDiff(() => getPropertyDiff(layerId, property.name));
+				op.performDiff((diff) => diff.modifyProperty(property.id));
 				op.submit();
 			};
 			onValueChangeFn.current(value);
 
 			onValueChangeEndFn.current = () => {
-				params.addDiff(() => getPropertyDiff(layerId, property.name));
+				params.addDiff((diff) => diff.modifyProperty(property.id));
 				paramsRef.current?.submitAction("Update value");
 			};
 		});

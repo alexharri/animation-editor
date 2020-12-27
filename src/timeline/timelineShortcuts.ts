@@ -14,11 +14,12 @@ const getSelectedTimelineIds = (areaId: string, actionState = getActionState()) 
 	const { compositionId } = getAreaActionState(areaId, actionState);
 	const { compositionState, compositionSelectionState } = actionState;
 
-	return getSelectedTimelineIdsInComposition(
+	const { timelineIds } = getSelectedTimelineIdsInComposition(
 		compositionId,
 		compositionState,
 		compositionSelectionState,
 	);
+	return timelineIds;
 };
 
 const timelineShortcuts = {

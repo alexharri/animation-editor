@@ -22,7 +22,7 @@ const render = (e: React.MouseEvent, canvas: HTMLCanvasElement, opts: Options) =
 
 	const { compositionState, compositionSelectionState } = getActionState();
 	const { compositionId } = getAreaActionState<AreaType.Timeline>(areaId);
-	const timelineIds = getSelectedTimelineIdsInComposition(
+	const { timelineIds } = getSelectedTimelineIdsInComposition(
 		compositionId,
 		compositionState,
 		compositionSelectionState,

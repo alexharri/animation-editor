@@ -67,23 +67,23 @@ export const timelineHandlers = {
 		const initialPosition = Vec2.fromEvent(e);
 
 		const fn: RequestActionCallback = (params) => {
-			const { addListener, dispatch, submitAction } = params;
-
 			const onMove = (e?: MouseEvent) => {
 				const pos = e ? Vec2.fromEvent(e) : initialPosition;
 				const x = graphEditorGlobalToNormal(pos.x, options);
-				dispatch(
+				params.dispatch(
 					compositionActions.setFrameIndex(
 						composition.id,
 						capToRange(0, composition.length - 1, Math.round(x)),
 					),
 				);
+				params.performDiff((diff) => diff.frameIndex(compositionId));
 			};
-			addListener.repeated("mousemove", onMove);
+			params.addListener.repeated("mousemove", onMove);
 			onMove();
 
-			addListener.once("mouseup", () => {
-				submitAction("Move scrubber");
+			params.addListener.once("mouseup", () => {
+				params.addDiff((diff) => diff.frameIndex(compositionId));
+				params.submitAction("Move scrubber");
 			});
 		};
 		requestAction({ history: true }, fn);
@@ -425,25 +425,27 @@ export const timelineHandlers = {
 				selection: timelineSelection[timeline.id],
 			});
 
-			requestAction({ history: true }, ({ dispatch, submitAction }) => {
-				dispatch(
+			requestAction({ history: true }, (params) => {
+				params.dispatch(
 					timelineActions.removeTimeline(timelineId),
 					compositionActions.setPropertyValue(propertyId, value),
 					compositionActions.setPropertyTimelineId(propertyId, ""),
 				);
-				submitAction("Remove timeline from property");
+				params.addDiff((diff) => diff.togglePropertyAnimated(propertyId));
+				params.submitAction("Remove timeline from property");
 			});
 			return;
 		}
 
 		// Create timeline with a single keyframe at the current time
-		requestAction({ history: true }, ({ dispatch, submitAction }) => {
+		requestAction({ history: true }, (params) => {
 			const timeline = createTimelineForLayerProperty(property.value, composition.frameIndex);
-			dispatch(
+			params.dispatch(
 				timelineActions.setTimeline(timeline.id, timeline),
 				compositionActions.setPropertyTimelineId(propertyId, timeline.id),
 			);
-			submitAction("Add timeline to property");
+			params.addDiff((diff) => diff.togglePropertyAnimated(propertyId));
+			params.submitAction("Add timeline to property");
 		});
 	},
 

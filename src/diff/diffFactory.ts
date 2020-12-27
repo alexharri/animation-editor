@@ -1,4 +1,4 @@
-import { Diff, DiffType } from "~/diff/diffs";
+import { Diff, DiffType, ModifyMultipleLayerPropertiesDiff } from "~/diff/diffs";
 
 export type DiffFactoryFn = (factory: typeof diffFactory) => Diff;
 
@@ -24,10 +24,21 @@ export const diffFactory = {
 	modifyLayer: (layerId: string): Diff => {
 		return { type: DiffType.Layer, layerIds: [layerId] };
 	},
-	layerTransform: (layerId: string): Diff => {
-		return { type: DiffType.LayerTransform, layerIds: [layerId] };
-	},
 	resizeAreas: (): Diff => {
 		return { type: DiffType.ResizeAreas };
+	},
+	frameIndex: (compositionId: string): Diff => {
+		return { type: DiffType.FrameIndex, compositionId };
+	},
+	modifyProperty: (propertyId: string): Diff => {
+		return { type: DiffType.ModifyProperty, propertyId };
+	},
+	modifyMultipleLayerProperties: (
+		modified: ModifyMultipleLayerPropertiesDiff["modified"],
+	): Diff => {
+		return { type: DiffType.ModifyMultipleLayerProperties, modified };
+	},
+	togglePropertyAnimated: (propertyId: string): Diff => {
+		return { type: DiffType.TogglePropertyAnimated, propertyId };
 	},
 };

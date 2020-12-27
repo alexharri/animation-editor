@@ -1,11 +1,11 @@
 import * as PIXI from "pixi.js";
 import React, { useCallback, useEffect, useRef } from "react";
 import { getCompositionPlayback, useCompositionPlayback } from "~/composition/compositionPlayback";
+import { manageTopLevelComposition } from "~/composition/manager/compositionManager";
 import { Tool } from "~/constants";
 import { cssCursors, cssVariables } from "~/cssVariables";
 import { useActionStateEffect } from "~/hook/useActionState";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { manageComposition } from "~/render/pixi/compositionManager";
 import { renderCompositionWorkspaceGuides as renderWorkspaceGuides } from "~/render/renderWorkspace";
 import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { getActionId, getActionState } from "~/state/stateUtils";
@@ -154,7 +154,11 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 			return;
 		}
 
-		const unsubscribe = manageComposition(props.areaState.compositionId, props.areaId, canvas);
+		const unsubscribe = manageTopLevelComposition(
+			props.areaState.compositionId,
+			props.areaId,
+			canvas,
+		);
 		return unsubscribe;
 	}, []);
 

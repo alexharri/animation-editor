@@ -129,7 +129,7 @@ export const GraphEditor: React.FC<Props> = (props) => {
 
 	const onLeftMouseDown = (e: React.MouseEvent) => {
 		const { compositionState, compositionSelectionState } = getActionState();
-		const timelineIds = getSelectedTimelineIdsInComposition(
+		const { timelineIds } = getSelectedTimelineIdsInComposition(
 			props.compositionId,
 			compositionState,
 			compositionSelectionState,
@@ -148,7 +148,7 @@ export const GraphEditor: React.FC<Props> = (props) => {
 	const onRightMouseDown = (e: React.MouseEvent) => {
 		const { compositionState, compositionSelectionState } = getActionState();
 		const { compositionId } = props;
-		const timelineIds = getSelectedTimelineIdsInComposition(
+		const { timelineIds } = getSelectedTimelineIdsInComposition(
 			compositionId,
 			compositionState,
 			compositionSelectionState,
