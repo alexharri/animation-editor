@@ -77,9 +77,9 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 	const { nodeId, graphId } = props;
 
 	const expression = useComputeHistory((state) => {
-		const node = state.flowState.graphs[props.graphId].nodes[props.nodeId] as FlowNode<
-			FlowNodeType.expr
-		>;
+		const node = state.flowState.graphs[props.graphId].nodes[
+			props.nodeId
+		] as FlowNode<FlowNodeType.expr>;
 
 		return node.state.expression;
 	});
@@ -88,9 +88,9 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 
 	const onFocus = () => {
 		const getExpr = (state: ActionState) => {
-			const node = state.flowState.graphs[graphId].nodes[nodeId] as FlowNode<
-				FlowNodeType.expr
-			>;
+			const node = state.flowState.graphs[graphId].nodes[
+				nodeId
+			] as FlowNode<FlowNodeType.expr>;
 			return node.state.expression;
 		};
 
@@ -152,6 +152,7 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 		});
 
 		params.dispatch(toDispatch);
+		params.addDiff((diff) => diff.flowNodeExpression({ nodeId, graphId }));
 		params.submitAction("Modify expression");
 	};
 

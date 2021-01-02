@@ -1,4 +1,5 @@
-import { Diff, DiffType, ModifyMultipleLayerPropertiesDiff } from "~/diff/diffs";
+import { Diff, DiffType } from "~/diff/diffs";
+import { FlowNodeReference } from "~/flow/flowTypes";
 
 export type DiffFactoryFn = (factory: typeof diffFactory) => Diff;
 
@@ -33,12 +34,19 @@ export const diffFactory = {
 	modifyProperty: (propertyId: string): Diff => {
 		return { type: DiffType.ModifyProperty, propertyId };
 	},
-	modifyMultipleLayerProperties: (
-		modified: ModifyMultipleLayerPropertiesDiff["modified"],
-	): Diff => {
-		return { type: DiffType.ModifyMultipleLayerProperties, modified };
+	modifyMultipleLayerProperties: (propertyIds: string[]): Diff => {
+		return { type: DiffType.ModifyMultipleLayerProperties, propertyIds };
 	},
 	togglePropertyAnimated: (propertyId: string): Diff => {
 		return { type: DiffType.TogglePropertyAnimated, propertyId };
+	},
+	flowNodeState: (nodeRef: FlowNodeReference): Diff => {
+		return { type: DiffType.FlowNodeState, nodeRef };
+	},
+	flowNodeExpression: (nodeRef: FlowNodeReference): Diff => {
+		return { type: DiffType.FlowNodeExpression, nodeRef };
+	},
+	removeFlowNode: (nodeRef: FlowNodeReference): Diff => {
+		return { type: DiffType.RemoveFlowNode, nodeRef };
 	},
 };

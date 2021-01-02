@@ -150,6 +150,7 @@ const parseRect = (arg: FlowComputeNodeArg): Rect => {
 const parsers: Partial<Record<ValueType, (arg: FlowComputeNodeArg) => any>> = {
 	[ValueType.Vec2]: parseVec2,
 	[ValueType.Number]: parseNum,
+	[ValueType.RGBAColor]: parseColor,
 	[ValueType.Rect]: parseRect,
 };
 

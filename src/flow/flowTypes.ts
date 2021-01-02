@@ -88,7 +88,8 @@ export interface FlowGraph {
 	} | null;
 }
 
-export interface FlowNode<T extends FlowNodeType> {
+export interface FlowNode<T extends FlowNodeType = FlowNodeType> {
+	graphId: string;
 	id: string;
 	type: T;
 	position: Vec2;
@@ -116,4 +117,9 @@ export interface FlowNodeOutput {
 export interface FlowNodeIO {
 	inputs: FlowNodeInput[];
 	outputs: FlowNodeOutput[];
+}
+
+export interface FlowNodeReference {
+	graphId: string;
+	nodeId: string;
 }

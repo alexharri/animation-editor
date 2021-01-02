@@ -1,4 +1,5 @@
 import { Layer } from "~/composition/compositionTypes";
+import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { CompositionContext } from "~/composition/manager/compositionContext";
 import { manageComposition } from "~/composition/manager/compositionManager";
 import {
@@ -11,26 +12,28 @@ import { LayerType } from "~/types";
 
 export interface LayerManager {
 	addLayer: (layer: Layer, actionState: ActionState) => void;
+	updatePropertyStructure: (layer: Layer, actionState: ActionState) => void;
 	removeLayer: (layer: Layer) => void;
 	getLayerContainer: (layerId: string) => PIXI.Container;
 	sendDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
-	getActionToPerform: PerformableManager["getActionToPerform"];
+	getAnimatedPropertyIds: PerformableManager["getAnimatedPropertyIds"];
 	getActionsToPerform: PerformableManager["getActionsToPerform"];
 	getActionsToPerformOnFrameIndexChange: PerformableManager["getActionsToPerformOnFrameIndexChange"];
-	updatePropertyStructure: (layer: Layer, actionState: ActionState) => void;
+	getLayerPropertyMap: (layerId: string) => LayerPropertyMap;
 }
 
 export const createLayerManager = (getContext: () => CompositionContext): LayerManager => {
 	const layerToContainer: Record<string, PIXI.Container> = {};
 	const subCompositions: Record<string, { manager: ReturnType<typeof manageComposition> }> = {};
 	const performableManager = createPerformableManager();
+	const layerPropertyMapMap: Record<string, LayerPropertyMap> = {};
 
 	return {
 		addLayer: (layer: Layer, actionState: ActionState) => {
 			const ctx = getContext();
 
 			// Create PIXI container and add to registry
-			const container = layerToPixi(actionState, layer);
+			const container = layerToPixi(actionState, layer, ctx.properties.getPropertyValue);
 			layerToContainer[layer.id] = container;
 
 			// Add the layer to the composition container
@@ -49,6 +52,10 @@ export const createLayerManager = (getContext: () => CompositionContext): LayerM
 			}
 
 			performableManager.addLayer(actionState, layer.id);
+			layerPropertyMapMap[layer.id] = constructLayerPropertyMap(
+				layer.id,
+				actionState.compositionState,
+			);
 		},
 
 		removeLayer: (layer: Layer) => {
@@ -59,6 +66,7 @@ export const createLayerManager = (getContext: () => CompositionContext): LayerM
 
 			// Remove the container from the registry
 			delete layerToContainer[layer.id];
+			delete layerPropertyMapMap[layer.id];
 
 			if (layer.type === LayerType.Composition) {
 				// The layer is a composition layer.
@@ -91,7 +99,9 @@ export const createLayerManager = (getContext: () => CompositionContext): LayerM
 			performableManager.onUpdateLayerStructure(actionState, layer.id);
 		},
 
-		getActionToPerform: performableManager.getActionToPerform,
+		getLayerPropertyMap: (layerId) => layerPropertyMapMap[layerId],
+
+		getAnimatedPropertyIds: performableManager.getAnimatedPropertyIds,
 
 		getActionsToPerform: performableManager.getActionsToPerform,
 

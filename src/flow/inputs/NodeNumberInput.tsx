@@ -31,9 +31,11 @@ const NodeNumberInputComponent: React.FC<Props> = (props) => {
 
 	const { onChange, onChangeEnd } = useNumberInputAction({
 		onChange: (value, params) => {
+			params.performDiff((diff) => diff.flowNodeState({ nodeId, graphId }));
 			params.dispatch(flowActions.setNodeInputValue(graphId, nodeId, index, value));
 		},
 		onChangeEnd: (_type, params) => {
+			params.addDiff((diff) => diff.flowNodeState({ nodeId, graphId }));
 			params.submitAction("Update input value");
 		},
 	});

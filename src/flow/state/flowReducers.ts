@@ -128,6 +128,7 @@ function graphReducer(state: FlowGraph, action: FlowAction): FlowGraph {
 					...state.nodes,
 					[id]: {
 						id,
+						graphId: state.id,
 						type,
 						position,
 						width: DEFAULT_FLOW_NODE_WIDTH,

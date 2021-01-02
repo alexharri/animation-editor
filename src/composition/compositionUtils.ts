@@ -165,6 +165,36 @@ export function forEachSubProperty(
 	}
 }
 
+export function findDirectSubProperty(
+	propertyId: string,
+	compositionState: CompositionState,
+	fn: (property: Property) => boolean,
+): Property | null {
+	const property = compositionState.properties[propertyId];
+
+	if (property.type === "property") {
+		throw new Error(`Property of type "property" has no sub-properties.`);
+	}
+
+	const toIterateOver = [...property.properties];
+	for (let i = 0; i < property.properties.length; i++) {
+		const propertyId = toIterateOver[i];
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "property") {
+			const found = fn(property);
+			if (found) {
+				return property;
+			}
+		} else {
+			toIterateOver.push(...property.properties);
+		}
+		toIterateOver.shift();
+	}
+
+	return null;
+}
+
 export function forEachLayerPropertyAndCompoundProperty(
 	layerId: string,
 	compositionState: CompositionState,

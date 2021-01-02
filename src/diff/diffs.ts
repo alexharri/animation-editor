@@ -1,3 +1,5 @@
+import { FlowNodeReference } from "~/flow/flowTypes";
+
 interface _C {
 	compositionId: string;
 }
@@ -21,6 +23,9 @@ export enum DiffType {
 	LayerPropertyStructure = 11,
 	TogglePropertyAnimated = 12,
 	ModifyMultipleLayerProperties = 13,
+	FlowNodeState = 14,
+	FlowNodeExpression = 15,
+	RemoveFlowNode = 16,
 }
 
 /**
@@ -83,7 +88,22 @@ export interface TogglePropertyAnimatedDiff extends _P {
 
 export interface ModifyMultipleLayerPropertiesDiff {
 	type: DiffType.ModifyMultipleLayerProperties;
-	modified: Array<{ layerId: string; propertyIds: string[] }>;
+	propertyIds: string[];
+}
+
+export interface FlowNodeDiff {
+	type: DiffType.FlowNodeState;
+	nodeRef: FlowNodeReference;
+}
+
+export interface FlowNodeExpressionDiff {
+	type: DiffType.FlowNodeExpression;
+	nodeRef: FlowNodeReference;
+}
+
+export interface RemoveFlowNodeDiff {
+	type: DiffType.RemoveFlowNode;
+	nodeRef: FlowNodeReference;
 }
 
 export type Diff =
@@ -97,4 +117,7 @@ export type Diff =
 	| FrameIndexDiff
 	| ModifyPropertyDiff
 	| TogglePropertyAnimatedDiff
-	| ModifyMultipleLayerPropertiesDiff;
+	| ModifyMultipleLayerPropertiesDiff
+	| FlowNodeDiff
+	| FlowNodeExpressionDiff
+	| RemoveFlowNodeDiff;

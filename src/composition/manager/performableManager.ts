@@ -16,8 +16,8 @@ export interface PerformableManager {
 	addLayer: (actionState: ActionState, layerId: string) => void;
 	onUpdateLayerStructure: (actionState: ActionState, layerId: string) => void;
 	removeLayer: (layerId: string) => void;
-	getActionToPerform: (propertyId: string) => Performable;
-	getActionsToPerform: (propertyIds: string[]) => Performable[];
+	getAnimatedPropertyIds: () => string[];
+	getActionsToPerform: (actionState: ActionState, propertyIds: string[]) => LayerPerformables[];
 	getActionsToPerformOnFrameIndexChange: () => Array<LayerPerformables>;
 }
 
@@ -29,7 +29,7 @@ interface PropertyInformation {
 
 export const createPerformableManager = (): PerformableManager => {
 	const propertyMap: Record<string, PropertyInformation> = {};
-	const registeredPropertyIdsMap: Record<string, string[]> = {};
+	const registeredPropertyIdsByLayer: Record<string, string[]> = {};
 	const layerIdSet = new Set<string>();
 	// const layerToPropertiesAffectedByGraph: Record<string, string[]>;
 	// const layerToPropertiesAffectedByFrameIndexChange: Record<string, string[]>;
@@ -77,35 +77,62 @@ export const createPerformableManager = (): PerformableManager => {
 					add(property.id, Performable.DrawLayer);
 				});
 			}
-			registeredPropertyIdsMap[layerId] = registered;
+			registeredPropertyIdsByLayer[layerId] = registered;
 			layerIdSet.add(layerId);
 		},
 
 		onUpdateLayerStructure: (...args) => self.addLayer(...args),
 
 		removeLayer: (layerId) => {
-			const registered = registeredPropertyIdsMap[layerId];
-			delete registeredPropertyIdsMap[layerId];
+			const registered = registeredPropertyIdsByLayer[layerId];
+			delete registeredPropertyIdsByLayer[layerId];
 			for (const propertyId of registered) {
 				delete propertyMap[propertyId];
 			}
 			layerIdSet.delete(layerId);
 		},
 
-		getActionToPerform: (propertyId) => propertyMap[propertyId].performable,
-
-		getActionsToPerform: (propertyIds) => {
-			const performableSet = new Set<Performable>();
+		getActionsToPerform: (actionState, propertyIds) => {
+			const { compositionState } = actionState;
+			const performablesByLayer: Record<string, Set<Performable>> = {};
 
 			for (const propertyId of propertyIds) {
-				performableSet.add(propertyMap[propertyId].performable);
+				const property = compositionState.properties[propertyId];
+
+				if (!performablesByLayer[property.layerId]) {
+					performablesByLayer[property.layerId] = new Set();
+				}
+
+				performablesByLayer[property.layerId].add(propertyMap[propertyId].performable);
 			}
 
-			if (performableSet.has(Performable.UpdateTransform)) {
-				performableSet.delete(Performable.UpdatePosition);
+			const layerIds = Object.keys(performablesByLayer);
+			for (const layerId of layerIds) {
+				const performableSet = performablesByLayer[layerId];
+				if (performableSet.has(Performable.UpdateTransform)) {
+					performableSet.delete(Performable.UpdatePosition);
+				}
 			}
 
-			return [...performableSet];
+			return layerIds.map((layerId) => ({
+				layerId,
+				performables: [...performablesByLayer[layerId]],
+			}));
+		},
+
+		getAnimatedPropertyIds: () => {
+			const propertyIds: string[] = [];
+
+			const layerIds = [...layerIdSet];
+			for (const layerId of layerIds) {
+				for (const propertyId of registeredPropertyIdsByLayer[layerId]) {
+					if (propertyMap[propertyId].isAnimated) {
+						propertyIds.push(propertyId);
+					}
+				}
+			}
+
+			return propertyIds;
 		},
 
 		getActionsToPerformOnFrameIndexChange: () => {
@@ -113,7 +140,7 @@ export const createPerformableManager = (): PerformableManager => {
 
 			const layerPerformables: LayerPerformables[] = [];
 			for (const layerId of layerIds) {
-				const registered = registeredPropertyIdsMap[layerId];
+				const registered = registeredPropertyIdsByLayer[layerId];
 				const performableSet = new Set<Performable>();
 
 				for (const propertyId of registered) {

@@ -1,3 +1,4 @@
+import { CompositionState } from "~/composition/compositionReducer";
 import { FlowGraph, FlowNodeType } from "~/flow/flowTypes";
 import { FlowGraphSelection, FlowSelectionState } from "~/flow/state/flowSelectionReducer";
 import { isMapShallowEqual, removeKeysFromMap } from "~/util/mapUtils";
@@ -163,3 +164,36 @@ export const didFlowSelectionChange: (
 
 	return false;
 };
+
+export function getPropertyFlowNodeReferencedPropertyIds(
+	compositionState: CompositionState,
+	propertyId: string,
+) {
+	const property = compositionState.properties[propertyId];
+
+	switch (property.type) {
+		case "property":
+			return [property.id];
+		case "compound":
+			return [...property.properties];
+		case "group": {
+			const propertyIds: string[] = [];
+			for (const propertyId of property.properties) {
+				const p = compositionState.properties[propertyId];
+				switch (p.type) {
+					case "property": {
+						propertyIds.push(p.id);
+						break;
+					}
+					case "compound": {
+						propertyIds.push(...p.properties);
+						break;
+					}
+				}
+			}
+			return propertyIds;
+		}
+		default:
+			throw new Error("Unexpected property type");
+	}
+}

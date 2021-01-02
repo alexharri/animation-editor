@@ -77,25 +77,26 @@ const getAllOutputsOfType = (graph: FlowGraph, nodeId: string, inputIndex: numbe
 
 export const nodeHandlers = {
 	onRightClick: (e: React.MouseEvent, graphId: string, nodeId: string) => {
-		requestAction({ history: true }, ({ submitAction, dispatch, cancelAction }) => {
-			dispatch(
+		requestAction({ history: true }, (params) => {
+			params.dispatch(
 				contextMenuActions.openContextMenu(
 					"Node",
 					[
 						{
 							label: "Delete node",
 							onSelect: () => {
-								dispatch(
+								params.dispatch(
 									contextMenuActions.closeContextMenu(),
 									flowActions.removeNode(graphId, nodeId),
 								);
-								submitAction("Remove node");
+								params.addDiff((diff) => diff.removeFlowNode({ nodeId, graphId }));
+								params.submitAction("Remove node");
 							},
 							default: true,
 						},
 					],
 					Vec2.fromEvent(e),
-					cancelAction,
+					params.cancelAction,
 				),
 			);
 		});

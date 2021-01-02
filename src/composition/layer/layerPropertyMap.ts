@@ -2,7 +2,7 @@ import { CompositionState } from "~/composition/compositionReducer";
 import { forEachLayerProperty } from "~/composition/compositionUtils";
 import { LayerType, PropertyName } from "~/types";
 
-interface CommonLayerPropertyMap {
+export interface CommonLayerPropertyMap {
 	[PropertyName.PositionX]: string;
 	[PropertyName.PositionY]: string;
 	[PropertyName.Rotation]: string;

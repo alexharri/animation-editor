@@ -4,6 +4,7 @@ import { CompositionContext } from "~/composition/manager/compositionContext";
 import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
 import { createLayerManager } from "~/composition/manager/layerManager";
 import { populateCompositionContainer } from "~/composition/manager/populateCompositionContainer";
+import { createPropertyManager } from "~/composition/manager/propertyManager";
 import { AreaType } from "~/constants";
 import { DiffType } from "~/diff/diffs";
 import { subscribeToDiffs, unsubscribeToDiffs } from "~/listener/diffListener";
@@ -15,10 +16,13 @@ export const manageComposition = (
 	compositionId: string,
 	parentCompContainer: PIXI.Container,
 ): CompositionContext => {
+	const propertyManager = createPropertyManager(compositionId, getActionState());
+
 	const ctx: CompositionContext = {
 		compositionId,
 		container: new PIXI.Container(),
 		layers: createLayerManager(() => ctx),
+		properties: propertyManager,
 		onDiffs: (actionState, diffs, direction) =>
 			compositionDiffHandler(ctx, actionState, diffs, direction),
 		prevState: getActionState(),

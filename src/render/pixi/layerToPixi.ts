@@ -17,7 +17,6 @@ import {
 	isShapePathClosed,
 	pathIdToCurves,
 } from "~/shape/shapeUtils";
-import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 import { LayerType, PropertyGroupName, PropertyName } from "~/types";
 import { rgbToBinary } from "~/util/color/convertColor";
 import { newTess } from "~/util/math/newTess";
@@ -27,9 +26,16 @@ type Fn<T extends LayerPropertyMap = LayerPropertyMap> = (
 	layer: Layer,
 	map: T,
 	container: PIXI.Container,
+	getPropertyValue: (propertyId: string) => any,
 ) => void;
 
-const shapeLayerToPixi: Fn<ShapeLayerPropertyMap> = (actionState, layer, _, container) => {
+const shapeLayerToPixi: Fn<ShapeLayerPropertyMap> = (
+	actionState,
+	layer,
+	_,
+	container,
+	getPropertyValue,
+) => {
 	const graphic = new PIXI.Graphics();
 	container.addChild(graphic);
 
@@ -200,33 +206,42 @@ const shapeLayerToPixi: Fn<ShapeLayerPropertyMap> = (actionState, layer, _, cont
 	}
 };
 
-const createResolver = (actionState: ActionState, map: LayerPropertyMap) => (
-	propertyName: PropertyName,
-) => {
+const createResolver = (
+	actionState: ActionState,
+	map: LayerPropertyMap,
+	getPropertyValue: (propertyId: string) => any,
+) => (propertyName: PropertyName) => {
 	const { compositionState } = actionState;
 
 	const propertyId = (map as any)[propertyName];
-	const property = compositionState.properties[propertyId] as Property;
+	return getPropertyValue(propertyId);
+	// const property = compositionState.properties[propertyId] as Property;
 
-	if (!property.timelineId) {
-		return property.value;
-	}
+	// if (!property.timelineId) {
+	// 	return property.value;
+	// }
 
-	const layer = compositionState.layers[property.layerId];
-	const composition = compositionState.compositions[property.compositionId];
-	return getTimelineValueAtIndex({
-		timeline: actionState.timelineState[property.timelineId],
-		selection: actionState.timelineSelectionState[property.timelineId],
-		frameIndex: composition.frameIndex,
-		layerIndex: layer.index,
-	});
+	// const layer = compositionState.layers[property.layerId];
+	// const composition = compositionState.compositions[property.compositionId];
+	// return getTimelineValueAtIndex({
+	// 	timeline: actionState.timelineState[property.timelineId],
+	// 	selection: actionState.timelineSelectionState[property.timelineId],
+	// 	frameIndex: composition.frameIndex,
+	// 	layerIndex: layer.index,
+	// });
 };
 
-const rectLayerToPixi: Fn<RectLayerPropertyMap> = (actionState, _layer, map, container) => {
+const rectLayerToPixi: Fn<RectLayerPropertyMap> = (
+	actionState,
+	_layer,
+	map,
+	container,
+	getPropertyValue,
+) => {
 	const graphic = new PIXI.Graphics();
 	container.addChild(graphic);
 
-	const resolve = createResolver(actionState, map);
+	const resolve = createResolver(actionState, map, getPropertyValue);
 
 	const width = resolve(PropertyName.Width);
 	const height = resolve(PropertyName.Height);
@@ -247,11 +262,17 @@ const rectLayerToPixi: Fn<RectLayerPropertyMap> = (actionState, _layer, map, con
 	return graphic;
 };
 
-const ellipseLayerToPixi: Fn<EllipseLayerPropertyMap> = (actionState, _layer, map, container) => {
+const ellipseLayerToPixi: Fn<EllipseLayerPropertyMap> = (
+	actionState,
+	_layer,
+	map,
+	container,
+	getPropertyValue,
+) => {
 	const graphic = new PIXI.Graphics();
 	container.addChild(graphic);
 
-	const resolve = createResolver(actionState, map);
+	const resolve = createResolver(actionState, map, getPropertyValue);
 
 	const outerRadius = resolve(PropertyName.OuterRadius);
 	const fill = resolve(PropertyName.Fill);
@@ -271,18 +292,31 @@ const ellipseLayerToPixi: Fn<EllipseLayerPropertyMap> = (actionState, _layer, ma
 	return graphic;
 };
 
-const setContent: Fn = (actionState, layer, map, container) => {
+const setContent: Fn = (actionState, layer, map, container, getPropertyValue) => {
 	switch (layer.type) {
 		case LayerType.Shape:
-			return shapeLayerToPixi(actionState, layer, map as ShapeLayerPropertyMap, container);
+			return shapeLayerToPixi(
+				actionState,
+				layer,
+				map as ShapeLayerPropertyMap,
+				container,
+				getPropertyValue,
+			);
 		case LayerType.Rect:
-			return rectLayerToPixi(actionState, layer, map as RectLayerPropertyMap, container);
+			return rectLayerToPixi(
+				actionState,
+				layer,
+				map as RectLayerPropertyMap,
+				container,
+				getPropertyValue,
+			);
 		case LayerType.Ellipse:
 			return ellipseLayerToPixi(
 				actionState,
 				layer,
 				map as EllipseLayerPropertyMap,
 				container,
+				getPropertyValue,
 			);
 		case LayerType.Composition:
 			return container;
@@ -290,12 +324,16 @@ const setContent: Fn = (actionState, layer, map, container) => {
 	throw new Error("Not implemented");
 };
 
-export const layerToPixi = (actionState: ActionState, layer: Layer): PIXI.Container => {
+export const layerToPixi = (
+	actionState: ActionState,
+	layer: Layer,
+	getPropertyValue: (propertyId: string) => any,
+): PIXI.Container => {
 	const container = new PIXI.Container();
 
 	const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
 
-	const resolve = createResolver(actionState, map);
+	const resolve = createResolver(actionState, map, getPropertyValue);
 
 	const positionX = resolve(PropertyName.PositionX);
 	const positionY = resolve(PropertyName.PositionY);
@@ -305,7 +343,7 @@ export const layerToPixi = (actionState: ActionState, layer: Layer): PIXI.Contai
 	const scaleY = resolve(PropertyName.ScaleY);
 	const rotation = resolve(PropertyName.Rotation);
 
-	setContent(actionState, layer, map, container);
+	setContent(actionState, layer, map, container, getPropertyValue);
 	container.scale.set(scaleX, scaleY);
 	container.rotation = rotation * DEG_TO_RAD_FAC;
 	container.position.set(positionX, positionY);
@@ -317,11 +355,12 @@ export const updatePixiLayerContent = (
 	actionState: ActionState,
 	layer: Layer,
 	container: PIXI.Container,
+	getPropertyValue: (propertyId: string) => any,
 ) => {
 	const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
 	for (const child of container.children) {
 		container.removeChild(child);
 		child.destroy();
 	}
-	setContent(actionState, layer, map, container);
+	setContent(actionState, layer, map, container, getPropertyValue);
 };

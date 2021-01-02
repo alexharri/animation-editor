@@ -32,7 +32,6 @@ export interface GraphEditorContext {
 	normalToViewportY: (number: number) => number;
 	globalToNormal: (vec: Vec2) => Vec2;
 	yFac: number;
-	modified: Array<{ layerId: string; propertyIds: string[] }>;
 }
 
 export const constructGraphEditorContext = (
@@ -114,14 +113,6 @@ export const constructGraphEditorContext = (
 		layerToModifiedProperties[property.layerId].push(property.id);
 	}
 
-	const modified = Object.keys(layerToModifiedProperties).map<{
-		layerId: string;
-		propertyIds: string[];
-	}>((layerId) => {
-		const propertyIds = layerToModifiedProperties[layerId];
-		return { layerId, propertyIds };
-	});
-
 	const ctx: GraphEditorContext = {
 		mousePosition,
 		timelines,
@@ -138,7 +129,6 @@ export const constructGraphEditorContext = (
 		viewBounds,
 		yBounds,
 		yFac,
-		modified,
 	};
 	return ctx;
 };

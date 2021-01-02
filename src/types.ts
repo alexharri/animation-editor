@@ -140,6 +140,15 @@ export enum PropertyName {
 	MiterLimit = 22,
 }
 
+export type TransformPropertyName =
+	| PropertyName.PositionX
+	| PropertyName.PositionY
+	| PropertyName.AnchorX
+	| PropertyName.AnchorY
+	| PropertyName.ScaleX
+	| PropertyName.ScaleY
+	| PropertyName.Rotation;
+
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
 export type JsonArray = Array<Json>;
 export interface JsonObject {
