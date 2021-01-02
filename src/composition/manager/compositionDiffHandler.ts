@@ -182,6 +182,33 @@ export const compositionDiffHandler = (
 				}
 				break;
 			}
+			case DiffType.UpdateNodeConnection: {
+				const { nodeRefs } = diff;
+				console.log(nodeRefs);
+				const { graphId } = nodeRefs[0];
+				const { flowState, compositionState } = actionState;
+
+				const { layerId } = flowState.graphs[graphId];
+				const layer = compositionState.layers[layerId];
+				if (layer.compositionId !== compositionId) {
+					// Does not affect this composition
+					continue;
+				}
+
+				// Find the affected nodes in the previous state
+				const propertyIds = ctx.properties.getPropertyIdsAffectedByNodes(
+					nodeRefs,
+					ctx.prevState,
+				);
+
+				ctx.properties.updateStructure(actionState);
+
+				const actions = ctx.layers.getActionsToPerform(actionState, propertyIds);
+				for (const { layerId, performables } of actions) {
+					executePerformables(ctx, actionState, layerId, performables);
+				}
+				break;
+			}
 			case DiffType.ModifyProperty: {
 				const { propertyId } = diff;
 				ctx.properties.onPropertyIdsChanged([propertyId], actionState);

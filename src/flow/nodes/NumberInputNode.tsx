@@ -33,8 +33,10 @@ function NumberInputNodeComponent(props: Props) {
 					value,
 				}),
 			);
+			params.performDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
 		},
 		onChangeEnd: (_type, params) => {
+			params.addDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
 			params.submitAction("Update number input node value");
 		},
 	});

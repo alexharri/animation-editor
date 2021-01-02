@@ -26,6 +26,7 @@ export enum DiffType {
 	FlowNodeState = 14,
 	FlowNodeExpression = 15,
 	RemoveFlowNode = 16,
+	UpdateNodeConnection = 17,
 }
 
 /**
@@ -106,6 +107,11 @@ export interface RemoveFlowNodeDiff {
 	nodeRef: FlowNodeReference;
 }
 
+export interface UpdateNodeConnectionDiff {
+	type: DiffType.UpdateNodeConnection;
+	nodeRefs: FlowNodeReference[];
+}
+
 export type Diff =
 	| ModifyCompositionDimensions
 	| ModifyCompositionViewDiff
@@ -120,4 +126,5 @@ export type Diff =
 	| ModifyMultipleLayerPropertiesDiff
 	| FlowNodeDiff
 	| FlowNodeExpressionDiff
-	| RemoveFlowNodeDiff;
+	| RemoveFlowNodeDiff
+	| UpdateNodeConnectionDiff;

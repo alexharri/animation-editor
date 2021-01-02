@@ -49,4 +49,10 @@ export const diffFactory = {
 	removeFlowNode: (nodeRef: FlowNodeReference): Diff => {
 		return { type: DiffType.RemoveFlowNode, nodeRef };
 	},
+	updateNodeConnection: (graphId: string, affectedNodeIds: string[]): Diff => {
+		return {
+			type: DiffType.UpdateNodeConnection,
+			nodeRefs: affectedNodeIds.map((nodeId) => ({ nodeId, graphId })),
+		};
+	},
 };

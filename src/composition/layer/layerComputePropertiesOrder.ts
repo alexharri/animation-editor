@@ -71,6 +71,7 @@ interface Result {
 	nodeToIndex: Record<string, number>;
 	expressions: Record<string, EvalFunction>;
 	propertyIdToAffectedInputNodes: Partial<Record<string, NodeReference[]>>;
+	propertyIdToAffectedOutputNodes: Partial<Record<string, NodeReference[]>>;
 }
 
 export const getCompositionPropertyGraphOrder = (
@@ -95,6 +96,7 @@ export const getCompositionPropertyGraphOrder = (
 	const graphToOutputNodes: Record<string, FlowNode<FlowNodeType.property_output>[]> = {};
 	const nodeToNext: Result["nodeToNext"] = {};
 	const propertyIdToAffectedInputNodes: Result["propertyIdToAffectedInputNodes"] = {};
+	const propertyIdToAffectedOutputNodes: Result["propertyIdToAffectedOutputNodes"] = {};
 	const expressions: Record<string, EvalFunction> = {};
 
 	function dfs(node: FlowNode, visitedInTrip: Set<string>) {
@@ -138,6 +140,21 @@ export const getCompositionPropertyGraphOrder = (
 					propertyIdToAffectedInputNodes[propertyId] = [];
 				}
 				propertyIdToAffectedInputNodes[propertyId]!.push(ref);
+			}
+		}
+		if (node.type === FlowNodeType.property_output) {
+			// Populate `propertyIdToAffectedOutputNodes`
+			const state = node.state as FlowNodeState<FlowNodeType.property_input>;
+			const propertyIds = getPropertyFlowNodeReferencedPropertyIds(
+				compositionState,
+				state.propertyId,
+			);
+			const ref: NodeReference = { nodeId: node.id, graphId: node.graphId };
+			for (const propertyId of propertyIds) {
+				if (!propertyIdToAffectedOutputNodes[propertyId]) {
+					propertyIdToAffectedOutputNodes[propertyId] = [];
+				}
+				propertyIdToAffectedOutputNodes[propertyId]!.push(ref);
 			}
 		}
 
@@ -258,5 +275,6 @@ export const getCompositionPropertyGraphOrder = (
 		nodeToNext,
 		expressions,
 		propertyIdToAffectedInputNodes,
+		propertyIdToAffectedOutputNodes,
 	};
 };

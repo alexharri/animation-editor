@@ -81,10 +81,14 @@ const performRequestedAction = (
 		}
 	};
 
+	const diffs: Diff[] = [];
+	const allDiffs: Diff[] = [];
+
 	const cancelAction = () => {
 		store.dispatch(historyActions.cancelAction(actionId));
 		onComplete();
 		_cancelAction = null;
+		sendDiffsToSubscribers([...allDiffs].reverse(), "backward");
 	};
 	_cancelAction = cancelAction;
 
@@ -114,15 +118,6 @@ const performRequestedAction = (
 
 		store.dispatch(historyActions.dispatchToAction(actionId, action, history));
 	};
-
-	const diffs: Diff[] = [];
-	// const diff = Object.keys(genDiff).reduce<any>((obj, key) => {
-	// 	obj[key] = (...args: any[]) => {
-	// 		const item = (genDiff as any)[key](...args);
-	// 		diffs.push(item);
-	// 	};
-	// 	return obj;
-	// }, {}) as typeof genDiff;
 
 	const params: RequestActionParams = {
 		done,
@@ -213,11 +208,13 @@ const performRequestedAction = (
 		addDiff: (fn) => {
 			const diff = fn(diffFactory);
 			diffs.push(diff);
+			allDiffs.push(diff);
 			sendDiffsToSubscribers([diff]);
 		},
 
 		performDiff: (fn) => {
 			const diff = fn(diffFactory);
+			allDiffs.push(diff);
 			sendDiffsToSubscribers([diff]);
 		},
 	};

@@ -47,8 +47,10 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 						color,
 					}),
 				);
+				params.performDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
 			},
 			onChangeEnd: (_type, params) => {
+				params.addDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
 				params.submitAction("Update color input factor");
 			},
 		}),
@@ -76,6 +78,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 					params.dispatch(
 						flowActions.updateNodeState(graphId, nodeId, { color: rgbaColor }),
 					);
+					params.performDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
 				};
 
 				// Submit on enter
@@ -99,6 +102,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 					}
 
 					params.dispatch(contextMenuActions.closeContextMenu());
+					params.addDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
 					params.submitAction("Update color");
 				});
 

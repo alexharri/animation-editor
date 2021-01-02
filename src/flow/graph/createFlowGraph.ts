@@ -4,11 +4,13 @@ import { FlowGraph, FlowNodeType } from "~/flow/flowTypes";
 
 const createFlowGraphBase = () => {
 	const nodeId = "0";
+	const graphId = uuid();
 	return {
-		id: uuid(),
+		id: graphId,
 		nodes: {
 			[nodeId]: {
 				id: nodeId,
+				graphId,
 				position: Vec2.new(0, 0),
 				state: { layerId: "", propertyId: "" },
 				type: FlowNodeType.property_output,

@@ -32,6 +32,7 @@ export const createPropertyManager = (
 		toCompute,
 		expressions,
 		propertyIdToAffectedInputNodes,
+		propertyIdToAffectedOutputNodes,
 	} = getCompositionPropertyGraphOrder(compositionId, actionState);
 	let propertyValues: Record<string, any> = {};
 	let computed: Record<string, FlowComputeNodeArg[]> = {};
@@ -43,6 +44,7 @@ export const createPropertyManager = (
 		toCompute = result.toCompute;
 		expressions = result.expressions;
 		propertyIdToAffectedInputNodes = result.propertyIdToAffectedInputNodes;
+		propertyIdToAffectedOutputNodes = result.propertyIdToAffectedOutputNodes;
 
 		// Populate property values
 		{
@@ -365,6 +367,7 @@ export const createPropertyManager = (
 			const nodeRefs: Array<{ nodeId: string; graphId: string }> = [];
 			for (const propertyId of propertyIds) {
 				nodeRefs.push(...(propertyIdToAffectedInputNodes[propertyId] || []));
+				nodeRefs.push(...(propertyIdToAffectedOutputNodes[propertyId] || []));
 			}
 			recomputeNodeRefs(actionState, nodeRefs);
 		},
