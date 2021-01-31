@@ -76,10 +76,9 @@ const NodeTValueInputComponent: React.FC<Props> = (props) => {
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ flowState },
-	{ graphId, nodeId, index },
+	{ nodeId, index },
 ) => {
-	const graph = flowState.graphs[graphId];
-	const node = graph.nodes[nodeId];
+	const node = flowState.nodes[nodeId];
 	return {
 		input: node.inputs[index],
 	};

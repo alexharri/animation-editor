@@ -128,15 +128,10 @@ export const applyIndexTransformToLayer = (
 export const applyParentTransform = (
 	transform: LayerTransform,
 	parentTransform: LayerTransform,
-	isBaseTransform: boolean,
 ): LayerTransform => {
-	let translate = transform.translate.add(parentTransform.translate);
+	let translate = transform.translate.add(parentTransform.translate).sub(parentTransform.anchor);
 
 	const origin = parentTransform.translate;
-
-	if (isBaseTransform) {
-		translate = translate.sub(parentTransform.anchor);
-	}
 
 	if (parentTransform.scaleX !== 1 || parentTransform.scaleY !== 1) {
 		translate = translate.scaleXY(parentTransform.scaleX, parentTransform.scaleY, origin);
@@ -162,7 +157,9 @@ export const adjustTransformToParent = (
 	transform: LayerTransform,
 	parentTransform: LayerTransform,
 ): LayerTransform => {
-	const translateDiff = transform.translate.sub(parentTransform.translate);
+	const translateDiff = transform.translate
+		.sub(parentTransform.translate)
+		.add(parentTransform.anchor);
 
 	const rmat = Mat2.rotation(-parentTransform.rotation);
 	const translate = translateDiff

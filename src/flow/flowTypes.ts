@@ -67,7 +67,7 @@ export interface FlowGraph {
 	propertyId: string;
 	id: string;
 	moveVector: Vec2;
-	nodes: { [nodeId: string]: FlowNode<FlowNodeType> };
+	nodes: string[];
 	_addNodeOfTypeOnClick: { type: FlowNodeType; io?: FlowNodeIO } | null;
 	_dragSelectRect: Rect | null;
 	_dragOutputTo: {

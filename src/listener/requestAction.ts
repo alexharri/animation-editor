@@ -43,6 +43,7 @@ export interface RequestActionParams {
 	done: () => boolean;
 	addDiff: (fn: DiffFactoryFn) => void;
 	performDiff: (fn: DiffFactoryFn) => void;
+	addReverseDiff: (fn: DiffFactoryFn) => void;
 }
 
 export interface RequestActionCallback {
@@ -84,11 +85,20 @@ const performRequestedAction = (
 	const diffs: Diff[] = [];
 	const allDiffs: Diff[] = [];
 
+	// The diffs to perform to reverse the performed to reverse the diffs
+	// that have been performed by the current action.
+	//
+	// If none are specified, the performed diffs are performed again in
+	// reverse order.
+	const reverseDiffs: Diff[] = [];
+
 	const cancelAction = () => {
 		store.dispatch(historyActions.cancelAction(actionId));
 		onComplete();
 		_cancelAction = null;
-		sendDiffsToSubscribers([...allDiffs].reverse(), "backward");
+
+		const diffsToPerform = reverseDiffs.length ? reverseDiffs : [...allDiffs].reverse();
+		sendDiffsToSubscribers(diffsToPerform, "backward");
 	};
 	_cancelAction = cancelAction;
 
@@ -216,6 +226,11 @@ const performRequestedAction = (
 			const diff = fn(diffFactory);
 			allDiffs.push(diff);
 			sendDiffsToSubscribers([diff]);
+		},
+
+		addReverseDiff: (fn) => {
+			const diff = fn(diffFactory);
+			reverseDiffs.push(diff);
 		},
 	};
 

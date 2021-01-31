@@ -34,8 +34,8 @@ export const getLayerDependencies = (
 		const graph = flowState.graphs[graphId];
 
 		const outputNodes: FlowNode<FlowNodeType.property_output>[] = [];
-		for (const nodeId of Object.keys(graph.nodes)) {
-			const node = graph.nodes[nodeId];
+		for (const nodeId of graph.nodes) {
+			const node = flowState.nodes[nodeId];
 			if (node.type === FlowNodeType.property_output) {
 				outputNodes.push(node as FlowNode<FlowNodeType.property_output>);
 			}
@@ -85,7 +85,7 @@ export const getLayerDependencies = (
 						continue;
 					}
 					findDependencies(
-						graph.nodes[input.pointer.nodeId],
+						flowState.nodes[input.pointer.nodeId],
 						input.pointer.outputIndex,
 						push,
 					);
@@ -100,7 +100,7 @@ export const getLayerDependencies = (
 
 				const affectedBy: AffectedBy[] = [];
 
-				findDependencies(graph.nodes[input.pointer.nodeId], i, (item) =>
+				findDependencies(flowState.nodes[input.pointer.nodeId], i, (item) =>
 					affectedBy.push(item),
 				);
 

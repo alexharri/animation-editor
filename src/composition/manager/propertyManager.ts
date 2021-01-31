@@ -1,25 +1,29 @@
 import * as mathjs from "mathjs";
-import { Layer, Property } from "~/composition/compositionTypes";
+import { Property } from "~/composition/compositionTypes";
 import { forEachLayerProperty } from "~/composition/compositionUtils";
 import { getCompositionPropertyGraphOrder } from "~/composition/layer/layerComputePropertiesOrder";
 import { flowNodeArg } from "~/flow/flowArgs";
 import { computeNodeOutputsFromInputArgs } from "~/flow/flowComputeNodeNew";
 import { FlowNodeState } from "~/flow/flowNodeState";
-import { FlowComputeNodeArg, FlowNode, FlowNodeReference, FlowNodeType } from "~/flow/flowTypes";
-import { getPropertyFlowNodeReferencedPropertyIds } from "~/flow/flowUtils";
+import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
+import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 
 export interface PropertyManager {
-	addLayer: (layer: Layer, actionState: ActionState) => void;
+	addLayer: (actionState: ActionState) => void;
+	removeLayer: (actionState: ActionState) => void;
 	updateStructure: (actionState: ActionState) => void;
 	getPropertyValue: (propertyId: string) => any;
-	onPropertyIdsChanged: (propertyIds: string[], actionState: ActionState) => void;
-	onNodeStateChange: (nodeRef: FlowNodeReference, actionState: ActionState) => void;
-	onNodeExpressionChange: (nodeRef: FlowNodeReference, actionState: ActionState) => void;
-	getPropertyIdsAffectedByNodes: (
-		nodeRefs: FlowNodeReference[],
+	onPropertyIdsChanged: (
+		propertyIds: string[],
 		actionState: ActionState,
-	) => string[];
+		frameIndex?: number,
+	) => void;
+	onFrameIndexChanged: (actionState: ActionState, frameIndex: number) => void;
+	onNodeStateChange: (nodeId: string, actionState: ActionState) => void;
+	onNodeExpressionChange: (nodeId: string, actionState: ActionState) => void;
+	getPropertyIdsAffectedByNodes: (nodeIds: string[], actionState: ActionState) => string[];
+	getPropertyIdsAffectedByFrameIndexInGraphByLayer: () => Record<string, string[]>;
 }
 
 export const createPropertyManager = (
@@ -33,9 +37,11 @@ export const createPropertyManager = (
 		expressions,
 		propertyIdToAffectedInputNodes,
 		propertyIdToAffectedOutputNodes,
+		nodeIdsThatEmitFrameIndex,
 	} = getCompositionPropertyGraphOrder(compositionId, actionState);
 	let propertyValues: Record<string, any> = {};
 	let computed: Record<string, FlowComputeNodeArg[]> = {};
+	let pIdsAffectedByFrameViaGraphByLayer: Record<string, string[]> = {};
 
 	const reset = (actionState: ActionState) => {
 		const result = getCompositionPropertyGraphOrder(compositionId, actionState);
@@ -45,6 +51,9 @@ export const createPropertyManager = (
 		expressions = result.expressions;
 		propertyIdToAffectedInputNodes = result.propertyIdToAffectedInputNodes;
 		propertyIdToAffectedOutputNodes = result.propertyIdToAffectedOutputNodes;
+		nodeIdsThatEmitFrameIndex = result.nodeIdsThatEmitFrameIndex;
+		propertyValues = {};
+		computed = {};
 
 		// Populate property values
 		{
@@ -67,18 +76,35 @@ export const createPropertyManager = (
 			}
 		}
 
-		for (const ref of toCompute) {
-			computeNode(actionState, ref);
+		for (const nodeId of toCompute) {
+			const { frameIndex } = actionState.compositionState.compositions[compositionId];
+			computeNode(actionState, nodeId, { frameIndex });
 		}
+
+		pIdsAffectedByFrameViaGraphByLayer = getPropertyIdsAffectedByNodes(
+			nodeIdsThatEmitFrameIndex,
+			actionState,
+		).reduce<Record<string, string[]>>((acc, propertyId) => {
+			const property = actionState.compositionState.properties[propertyId];
+			if (!acc[property.layerId]) {
+				acc[property.layerId] = [];
+			}
+			acc[property.layerId].push(property.id);
+			return acc;
+		}, {});
 	};
 
-	const getNodeInputValues = (actionState: ActionState, node: FlowNode): FlowComputeNodeArg[] => {
+	const getNodeInputValues = (
+		actionState: ActionState,
+		node: FlowNode,
+		options: { frameIndex: number },
+	): FlowComputeNodeArg[] => {
 		if (node.type === FlowNodeType.array_modifier_index) {
 			return [flowNodeArg.number(-1)];
 		}
 		if (node.type === FlowNodeType.composition) {
 			const composition = actionState.compositionState.compositions[compositionId];
-			return [composition.width, composition.height, composition.frameIndex].map(
+			return [composition.width, composition.height, options.frameIndex].map(
 				flowNodeArg.number,
 			);
 		}
@@ -93,6 +119,12 @@ export const createPropertyManager = (
 		if (node.type === FlowNodeType.property_input) {
 			const { compositionState } = actionState;
 			const state = node.state as FlowNodeState<FlowNodeType.property_input>;
+
+			if (!state.propertyId) {
+				// The node has not selected a property.
+				return [];
+			}
+
 			const property = compositionState.properties[state.propertyId];
 
 			switch (property.type) {
@@ -151,6 +183,12 @@ export const createPropertyManager = (
 	) => {
 		const { compositionState } = actionState;
 		const state = node.state;
+
+		if (!state.propertyId) {
+			// The node has not selected a property.
+			return;
+		}
+
 		const outputs = computed[node.id];
 		const targetProperty = compositionState.properties[state.propertyId];
 
@@ -172,11 +210,18 @@ export const createPropertyManager = (
 			if (!input.pointer) {
 				continue;
 			}
-			const { value } = outputs[i];
 			const propertyId = propertyIds[i];
 			const property = compositionState.properties[propertyId];
 
+			let { value } = outputs[i];
+
 			if (property.type === "compound") {
+				if (typeof value === "number") {
+					// If the value provided to a compound property (Vec2) is a number
+					// then we case it to Vec2(N, N).
+					value = Vec2.new(value, value);
+				}
+
 				if (!(value instanceof Vec2)) {
 					throw new Error("Expected compound property value to be Vec2");
 				}
@@ -193,17 +238,12 @@ export const createPropertyManager = (
 
 	const computeNode = (
 		actionState: ActionState,
-		{
-			nodeId,
-			graphId,
-		}: {
-			graphId: string;
-			nodeId: string;
-		},
+		nodeId: string,
+		options: { frameIndex: number },
 	) => {
-		const graph = actionState.flowState.graphs[graphId];
-		const node = graph.nodes[nodeId];
-		const inputs = getNodeInputValues(actionState, node);
+		const { flowState } = actionState;
+		const node = flowState.nodes[nodeId];
+		const inputs = getNodeInputValues(actionState, node, options);
 		let outputs: FlowComputeNodeArg[];
 
 		if (node.type === FlowNodeType.expr) {
@@ -262,127 +302,116 @@ export const createPropertyManager = (
 
 	const recomputeNodeRefs = (
 		actionState: ActionState,
-		nodeRefs: Array<{ nodeId: string; graphId: string }>,
+		nodeIds: string[],
+		options: { frameIndex?: number },
 	) => {
-		const nodeIdToGraphId = nodeRefs.reduce<Record<string, string>>((acc, ref) => {
-			acc[ref.nodeId] = ref.graphId;
-			return acc;
-		}, {});
+		let frameIndex = options.frameIndex;
+
+		if (typeof frameIndex === "undefined") {
+			const composition = actionState.compositionState.compositions[compositionId];
+			frameIndex = composition.frameIndex;
+		}
+
 		const nodeIdsToUpdate = new Set<string>();
 
-		function dfs(ref: { nodeId: string; graphId: string }) {
-			if (nodeIdsToUpdate.has(ref.nodeId)) {
+		function dfs(nodeId: string) {
+			if (nodeIdsToUpdate.has(nodeId)) {
 				return;
 			}
-			nodeIdsToUpdate.add(ref.nodeId);
-			nodeIdToGraphId[ref.nodeId] = ref.graphId;
-			const next = nodeToNext[ref.nodeId];
-			for (const ref of next) {
-				dfs(ref);
+			nodeIdsToUpdate.add(nodeId);
+			const next = nodeToNext[nodeId];
+			for (const nodeId of next) {
+				dfs(nodeId);
 			}
 		}
-		for (const ref of nodeRefs) {
-			dfs(ref);
+		for (const nodeId of nodeIds) {
+			dfs(nodeId);
 		}
 		const toUpdate = [...nodeIdsToUpdate].sort((a, b) => nodeToIndex[a] - nodeToIndex[b]);
 		for (const nodeId of toUpdate) {
-			const graphId = nodeIdToGraphId[nodeId];
-			computeNode(actionState, { nodeId, graphId });
+			computeNode(actionState, nodeId, { frameIndex });
 		}
 	};
 
-	const getPropertyIdsAffectedByNodes = (
-		nodeRefs: FlowNodeReference[],
-		actionState: ActionState,
-	): string[] => {
+	function getPropertyIdsAffectedByNodes(nodeIds: string[], actionState: ActionState): string[] {
 		const found = new Set<string>();
 		const propertyIdSet = new Set<string>();
 
-		function dfs(ref: { nodeId: string; graphId: string }) {
-			if (found.has(ref.nodeId)) {
+		function dfs(nodeId: string) {
+			if (found.has(nodeId)) {
 				return;
 			}
-			found.add(ref.nodeId);
-			const next = nodeToNext[ref.nodeId];
-			for (const ref of next) {
-				dfs(ref);
+			found.add(nodeId);
+			const next = nodeToNext[nodeId];
+			for (const nodeId of next) {
+				dfs(nodeId);
 			}
 
-			const graph = actionState.flowState.graphs[ref.graphId];
-			const node = graph.nodes[ref.nodeId];
-
+			const node = actionState.flowState.nodes[nodeId];
 			if (node.type === FlowNodeType.property_output) {
 				const state = node.state as FlowNodeState<FlowNodeType.property_output>;
-				const propertyIds = getPropertyFlowNodeReferencedPropertyIds(
+				const propertyIds = getFlowPropertyNodeReferencedPropertyIds(
 					actionState.compositionState,
 					state.propertyId,
 				);
 				propertyIds.forEach((propertyId) => propertyIdSet.add(propertyId));
 			}
 		}
-		for (const ref of nodeRefs) {
-			dfs(ref);
+		for (const nodeId of nodeIds) {
+			dfs(nodeId);
 		}
 		return [...propertyIdSet];
-	};
+	}
 
 	const self: PropertyManager = {
-		addLayer: (layer, actionState) => {
-			const { compositionState, timelineState, timelineSelectionState } = actionState;
+		addLayer: (actionState) => {
+			reset(actionState);
+		},
 
-			forEachLayerProperty(layer.id, actionState.compositionState, (property) => {
-				const composition = compositionState.compositions[property.compositionId];
-				const value = property.timelineId
-					? getTimelineValueAtIndex({
-							timeline: timelineState[property.timelineId],
-							selection: timelineSelectionState[property.timelineId],
-							frameIndex: composition.frameIndex,
-							layerIndex: layer.index,
-					  })
-					: property.value;
-				propertyValues[property.id] = value;
-			});
-
+		removeLayer: (actionState) => {
 			reset(actionState);
 		},
 
 		getPropertyValue: (propertyId) => propertyValues[propertyId],
 
-		onPropertyIdsChanged: (propertyIds, actionState) => {
+		onPropertyIdsChanged: (propertyIds, actionState, frameIndex) => {
 			const { compositionState, timelineState, timelineSelectionState } = actionState;
 			for (const propertyId of propertyIds) {
 				const property = compositionState.properties[propertyId] as Property;
 				const layer = compositionState.layers[property.layerId];
-				const composition = compositionState.compositions[property.compositionId];
+				const composition = compositionState.compositions[layer.compositionId];
 				const value = property.timelineId
 					? getTimelineValueAtIndex({
 							timeline: timelineState[property.timelineId],
 							selection: timelineSelectionState[property.timelineId],
-							frameIndex: composition.frameIndex,
+							frameIndex: frameIndex ?? composition.frameIndex,
 							layerIndex: layer.index,
 					  })
 					: property.value;
 				propertyValues[property.id] = value;
 			}
-			const nodeRefs: Array<{ nodeId: string; graphId: string }> = [];
+			const nodeIds: string[] = [];
 			for (const propertyId of propertyIds) {
-				nodeRefs.push(...(propertyIdToAffectedInputNodes[propertyId] || []));
-				nodeRefs.push(...(propertyIdToAffectedOutputNodes[propertyId] || []));
+				nodeIds.push(...(propertyIdToAffectedInputNodes[propertyId] || []));
+				nodeIds.push(...(propertyIdToAffectedOutputNodes[propertyId] || []));
 			}
-			recomputeNodeRefs(actionState, nodeRefs);
+
+			recomputeNodeRefs(actionState, nodeIds, { frameIndex });
 		},
 
-		onNodeStateChange: (nodeRef, actionState) => {
-			recomputeNodeRefs(actionState, [nodeRef]);
+		onFrameIndexChanged: (actionState, frameIndex) => {
+			recomputeNodeRefs(actionState, nodeIdsThatEmitFrameIndex, { frameIndex });
 		},
 
-		onNodeExpressionChange: (nodeRef, actionState) => {
-			const { nodeId, graphId } = nodeRef;
-			const graph = actionState.flowState.graphs[graphId];
-			const node = graph.nodes[nodeId] as FlowNode<FlowNodeType.expr>;
+		onNodeStateChange: (nodeId, actionState) => {
+			recomputeNodeRefs(actionState, [nodeId], {});
+		},
+
+		onNodeExpressionChange: (nodeId, actionState) => {
+			const node = actionState.flowState.nodes[nodeId] as FlowNode<FlowNodeType.expr>;
 			const { expression } = node.state;
 			expressions[node.id] = mathjs.compile(expression);
-			self.onNodeStateChange(nodeRef, actionState);
+			self.onNodeStateChange(nodeId, actionState);
 		},
 
 		getPropertyIdsAffectedByNodes: (nodeRefs, actionState) => {
@@ -391,6 +420,10 @@ export const createPropertyManager = (
 
 		updateStructure: (actionState) => {
 			reset(actionState);
+		},
+
+		getPropertyIdsAffectedByFrameIndexInGraphByLayer: () => {
+			return pIdsAffectedByFrameViaGraphByLayer;
 		},
 	};
 	return self;

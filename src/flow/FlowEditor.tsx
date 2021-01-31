@@ -4,7 +4,7 @@ import { FlowEditorDragSelect } from "~/flow/dragSelect/FlowEditorDragSelect";
 import styles from "~/flow/FlowEditor.styles";
 import { FlowEditorConnections } from "~/flow/FlowEditorConnections";
 import { flowEditorHandlers } from "~/flow/flowEditorHandlers";
-import { FlowGraph, FlowNodeType } from "~/flow/flowTypes";
+import { FlowGraph, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { flowEditorGlobalToNormal } from "~/flow/flowUtils";
 import { ArrayModifierIndexNode } from "~/flow/nodes/arrayModifier/ArrayModifierIndexNode";
 import { CapNumberNode } from "~/flow/nodes/CapNumberNode";
@@ -34,6 +34,7 @@ const s = compileStylesheetLabelled(styles);
 type OwnProps = AreaComponentProps<FlowAreaState>;
 interface StateProps {
 	graph: FlowGraph;
+	nodes: Record<string, FlowNode>;
 }
 type Props = OwnProps & StateProps;
 
@@ -116,7 +117,7 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 		return null;
 	}
 
-	const nodeIds = Object.keys(graph.nodes);
+	const nodeIds = graph.nodes;
 
 	return (
 		<>
@@ -174,7 +175,7 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 								zIndex: number;
 							}> = Node;
 
-							switch (props.graph.nodes[nodeId].type) {
+							switch (props.nodes[nodeId].type) {
 								case FlowNodeType.expr: {
 									NodeComponent = ExpressionNode;
 									break;
@@ -298,7 +299,10 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 };
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ flowState }, props) => {
-	return { graph: flowState.graphs[props.areaState.graphId] };
+	return {
+		graph: flowState.graphs[props.areaState.graphId],
+		nodes: flowState.nodes,
+	};
 };
 
 export const FlowEditor = connectActionState(mapStateToProps)(FlowEditorComponent);

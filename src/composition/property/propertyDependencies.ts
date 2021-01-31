@@ -40,8 +40,8 @@ export const getPropertyDependencies = (
 		const graph = flowState.graphs[graphId];
 
 		const outputNodes: FlowNode<FlowNodeType.property_output>[] = [];
-		for (const nodeId of Object.keys(graph.nodes)) {
-			const node = graph.nodes[nodeId];
+		for (const nodeId of graph.nodes) {
+			const node = flowState.nodes[nodeId];
 			if (node.type === FlowNodeType.property_output) {
 				outputNodes.push(node as FlowNode<FlowNodeType.property_output>);
 			}
@@ -118,7 +118,7 @@ export const getPropertyDependencies = (
 						continue;
 					}
 					findDependencies(
-						graph.nodes[input.pointer.nodeId],
+						flowState.nodes[input.pointer.nodeId],
 						input.pointer.outputIndex,
 						outputNodeId,
 						inputIndex,
@@ -132,7 +132,7 @@ export const getPropertyDependencies = (
 					continue;
 				}
 
-				findDependencies(graph.nodes[input.pointer.nodeId], i, node.id, i);
+				findDependencies(flowState.nodes[input.pointer.nodeId], i, node.id, i);
 			}
 		}
 	}

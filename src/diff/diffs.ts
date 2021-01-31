@@ -1,5 +1,3 @@
-import { FlowNodeReference } from "~/flow/flowTypes";
-
 interface _C {
 	compositionId: string;
 }
@@ -27,6 +25,9 @@ export enum DiffType {
 	FlowNodeExpression = 15,
 	RemoveFlowNode = 16,
 	UpdateNodeConnection = 17,
+	AddFlowNode = 18,
+	LayerParent = 19,
+	LayerIndexOrLength = 20,
 }
 
 /**
@@ -77,6 +78,8 @@ export interface ResizeAreasDiff {
 
 export interface FrameIndexDiff extends _C {
 	type: DiffType.FrameIndex;
+	compositionId: string;
+	frameIndex: number;
 }
 
 export interface ModifyPropertyDiff extends _P {
@@ -94,22 +97,37 @@ export interface ModifyMultipleLayerPropertiesDiff {
 
 export interface FlowNodeDiff {
 	type: DiffType.FlowNodeState;
-	nodeRef: FlowNodeReference;
+	nodeId: string;
 }
 
 export interface FlowNodeExpressionDiff {
 	type: DiffType.FlowNodeExpression;
-	nodeRef: FlowNodeReference;
+	nodeId: string;
 }
 
 export interface RemoveFlowNodeDiff {
 	type: DiffType.RemoveFlowNode;
-	nodeRef: FlowNodeReference;
+	nodeId: string;
+}
+
+export interface AddFlowNodeDiff {
+	type: DiffType.AddFlowNode;
+	nodeId: string;
 }
 
 export interface UpdateNodeConnectionDiff {
 	type: DiffType.UpdateNodeConnection;
-	nodeRefs: FlowNodeReference[];
+	nodeIds: string[];
+}
+
+export interface LayerParentDiff {
+	type: DiffType.LayerParent;
+	layerId: string;
+}
+
+export interface LayerIndexOrLength {
+	type: DiffType.LayerIndexOrLength;
+	layerIds: string[];
 }
 
 export type Diff =
@@ -127,4 +145,7 @@ export type Diff =
 	| FlowNodeDiff
 	| FlowNodeExpressionDiff
 	| RemoveFlowNodeDiff
-	| UpdateNodeConnectionDiff;
+	| AddFlowNodeDiff
+	| UpdateNodeConnectionDiff
+	| LayerParentDiff
+	| LayerIndexOrLength;

@@ -1,5 +1,4 @@
 import { Diff, DiffType } from "~/diff/diffs";
-import { FlowNodeReference } from "~/flow/flowTypes";
 
 export type DiffFactoryFn = (factory: typeof diffFactory) => Diff;
 
@@ -28,8 +27,8 @@ export const diffFactory = {
 	resizeAreas: (): Diff => {
 		return { type: DiffType.ResizeAreas };
 	},
-	frameIndex: (compositionId: string): Diff => {
-		return { type: DiffType.FrameIndex, compositionId };
+	frameIndex: (compositionId: string, frameIndex: number): Diff => {
+		return { type: DiffType.FrameIndex, compositionId, frameIndex };
 	},
 	modifyProperty: (propertyId: string): Diff => {
 		return { type: DiffType.ModifyProperty, propertyId };
@@ -40,19 +39,25 @@ export const diffFactory = {
 	togglePropertyAnimated: (propertyId: string): Diff => {
 		return { type: DiffType.TogglePropertyAnimated, propertyId };
 	},
-	flowNodeState: (nodeRef: FlowNodeReference): Diff => {
-		return { type: DiffType.FlowNodeState, nodeRef };
+	flowNodeState: (nodeId: string): Diff => {
+		return { type: DiffType.FlowNodeState, nodeId };
 	},
-	flowNodeExpression: (nodeRef: FlowNodeReference): Diff => {
-		return { type: DiffType.FlowNodeExpression, nodeRef };
+	flowNodeExpression: (nodeId: string): Diff => {
+		return { type: DiffType.FlowNodeExpression, nodeId };
 	},
-	removeFlowNode: (nodeRef: FlowNodeReference): Diff => {
-		return { type: DiffType.RemoveFlowNode, nodeRef };
+	removeFlowNode: (nodeId: string): Diff => {
+		return { type: DiffType.RemoveFlowNode, nodeId };
 	},
-	updateNodeConnection: (graphId: string, affectedNodeIds: string[]): Diff => {
-		return {
-			type: DiffType.UpdateNodeConnection,
-			nodeRefs: affectedNodeIds.map((nodeId) => ({ nodeId, graphId })),
-		};
+	addFlowNode: (nodeId: string): Diff => {
+		return { type: DiffType.AddFlowNode, nodeId };
+	},
+	updateNodeConnection: (affectedNodeIds: string[]): Diff => {
+		return { type: DiffType.UpdateNodeConnection, nodeIds: affectedNodeIds };
+	},
+	layerParent: (layerId: string): Diff => {
+		return { type: DiffType.LayerParent, layerId };
+	},
+	layerIndexOrLength: (layerIds: string[]): Diff => {
+		return { type: DiffType.LayerIndexOrLength, layerIds };
 	},
 };

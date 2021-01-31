@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
+import { DiffType } from "~/diff/diffs";
 import "~/globals";
 import { addListener } from "~/listener/addListener";
 import { sendDiffsToSubscribers } from "~/listener/diffListener";
@@ -20,6 +21,12 @@ ReactDOM.render(<Root />, document.getElementById("root"));
 
 // Disable right click context menu
 document.addEventListener("contextmenu", (e) => e.preventDefault(), false);
+
+window.addEventListener("resize", () => {
+	requestAnimationFrame(() => {
+		sendDiffsToSubscribers([{ type: DiffType.ResizeAreas }]);
+	});
+});
 
 addListener.repeated("keydown", { modifierKeys: ["Command"] }, (e) => {
 	if (!isKeyCodeOf("Z", e.keyCode)) {

@@ -31,11 +31,11 @@ const NodeNumberInputComponent: React.FC<Props> = (props) => {
 
 	const { onChange, onChangeEnd } = useNumberInputAction({
 		onChange: (value, params) => {
-			params.performDiff((diff) => diff.flowNodeState({ nodeId, graphId }));
+			params.performDiff((diff) => diff.flowNodeState(nodeId));
 			params.dispatch(flowActions.setNodeInputValue(graphId, nodeId, index, value));
 		},
 		onChangeEnd: (_type, params) => {
-			params.addDiff((diff) => diff.flowNodeState({ nodeId, graphId }));
+			params.addDiff((diff) => diff.flowNodeState(nodeId));
 			params.submitAction("Update input value");
 		},
 	});
@@ -86,10 +86,9 @@ const NodeNumberInputComponent: React.FC<Props> = (props) => {
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ flowState },
-	{ graphId, nodeId, index },
+	{ nodeId, index },
 ) => {
-	const graph = flowState.graphs[graphId];
-	const node = graph.nodes[nodeId];
+	const node = flowState.nodes[nodeId];
 	return {
 		input: node.inputs[index],
 	};

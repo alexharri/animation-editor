@@ -66,7 +66,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	const graph = flowState.graphs[graphId];
 	const selection = flowSelectionFromState(graphId, flowSelectionState);
 
-	const { type, width, position } = graph.nodes[nodeId];
+	const { type, width, position } = flowState.nodes[nodeId];
 	const selected = !!selection.nodes[nodeId];
 
 	const { x: left, y: top } =

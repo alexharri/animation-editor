@@ -2,7 +2,7 @@ import { CompositionState } from "~/composition/compositionReducer";
 import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { getActionState } from "~/state/stateUtils";
-import { LayerType } from "~/types";
+import { LayerType, PropertyGroupName } from "~/types";
 
 export const reduceVisibleLayerProperties = <T>(
 	layerId: string,
@@ -125,11 +125,23 @@ export function forEachLayerProperty(
 	layerId: string,
 	compositionState: CompositionState,
 	fn: (property: Property) => void,
+	options: { ignoreGroups?: PropertyGroupName[] } = {},
 ): void {
+	const groupsToIgnore = new Set<PropertyGroupName>();
+
+	if (options.ignoreGroups) {
+		options.ignoreGroups.forEach((name) => groupsToIgnore.add(name));
+	}
+
 	const toIterateOver = [...compositionState.layers[layerId].properties];
 	while (toIterateOver.length) {
 		const propertyId = toIterateOver[0];
 		const property = compositionState.properties[propertyId];
+
+		if (property.type === "group" && groupsToIgnore.has(property.name)) {
+			toIterateOver.shift();
+			continue;
+		}
 
 		if (property.type === "property") {
 			fn(property);
@@ -141,11 +153,11 @@ export function forEachLayerProperty(
 }
 
 export function forEachSubProperty(
-	propertyId: string,
+	_propertyId: string,
 	compositionState: CompositionState,
 	fn: (property: Property) => void,
 ): void {
-	const property = compositionState.properties[propertyId];
+	const property = compositionState.properties[_propertyId];
 
 	if (property.type === "property") {
 		throw new Error(`Property of type "property" has no sub-properties.`);

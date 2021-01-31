@@ -383,7 +383,6 @@ export const moveToolHandlers = {
 								continue;
 							}
 
-							// console.log(keyframes, keyframes[j], keyframes[j + 1], frameIndex);
 							const [k0, k, k1] = splitKeyframesAtIndex(
 								keyframes[j],
 								keyframes[j + 1],

@@ -177,7 +177,7 @@ const mapState: MapActionState<StateProps, OwnProps> = (
 	{ graphId, nodeId },
 ) => {
 	const graph = flowState.graphs[graphId];
-	const node = graph.nodes[nodeId];
+	const node = flowState.nodes[nodeId];
 	const state = node.state as StateProps["state"];
 
 	const graphLayerPropertyIds = graph.layerId

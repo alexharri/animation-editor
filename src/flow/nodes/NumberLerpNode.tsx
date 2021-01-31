@@ -52,12 +52,8 @@ function NumberLerpNodeComponent(props: Props) {
 	);
 }
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ flowState },
-	{ graphId, nodeId },
-) => {
-	const graph = flowState.graphs[graphId];
-	const node = graph.nodes[nodeId];
+const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ flowState }, { nodeId }) => {
+	const node = flowState.nodes[nodeId];
 	return {
 		inputs: node.inputs,
 		outputs: node.outputs,

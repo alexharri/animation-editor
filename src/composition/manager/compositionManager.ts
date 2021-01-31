@@ -3,7 +3,6 @@ import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { CompositionContext } from "~/composition/manager/compositionContext";
 import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
 import { createLayerManager } from "~/composition/manager/layerManager";
-import { populateCompositionContainer } from "~/composition/manager/populateCompositionContainer";
 import { createPropertyManager } from "~/composition/manager/propertyManager";
 import { AreaType } from "~/constants";
 import { DiffType } from "~/diff/diffs";
@@ -16,12 +15,21 @@ export const manageComposition = (
 	compositionId: string,
 	parentCompContainer: PIXI.Container,
 ): CompositionContext => {
+	const container = new PIXI.Container();
+	container.sortableChildren = true;
+
 	const propertyManager = createPropertyManager(compositionId, getActionState());
+	const layerManager = createLayerManager(
+		compositionId,
+		container,
+		propertyManager,
+		getActionState(),
+	);
 
 	const ctx: CompositionContext = {
 		compositionId,
-		container: new PIXI.Container(),
-		layers: createLayerManager(() => ctx),
+		container,
+		layers: layerManager,
 		properties: propertyManager,
 		onDiffs: (actionState, diffs, direction) =>
 			compositionDiffHandler(ctx, actionState, diffs, direction),
@@ -31,11 +39,7 @@ export const manageComposition = (
 			ctx.container.destroy({ children: true, texture: true, baseTexture: true });
 		},
 	};
-
-	ctx.container.sortableChildren = true;
 	parentCompContainer.addChild(ctx.container);
-
-	populateCompositionContainer(ctx.prevState, compositionId, ctx.layers);
 
 	return ctx;
 };
@@ -45,18 +49,7 @@ export const manageTopLevelComposition = (
 	areaId: string,
 	canvas: HTMLCanvasElement,
 ) => {
-	// let lastHistoryIndex = store.getState().flowState.index;
 	let prevState = getActionStateFromApplicationState(store.getState());
-
-	// const unsubscribe = store.subscribe(() => {
-	// 	const index = store.getState().flowState.index;
-	// 	if (index === lastHistoryIndex) {
-	// 		return;
-	// 	}
-	// 	lastHistoryIndex = index;
-	// 	prevState = getActionStateFromApplicationState(store.getState());
-	// 	console.log(index);
-	// });
 
 	const app = new PIXI.Application({
 		width: canvas.width,

@@ -1,6 +1,6 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { forEachLayerProperty } from "~/composition/compositionUtils";
-import { LayerType, PropertyName } from "~/types";
+import { LayerType, PropertyGroupName, PropertyName } from "~/types";
 
 export interface CommonLayerPropertyMap {
 	[PropertyName.PositionX]: string;
@@ -60,12 +60,30 @@ const _initialCommonMap: CommonLayerPropertyMap = {
 	[PropertyName.ScaleY]: "",
 };
 
+const ignoreGroups = {
+	// Ignore shape layer's Content group so that the shape transform
+	// does not override the transform properties.
+	[LayerType.Shape]: [PropertyGroupName.Content],
+
+	[LayerType.Composition]: [],
+	[LayerType.Ellipse]: [],
+	[LayerType.Line]: [],
+	[LayerType.Rect]: [],
+};
+
 const populateMap = (layerId: string, compositionState: CompositionState, map: any) => {
-	forEachLayerProperty(layerId, compositionState, (property) => {
-		if (map.hasOwnProperty(property.name)) {
-			(map as any)[property.name] = property.id;
-		}
-	});
+	const layer = compositionState.layers[layerId];
+
+	forEachLayerProperty(
+		layerId,
+		compositionState,
+		(property) => {
+			if (map.hasOwnProperty(property.name)) {
+				(map as any)[property.name] = property.id;
+			}
+		},
+		{ ignoreGroups: ignoreGroups[layer.type] },
+	);
 };
 
 function rectLayerPropertyMap(layerId: string, compositionState: CompositionState) {

@@ -34,7 +34,7 @@ const shapeLayerToPixi: Fn<ShapeLayerPropertyMap> = (
 	layer,
 	_,
 	container,
-	getPropertyValue,
+	_getPropertyValue,
 ) => {
 	const graphic = new PIXI.Graphics();
 	container.addChild(graphic);
@@ -206,33 +206,15 @@ const shapeLayerToPixi: Fn<ShapeLayerPropertyMap> = (
 	}
 };
 
-const createResolver = (
-	actionState: ActionState,
-	map: LayerPropertyMap,
-	getPropertyValue: (propertyId: string) => any,
-) => (propertyName: PropertyName) => {
-	const { compositionState } = actionState;
-
+const createResolver = (map: LayerPropertyMap, getPropertyValue: (propertyId: string) => any) => (
+	propertyName: PropertyName,
+) => {
 	const propertyId = (map as any)[propertyName];
 	return getPropertyValue(propertyId);
-	// const property = compositionState.properties[propertyId] as Property;
-
-	// if (!property.timelineId) {
-	// 	return property.value;
-	// }
-
-	// const layer = compositionState.layers[property.layerId];
-	// const composition = compositionState.compositions[property.compositionId];
-	// return getTimelineValueAtIndex({
-	// 	timeline: actionState.timelineState[property.timelineId],
-	// 	selection: actionState.timelineSelectionState[property.timelineId],
-	// 	frameIndex: composition.frameIndex,
-	// 	layerIndex: layer.index,
-	// });
 };
 
 const rectLayerToPixi: Fn<RectLayerPropertyMap> = (
-	actionState,
+	_actionState,
 	_layer,
 	map,
 	container,
@@ -241,29 +223,38 @@ const rectLayerToPixi: Fn<RectLayerPropertyMap> = (
 	const graphic = new PIXI.Graphics();
 	container.addChild(graphic);
 
-	const resolve = createResolver(actionState, map, getPropertyValue);
+	const resolve = createResolver(map, getPropertyValue);
 
 	const width = resolve(PropertyName.Width);
 	const height = resolve(PropertyName.Height);
 	const fill = resolve(PropertyName.Fill);
 	const strokeColor = resolve(PropertyName.StrokeColor);
 	const strokeWidth = resolve(PropertyName.StrokeWidth);
+	let borderRadius = resolve(PropertyName.BorderRadius);
+
+	borderRadius = Math.max(0, Math.min(width / 2 - 0.01, height / 2 - 0.01, borderRadius));
 
 	const [r, g, b, a] = fill;
 	graphic.beginFill(rgbToBinary([r, g, b]), a);
 
 	if (strokeWidth > 0) {
 		const [r, g, b, a] = strokeColor;
-		graphic.lineTextureStyle({ color: rgbToBinary([r, g, b]), alpha: a, width: strokeWidth });
+		graphic.lineStyle(strokeWidth, rgbToBinary([r, g, b]), a);
 	}
 
-	graphic.drawRect(0, 0, width, height);
+	if (borderRadius > 0) {
+		graphic.drawRoundedRect(0, 0, width, height, borderRadius);
+	} else {
+		graphic.drawRect(0, 0, width, height);
+	}
+
+	graphic.endFill();
 
 	return graphic;
 };
 
 const ellipseLayerToPixi: Fn<EllipseLayerPropertyMap> = (
-	actionState,
+	_actionState,
 	_layer,
 	map,
 	container,
@@ -272,7 +263,7 @@ const ellipseLayerToPixi: Fn<EllipseLayerPropertyMap> = (
 	const graphic = new PIXI.Graphics();
 	container.addChild(graphic);
 
-	const resolve = createResolver(actionState, map, getPropertyValue);
+	const resolve = createResolver(map, getPropertyValue);
 
 	const outerRadius = resolve(PropertyName.OuterRadius);
 	const fill = resolve(PropertyName.Fill);
@@ -328,13 +319,27 @@ export const layerToPixi = (
 	actionState: ActionState,
 	layer: Layer,
 	getPropertyValue: (propertyId: string) => any,
-): PIXI.Container => {
-	const container = new PIXI.Container();
+): {
+	transformContainer: PIXI.Container;
+	ownContentContainer: PIXI.Container;
+	childLayerContainer: PIXI.Container;
+} => {
+	const transformContainer = new PIXI.Container();
+	const ownContentContainer = new PIXI.Container();
+	const childLayerContainer = new PIXI.Container();
+
+	// The layer's transform affects both its own content and the content
+	// of its child layers, so we add both to the transform container.
+	transformContainer.addChild(ownContentContainer);
+	transformContainer.addChild(childLayerContainer);
 
 	const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
+	const resolve = createResolver(map, getPropertyValue);
 
-	const resolve = createResolver(actionState, map, getPropertyValue);
+	// Populate the content container
+	setContent(actionState, layer, map, ownContentContainer, getPropertyValue);
 
+	// Apply the layer's transform to the transform container
 	const positionX = resolve(PropertyName.PositionX);
 	const positionY = resolve(PropertyName.PositionY);
 	const anchorX = resolve(PropertyName.AnchorX);
@@ -343,24 +348,24 @@ export const layerToPixi = (
 	const scaleY = resolve(PropertyName.ScaleY);
 	const rotation = resolve(PropertyName.Rotation);
 
-	setContent(actionState, layer, map, container, getPropertyValue);
-	container.scale.set(scaleX, scaleY);
-	container.rotation = rotation * DEG_TO_RAD_FAC;
-	container.position.set(positionX, positionY);
-	container.pivot.set(anchorX, anchorY);
-	return container;
+	transformContainer.scale.set(scaleX, scaleY);
+	transformContainer.rotation = rotation * DEG_TO_RAD_FAC;
+	transformContainer.position.set(positionX, positionY);
+	transformContainer.pivot.set(anchorX, anchorY);
+
+	return { transformContainer, childLayerContainer, ownContentContainer };
 };
 
 export const updatePixiLayerContent = (
 	actionState: ActionState,
 	layer: Layer,
-	container: PIXI.Container,
+	ownContentContainer: PIXI.Container,
 	getPropertyValue: (propertyId: string) => any,
 ) => {
 	const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
-	for (const child of container.children) {
-		container.removeChild(child);
+	for (const child of ownContentContainer.children) {
+		ownContentContainer.removeChild(child);
 		child.destroy();
 	}
-	setContent(actionState, layer, map, container, getPropertyValue);
+	setContent(actionState, layer, map, ownContentContainer, getPropertyValue);
 };

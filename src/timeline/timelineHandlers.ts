@@ -63,26 +63,23 @@ export const timelineHandlers = {
 		const { compositionId } = options;
 
 		const composition = getActionState().compositionState.compositions[compositionId];
-
 		const initialPosition = Vec2.fromEvent(e);
+
+		let frameIndex = composition.frameIndex;
 
 		const fn: RequestActionCallback = (params) => {
 			const onMove = (e?: MouseEvent) => {
 				const pos = e ? Vec2.fromEvent(e) : initialPosition;
 				const x = graphEditorGlobalToNormal(pos.x, options);
-				params.dispatch(
-					compositionActions.setFrameIndex(
-						composition.id,
-						capToRange(0, composition.length - 1, Math.round(x)),
-					),
-				);
-				params.performDiff((diff) => diff.frameIndex(compositionId));
+				frameIndex = capToRange(0, composition.length - 1, Math.round(x));
+				params.dispatch(compositionActions.setFrameIndex(composition.id, frameIndex));
+				params.performDiff((diff) => diff.frameIndex(compositionId, frameIndex));
 			};
 			params.addListener.repeated("mousemove", onMove);
 			onMove();
 
 			params.addListener.once("mouseup", () => {
-				params.addDiff((diff) => diff.frameIndex(compositionId));
+				params.addDiff((diff) => diff.frameIndex(compositionId, frameIndex));
 				params.submitAction("Move scrubber");
 			});
 		};
@@ -727,10 +724,13 @@ export const timelineHandlers = {
 				return;
 			}
 
-			const graph = createArrayModifierFlowGraph(propertyId);
+			const { graph, node } = createArrayModifierFlowGraph(propertyId);
 
-			dispatch(compositionActions.setPropertyGraphId(propertyId, graph.id));
-			dispatch(flowActions.setGraph(graph));
+			dispatch(
+				compositionActions.setPropertyGraphId(propertyId, graph.id),
+				flowActions.setGraph(graph),
+				flowActions.setNode(node),
+			);
 			submitAction("Create array modifier graph");
 		});
 	},
@@ -752,10 +752,13 @@ export const timelineHandlers = {
 				return;
 			}
 
-			const graph = createLayerFlowGraph(layerId);
+			const { graph, node } = createLayerFlowGraph(layerId);
 
-			dispatch(compositionActions.setLayerGraphId(layerId, graph.id));
-			dispatch(flowActions.setGraph(graph));
+			dispatch(
+				compositionActions.setLayerGraphId(layerId, graph.id),
+				flowActions.setGraph(graph),
+				flowActions.setNode(node),
+			);
 			submitAction("Create layer graph");
 		});
 	},

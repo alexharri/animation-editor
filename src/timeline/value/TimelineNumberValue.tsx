@@ -3,6 +3,7 @@ import { NumberInput } from "~/components/common/NumberInput";
 import { LinkIcon } from "~/components/icons/LinkIcon";
 import { compositionActions } from "~/composition/compositionReducer";
 import { Composition, CompoundProperty, Property } from "~/composition/compositionTypes";
+import { DiffFactoryFn } from "~/diff/diffFactory";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
@@ -47,6 +48,11 @@ const usePropertyNumberInput = (
 					return p.id !== property.id;
 				})!;
 			}
+
+			const diffFn: DiffFactoryFn = (diff) =>
+				otherPropertyId
+					? diff.modifyMultipleLayerProperties([property.id, otherPropertyId])
+					: diff.modifyProperty(property.id);
 
 			if (otherPropertyId) {
 				const {
@@ -162,13 +168,13 @@ const usePropertyNumberInput = (
 					update(otherPropertyId, proportion * value);
 				}
 
-				op.performDiff((diff) => diff.modifyProperty(property.id));
+				op.performDiff(diffFn);
 				op.submit();
 			};
 			onValueChangeFn.current(value);
 
 			onValueChangeEndFn.current = () => {
-				params.addDiff((diff) => diff.modifyProperty(property.id));
+				params.addDiff(diffFn);
 				paramsRef.current?.submitAction("Update value");
 			};
 		});

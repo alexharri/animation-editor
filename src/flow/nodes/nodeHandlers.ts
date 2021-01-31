@@ -2,13 +2,13 @@ import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { AreaType, FLOW_NODE_MIN_WIDTH } from "~/constants";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { flowValidInputsToOutputsMap } from "~/flow/flowIO";
-import { FlowGraph } from "~/flow/flowTypes";
 import {
 	didFlowSelectionChange,
 	flowEditorGlobalToNormal,
 	flowSelectionFromState,
 } from "~/flow/flowUtils";
 import { flowActions } from "~/flow/state/flowActions";
+import { FlowState } from "~/flow/state/flowReducers";
 import { flowSelectionActions } from "~/flow/state/flowSelectionReducer";
 import {
 	calculateNodeInputPosition,
@@ -19,21 +19,23 @@ import { requestAction, RequestActionCallback } from "~/listener/requestAction";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { getDistance } from "~/util/math";
 
-const getAllValidInputsForType = (graph: FlowGraph, nodeId: string, outputIndex: number) => {
+const getAllValidInputsForType = (flowState: FlowState, nodeId: string, outputIndex: number) => {
 	const allNodeInputsOfType: Array<{
 		nodeId: string;
 		inputIndex: number;
 		position: Vec2;
 	}> = [];
 
-	const output = graph.nodes[nodeId].outputs[outputIndex];
+	const node = flowState.nodes[nodeId];
+	const graph = flowState.graphs[node.graphId];
+	const output = node.outputs[outputIndex];
 
-	for (const key in graph.nodes) {
+	for (const key of graph.nodes) {
 		if (key === nodeId) {
 			continue;
 		}
 
-		const node = graph.nodes[key];
+		const node = flowState.nodes[key];
 
 		for (let i = 0; i < node.inputs.length; i += 1) {
 			const input = node.inputs[i];
@@ -47,21 +49,23 @@ const getAllValidInputsForType = (graph: FlowGraph, nodeId: string, outputIndex:
 	return allNodeInputsOfType;
 };
 
-const getAllOutputsOfType = (graph: FlowGraph, nodeId: string, inputIndex: number) => {
+const getAllOutputsOfType = (flowState: FlowState, nodeId: string, inputIndex: number) => {
 	const allNodeOutputsOfType: Array<{
 		nodeId: string;
 		outputIndex: number;
 		position: Vec2;
 	}> = [];
 
-	const input = graph.nodes[nodeId].inputs[inputIndex];
+	const node = flowState.nodes[nodeId];
+	const graph = flowState.graphs[node.graphId];
+	const input = node.inputs[inputIndex];
 
-	for (const key in graph.nodes) {
+	for (const key of graph.nodes) {
 		if (key === nodeId) {
 			continue;
 		}
 
-		const node = graph.nodes[key];
+		const node = flowState.nodes[key];
 
 		for (let i = 0; i < node.outputs.length; i += 1) {
 			const output = node.outputs[i];
@@ -89,7 +93,7 @@ export const nodeHandlers = {
 									contextMenuActions.closeContextMenu(),
 									flowActions.removeNode(graphId, nodeId),
 								);
-								params.addDiff((diff) => diff.removeFlowNode({ nodeId, graphId }));
+								params.addDiff((diff) => diff.removeFlowNode(nodeId));
 								params.submitAction("Remove node");
 							},
 							default: true,
@@ -182,14 +186,14 @@ export const nodeHandlers = {
 		outputIndex: number,
 	) => {
 		requestAction({ history: true }, (params) => {
+			const { flowState } = getActionState();
 			const { pan, scale } = getAreaActionState<AreaType.FlowEditor>(areaId);
-			const graph = getActionState().flowState.graphs[graphId];
 
 			const viewport = getAreaViewport(areaId, AreaType.FlowEditor);
 			const transformMousePosition = (mousePosition: Vec2) =>
 				flowEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
-			const allNodeInputsOfType = getAllValidInputsForType(graph, nodeId, outputIndex);
+			const allNodeInputsOfType = getAllValidInputsForType(flowState, nodeId, outputIndex);
 
 			let hasInit = false;
 
@@ -230,7 +234,7 @@ export const nodeHandlers = {
 					const to = graph._dragOutputTo?.wouldConnectToInput.nodeId;
 
 					params.dispatch(flowActions.submitDragOutputTo(graphId));
-					params.addDiff((diff) => diff.updateNodeConnection(graphId, [from, to]));
+					params.addDiff((diff) => diff.updateNodeConnection([from, to]));
 					params.submitAction("Connect output to input");
 					return;
 				}
@@ -248,14 +252,14 @@ export const nodeHandlers = {
 		inputIndex: number,
 	) => {
 		const cb: RequestActionCallback = (params) => {
+			const { flowState } = getActionState();
 			const { pan, scale } = getAreaActionState<AreaType.FlowEditor>(areaId);
-			const graph = getActionState().flowState.graphs[graphId];
 
 			const viewport = getAreaViewport(areaId, AreaType.FlowEditor);
 			const transformMousePosition = (mousePosition: Vec2) =>
 				flowEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
-			const allNodeOutputsOfType = getAllOutputsOfType(graph, nodeId, inputIndex);
+			const allNodeOutputsOfType = getAllOutputsOfType(flowState, nodeId, inputIndex);
 
 			let hasInit = false;
 
@@ -296,7 +300,7 @@ export const nodeHandlers = {
 					const to = graph._dragInputTo?.wouldConnectToOutput.nodeId;
 
 					params.dispatch(flowActions.submitDragInputTo(graphId));
-					params.addDiff((diff) => diff.updateNodeConnection(graphId, [from, to]));
+					params.addDiff((diff) => diff.updateNodeConnection([from, to]));
 					params.submitAction("Connect input to output");
 					return;
 				}
@@ -316,13 +320,14 @@ export const nodeHandlers = {
 	) => {
 		const cb: RequestActionCallback = (params) => {
 			const { pan, scale } = getAreaActionState<AreaType.FlowEditor>(areaId);
-			const graph = getActionState().flowState.graphs[graphId];
+			const { flowState } = getActionState();
 
 			const viewport = getAreaViewport(areaId, AreaType.FlowEditor);
 			const transformMousePosition = (mousePosition: Vec2) =>
 				flowEditorGlobalToNormal(mousePosition, viewport, scale, pan);
 
-			const pointer = graph.nodes[nodeId].inputs[inputIndex].pointer;
+			const node = flowState.nodes[nodeId];
+			const pointer = node.inputs[inputIndex].pointer;
 
 			if (!pointer) {
 				console.warn(`No pointer for '${nodeId}' input at index '${inputIndex}'`);
@@ -331,7 +336,7 @@ export const nodeHandlers = {
 			}
 
 			const allNodeInputsOfType = getAllValidInputsForType(
-				graph,
+				flowState,
 				pointer.nodeId,
 				pointer.outputIndex,
 			);
@@ -352,9 +357,7 @@ export const nodeHandlers = {
 							nodeId: pointer.nodeId,
 						}),
 					);
-					params.performDiff((diff) =>
-						diff.updateNodeConnection(graphId, [from, toPrev]),
-					);
+					params.performDiff((diff) => diff.updateNodeConnection([from, toPrev]));
 					hasInit = true;
 				}
 
@@ -393,13 +396,11 @@ export const nodeHandlers = {
 					const toNext = graph._dragOutputTo.wouldConnectToInput.nodeId;
 
 					params.dispatch(flowActions.submitDragOutputTo(graphId));
-					params.addDiff((diff) =>
-						diff.updateNodeConnection(graphId, [from, toPrev, toNext]),
-					);
+					params.addDiff((diff) => diff.updateNodeConnection([from, toPrev, toNext]));
 					params.submitAction("Move input to output");
 				} else {
 					params.dispatch(flowActions.clearDragOutputTo(graphId));
-					params.addDiff((diff) => diff.updateNodeConnection(graphId, [from, toPrev]));
+					params.addDiff((diff) => diff.updateNodeConnection([from, toPrev]));
 					params.submitAction("Disconnect input");
 				}
 			});
@@ -424,10 +425,9 @@ export const nodeHandlers = {
 
 		requestAction({ history: true }, (params) => {
 			const { submitAction, cancelAction, dispatch, addListener } = params;
+			const { flowState } = getActionState();
 
-			const graph = getActionState().flowState.graphs[graphId];
-
-			const node = graph.nodes[nodeId];
+			const node = flowState.nodes[nodeId];
 
 			let hasMoved = false;
 

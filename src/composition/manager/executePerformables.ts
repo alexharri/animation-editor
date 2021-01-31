@@ -25,20 +25,20 @@ export const executePerformables = (
 				updatePixiLayerContent(
 					actionState,
 					layer,
-					ctx.layers.getLayerContainer(layerId),
+					ctx.layers.getLayerOwnContentContainer(layerId),
 					ctx.properties.getPropertyValue,
 				);
 				break;
 			}
 			case Performable.UpdatePosition: {
-				const container = ctx.layers.getLayerContainer(layerId);
+				const container = ctx.layers.getLayerTransformContainer(layerId);
 				const x = getPropertyValue(PropertyName.PositionX);
 				const y = getPropertyValue(PropertyName.PositionY);
 				container.position.set(x, y);
 				break;
 			}
 			case Performable.UpdateTransform: {
-				const container = ctx.layers.getLayerContainer(layerId);
+				const container = ctx.layers.getLayerTransformContainer(layerId);
 
 				const xPos = getPropertyValue(PropertyName.PositionX);
 				const yPos = getPropertyValue(PropertyName.PositionY);

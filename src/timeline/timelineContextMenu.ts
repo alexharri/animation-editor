@@ -200,9 +200,9 @@ export const createTimelineContextMenu = (
 					}
 
 					const graph = flowState.graphs[graphId];
-					const nodeIds = Object.keys(graph.nodes);
+					const nodeIds = graph.nodes;
 					for (let j = 0; j < nodeIds.length; j += 1) {
-						const node = graph.nodes[nodeIds[j]];
+						const node = flowState.nodes[nodeIds[j]];
 
 						if (node.type !== FlowNodeType.property_input) {
 							continue;

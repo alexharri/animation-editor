@@ -162,64 +162,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 		return unsubscribe;
 	}, []);
 
-	// useEffect(() => {
-	// 	const canvas = canvasRef.current;
-	// 	if (!canvas) {
-	// 		return;
-	// 	}
-	// 	const app = new PIXI.Application({
-	// 		width: canvas.width,
-	// 		height: canvas.height,
-	// 		view: canvas,
-	// 		transparent: true,
-	// 		antialias: true,
-	// 	});
-	// 	appRef.current = app;
-
-	// 	const shapes: PIXI.Container[] = [];
-
-	// 	const actionState = getActionState();
-	// 	const { compositionState } = actionState;
-
-	// 	const { compositionId } = props.areaState;
-	// 	const composition = compositionState.compositions[compositionId];
-
-	// 	for (const layerId of composition.layers) {
-	// 		const layer = compositionState.layers[layerId];
-	// 		const node = layerToPixi(actionState, layer);
-	// 		shapes.push(node);
-	// 	}
-
-	// 	// const N = 200;
-	// 	// for (let i = 0; i < N; i++) {
-	// 	// 	const shape = new PIXI.Graphics()
-	// 	// 		.beginFill(0x7700ff)
-	// 	// 		.lineStyle(2, 0xff0000, 1)
-	// 	// 		.moveTo(100, 100)
-	// 	// 		.bezierCurveTo(150, 100, 200, 150, 200, 200)
-	// 	// 		.lineTo(180, 200)
-	// 	// 		.bezierCurveTo(180, 120, 120, 120, 100, 120)
-	// 	// 		.closePath();
-	// 	// 	// shape.scale.set(interpolate(0.1, 4, i / N));
-	// 	// 	shape.pivot.set(200, 200);
-	// 	// 	shapes.push(shape);
-	// 	// }
-
-	// 	const tick = () => {
-	// 		requestAnimationFrame(tick);
-
-	// 		for (let i = 0; i < shapes.length; i++) {
-	// 			const shape = shapes[i];
-	// 			shape.position.set(500 + i * 50, 500 + i * 50);
-	// 			shape.rotation += 0.01;
-	// 		}
-	// 	};
-	// 	tick();
-
-	// 	app.stage.addChild(...shapes);
-	// }, []);
-
-	const renderWorkspace = useCallback((options: ReturnType<typeof getOptions>) => {
+	const renderWorkspace = useCallback(() => {
 		const props = propsRef.current;
 		const app = appRef.current;
 
@@ -228,13 +171,13 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 		}
 
 		if (app.screen.width !== props.width || app.screen.height !== props.height) {
-			console.log("updating size");
 			app.screen.width = props.width;
 			app.screen.height = props.height;
 		}
 	}, []);
 
 	const keyDownRef = useRef({ Shift: false, Command: false });
+	const lastHadPlayback = useRef(false);
 
 	useEffect(() => {
 		let mounted = true;
@@ -245,24 +188,24 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 			}
 
 			// const mainCtx = canvasRef.current?.getContext("2d");
-			const guidesCtx = guideCanvasRef.current?.getContext("2d");
+			const canvas = guideCanvasRef.current;
+			const guidesCtx = canvas?.getContext("2d");
 
-			if (!guidesCtx) {
+			if (!canvas || !guidesCtx) {
 				return;
 			}
 
 			const playback = getCompositionPlayback(propsRef.current.areaState.compositionId);
+
+			if (lastHadPlayback.current !== !!playback) {
+				canvas.style.opacity = !!playback ? "0" : "1";
+			}
+
+			lastHadPlayback.current = !!playback;
+
 			if (playback) {
 				shouldRenderRef.current = false;
-				renderWorkspace(
-					getOptions(
-						propsRef.current,
-						null as any,
-						undefined,
-						keyDownRef.current,
-						playback.frameIndex,
-					),
-				);
+				renderWorkspace();
 				return;
 			}
 
@@ -271,9 +214,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 
 			if (render) {
 				shouldRenderRef.current = false;
-				renderWorkspace(
-					getOptions(propsRef.current, null as any, undefined, keyDownRef.current),
-				);
+				renderWorkspace();
 			}
 
 			if (renderGuides) {

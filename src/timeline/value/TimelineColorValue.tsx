@@ -3,6 +3,7 @@ import { ColorPicker } from "~/components/colorPicker/ColorPicker";
 import { compositionActions } from "~/composition/compositionReducer";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuBaseProps, OpenCustomContextMenuOptions } from "~/contextMenu/contextMenuTypes";
+import { DiffFactoryFn } from "~/diff/diffFactory";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { useGetRefRectFn, useRefRect } from "~/hook/useRefRect";
 import { requestAction } from "~/listener/requestAction";
@@ -42,6 +43,8 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 					updateRect(rect!);
 				}, [rect]);
 
+				const diffFn: DiffFactoryFn = (diff) => diff.modifyProperty(property.id);
+
 				const onChange = (rgbColor: RGBColor) => {
 					latestColor.current = rgbColor;
 
@@ -50,7 +53,7 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 						value = [...rgbColor, props.value[3]] as RGBAColor;
 					}
 
-					params.performDiff((diff) => diff.modifyLayer(property.layerId));
+					params.performDiff(diffFn);
 					params.dispatch(compositionActions.setPropertyValue(props.propertyId, value));
 				};
 
@@ -75,7 +78,7 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 					}
 
 					params.dispatch(contextMenuActions.closeContextMenu());
-					params.addDiff((diff) => diff.modifyLayer(property.layerId));
+					params.addDiff(diffFn);
 					params.submitAction("Update color");
 				});
 

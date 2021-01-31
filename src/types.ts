@@ -149,6 +149,16 @@ export type TransformPropertyName =
 	| PropertyName.ScaleY
 	| PropertyName.Rotation;
 
+export const TRANSFORM_PROPERTY_NAMES = [
+	PropertyName.PositionX,
+	PropertyName.PositionY,
+	PropertyName.AnchorX,
+	PropertyName.AnchorY,
+	PropertyName.ScaleX,
+	PropertyName.ScaleY,
+	PropertyName.Rotation,
+] as const;
+
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
 export type JsonArray = Array<Json>;
 export interface JsonObject {

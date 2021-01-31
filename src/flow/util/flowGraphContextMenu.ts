@@ -8,6 +8,7 @@ import { flowActions } from "~/flow/state/flowActions";
 import { RequestActionParams } from "~/listener/requestAction";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { PropertyGroupName } from "~/types";
+import { createMapNumberId } from "~/util/mapUtils";
 
 interface Options {
 	graphId: string;
@@ -19,7 +20,6 @@ interface Options {
 
 export const getFlowGraphContextMenuOptions = (options: Options) => {
 	const { graphId, areaId, viewport, params, setClickCapture } = options;
-	const { dispatch, submitAction } = params;
 
 	const actionState = getActionState();
 	const graph = actionState.flowState.graphs[graphId];
@@ -54,16 +54,20 @@ export const getFlowGraphContextMenuOptions = (options: Options) => {
 	}
 
 	const onAddSelect = (options: AddNodeOptions) => {
-		dispatch(flowActions.startAddNode(graphId, options.type, options.getIO?.()));
-		dispatch(contextMenuActions.closeContextMenu());
+		params.dispatch(
+			flowActions.startAddNode(graphId, options.type, options.getIO?.()),
+			contextMenuActions.closeContextMenu(),
+		);
 
 		const fn = (e: React.MouseEvent) => {
 			if (!e) {
 				return;
 			}
+			const expectedNodeId = createMapNumberId(getActionState().flowState.nodes);
 			const pos = flowEditorGlobalToNormal(Vec2.fromEvent(e), viewport, scale, pan);
-			dispatch(flowActions.submitAddNode(graphId, pos));
-			submitAction("Add node");
+			params.dispatch(flowActions.submitAddNode(graphId, pos));
+			params.addDiff((diff) => diff.addFlowNode(expectedNodeId));
+			params.submitAction("Add node");
 		};
 		setClickCapture({ fn });
 	};

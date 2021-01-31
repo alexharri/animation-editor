@@ -77,9 +77,7 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 	const { nodeId, graphId } = props;
 
 	const expression = useComputeHistory((state) => {
-		const node = state.flowState.graphs[props.graphId].nodes[
-			props.nodeId
-		] as FlowNode<FlowNodeType.expr>;
+		const node = state.flowState.nodes[props.nodeId] as FlowNode<FlowNodeType.expr>;
 
 		return node.state.expression;
 	});
@@ -88,9 +86,7 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 
 	const onFocus = () => {
 		const getExpr = (state: ActionState) => {
-			const node = state.flowState.graphs[graphId].nodes[
-				nodeId
-			] as FlowNode<FlowNodeType.expr>;
+			const node = state.flowState.nodes[nodeId] as FlowNode<FlowNodeType.expr>;
 			return node.state.expression;
 		};
 
@@ -123,9 +119,9 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 			}),
 		);
 
-		const graph = getActionState().flowState.graphs[graphId];
+		const { flowState } = getActionState();
 
-		const toUpdate = getExpressionUpdateIO(expression, graph, nodeId);
+		const toUpdate = getExpressionUpdateIO(expression, flowState, nodeId);
 
 		const toDispatch: any[] = [
 			flowActions.removeNodeInputs(graphId, nodeId, toUpdate.inputIndicesToRemove),
@@ -152,7 +148,7 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 		});
 
 		params.dispatch(toDispatch);
-		params.addDiff((diff) => diff.flowNodeExpression({ nodeId, graphId }));
+		params.addDiff((diff) => diff.flowNodeExpression(nodeId));
 		params.submitAction("Modify expression");
 	};
 
@@ -237,12 +233,8 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ flowState },
-	{ graphId, nodeId },
-) => {
-	const graph = flowState.graphs[graphId];
-	const node = graph.nodes[nodeId] as FlowNode<FlowNodeType.expr>;
+const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ flowState }, { nodeId }) => {
+	const node = flowState.nodes[nodeId] as FlowNode<FlowNodeType.expr>;
 	return {
 		textareaHeight: node.state.textareaHeight,
 	};

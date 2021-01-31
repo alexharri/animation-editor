@@ -21,6 +21,7 @@ import { LayerType, PropertyGroupName, RGBAColor, RGBColor, TransformBehavior } 
 import {
 	addListToMap,
 	createGenMapIdFn,
+	mergeItemInMap,
 	modifyItemsInMap,
 	modifyItemsInUnionMap,
 	removeKeysFromMap,
@@ -60,6 +61,10 @@ export const compositionActions = {
 			layerIndexShift: number,
 			selectionState: CompositionSelectionState,
 		) => action({ compositionId, layerIndexShift, selectionState });
+	}),
+
+	setLayerIndex: createAction("comp/SET_LAYER_INDEX", (action) => {
+		return (layerId: string, index: number) => action({ layerId, index });
 	}),
 
 	moveLayers: createAction("comp/MOVE_LAYERS", (action) => {
@@ -924,6 +929,11 @@ export const compositionReducer = (
 					},
 				),
 			};
+		}
+
+		case getType(compositionActions.setLayerIndex): {
+			const { layerId, index } = action.payload;
+			return { ...state, layers: mergeItemInMap(state.layers, layerId, () => ({ index })) };
 		}
 
 		case getType(compositionActions.setCompoundPropertySeparated): {

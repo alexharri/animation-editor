@@ -47,10 +47,10 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 						color,
 					}),
 				);
-				params.performDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
+				params.performDiff((diff) => diff.flowNodeState(nodeId));
 			},
 			onChangeEnd: (_type, params) => {
-				params.addDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
+				params.addDiff((diff) => diff.flowNodeState(nodeId));
 				params.submitAction("Update color input factor");
 			},
 		}),
@@ -78,7 +78,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 					params.dispatch(
 						flowActions.updateNodeState(graphId, nodeId, { color: rgbaColor }),
 					);
-					params.performDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
+					params.performDiff((diff) => diff.flowNodeState(nodeId));
 				};
 
 				// Submit on enter
@@ -102,7 +102,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 					}
 
 					params.dispatch(contextMenuActions.closeContextMenu());
-					params.addDiff((diff) => diff.flowNodeState({ graphId, nodeId }));
+					params.addDiff((diff) => diff.flowNodeState(nodeId));
 					params.submitAction("Update color");
 				});
 
@@ -184,12 +184,8 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 	);
 };
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = (
-	{ flowState },
-	{ graphId, nodeId },
-) => {
-	const graph = flowState.graphs[graphId];
-	const node = graph.nodes[nodeId];
+const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ flowState }, { nodeId }) => {
+	const node = flowState.nodes[nodeId];
 	return {
 		outputs: node.outputs,
 		state: node.state as StateProps["state"],

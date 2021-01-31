@@ -1,5 +1,6 @@
 import { Property } from "~/composition/compositionTypes";
 import { forEachSubProperty } from "~/composition/compositionUtils";
+import { PropertyManager } from "~/composition/manager/propertyManager";
 import { PropertyGroupName, PropertyName } from "~/types";
 
 const EMPTY_STR_SET = new Set<string>();
@@ -27,12 +28,10 @@ interface PropertyInformation {
 	affectedByNodesInGraph: Set<string>;
 }
 
-export const createPerformableManager = (): PerformableManager => {
+export const createPerformableManager = (propertyManager: PropertyManager): PerformableManager => {
 	const propertyMap: Record<string, PropertyInformation> = {};
-	const registeredPropertyIdsByLayer: Record<string, string[]> = {};
+	const propertyIdsByLayer: Record<string, string[]> = {};
 	const layerIdSet = new Set<string>();
-	// const layerToPropertiesAffectedByGraph: Record<string, string[]>;
-	// const layerToPropertiesAffectedByFrameIndexChange: Record<string, string[]>;
 
 	const self: PerformableManager = {
 		addLayer: (actionState, layerId) => {
@@ -77,15 +76,15 @@ export const createPerformableManager = (): PerformableManager => {
 					add(property.id, Performable.DrawLayer);
 				});
 			}
-			registeredPropertyIdsByLayer[layerId] = registered;
+			propertyIdsByLayer[layerId] = registered;
 			layerIdSet.add(layerId);
 		},
 
 		onUpdateLayerStructure: (...args) => self.addLayer(...args),
 
 		removeLayer: (layerId) => {
-			const registered = registeredPropertyIdsByLayer[layerId];
-			delete registeredPropertyIdsByLayer[layerId];
+			const registered = propertyIdsByLayer[layerId];
+			delete propertyIdsByLayer[layerId];
 			for (const propertyId of registered) {
 				delete propertyMap[propertyId];
 			}
@@ -125,7 +124,7 @@ export const createPerformableManager = (): PerformableManager => {
 
 			const layerIds = [...layerIdSet];
 			for (const layerId of layerIds) {
-				for (const propertyId of registeredPropertyIdsByLayer[layerId]) {
+				for (const propertyId of propertyIdsByLayer[layerId]) {
 					if (propertyMap[propertyId].isAnimated) {
 						propertyIds.push(propertyId);
 					}
@@ -138,16 +137,23 @@ export const createPerformableManager = (): PerformableManager => {
 		getActionsToPerformOnFrameIndexChange: () => {
 			const layerIds = [...layerIdSet];
 
+			const graph_pidsAffectedByFrameInGraphByLayer = propertyManager.getPropertyIdsAffectedByFrameIndexInGraphByLayer();
+
 			const layerPerformables: LayerPerformables[] = [];
 			for (const layerId of layerIds) {
-				const registered = registeredPropertyIdsByLayer[layerId];
+				const allLayerPropertyIds = propertyIdsByLayer[layerId];
 				const performableSet = new Set<Performable>();
 
-				for (const propertyId of registered) {
+				for (const propertyId of allLayerPropertyIds) {
 					const info = propertyMap[propertyId];
 					if (info.isAnimated) {
 						performableSet.add(info.performable);
 					}
+				}
+
+				for (const propertyId of graph_pidsAffectedByFrameInGraphByLayer[layerId] || []) {
+					const info = propertyMap[propertyId];
+					performableSet.add(info.performable);
 				}
 
 				if (performableSet.has(Performable.UpdateTransform)) {

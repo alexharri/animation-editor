@@ -211,7 +211,7 @@ const computeFnMap: Record<Type, (args: FlowComputeNodeArg[]) => FlowComputeNode
 		return color.map((x) => flowNodeArg.number(x));
 	},
 
-	[Type.expr]: (args) => {
+	[Type.expr]: () => {
 		throw new Error("Not implemented");
 		// if (!ctx.expressionCache[node.id]) {
 		// 	ctx.expressionCache[node.id] = mathjs.compile(state.expression);

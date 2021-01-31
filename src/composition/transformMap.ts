@@ -74,9 +74,9 @@ export const computeLayerTransformMap = (
 			getLayerBaseTransform;
 			if (layer.parentLayerId) {
 				const parentTransform = map[layer.parentLayerId].transform;
-				transform = applyParentTransform(transform, parentTransform, false);
+				transform = applyParentTransform(transform, parentTransform);
 			} else {
-				transform = applyParentTransform(transform, parentTransform, true);
+				transform = applyParentTransform(transform, parentTransform);
 			}
 
 			map[layer.id].transform = transform;

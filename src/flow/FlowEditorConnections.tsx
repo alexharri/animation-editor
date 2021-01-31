@@ -3,6 +3,7 @@ import { cssVariables, cssZIndex } from "~/cssVariables";
 import { FlowGraph } from "~/flow/flowTypes";
 import { flowEditorPositionToViewport, flowSelectionFromState } from "~/flow/flowUtils";
 import { FlowAreaState } from "~/flow/state/flowAreaReducer";
+import { FlowState } from "~/flow/state/flowReducers";
 import { FlowGraphSelection } from "~/flow/state/flowSelectionReducer";
 import {
 	calculateNodeInputPosition,
@@ -23,6 +24,7 @@ interface OwnProps {
 }
 interface StateProps {
 	graph: FlowGraph;
+	nodes: FlowState["nodes"];
 	selection: FlowGraphSelection;
 }
 type Props = OwnProps & StateProps;
@@ -31,7 +33,7 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 	public render() {
 		const { props } = this;
 
-		const { areaState, graph, selection, width, height, left, top } = props;
+		const { areaState, graph, selection, width, height, left, top, nodes } = props;
 		const { pan, scale } = areaState;
 		const opts = { viewport: { width, height, left, top }, pan, scale };
 
@@ -39,7 +41,7 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 
 		if (graph._dragOutputTo) {
 			const { fromOutput, wouldConnectToInput } = graph._dragOutputTo;
-			const fromNode = graph.nodes[fromOutput.nodeId];
+			const fromNode = nodes[fromOutput.nodeId];
 			const outputIndex = fromOutput.outputIndex;
 			const outputPos = flowEditorPositionToViewport(
 				calculateNodeOutputPosition(fromNode, outputIndex),
@@ -49,7 +51,7 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 			let position = graph._dragOutputTo.position;
 
 			if (wouldConnectToInput) {
-				const targetNode = graph.nodes[wouldConnectToInput.nodeId];
+				const targetNode = nodes[wouldConnectToInput.nodeId];
 				position = calculateNodeInputPosition(targetNode, wouldConnectToInput.inputIndex);
 			}
 
@@ -69,7 +71,7 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 
 		if (graph._dragInputTo) {
 			const { fromInput, wouldConnectToOutput } = graph._dragInputTo;
-			const inputNode = graph.nodes[fromInput.nodeId];
+			const inputNode = nodes[fromInput.nodeId];
 			const inputIndex = fromInput.inputIndex;
 			const inputPos = calculateNodeInputPosition(inputNode, inputIndex).apply((vec) =>
 				flowEditorPositionToViewport(vec, opts),
@@ -78,7 +80,7 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 			let position = graph._dragInputTo.position;
 
 			if (wouldConnectToOutput) {
-				const targetNode = graph.nodes[wouldConnectToOutput.nodeId];
+				const targetNode = nodes[wouldConnectToOutput.nodeId];
 				position = calculateNodeOutputPosition(
 					targetNode,
 					wouldConnectToOutput.outputIndex,
@@ -99,9 +101,9 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 			);
 		}
 
-		const nodeIds = Object.keys(graph.nodes);
+		const nodeIds = graph.nodes;
 		for (let i = 0; i < nodeIds.length; i += 1) {
-			const node = graph.nodes[nodeIds[i]];
+			const node = nodes[nodeIds[i]];
 
 			for (let j = 0; j < node.inputs.length; j += 1) {
 				const pointer = node.inputs[j].pointer;
@@ -110,7 +112,7 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 					continue;
 				}
 
-				const targetNode = graph.nodes[pointer.nodeId];
+				const targetNode = nodes[pointer.nodeId];
 
 				const targetPos = calculateNodeOutputPosition(targetNode, pointer.outputIndex)
 					.apply((vec) =>
@@ -158,11 +160,16 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 	}
 }
 
-const mapStateToProps: MapActionState<StateProps, OwnProps> = (state, ownProps) => {
-	const graph = state.flowState.graphs[ownProps.graphId];
-	const selection = flowSelectionFromState(ownProps.graphId, state.flowSelectionState);
+const mapStateToProps: MapActionState<StateProps, OwnProps> = (
+	{ flowState, flowSelectionState },
+	ownProps,
+) => {
+	const { nodes } = flowState;
+	const graph = flowState.graphs[ownProps.graphId];
+	const selection = flowSelectionFromState(ownProps.graphId, flowSelectionState);
 	return {
 		graph,
+		nodes,
 		selection,
 	};
 };
