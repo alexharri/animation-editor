@@ -223,7 +223,8 @@ const performRequestedAction = (
 			const diff = fn(diffFactory);
 			diffs.push(diff);
 			allDiffs.push(diff);
-			sendDiffsToSubscribers([diff]);
+			// The diff is not performed when added. Added diffs are performed when
+			// the action is submitted.
 		},
 
 		performDiff: (fn) => {

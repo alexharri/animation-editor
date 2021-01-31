@@ -95,7 +95,7 @@ export interface ModifyMultipleLayerPropertiesDiff {
 	propertyIds: string[];
 }
 
-export interface FlowNodeDiff {
+export interface FlowNodeStateDiff {
 	type: DiffType.FlowNodeState;
 	nodeId: string;
 }
@@ -143,7 +143,7 @@ export type Diff =
 	| ModifyPropertyDiff
 	| TogglePropertyAnimatedDiff
 	| ModifyMultipleLayerPropertiesDiff
-	| FlowNodeDiff
+	| FlowNodeStateDiff
 	| FlowNodeExpressionDiff
 	| RemoveFlowNodeDiff
 	| AddFlowNodeDiff

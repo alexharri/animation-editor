@@ -52,6 +52,14 @@ export const createLayerManager = (
 
 	const self: LayerManager = {
 		addLayer: (layer, actionState) => {
+			if (layerContainers[layer.id]) {
+				// Layer is already present.
+				//
+				// Warn about this happening and remove the layer before re-adding.
+				console.warn(`Added already present layer '${layer.id}'.`);
+				self.removeLayer(layer);
+			}
+
 			// Create PIXI container and add to registry
 			layerContainers[layer.id] = layerToPixi(
 				actionState,
@@ -63,7 +71,7 @@ export const createLayerManager = (
 			let parentContainer = compositionContainer;
 
 			if (layer.parentLayerId) {
-				parentContainer = self.getLayerTransformContainer(layer.parentLayerId);
+				parentContainer = self.getLayerChildLayerContainer(layer.parentLayerId);
 			}
 
 			// Add the layer to the parent container

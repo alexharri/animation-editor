@@ -53,16 +53,11 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 						value = [...rgbColor, props.value[3]] as RGBAColor;
 					}
 
-					params.performDiff(diffFn);
 					params.dispatch(compositionActions.setPropertyValue(props.propertyId, value));
+					params.performDiff(diffFn);
 				};
 
-				// Submit on enter
-				useKeyDownEffect("Enter", (down) => {
-					if (!down) {
-						return;
-					}
-
+				const onSubmit = () => {
 					let changed = false;
 
 					for (let i = 0; i < rgb.length; i += 1) {
@@ -80,11 +75,20 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 					params.dispatch(contextMenuActions.closeContextMenu());
 					params.addDiff(diffFn);
 					params.submitAction("Update color");
+				};
+
+				// Submit on enter
+				useKeyDownEffect("Enter", (down) => {
+					if (!down) {
+						return;
+					}
+
+					onSubmit();
 				});
 
 				return (
 					<div ref={ref} className={s("colorPickerWrapper")}>
-						<ColorPicker rgbColor={rgb} onChange={onChange} />
+						<ColorPicker rgbColor={rgb} onChange={onChange} onSubmit={onSubmit} />
 					</div>
 				);
 			};

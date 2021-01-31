@@ -1,9 +1,9 @@
-import React, { useRef, useState, useLayoutEffect } from "react";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-import { RGBColor } from "~/types";
-import { rgbToHSL, hslToRGB } from "~/util/color/convertColor";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { useCanvasPixelSelector } from "~/hook/useCanvasPixelSelector";
 import { useDidUpdate } from "~/hook/useDidUpdate";
+import { RGBColor } from "~/types";
+import { hslToRGB, rgbToHSL } from "~/util/color/convertColor";
+import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	container: css`
@@ -204,6 +204,7 @@ const Block: React.FC<{ rgb: RGBColor; hue: number; onRgbChange: (rgb: RGBColor)
 interface Props {
 	rgbColor: RGBColor;
 	onChange: (rgbColor: RGBColor) => void;
+	onSubmit: () => void;
 }
 
 export const ColorPicker: React.FC<Props> = (props) => {
@@ -238,8 +239,12 @@ export const ColorPicker: React.FC<Props> = (props) => {
 						height: 32,
 						width: 64,
 						background: `rgb(${initialRgb.join(",")})`,
+						marginBottom: 16,
 					}}
 				/>
+				<button onClick={props.onSubmit} style={{ display: "block", width: "100%" }}>
+					OK
+				</button>
 			</div>
 		</div>
 	);
