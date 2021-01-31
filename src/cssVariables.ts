@@ -26,6 +26,7 @@ export const cssVariables = {
 	dark700: "#2d2d2d",
 	dark600: "#272727",
 	dark500: "#222222",
+	dark400: "#191919",
 	dark300: "#111111",
 
 	toolbarHeight: `${TOOLBAR_HEIGHT}px`,

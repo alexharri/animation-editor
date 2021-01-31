@@ -112,6 +112,7 @@ export const createLayer = <T extends LayerType>(options: Options<T>) => {
 		id: layerId,
 		index: 0,
 		length: composition.length,
+		playbackStartsAtIndex: type === LayerType.Composition ? 0 : -1,
 		name: getNonDuplicateName(defaultName, existingLayerNames),
 		properties: topLevelProperties.map((p) => p.id),
 		type,

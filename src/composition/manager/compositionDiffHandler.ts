@@ -17,7 +17,6 @@ export const compositionDiffHandler = (
 	const { compositionId } = ctx;
 
 	const composition = actionState.compositionState.compositions[compositionId];
-	const compLayers = new Set(composition.layers);
 
 	let shouldUpdateZIndices = false;
 
@@ -49,27 +48,34 @@ export const compositionDiffHandler = (
 	const nodeDoesNotAffectComposition = (nodeId: string) => {
 		return compositionId !== getFlowNodeAssociatedCompositionId(nodeId, actionState);
 	};
+	const propertyDoesNotAffectComposition = (propertyId: string) => {
+		const property = actionState.compositionState.properties[propertyId];
+		return compositionId !== property.compositionId;
+	};
+	const layerDoesNotAffectComposition = (layerId: string) => {
+		const layer = actionState.compositionState.layers[layerId];
+		return compositionId !== layer.compositionId;
+	};
 
 	for (const diff of diffs) {
 		if (direction === "backward") {
 			switch (diff.type) {
 				case DiffType.AddLayer: {
 					onRemoveLayers(diff.layerIds);
-					continue;
+					break;
 				}
 				case DiffType.RemoveLayer: {
 					onAddLayers(diff.layerIds);
-					continue;
+					break;
 				}
 				case DiffType.RemoveFlowNode: {
 					const { nodeId } = diff;
-					const { flowState, compositionState } = actionState;
+					const { flowState } = actionState;
 					const { graphId } = flowState.nodes[nodeId];
 					const { layerId } = flowState.graphs[graphId];
-					const layer = compositionState.layers[layerId];
-					if (layer.compositionId !== compositionId) {
-						// Does not affect this composition
-						continue;
+
+					if (layerDoesNotAffectComposition(layerId)) {
+						break;
 					}
 
 					ctx.properties.updateStructure(actionState);
@@ -84,18 +90,27 @@ export const compositionDiffHandler = (
 					for (const { layerId, performables } of actions) {
 						executePerformables(ctx, actionState, layerId, performables);
 					}
-					continue;
+					break;
 				}
 			}
 		}
 
 		switch (diff.type) {
+			case DiffType.AddLayer: {
+				onAddLayers(diff.layerIds);
+				break;
+			}
+			case DiffType.RemoveLayer: {
+				onRemoveLayers(diff.layerIds);
+				break;
+			}
 			case DiffType.MoveLayer: {
 				const { layerIds } = diff;
 				for (const layerId of layerIds) {
-					if (!compLayers.has(layerId)) {
-						continue;
+					if (layerDoesNotAffectComposition(layerId)) {
+						break;
 					}
+
 					const map = ctx.layers.getLayerPropertyMap(layerId);
 					const xId = map[PropertyName.PositionX];
 					const yId = map[PropertyName.PositionY];
@@ -108,14 +123,6 @@ export const compositionDiffHandler = (
 					const container = ctx.layers.getLayerTransformContainer(layerId);
 					container.position.set(x, y);
 				}
-				break;
-			}
-			case DiffType.AddLayer: {
-				onAddLayers(diff.layerIds);
-				break;
-			}
-			case DiffType.RemoveLayer: {
-				onRemoveLayers(diff.layerIds);
 				break;
 			}
 			case DiffType.FrameIndex: {
@@ -142,7 +149,7 @@ export const compositionDiffHandler = (
 				const { nodeId } = diff;
 
 				if (nodeDoesNotAffectComposition(nodeId)) {
-					continue;
+					break;
 				}
 
 				ctx.properties.onNodeStateChange(nodeId, actionState);
@@ -162,7 +169,7 @@ export const compositionDiffHandler = (
 				const { nodeId } = diff;
 
 				if (nodeDoesNotAffectComposition(nodeId)) {
-					continue;
+					break;
 				}
 
 				ctx.properties.onNodeExpressionChange(nodeId, actionState);
@@ -182,7 +189,7 @@ export const compositionDiffHandler = (
 				const { nodeId } = diff;
 
 				if (nodeDoesNotAffectComposition(nodeId)) {
-					continue;
+					break;
 				}
 
 				// A newly added node does not affect the rest of the graph until
@@ -193,13 +200,12 @@ export const compositionDiffHandler = (
 			}
 			case DiffType.RemoveFlowNode: {
 				const { nodeId } = diff;
-				const { flowState, compositionState } = ctx.prevState;
+				const { flowState } = ctx.prevState;
 				const { graphId } = flowState.nodes[nodeId];
 				const { layerId } = flowState.graphs[graphId];
-				const layer = compositionState.layers[layerId];
-				if (layer.compositionId !== compositionId) {
-					// Does not affect this composition
-					continue;
+
+				if (layerDoesNotAffectComposition(layerId)) {
+					break;
 				}
 
 				// Find the affected nodes in the previous state
@@ -220,7 +226,7 @@ export const compositionDiffHandler = (
 				const { nodeIds } = diff;
 
 				if (nodeDoesNotAffectComposition(nodeIds[0])) {
-					continue;
+					break;
 				}
 
 				// Find the affected nodes in the previous state
@@ -239,6 +245,11 @@ export const compositionDiffHandler = (
 			}
 			case DiffType.Layer: {
 				const { layerIds } = diff;
+
+				if (layerDoesNotAffectComposition(layerIds[0])) {
+					break;
+				}
+
 				for (const layerId of layerIds) {
 					executePerformables(ctx, actionState, layerId, [Performable.DrawLayer]);
 				}
@@ -247,9 +258,7 @@ export const compositionDiffHandler = (
 			case DiffType.ModifyProperty: {
 				const { propertyId } = diff;
 
-				const property = actionState.compositionState.properties[propertyId];
-
-				if (property.compositionId !== compositionId) {
+				if (propertyDoesNotAffectComposition(propertyId)) {
 					break;
 				}
 
@@ -263,6 +272,11 @@ export const compositionDiffHandler = (
 			case DiffType.TogglePropertyAnimated: {
 				const { propertyId } = diff;
 				const { compositionState } = actionState;
+
+				if (propertyDoesNotAffectComposition(propertyId)) {
+					break;
+				}
+
 				const property = compositionState.properties[propertyId];
 				const layer = compositionState.layers[property.layerId];
 				ctx.layers.updatePropertyStructure(layer, actionState);
@@ -282,10 +296,6 @@ export const compositionDiffHandler = (
 				ctx.layers.onUpdateLayerParent(layerId, actionState);
 				executePerformables(ctx, actionState, layerId, [Performable.UpdateTransform]);
 				break;
-			}
-			case DiffType.LayerIndexOrLength: {
-				const composition = actionState.compositionState.compositions[compositionId];
-				ctx.layers.onFrameIndexChanged(actionState, composition.frameIndex);
 			}
 		}
 	}

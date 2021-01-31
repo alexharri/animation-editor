@@ -175,6 +175,10 @@ const performRequestedAction = (
 				beforeSubmit(params);
 			}
 
+			if (diffs.length) {
+				sendDiffsToSubscribers(diffs);
+			}
+
 			const modifiedKeys: string[] = [];
 			{
 				const state: any = store.getState();

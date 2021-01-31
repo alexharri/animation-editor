@@ -67,6 +67,15 @@ export const compositionActions = {
 		return (layerId: string, index: number) => action({ layerId, index });
 	}),
 
+	setLayerPlaybackIndex: createAction("comp/SET_LAYER_PLAYBACK_INDEX", (action) => {
+		return (layerId: string, index: number) => action({ layerId, index });
+	}),
+
+	setLayerIndexAndLength: createAction("comp/SET_LAYER_INDEX_AND_LENGTH", (action) => {
+		return (layerId: string, index: number, length: number) =>
+			action({ layerId, index, length });
+	}),
+
 	moveLayers: createAction("comp/MOVE_LAYERS", (action) => {
 		return (
 			compositionId: string,
@@ -97,6 +106,10 @@ export const compositionActions = {
 	setCompositionDimension: createAction("comp/SET_COMPOSITION_DIMENSIONS", (action) => {
 		return (compositionId: string, which: "width" | "height", value: number) =>
 			action({ compositionId, which, value });
+	}),
+
+	setCompositionLength: createAction("comp/SET_COMPOSITION_LENGTH", (action) => {
+		return (compositionId: string, value: number) => action({ compositionId, value });
 	}),
 
 	/**
@@ -470,6 +483,16 @@ export const compositionReducer = (
 						[which]: value,
 					},
 				},
+			};
+		}
+
+		case getType(compositionActions.setCompositionLength): {
+			const { compositionId, value } = action.payload;
+			return {
+				...state,
+				compositions: mergeItemInMap(state.compositions, compositionId, () => ({
+					length: value,
+				})),
 			};
 		}
 
@@ -934,6 +957,24 @@ export const compositionReducer = (
 		case getType(compositionActions.setLayerIndex): {
 			const { layerId, index } = action.payload;
 			return { ...state, layers: mergeItemInMap(state.layers, layerId, () => ({ index })) };
+		}
+
+		case getType(compositionActions.setLayerPlaybackIndex): {
+			const { layerId, index } = action.payload;
+			return {
+				...state,
+				layers: mergeItemInMap(state.layers, layerId, () => ({
+					playbackStartsAtIndex: index,
+				})),
+			};
+		}
+
+		case getType(compositionActions.setLayerIndexAndLength): {
+			const { layerId, index, length } = action.payload;
+			return {
+				...state,
+				layers: mergeItemInMap(state.layers, layerId, () => ({ index, length })),
+			};
 		}
 
 		case getType(compositionActions.setCompoundPropertySeparated): {

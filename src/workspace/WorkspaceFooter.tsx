@@ -42,6 +42,7 @@ interface OwnProps {
 interface StateProps {
 	width: number;
 	height: number;
+	length: number;
 }
 type Props = OwnProps & StateProps;
 
@@ -52,7 +53,7 @@ const WorkspaceFooterComponent = (props: Props) => {
 	const onValueChangeFn = useRef<((value: number) => void) | null>(null);
 	const onValueChangeEndFn = useRef<(() => void) | null>(null);
 
-	const onValueChange = (which: "width" | "height", value: number) => {
+	const onValueChange = (which: "width" | "height" | "length", value: number) => {
 		if (onValueChangeFn.current) {
 			onValueChangeFn.current(value);
 			return;
@@ -63,7 +64,9 @@ const WorkspaceFooterComponent = (props: Props) => {
 
 			onValueChangeFn.current = (value) => {
 				params.dispatch(
-					compositionActions.setCompositionDimension(compositionId, which, value),
+					which === "length"
+						? compositionActions.setCompositionLength(compositionId, value)
+						: compositionActions.setCompositionDimension(compositionId, which, value),
 				);
 				paramsRef.current?.performDiff((diff) => diff.compositionDimensions(compositionId));
 			};
@@ -71,7 +74,11 @@ const WorkspaceFooterComponent = (props: Props) => {
 
 			onValueChangeEndFn.current = () => {
 				paramsRef.current?.addDiff((diff) => diff.compositionDimensions(compositionId));
-				paramsRef.current?.submitAction("Update composition dimensions");
+				if (which === "length") {
+					paramsRef.current?.submitAction("Update composition length");
+				} else {
+					paramsRef.current?.submitAction("Update composition dimensions");
+				}
 			};
 		});
 	};
@@ -100,6 +107,13 @@ const WorkspaceFooterComponent = (props: Props) => {
 				onChangeEnd={onValueChangeEnd}
 				value={props.height}
 			/>
+			<div className={s("dimensionLabel")}>Length</div>
+			<NumberInput
+				min={1}
+				onChange={(value) => onValueChange("length", value)}
+				onChangeEnd={onValueChangeEnd}
+				value={props.length}
+			/>
 		</div>
 	);
 };
@@ -108,9 +122,9 @@ const mapState: MapActionState<StateProps, OwnProps> = (
 	{ compositionState },
 	{ compositionId },
 ) => {
-	const { width, height } = compositionState.compositions[compositionId];
+	const { width, height, length } = compositionState.compositions[compositionId];
 
-	return { width, height };
+	return { width, height, length };
 };
 
 export const WorkspaceFooter = connectActionState(mapState)(WorkspaceFooterComponent);

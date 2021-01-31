@@ -247,8 +247,6 @@ const TimelineComponent: React.FC<Props> = (props) => {
 							}}
 							timelineAreaId={props.areaId}
 							trackDragSelectRect={props.areaState.trackDragSelectRect}
-							layerIndexShift={props.areaState.layerIndexShift}
-							layerLengthShift={props.areaState.layerLengthShift}
 						/>
 					)}
 					{props.areaState.graphEditorOpen && (

@@ -127,7 +127,8 @@ export interface LayerParentDiff {
 
 export interface LayerIndexOrLength {
 	type: DiffType.LayerIndexOrLength;
-	layerIds: string[];
+	compositionId: string;
+	frameIndex: number;
 }
 
 export type Diff =

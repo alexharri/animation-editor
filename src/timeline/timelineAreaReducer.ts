@@ -8,8 +8,6 @@ export interface TimelineAreaState {
 	panY: number;
 	dragSelectRect: Rect | null;
 	trackDragSelectRect: Rect | null;
-	layerIndexShift: number;
-	layerLengthShift: [number, number];
 	moveLayers: null | { layerId: string; type: "above" | "below" | "invalid" };
 	pickWhipLayerParent: null | LayerParentPickWhip;
 }
@@ -21,8 +19,6 @@ export const initialTimelineAreaState: TimelineAreaState = {
 	panY: 0,
 	dragSelectRect: null,
 	trackDragSelectRect: null,
-	layerIndexShift: 0,
-	layerLengthShift: [0, 0],
 	moveLayers: null,
 	pickWhipLayerParent: null,
 };

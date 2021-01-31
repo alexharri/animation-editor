@@ -57,7 +57,4 @@ export const diffFactory = {
 	layerParent: (layerId: string): Diff => {
 		return { type: DiffType.LayerParent, layerId };
 	},
-	layerIndexOrLength: (layerIds: string[]): Diff => {
-		return { type: DiffType.LayerIndexOrLength, layerIds };
-	},
 };

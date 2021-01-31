@@ -436,7 +436,10 @@ export const timelineHandlers = {
 
 		// Create timeline with a single keyframe at the current time
 		requestAction({ history: true }, (params) => {
-			const timeline = createTimelineForLayerProperty(property.value, composition.frameIndex);
+			const timeline = createTimelineForLayerProperty(
+				property.value,
+				composition.frameIndex - layer.index,
+			);
 			params.dispatch(
 				timelineActions.setTimeline(timeline.id, timeline),
 				compositionActions.setPropertyTimelineId(propertyId, timeline.id),
