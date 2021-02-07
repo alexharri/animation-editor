@@ -1,7 +1,7 @@
-import { Property } from "~/composition/compositionTypes";
+import { Property, PropertyGroup } from "~/composition/compositionTypes";
 import { forEachSubProperty } from "~/composition/compositionUtils";
 import { PropertyManager } from "~/composition/manager/propertyManager";
-import { PropertyGroupName, PropertyName } from "~/types";
+import { CompoundPropertyName, PropertyGroupName, PropertyName } from "~/types";
 
 const EMPTY_STR_SET = new Set<string>();
 
@@ -9,6 +9,8 @@ export enum Performable {
 	DrawLayer,
 	UpdatePosition,
 	UpdateTransform,
+	UpdateArrayModifierTransform,
+	UpdateArrayModifierCount,
 }
 
 type LayerPerformables = { layerId: string; performables: Performable[] };
@@ -39,7 +41,15 @@ export const createPerformableManager = (propertyManager: PropertyManager): Perf
 			const layer = compositionState.layers[layerId];
 
 			const registered: string[] = [];
+			const touched = new Set<string>();
+
 			const add = (propertyId: string, performable: Performable) => {
+				if (touched.has(propertyId)) {
+					console.warn(`Property '${propertyId}' already registered.`);
+					return;
+				}
+				touched.add(propertyId);
+
 				registered.push(propertyId);
 				const property = compositionState.properties[propertyId] as Property;
 				const isAnimated = !!property.timelineId;
@@ -54,6 +64,62 @@ export const createPerformableManager = (propertyManager: PropertyManager): Perf
 				const property = compositionState.properties[propertyId];
 				return property.name === PropertyGroupName.Transform;
 			});
+			const modifiersGroupIndex = layer.properties.findIndex((propertyId) => {
+				const property = compositionState.properties[propertyId];
+				return property.name === PropertyGroupName.Modifiers;
+			});
+
+			const modifiersGroup = compositionState.properties[
+				layer.properties[modifiersGroupIndex]
+			] as PropertyGroup;
+			for (const propertyId of modifiersGroup.properties) {
+				const modifierGroup = compositionState.properties[propertyId] as PropertyGroup;
+
+				if (modifierGroup.name !== PropertyGroupName.ArrayModifier) {
+					throw new Error(`Unexpected property group name '${modifierGroup.name}'.`);
+				}
+
+				// Find transform group within array modifier
+				const arrayModifierTransformGroupIndex = modifierGroup.properties.findIndex(
+					(propertyId) => {
+						const property = compositionState.properties[propertyId];
+						return property.name === PropertyGroupName.Transform;
+					},
+				);
+				forEachSubProperty(
+					modifierGroup.properties[arrayModifierTransformGroupIndex],
+					compositionState,
+					(property) => {
+						add(property.id, Performable.UpdateArrayModifierTransform);
+					},
+				);
+				for (let i = 0; i < modifierGroup.properties.length; i++) {
+					if (i === arrayModifierTransformGroupIndex) {
+						continue;
+					}
+					const property = compositionState.properties[modifierGroup.properties[i]];
+
+					if (property.name === CompoundPropertyName.ArrayModifier_Origin) {
+						forEachSubProperty(property.id, compositionState, (property) => {
+							add(property.id, Performable.UpdateArrayModifierTransform);
+						});
+						continue;
+					}
+
+					if (property.type !== "property") {
+						throw new Error(
+							`Expected property of type 'property'. Got '${property.type}'.`,
+						);
+					}
+
+					if (property.name === PropertyName.ArrayModifier_Count) {
+						add(property.id, Performable.UpdateArrayModifierCount);
+					} else {
+						add(property.id, Performable.UpdateArrayModifierTransform);
+					}
+				}
+			}
+
 			forEachSubProperty(
 				layer.properties[transformGroupIndex],
 				compositionState,
@@ -68,8 +134,11 @@ export const createPerformableManager = (propertyManager: PropertyManager): Perf
 					add(property.id, Performable.UpdateTransform);
 				},
 			);
-			for (let i = 0; i < forEachSubProperty.length; i++) {
+			for (let i = 0; i < layer.properties.length; i++) {
 				if (i === transformGroupIndex) {
+					continue;
+				}
+				if (i === modifiersGroupIndex) {
 					continue;
 				}
 				forEachSubProperty(layer.properties[i], compositionState, (property) => {

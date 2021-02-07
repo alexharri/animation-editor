@@ -2,6 +2,7 @@ import * as PIXI from "pixi.js";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { CompositionContext } from "~/composition/manager/compositionContext";
 import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
+import { createGraphicManager } from "~/composition/manager/graphicManager";
 import { createLayerManager } from "~/composition/manager/layerManager";
 import { createPropertyManager } from "~/composition/manager/propertyManager";
 import { AreaType } from "~/constants";
@@ -19,10 +20,12 @@ export const manageComposition = (
 	container.sortableChildren = true;
 
 	const propertyManager = createPropertyManager(compositionId, getActionState());
+	const graphicManager = createGraphicManager(compositionId, propertyManager);
 	const layerManager = createLayerManager(
 		compositionId,
 		container,
 		propertyManager,
+		graphicManager,
 		getActionState(),
 	);
 
@@ -30,6 +33,7 @@ export const manageComposition = (
 		compositionId,
 		container,
 		layers: layerManager,
+		graphics: graphicManager,
 		properties: propertyManager,
 		onDiffs: (actionState, diffs, direction) =>
 			compositionDiffHandler(ctx, actionState, diffs, direction),

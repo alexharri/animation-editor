@@ -1,15 +1,21 @@
+import * as PIXI from "pixi.js";
 import { Layer } from "~/composition/compositionTypes";
 import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { manageComposition } from "~/composition/manager/compositionManager";
+import { GraphicManager } from "~/composition/manager/graphicManager";
 import {
 	createPerformableManager,
 	PerformableManager,
 } from "~/composition/manager/performableManager";
 import { populateLayerManager } from "~/composition/manager/populateLayerManager";
 import { PropertyManager } from "~/composition/manager/propertyManager";
+import { getTransformFromTransformGroupId } from "~/composition/transformUtils";
+import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
+import { DEFAULT_LAYER_TRANSFORM } from "~/constants";
 import { adjustDiffsToChildComposition } from "~/diff/adjustDiffsToChildComposition";
 import { Diff } from "~/diff/diffs";
-import { layerToPixi } from "~/render/pixi/layerToPixi";
+import { applyPixiLayerTransform } from "~/render/pixi/pixiLayerTransform";
+import { createArrayModifierPIXITransforms } from "~/render/pixi/pixiTransform";
 import { LayerType, TRANSFORM_PROPERTY_NAMES } from "~/types";
 
 export interface LayerManager {
@@ -32,6 +38,7 @@ export const createLayerManager = (
 	compositionId: string,
 	compositionContainer: PIXI.Container,
 	properties: PropertyManager,
+	graphicManager: GraphicManager,
 	actionState: ActionState,
 ): LayerManager => {
 	const layerContainers: Record<
@@ -50,6 +57,21 @@ export const createLayerManager = (
 	const performableManager = createPerformableManager(properties);
 	const layerPropertyMapMap: Record<string, LayerPropertyMap> = {};
 
+	// const addContentToOwnContentContainer = (layer: Layer) => {
+	// 	const { ownContentContainer } = layerContainers[layer.id];
+
+	// 	if (layer.type === LayerType.Composition) {
+	// 		ownContentContainer.addChild(container);
+	// 		return;
+	// 	}
+
+	// 	for (let i = 0; i < 3; i++) {
+	// 		const child = new PIXI.Graphics(graphic.geometry);
+	// 		child.position.x = i * 10;
+	// 		ownContentContainer.addChild(child);
+	// 	}
+	// };
+
 	const self: LayerManager = {
 		addLayer: (layer, actionState) => {
 			if (layerContainers[layer.id]) {
@@ -60,16 +82,32 @@ export const createLayerManager = (
 				self.removeLayer(layer);
 			}
 
-			// Create PIXI container and add to registry
-			layerContainers[layer.id] = layerToPixi(
-				actionState,
-				layer,
-				properties.getPropertyValue,
-			);
-			const { transformContainer, ownContentContainer } = layerContainers[layer.id];
+			const transformContainer = new PIXI.Container();
+			const ownContentContainer = new PIXI.Container();
+			const childLayerContainer = new PIXI.Container();
+
+			layerContainers[layer.id] = {
+				transformContainer,
+				ownContentContainer,
+				childLayerContainer,
+			};
+
+			// The layer's transform affects both its own content and the content
+			// of its child layers, so we add both to the transform container.
+			transformContainer.addChild(ownContentContainer);
+			transformContainer.addChild(childLayerContainer);
+
+			if (layer.type !== LayerType.Composition) {
+				// Create the root graphic of the layer
+				graphicManager.getLayerGraphic(actionState, layer);
+			}
+
+			const { getPropertyValue } = properties;
+			const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
+
+			applyPixiLayerTransform({ transformContainer, getPropertyValue, layer, map });
 
 			let parentContainer = compositionContainer;
-
 			if (layer.parentLayerId) {
 				parentContainer = self.getLayerChildLayerContainer(layer.parentLayerId);
 			}
@@ -95,6 +133,41 @@ export const createLayerManager = (
 				actionState.compositionState,
 			);
 			layerToVisible[layer.id] = true;
+
+			const { compositionState } = actionState;
+			const arrayModifiers = getLayerArrayModifiers(layer.id, compositionState);
+
+			const resolvedModifiers =
+				arrayModifiers.length === 0
+					? [
+							{
+								count: 1,
+								transform: DEFAULT_LAYER_TRANSFORM,
+							},
+					  ]
+					: arrayModifiers.map((modifier) => {
+							const transform = getTransformFromTransformGroupId(
+								modifier.transformGroupId,
+								compositionState,
+								properties.getPropertyValue,
+							);
+							return {
+								count: getPropertyValue(modifier.countId),
+								transform,
+							};
+					  });
+
+			const dimensions = resolvedModifiers.map((item) => item.count);
+			const transforms = resolvedModifiers.map((item) => item.transform);
+
+			const pixiTransforms = createArrayModifierPIXITransforms(dimensions, transforms);
+
+			for (let i = 0; i < pixiTransforms.length; i++) {
+				const graphic = graphicManager.getLayerGraphic(actionState, layer);
+				const g0 = new PIXI.Graphics(graphic.geometry);
+				g0.localTransform.append(pixiTransforms[i].worldTransform);
+				ownContentContainer.addChild(g0);
+			}
 		},
 
 		onUpdateLayerParent: (layerId, actionState) => {
@@ -124,6 +197,8 @@ export const createLayerManager = (
 			const { transformContainer } = layerContainers[layer.id];
 			transformContainer.parent.removeChild(transformContainer);
 			transformContainer.destroy({ children: true }); // Also destroys ownContent
+
+			graphicManager.deleteLayerGraphic(layer.id);
 
 			// Remove the container from the registry
 			delete layerContainers[layer.id];
@@ -184,7 +259,10 @@ export const createLayerManager = (
 		},
 
 		updatePropertyStructure: (layer, actionState) => {
+			console.log("update property structe");
 			performableManager.onUpdateLayerStructure(actionState, layer.id);
+			properties.updateStructure(actionState);
+			self.addLayer(layer, actionState);
 		},
 
 		getLayerPropertyMap: (layerId) => layerPropertyMapMap[layerId],

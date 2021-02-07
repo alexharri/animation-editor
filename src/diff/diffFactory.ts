@@ -57,4 +57,10 @@ export const diffFactory = {
 	layerParent: (layerId: string): Diff => {
 		return { type: DiffType.LayerParent, layerId };
 	},
+	propertyStructure: (layerId: string): Diff => {
+		return { type: DiffType.PropertyStructure, layerId };
+	},
+	modifierOrder: (layerId: string): Diff => {
+		return { type: DiffType.ModifierOrder, layerId };
+	},
 };

@@ -82,7 +82,7 @@ const populateMap = (layerId: string, compositionState: CompositionState, map: a
 				(map as any)[property.name] = property.id;
 			}
 		},
-		{ ignoreGroups: ignoreGroups[layer.type] },
+		{ ignoreGroups: [ignoreGroups[layer.type], PropertyGroupName.ArrayModifier] },
 	);
 };
 

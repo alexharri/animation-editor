@@ -1,7 +1,10 @@
+import * as PIXI from "pixi.js";
 import { CompositionContext } from "~/composition/manager/compositionContext";
 import { Performable } from "~/composition/manager/performableManager";
+import { getTransformFromTransformGroupId } from "~/composition/transformUtils";
+import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
-import { updatePixiLayerContent } from "~/render/pixi/layerToPixi";
+import { createArrayModifierPIXITransforms } from "~/render/pixi/pixiTransform";
 import { PropertyName, TransformPropertyName } from "~/types";
 
 export const executePerformables = (
@@ -22,12 +25,7 @@ export const executePerformables = (
 	for (const performable of performables) {
 		switch (performable) {
 			case Performable.DrawLayer: {
-				updatePixiLayerContent(
-					actionState,
-					layer,
-					ctx.layers.getLayerOwnContentContainer(layerId),
-					ctx.properties.getPropertyValue,
-				);
+				ctx.graphics.updateLayerGraphic(actionState, layer);
 				break;
 			}
 			case Performable.UpdatePosition: {
@@ -52,6 +50,66 @@ export const executePerformables = (
 				container.scale.set(xScale, yScale);
 				container.pivot.set(xAnchor, yAnchor);
 				container.rotation = rotation * DEG_TO_RAD_FAC;
+				break;
+			}
+			case Performable.UpdateArrayModifierCount: {
+				const { compositionState } = actionState;
+				const arrayModifiers = getLayerArrayModifiers(layer.id, compositionState);
+
+				const resolvedModifiers = arrayModifiers.map((modifier) => {
+					const transform = getTransformFromTransformGroupId(
+						modifier.transformGroupId,
+						compositionState,
+						ctx.properties.getPropertyValue,
+					);
+					return {
+						count: ctx.properties.getPropertyValue(modifier.countId),
+						transform,
+					};
+				});
+
+				const dimensions = resolvedModifiers.map((item) => item.count);
+				const transforms = resolvedModifiers.map((item) => item.transform);
+
+				const pixiTransforms = createArrayModifierPIXITransforms(dimensions, transforms);
+				const ownContentContainer = ctx.layers.getLayerOwnContentContainer(layer.id);
+				ownContentContainer.removeChildren();
+
+				for (let i = 0; i < pixiTransforms.length; i++) {
+					const graphic = ctx.graphics.getLayerGraphic(actionState, layer);
+					const g0 = new PIXI.Graphics(graphic.geometry);
+					g0.localTransform.append(pixiTransforms[i].worldTransform);
+					ownContentContainer.addChild(g0);
+				}
+				break;
+			}
+			case Performable.UpdateArrayModifierTransform: {
+				const { compositionState } = actionState;
+				const arrayModifiers = getLayerArrayModifiers(layer.id, compositionState);
+
+				const resolvedModifiers = arrayModifiers.map((modifier) => {
+					const transform = getTransformFromTransformGroupId(
+						modifier.transformGroupId,
+						compositionState,
+						ctx.properties.getPropertyValue,
+					);
+					return {
+						count: ctx.properties.getPropertyValue(modifier.countId),
+						transform,
+					};
+				});
+
+				const dimensions = resolvedModifiers.map((item) => item.count);
+				const transforms = resolvedModifiers.map((item) => item.transform);
+
+				const pixiTransforms = createArrayModifierPIXITransforms(dimensions, transforms);
+				const ownContentContainer = ctx.layers.getLayerOwnContentContainer(layer.id);
+				const children = ownContentContainer.children;
+
+				for (let i = 0; i < children.length; i++) {
+					const child = children[i];
+					child.transform.setFromMatrix(pixiTransforms[i].worldTransform);
+				}
 				break;
 			}
 		}

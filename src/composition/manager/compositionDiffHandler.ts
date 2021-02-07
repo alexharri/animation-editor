@@ -15,6 +15,7 @@ import {
 	ModifyMultipleLayerPropertiesDiff,
 	ModifyPropertyDiff,
 	MoveLayerDiff,
+	PropertyStructureDiff,
 	RemoveFlowNodeDiff,
 	RemoveLayerDiff,
 	TogglePropertyAnimatedDiff,
@@ -247,8 +248,6 @@ export const compositionDiffHandler = (
 				return;
 			}
 
-			console.log(propertyId);
-
 			ctx.properties.onPropertyIdsChanged([propertyId], actionState);
 			const actions = ctx.layers.getActionsToPerform(actionState, [propertyId]);
 			for (const { layerId, performables } of actions) {
@@ -279,6 +278,16 @@ export const compositionDiffHandler = (
 			const { layerId } = diff;
 			ctx.layers.onUpdateLayerParent(layerId, actionState);
 			executePerformables(ctx, actionState, layerId, [Performable.UpdateTransform]);
+		},
+		[DiffType.PropertyStructure]: (diff: PropertyStructureDiff) => {
+			const { layerId } = diff;
+			const layer = actionState.compositionState.layers[layerId];
+			ctx.layers.updatePropertyStructure(layer, actionState);
+		},
+		[DiffType.ModifierOrder]: (diff: PropertyStructureDiff) => {
+			const { layerId } = diff;
+			const layer = actionState.compositionState.layers[layerId];
+			ctx.layers.updatePropertyStructure(layer, actionState);
 		},
 		[DiffType.ResizeAreas]: () => {},
 		[DiffType.ModifyCompositionView]: () => {},

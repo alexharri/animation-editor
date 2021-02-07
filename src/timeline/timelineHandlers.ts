@@ -951,7 +951,11 @@ export const timelineHandlers = {
 
 	moveModifierInList: (modifierPropertyId: string, moveBy: -1 | 1) => {
 		requestAction({ history: true }, (params) => {
+			const { compositionState } = getActionState();
+			const property = compositionState.properties[modifierPropertyId];
+
 			params.dispatch(compositionActions.moveModifier(modifierPropertyId, moveBy));
+			params.addDiff((diff) => diff.modifierOrder(property.layerId));
 			params.submitAction("Move modifier");
 		});
 	},

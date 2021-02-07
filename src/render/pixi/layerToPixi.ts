@@ -9,7 +9,6 @@ import {
 	ShapeLayerPropertyMap,
 } from "~/composition/layer/layerPropertyMap";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { DEG_TO_RAD_FAC } from "~/constants";
 import { pixiLineCap, pixiLineJoin } from "~/render/pixi/pixiConstants";
 import {
 	getShapeFillGroupValues,
@@ -24,21 +23,25 @@ import { newTess } from "~/util/math/newTess";
 type Fn<T extends LayerPropertyMap = LayerPropertyMap> = (
 	actionState: ActionState,
 	layer: Layer,
+	graphic: PIXI.Graphics,
 	map: T,
-	container: PIXI.Container,
 	getPropertyValue: (propertyId: string) => any,
 ) => void;
 
-const shapeLayerToPixi: Fn<ShapeLayerPropertyMap> = (
+const createResolver = (map: LayerPropertyMap, getPropertyValue: (propertyId: string) => any) => (
+	propertyName: PropertyName,
+) => {
+	const propertyId = (map as any)[propertyName];
+	return getPropertyValue(propertyId);
+};
+
+const updateShapeLayerGraphic: Fn<ShapeLayerPropertyMap> = (
 	actionState,
 	layer,
+	graphic,
 	_,
-	container,
 	_getPropertyValue,
 ) => {
-	const graphic = new PIXI.Graphics();
-	container.addChild(graphic);
-
 	const {
 		shapeState,
 		shapeSelectionState,
@@ -206,23 +209,13 @@ const shapeLayerToPixi: Fn<ShapeLayerPropertyMap> = (
 	}
 };
 
-const createResolver = (map: LayerPropertyMap, getPropertyValue: (propertyId: string) => any) => (
-	propertyName: PropertyName,
-) => {
-	const propertyId = (map as any)[propertyName];
-	return getPropertyValue(propertyId);
-};
-
-const rectLayerToPixi: Fn<RectLayerPropertyMap> = (
+const updateRectLayerGraphic: Fn<RectLayerPropertyMap> = (
 	_actionState,
 	_layer,
+	graphic,
 	map,
-	container,
 	getPropertyValue,
 ) => {
-	const graphic = new PIXI.Graphics();
-	container.addChild(graphic);
-
 	const resolve = createResolver(map, getPropertyValue);
 
 	const width = resolve(PropertyName.Width);
@@ -253,16 +246,13 @@ const rectLayerToPixi: Fn<RectLayerPropertyMap> = (
 	return graphic;
 };
 
-const ellipseLayerToPixi: Fn<EllipseLayerPropertyMap> = (
+const updateEllipseLayerGraphic: Fn<EllipseLayerPropertyMap> = (
 	_actionState,
 	_layer,
+	graphic,
 	map,
-	container,
 	getPropertyValue,
 ) => {
-	const graphic = new PIXI.Graphics();
-	container.addChild(graphic);
-
 	const resolve = createResolver(map, getPropertyValue);
 
 	const outerRadius = resolve(PropertyName.OuterRadius);
@@ -279,93 +269,93 @@ const ellipseLayerToPixi: Fn<EllipseLayerPropertyMap> = (
 	}
 
 	graphic.drawEllipse(0, 0, outerRadius, outerRadius);
-
-	return graphic;
 };
 
-const setContent: Fn = (actionState, layer, map, container, getPropertyValue) => {
+const updateLayerGraphic: Fn = (actionState, layer, graphic, map, getPropertyValue) => {
 	switch (layer.type) {
 		case LayerType.Shape:
-			return shapeLayerToPixi(
+			return updateShapeLayerGraphic(
 				actionState,
 				layer,
+				graphic,
 				map as ShapeLayerPropertyMap,
-				container,
 				getPropertyValue,
 			);
 		case LayerType.Rect:
-			return rectLayerToPixi(
+			return updateRectLayerGraphic(
 				actionState,
 				layer,
+				graphic,
 				map as RectLayerPropertyMap,
-				container,
 				getPropertyValue,
 			);
 		case LayerType.Ellipse:
-			return ellipseLayerToPixi(
+			return updateEllipseLayerGraphic(
 				actionState,
 				layer,
+				graphic,
 				map as EllipseLayerPropertyMap,
-				container,
 				getPropertyValue,
 			);
-		case LayerType.Composition:
-			return container;
 	}
 	throw new Error("Not implemented");
 };
 
-export const layerToPixi = (
+// export const layerToPixi = (
+// 	actionState: ActionState,
+// 	layer: Layer,
+// 	getPropertyValue: (propertyId: string) => any,
+// ): {
+// 	transformContainer: PIXI.Container;
+// 	ownContentContainer: PIXI.Container;
+// 	childLayerContainer: PIXI.Container;
+// 	container: PIXI.Container; // The same as `graphic` if non-composition layer
+// 	graphic: PIXI.Graphics;
+// } => {
+// 	const transformContainer = new PIXI.Container();
+// 	const ownContentContainer = new PIXI.Container();
+// 	const childLayerContainer = new PIXI.Container();
+
+// 	// The layer's transform affects both its own content and the content
+// 	// of its child layers, so we add both to the transform container.
+// 	transformContainer.addChild(ownContentContainer);
+// 	transformContainer.addChild(childLayerContainer);
+
+// 	const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
+// 	const resolve = createResolver(map, getPropertyValue);
+
+// 	let container: PIXI.Container;
+// 	let graphic: PIXI.Graphics;
+
+// 	if (layer.type === LayerType.Composition) {
+// 		graphic = new PIXI.Graphics();
+// 		container = new PIXI.Container();
+// 	} else {
+// 		graphic = updateLayerGraphic(actionState, layer, graphic, map, getPropertyValue);
+// 		container = graphic;
+// 	}
+
+// 	return { transformContainer, childLayerContainer, ownContentContainer, container, graphic };
+// };
+
+export const getPixiLayerGraphic = (
 	actionState: ActionState,
 	layer: Layer,
 	getPropertyValue: (propertyId: string) => any,
-): {
-	transformContainer: PIXI.Container;
-	ownContentContainer: PIXI.Container;
-	childLayerContainer: PIXI.Container;
-} => {
-	const transformContainer = new PIXI.Container();
-	const ownContentContainer = new PIXI.Container();
-	const childLayerContainer = new PIXI.Container();
-
-	// The layer's transform affects both its own content and the content
-	// of its child layers, so we add both to the transform container.
-	transformContainer.addChild(ownContentContainer);
-	transformContainer.addChild(childLayerContainer);
-
+): PIXI.Graphics => {
+	const graphic = new PIXI.Graphics();
 	const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
-	const resolve = createResolver(map, getPropertyValue);
-
-	// Populate the content container
-	setContent(actionState, layer, map, ownContentContainer, getPropertyValue);
-
-	// Apply the layer's transform to the transform container
-	const positionX = resolve(PropertyName.PositionX);
-	const positionY = resolve(PropertyName.PositionY);
-	const anchorX = resolve(PropertyName.AnchorX);
-	const anchorY = resolve(PropertyName.AnchorY);
-	const scaleX = resolve(PropertyName.ScaleX);
-	const scaleY = resolve(PropertyName.ScaleY);
-	const rotation = resolve(PropertyName.Rotation);
-
-	transformContainer.scale.set(scaleX, scaleY);
-	transformContainer.rotation = rotation * DEG_TO_RAD_FAC;
-	transformContainer.position.set(positionX, positionY);
-	transformContainer.pivot.set(anchorX, anchorY);
-
-	return { transformContainer, childLayerContainer, ownContentContainer };
+	updateLayerGraphic(actionState, layer, graphic, map, getPropertyValue);
+	return graphic;
 };
 
-export const updatePixiLayerContent = (
+export const updatePixiLayerGraphic = (
 	actionState: ActionState,
 	layer: Layer,
-	ownContentContainer: PIXI.Container,
+	graphic: PIXI.Graphics,
 	getPropertyValue: (propertyId: string) => any,
-) => {
+): void => {
 	const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
-	for (const child of ownContentContainer.children) {
-		ownContentContainer.removeChild(child);
-		child.destroy();
-	}
-	setContent(actionState, layer, map, ownContentContainer, getPropertyValue);
+	graphic.clear();
+	updateLayerGraphic(actionState, layer, graphic, map, getPropertyValue);
 };

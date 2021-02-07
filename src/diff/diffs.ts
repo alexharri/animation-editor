@@ -18,7 +18,7 @@ export enum DiffType {
 	ResizeAreas = 8,
 	FrameIndex = 9,
 	ModifyProperty = 10,
-	LayerPropertyStructure = 11,
+	PropertyStructure = 11,
 	TogglePropertyAnimated = 12,
 	ModifyMultipleLayerProperties = 13,
 	FlowNodeState = 14,
@@ -28,6 +28,7 @@ export enum DiffType {
 	AddFlowNode = 18,
 	LayerParent = 19,
 	LayerIndexOrLength = 20,
+	ModifierOrder = 21,
 }
 
 /**
@@ -131,6 +132,16 @@ export interface LayerIndexOrLength {
 	frameIndex: number;
 }
 
+export interface PropertyStructureDiff {
+	type: DiffType.PropertyStructure;
+	layerId: string;
+}
+
+export interface ModifierOrderDiff {
+	type: DiffType.ModifierOrder;
+	layerId: string;
+}
+
 export type Diff =
 	| ModifyCompositionDimensions
 	| ModifyCompositionViewDiff
@@ -149,4 +160,6 @@ export type Diff =
 	| AddFlowNodeDiff
 	| UpdateNodeConnectionDiff
 	| LayerParentDiff
-	| LayerIndexOrLength;
+	| LayerIndexOrLength
+	| PropertyStructureDiff
+	| ModifierOrderDiff;

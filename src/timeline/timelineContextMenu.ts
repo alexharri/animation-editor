@@ -81,6 +81,7 @@ export const createTimelineContextMenu = (
 								),
 							);
 							params.dispatch(contextMenuActions.closeContextMenu());
+							params.addDiff((diff) => diff.propertyStructure(layerId));
 							params.submitAction("Add array modifier to layer");
 						},
 					},

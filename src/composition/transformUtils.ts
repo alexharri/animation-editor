@@ -1,5 +1,6 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { Property } from "~/composition/compositionTypes";
+import { forEachSubProperty } from "~/composition/compositionUtils";
 import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { LayerTransform, ParentIndexTransform, PropertyName, PropertyValueMap } from "~/types";
@@ -182,4 +183,56 @@ export const adjustTransformToParent = (
 		scaleY: scaleY,
 		matrix: Mat2.identity(),
 	};
+};
+
+export const getTransformFromTransformGroupId = (
+	transformGroupId: string,
+	compositionState: CompositionState,
+	getPropertyValue: (propertyId: string) => any,
+): LayerTransform => {
+	const transform: LayerTransform = {
+		anchor: Vec2.new(0, 0),
+		translate: Vec2.new(0, 0),
+		rotation: 0,
+		scaleX: 0,
+		scaleY: 0,
+		matrix: Mat2.identity(),
+		origin: Vec2.new(0, 0),
+		originBehavior: "relative",
+	};
+
+	forEachSubProperty(transformGroupId, compositionState, (property) => {
+		switch (property.name) {
+			case PropertyName.PositionX: {
+				transform.translate.x = getPropertyValue(property.id);
+				break;
+			}
+			case PropertyName.PositionY: {
+				transform.translate.y = getPropertyValue(property.id);
+				break;
+			}
+			case PropertyName.AnchorX: {
+				transform.anchor.x = getPropertyValue(property.id);
+				break;
+			}
+			case PropertyName.AnchorY: {
+				transform.anchor.y = getPropertyValue(property.id);
+				break;
+			}
+			case PropertyName.ScaleX: {
+				transform.scaleX = getPropertyValue(property.id);
+				break;
+			}
+			case PropertyName.ScaleY: {
+				transform.scaleY = getPropertyValue(property.id);
+				break;
+			}
+			case PropertyName.Rotation: {
+				transform.rotation = getPropertyValue(property.id);
+				break;
+			}
+		}
+	});
+
+	return transform;
 };
