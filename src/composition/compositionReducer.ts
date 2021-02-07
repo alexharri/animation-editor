@@ -13,8 +13,8 @@ import {
 	reduceCompPropertiesAndGroups,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
-import { createLayer } from "~/composition/layer/createLayer";
-import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
+import { layerFactory } from "~/composition/factories/layerFactory";
+import { modifierPropertyGroupFactory } from "~/composition/factories/modifierPropertyGroupFactory";
 import { getLayerModifierPropertyGroupId } from "~/composition/util/compositionPropertyUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { LayerType, PropertyGroupName, RGBAColor, RGBColor, TransformBehavior } from "~/types";
@@ -148,7 +148,7 @@ export const compositionActions = {
 	}),
 
 	createNonCompositionLayer: createAction("comp/CREATE_NON_COMP_LAYER", (action) => {
-		return ({ layer, propertiesToAdd }: ReturnType<typeof createLayer>) =>
+		return ({ layer, propertiesToAdd }: ReturnType<typeof layerFactory>) =>
 			action({ layer, propertiesToAdd });
 	}),
 
@@ -555,7 +555,7 @@ export const compositionReducer = (
 				);
 			}
 
-			const { layer, propertiesToAdd } = createLayer({
+			const { layer, propertiesToAdd } = layerFactory({
 				compositionId,
 				type,
 				compositionState: state,
@@ -768,7 +768,7 @@ export const compositionReducer = (
 
 			if (groupIndex === -1) {
 				const createId = createGenMapIdFn(newState.properties);
-				const { group, properties } = createLayerModifierProperties({
+				const { group, properties } = modifierPropertyGroupFactory({
 					compositionId: layer.compositionId,
 					layerId,
 					createId,

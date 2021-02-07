@@ -6,7 +6,7 @@ import {
 } from "~/composition/compositionTypes";
 import { PropertyGroupName } from "~/types";
 
-export const createLayerModifierProperties = (
+export const modifierPropertyGroupFactory = (
 	opts: CreatePropertyOptions,
 ): CreateLayerPropertyGroup => {
 	const { layerId, compositionId } = opts;

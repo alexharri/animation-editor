@@ -5,7 +5,7 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { createShapeLayerShapeGroup } from "~/composition/path/shapeLayerPath";
+import { createShapeLayerShapeGroup } from "~/composition/factories/shapeLayerPathPropertiesFactory";
 import { FillRule, LineCap, LineJoin, PropertyGroupName, RGBAColor } from "~/types";
 
 export interface ShapeProperties {

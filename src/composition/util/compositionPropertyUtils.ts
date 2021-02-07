@@ -1,75 +1,21 @@
+import { compositionConstants } from "~/composition/compositionConstants";
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
 import { CompoundPropertyName, PropertyGroupName, PropertyName } from "~/types";
 
-const propertyGroupNameToLabel: { [key in keyof typeof PropertyGroupName]: string } = {
-	Dimensions: "Dimensions",
-	Transform: "Transform",
-	Content: "Content",
-	Structure: "Structure",
-	Modifiers: "Modifiers",
-	ArrayModifier: "Array Modifier",
-	Shape: "Shape",
-	Fill: "Fill",
-	Stroke: "Stroke",
-};
-
-const compoundPropertyNameToLabel: { [key in keyof typeof CompoundPropertyName]: string } = {
-	Anchor: "Anchor",
-	ArrayModifier_Origin: "Origin",
-	Position: "Position",
-	Scale: "Scale",
-};
-
-const propertyNameToLabel: { [key in keyof typeof PropertyName]: string } = {
-	AnchorX: "Anchor X",
-	AnchorY: "Anchor Y",
-	Scale: "Scale",
-	ScaleX: "X Scale",
-	ScaleY: "Y Scale",
-	Rotation: "Rotation",
-	PositionX: "X Position",
-	PositionY: "Y Position",
-	Opacity: "Opacity",
-
-	Height: "Height",
-	Width: "Width",
-	Fill: "Fill",
-	StrokeColor: "Stroke Color",
-	StrokeWidth: "Stroke Width",
-	BorderRadius: "Border Radius",
-	InnerRadius: "Inner Radius",
-	OuterRadius: "Outer Radius",
-
-	ArrayModifier_Count: "Count",
-	ArrayModifier_TransformBehavior: "Transform Behavior",
-	ArrayModifier_RotationCorrection: "Rotation Correction",
-	ArrayModifier_OriginX: "X Origin",
-	ArrayModifier_OriginY: "Y Origin",
-	ArrayModifier_OriginBehavior: "Origin Behavior",
-
-	ShapeLayer_Path: "Path",
-	RGBAColor: "Color",
-	RGBColor: "Color",
-	FillRule: "Fill Rule",
-	LineCap: "Line Cap",
-	LineJoin: "Line Join",
-	MiterLimit: "Miter Limit",
-};
-
 export const getLayerPropertyLabel = (name: PropertyName): string => {
 	const key = PropertyName[name] as keyof typeof PropertyName;
-	return propertyNameToLabel[key];
+	return compositionConstants.propertyNameToLabel[key];
 };
 
 export const getLayerCompoundPropertyLabel = (name: CompoundPropertyName): string => {
 	const key = CompoundPropertyName[name] as keyof typeof CompoundPropertyName;
-	return compoundPropertyNameToLabel[key];
+	return compositionConstants.compoundPropertyNameToLabel[key];
 };
 
 export const getLayerPropertyGroupLabel = (name: PropertyGroupName): string => {
 	const key = PropertyGroupName[name] as keyof typeof PropertyGroupName;
-	return propertyGroupNameToLabel[key];
+	return compositionConstants.propertyGroupNameToLabel[key];
 };
 
 export function getLayerCompositionProperties(

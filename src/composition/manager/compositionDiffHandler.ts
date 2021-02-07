@@ -1,4 +1,4 @@
-import { CompositionContext } from "~/composition/manager/compositionContext";
+import { CompositionManager } from "~/composition/manager/compositionManager";
 import { executePerformables } from "~/composition/manager/executePerformables";
 import { Performable } from "~/composition/manager/performableManager";
 import { updateLayerZIndices } from "~/composition/manager/updateCompositionLayerZIndices";
@@ -27,7 +27,7 @@ import { store } from "~/state/store";
 import { PropertyName } from "~/types";
 
 export const compositionDiffHandler = (
-	ctx: CompositionContext,
+	ctx: CompositionManager,
 	actionState: ActionState,
 	diffs: Diff[],
 	direction: "forward" | "backward",

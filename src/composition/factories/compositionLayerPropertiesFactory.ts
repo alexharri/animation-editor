@@ -54,7 +54,7 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 	return { properties, group };
 };
 
-export const createCompLayerProperties = (
+export const compositionLayerPropertiesFactory = (
 	opts: CreatePropertyOptions,
 ): CreateLayerPropertyGroup[] => {
 	return [dimensionProperties(opts)];

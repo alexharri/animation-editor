@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { CompositionContext } from "~/composition/manager/compositionContext";
+import { CompositionManager } from "~/composition/manager/compositionManager";
 import { Performable } from "~/composition/manager/performableManager";
 import { getTransformFromTransformGroupId } from "~/composition/transformUtils";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
@@ -8,7 +8,7 @@ import { createArrayModifierPIXITransforms } from "~/render/pixi/pixiTransform";
 import { PropertyName, TransformPropertyName } from "~/types";
 
 export const executePerformables = (
-	ctx: CompositionContext,
+	ctx: CompositionManager,
 	actionState: ActionState,
 	layerId: string,
 	performables: Performable[],

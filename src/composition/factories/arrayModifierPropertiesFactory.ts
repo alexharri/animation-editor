@@ -4,11 +4,11 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
+import { transformPropertiesFactory } from "~/composition/factories/transformPropertiesFactory";
 import { TimelineColors } from "~/constants";
 import { CompoundPropertyName, PropertyGroupName, PropertyName, ValueType } from "~/types";
 
-export const createArrayModifier = (opts: CreatePropertyOptions) => {
+export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 	const propertyId = opts.createId();
 	const propertiesToAdd: Array<Property | CompoundProperty | PropertyGroup> = [];
 
@@ -128,7 +128,7 @@ export const createArrayModifier = (opts: CreatePropertyOptions) => {
 	group.properties.push(count.id);
 	propertiesToAdd.push(count);
 
-	const transform = createLayerTransformProperties(opts);
+	const transform = transformPropertiesFactory(opts);
 
 	group.properties.push(transform.group.id);
 	propertiesToAdd.push(transform.group, ...transform.properties);

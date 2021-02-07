@@ -7,20 +7,26 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { createCompLayerProperties } from "~/composition/layer/compLayerProperties";
+import { compositionLayerPropertiesFactory } from "~/composition/factories/compositionLayerPropertiesFactory";
 import {
-	createEllipseLayerProperties,
+	ellipseLayerPropertiesFactory,
 	EllipseProperties,
-} from "~/composition/layer/ellipseLayerProperties";
-import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
-import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
-import { getLayerTypeName } from "~/composition/layer/layerUtils";
-import { createLineLayerProperties, LineProperties } from "~/composition/layer/lineLayerProperties";
-import { createRectLayerProperties, RectProperties } from "~/composition/layer/rectLayerProperties";
+} from "~/composition/factories/ellipseLayerPropertiesFactory";
+import {
+	lineLayerPropertiesFactory,
+	LineProperties,
+} from "~/composition/factories/lineLayerPropertiesFactory";
+import { modifierPropertyGroupFactory } from "~/composition/factories/modifierPropertyGroupFactory";
+import {
+	rectLayerPropertiesFactory,
+	RectProperties,
+} from "~/composition/factories/rectLayerPropertiesFactory";
 import {
 	createShapeLayerProperties,
 	ShapeProperties,
-} from "~/composition/layer/shapeLayerProperties";
+} from "~/composition/factories/shapeLayerPropertiesFactory";
+import { transformPropertiesFactory } from "~/composition/factories/transformPropertiesFactory";
+import { getLayerTypeName } from "~/composition/layer/layerUtils";
 import { LayerTransform, LayerType } from "~/types";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
 import { getNonDuplicateName } from "~/util/names";
@@ -32,15 +38,15 @@ const getLayerTypeSpecificProperties = <T extends LayerType>(
 ): CreateLayerPropertyGroup[] => {
 	switch (type) {
 		case LayerType.Composition:
-			return createCompLayerProperties(opts);
+			return compositionLayerPropertiesFactory(opts);
 		case LayerType.Shape:
 			return createShapeLayerProperties(opts, props);
 		case LayerType.Rect:
-			return createRectLayerProperties(opts, props);
+			return rectLayerPropertiesFactory(opts, props);
 		case LayerType.Ellipse:
-			return createEllipseLayerProperties(opts, props);
+			return ellipseLayerPropertiesFactory(opts, props);
 		case LayerType.Line:
-			return createLineLayerProperties(opts, props);
+			return lineLayerPropertiesFactory(opts, props);
 		default:
 			throw new Error(`Invalid layer type '${type}'`);
 	}
@@ -53,9 +59,9 @@ const getLayerProperties = <T extends LayerType>(
 	transform?: LayerTransform,
 ): CreateLayerPropertyGroup[] => {
 	return [
-		createLayerModifierProperties(opts),
+		modifierPropertyGroupFactory(opts),
 		...getLayerTypeSpecificProperties(type, opts, props),
-		createLayerTransformProperties(opts, transform),
+		transformPropertiesFactory(opts, transform),
 	];
 };
 
@@ -76,7 +82,7 @@ interface Options<T extends LayerType> {
 	props?: Partial<TypeToProps[T]>;
 }
 
-export const createLayer = <T extends LayerType>(options: Options<T>) => {
+export const layerFactory = <T extends LayerType>(options: Options<T>) => {
 	const { compositionId, compositionState, type } = options;
 
 	const composition = compositionState.compositions[compositionId];

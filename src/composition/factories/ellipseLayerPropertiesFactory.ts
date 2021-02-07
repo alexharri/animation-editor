@@ -7,20 +7,19 @@ import {
 import { TimelineColors } from "~/constants";
 import { PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
 
-export interface RectProperties {
+export interface EllipseProperties {
 	fill: RGBAColor;
 	strokeColor: RGBAColor;
 	strokeWidth: number;
-	width: number;
-	height: number;
+	radius: number;
 }
 
-const dimensionProperties = (
+const structureProperties = (
 	opts: CreatePropertyOptions,
-	props: Partial<RectProperties>,
+	props: Partial<EllipseProperties>,
 ): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
-	const { width = 100, height = 100 } = props;
+	const { radius = 50 } = props;
 
 	const properties: Property[] = [
 		{
@@ -28,11 +27,11 @@ const dimensionProperties = (
 			id: createId(),
 			layerId,
 			compositionId,
-			name: PropertyName.Width,
+			name: PropertyName.OuterRadius,
 			timelineId: "",
 			valueType: ValueType.Number,
 			color: TimelineColors.Width,
-			value: width,
+			value: radius,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -41,11 +40,11 @@ const dimensionProperties = (
 			id: createId(),
 			layerId,
 			compositionId,
-			name: PropertyName.Height,
+			name: PropertyName.InnerRadius,
 			timelineId: "",
 			valueType: ValueType.Number,
-			color: TimelineColors.Height,
-			value: height,
+			color: TimelineColors.Width,
+			value: 0,
 			min: 0,
 			compoundPropertyId: "",
 		},
@@ -53,7 +52,7 @@ const dimensionProperties = (
 
 	const group: PropertyGroup = {
 		type: "group",
-		name: PropertyGroupName.Dimensions,
+		name: PropertyGroupName.Structure,
 		id: opts.createId(),
 		layerId,
 		compositionId,
@@ -68,7 +67,7 @@ const dimensionProperties = (
 
 const contentProperties = (
 	opts: CreatePropertyOptions,
-	props: Partial<RectProperties>,
+	props: Partial<EllipseProperties>,
 ): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
 	const { fill = [255, 0, 0, 1], strokeWidth = 0, strokeColor = [0, 0, 0, 1] } = props;
@@ -113,19 +112,6 @@ const contentProperties = (
 			min: 0,
 			compoundPropertyId: "",
 		},
-		{
-			type: "property",
-			id: createId(),
-			layerId,
-			compositionId,
-			name: PropertyName.BorderRadius,
-			timelineId: "",
-			valueType: ValueType.Number,
-			color: TimelineColors.Height,
-			value: 0,
-			min: 0,
-			compoundPropertyId: "",
-		},
 	];
 
 	const group: PropertyGroup = {
@@ -143,9 +129,9 @@ const contentProperties = (
 	return { properties, group };
 };
 
-export const createRectLayerProperties = (
+export const ellipseLayerPropertiesFactory = (
 	opts: CreatePropertyOptions,
-	props: Partial<RectProperties> = {},
+	props: Partial<EllipseProperties> = {},
 ): CreateLayerPropertyGroup[] => {
-	return [dimensionProperties(opts, props), contentProperties(opts, props)];
+	return [structureProperties(opts, props), contentProperties(opts, props)];
 };

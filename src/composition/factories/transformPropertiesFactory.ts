@@ -18,7 +18,7 @@ export interface TransformProperties {
 	position: Vec2;
 }
 
-export const createLayerTransformProperties = (
+export const transformPropertiesFactory = (
 	opts: CreatePropertyOptions,
 	props: LayerTransform = DEFAULT_LAYER_TRANSFORM,
 ): CreateLayerPropertyGroup => {

@@ -4,7 +4,7 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { createLayerTransformProperties } from "~/composition/layer/layerTransformProperties";
+import { transformPropertiesFactory } from "~/composition/factories/transformPropertiesFactory";
 import { TimelineColors } from "~/constants";
 import {
 	FillRule,
@@ -248,7 +248,7 @@ export const createShapeLayerShapeGroup = (
 		}
 	}
 
-	const transform = createLayerTransformProperties(opts);
+	const transform = transformPropertiesFactory(opts);
 
 	group.properties.push(transform.group.id);
 	propertiesToAdd.push(transform.group, ...transform.properties);

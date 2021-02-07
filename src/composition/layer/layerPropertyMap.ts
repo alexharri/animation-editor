@@ -65,10 +65,10 @@ const ignoreGroups = {
 	// does not override the transform properties.
 	[LayerType.Shape]: [PropertyGroupName.Content],
 
-	[LayerType.Composition]: [],
-	[LayerType.Ellipse]: [],
-	[LayerType.Line]: [],
-	[LayerType.Rect]: [],
+	[LayerType.Composition]: [] as PropertyGroupName[],
+	[LayerType.Ellipse]: [] as PropertyGroupName[],
+	[LayerType.Line]: [] as PropertyGroupName[],
+	[LayerType.Rect]: [] as PropertyGroupName[],
 };
 
 const populateMap = (layerId: string, compositionState: CompositionState, map: any) => {
@@ -82,7 +82,7 @@ const populateMap = (layerId: string, compositionState: CompositionState, map: a
 				(map as any)[property.name] = property.id;
 			}
 		},
-		{ ignoreGroups: [ignoreGroups[layer.type], PropertyGroupName.ArrayModifier] },
+		{ ignoreGroups: [...ignoreGroups[layer.type], PropertyGroupName.ArrayModifier] },
 	);
 };
 

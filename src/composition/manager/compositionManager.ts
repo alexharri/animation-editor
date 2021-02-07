@@ -1,21 +1,36 @@
 import * as PIXI from "pixi.js";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
-import { CompositionContext } from "~/composition/manager/compositionContext";
 import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
-import { createGraphicManager } from "~/composition/manager/graphicManager";
-import { createLayerManager } from "~/composition/manager/layerManager";
-import { createPropertyManager } from "~/composition/manager/propertyManager";
+import { createGraphicManager, GraphicManager } from "~/composition/manager/graphicManager";
+import { createLayerManager, LayerManager } from "~/composition/manager/layerManager";
+import { createPropertyManager, PropertyManager } from "~/composition/manager/propertyManager";
 import { AreaType } from "~/constants";
-import { DiffType } from "~/diff/diffs";
+import { Diff, DiffType } from "~/diff/diffs";
 import { subscribeToDiffs, unsubscribeToDiffs } from "~/listener/diffListener";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import { Area } from "~/types/areaTypes";
 
+export interface CompositionManager {
+	compositionId: string;
+	container: PIXI.Container;
+	layers: LayerManager;
+	properties: PropertyManager;
+	graphics: GraphicManager;
+	onDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
+
+	/**
+	 * The state after the last call to `onDiffs`.
+	 */
+	prevState: ActionState;
+
+	destroy: () => void;
+}
+
 export const manageComposition = (
 	compositionId: string,
 	parentCompContainer: PIXI.Container,
-): CompositionContext => {
+): CompositionManager => {
 	const container = new PIXI.Container();
 	container.sortableChildren = true;
 
@@ -29,7 +44,7 @@ export const manageComposition = (
 		getActionState(),
 	);
 
-	const ctx: CompositionContext = {
+	const ctx: CompositionManager = {
 		compositionId,
 		container,
 		layers: layerManager,

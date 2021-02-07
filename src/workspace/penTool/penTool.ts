@@ -7,7 +7,7 @@ import {
 	getParentPropertyInLayer,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
-import { createShapeLayerShapeGroup } from "~/composition/path/shapeLayerPath";
+import { createShapeLayerShapeGroup } from "~/composition/factories/shapeLayerPathPropertiesFactory";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";

@@ -57,21 +57,6 @@ export const createLayerManager = (
 	const performableManager = createPerformableManager(properties);
 	const layerPropertyMapMap: Record<string, LayerPropertyMap> = {};
 
-	// const addContentToOwnContentContainer = (layer: Layer) => {
-	// 	const { ownContentContainer } = layerContainers[layer.id];
-
-	// 	if (layer.type === LayerType.Composition) {
-	// 		ownContentContainer.addChild(container);
-	// 		return;
-	// 	}
-
-	// 	for (let i = 0; i < 3; i++) {
-	// 		const child = new PIXI.Graphics(graphic.geometry);
-	// 		child.position.x = i * 10;
-	// 		ownContentContainer.addChild(child);
-	// 	}
-	// };
-
 	const self: LayerManager = {
 		addLayer: (layer, actionState) => {
 			if (layerContainers[layer.id]) {

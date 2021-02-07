@@ -1,8 +1,6 @@
 import { getLayerArrayModifierIndexTransform } from "~/composition/indexTransforms";
-import {
-	getLayerNameToProperty,
-	getLayerRectDimensionsAndOffset,
-} from "~/composition/layer/layerUtils";
+import { getLayerRectDimensionsAndOffset } from "~/composition/layer/layerRect";
+import { getLayerNameToProperty } from "~/composition/layer/layerUtils";
 import { applyParentTransform, getLayerBaseTransform } from "~/composition/transformUtils";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import { layerParentSort } from "~/shared/layer/layerParentSort";

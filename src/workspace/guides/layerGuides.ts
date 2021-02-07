@@ -1,8 +1,6 @@
 import { Layer } from "~/composition/compositionTypes";
-import {
-	getLayerNameToProperty,
-	getLayerRectDimensionsAndOffset,
-} from "~/composition/layer/layerUtils";
+import { getLayerRectDimensionsAndOffset } from "~/composition/layer/layerRect";
+import { getLayerNameToProperty } from "~/composition/layer/layerUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { getShapeLayerSelectedPathIds } from "~/shape/shapeUtils";
 import { CompositionRenderValues, LayerTransform, LayerType, NameToProperty } from "~/types";

@@ -2,8 +2,8 @@ import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
 import { CompoundProperty } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
+import { arrayModifierPropertiesFactory } from "~/composition/factories/arrayModifierPropertiesFactory";
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
-import { createArrayModifier } from "~/composition/modifiers/arrayModifier";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
 import { FlowNodeState } from "~/flow/flowNodeState";
@@ -67,7 +67,7 @@ export const createTimelineContextMenu = (
 						onSelect: () => {
 							const { compositionState } = getActionState();
 
-							const { propertyId, propertiesToAdd } = createArrayModifier({
+							const { propertyId, propertiesToAdd } = arrayModifierPropertiesFactory({
 								compositionId,
 								layerId,
 								createId: createGenMapIdFn(compositionState.properties),

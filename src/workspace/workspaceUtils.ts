@@ -1,7 +1,5 @@
-import {
-	getLayerNameToProperty,
-	getLayerRectDimensionsAndOffset,
-} from "~/composition/layer/layerUtils";
+import { getLayerRectDimensionsAndOffset } from "~/composition/layer/layerRect";
+import { getLayerNameToProperty } from "~/composition/layer/layerUtils";
 import { CompositionRenderValues, LayerType } from "~/types";
 
 export const globalToWorkspacePosition = (
