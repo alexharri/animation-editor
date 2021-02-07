@@ -1,6 +1,5 @@
 import { CompositionManager } from "~/composition/manager/compositionManager";
 import { executePerformables } from "~/composition/manager/executePerformables";
-import { Performable } from "~/composition/manager/performableManager";
 import { updateLayerZIndices } from "~/composition/manager/updateCompositionLayerZIndices";
 import {
 	AddFlowNodeDiff,
@@ -24,7 +23,7 @@ import {
 import { getFlowNodeAssociatedCompositionId } from "~/flow/flowUtils";
 import { getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
-import { PropertyName } from "~/types";
+import { Performable, PropertyName } from "~/types";
 
 export const compositionDiffHandler = (
 	ctx: CompositionManager,
@@ -59,7 +58,7 @@ export const compositionDiffHandler = (
 			}
 
 			ctx.properties.removeLayer(actionState);
-			ctx.layers.removeLayer(layer);
+			ctx.layers.removeLayer(layer, actionState);
 		}
 	};
 
@@ -91,9 +90,7 @@ export const compositionDiffHandler = (
 
 			ctx.properties.updateStructure(actionState);
 
-			// Find the affected nodes in the previous state
-			const propertyIds = ctx.properties.getPropertyIdsAffectedByNodes([nodeId], actionState);
-			const actions = ctx.layers.getActionsToPerform(actionState, propertyIds);
+			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds: [nodeId] });
 
 			for (const { layerId, performables } of actions) {
 				executePerformables(ctx, actionState, layerId, performables);
@@ -133,9 +130,7 @@ export const compositionDiffHandler = (
 				return;
 			}
 
-			const actions = ctx.layers.getActionsToPerformOnFrameIndexChange();
-			const animatedPropertyIds = ctx.layers.getAnimatedPropertyIds();
-			ctx.properties.onPropertyIdsChanged(animatedPropertyIds, actionState, diff.frameIndex);
+			const actions = ctx.properties.getActionsToPerformOnFrameIndexChange();
 			ctx.properties.onFrameIndexChanged(actionState, diff.frameIndex);
 			ctx.layers.onFrameIndexChanged(actionState, diff.frameIndex);
 
@@ -152,8 +147,7 @@ export const compositionDiffHandler = (
 
 			ctx.properties.onNodeStateChange(nodeId, actionState);
 
-			const propertyIds = ctx.properties.getPropertyIdsAffectedByNodes([nodeId], actionState);
-			const actions = ctx.layers.getActionsToPerform(actionState, propertyIds);
+			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds: [nodeId] });
 
 			for (const { layerId, performables } of actions) {
 				executePerformables(ctx, actionState, layerId, performables);
@@ -168,8 +162,7 @@ export const compositionDiffHandler = (
 
 			ctx.properties.onNodeExpressionChange(nodeId, actionState);
 
-			const propertyIds = ctx.properties.getPropertyIdsAffectedByNodes([nodeId], actionState);
-			const actions = ctx.layers.getActionsToPerform(actionState, propertyIds);
+			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds: [nodeId] });
 
 			for (const { layerId, performables } of actions) {
 				executePerformables(ctx, actionState, layerId, performables);
@@ -196,16 +189,9 @@ export const compositionDiffHandler = (
 			if (layerDoesNotAffectComposition(layerId)) {
 				return;
 			}
-
-			// Find the affected nodes in the previous state
-			const propertyIds = ctx.properties.getPropertyIdsAffectedByNodes(
-				[nodeId],
-				ctx.prevState,
-			);
-
 			ctx.properties.updateStructure(actionState);
 
-			const actions = ctx.layers.getActionsToPerform(actionState, propertyIds);
+			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds: [nodeId] });
 			for (const { layerId, performables } of actions) {
 				executePerformables(ctx, actionState, layerId, performables);
 			}
@@ -218,14 +204,10 @@ export const compositionDiffHandler = (
 			}
 
 			// Find the affected nodes in the previous state
-			const propertyIds = ctx.properties.getPropertyIdsAffectedByNodes(
-				nodeIds,
-				ctx.prevState,
-			);
 
 			ctx.properties.updateStructure(actionState);
 
-			const actions = ctx.layers.getActionsToPerform(actionState, propertyIds);
+			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds });
 			for (const { layerId, performables } of actions) {
 				executePerformables(ctx, actionState, layerId, performables);
 			}
@@ -249,7 +231,9 @@ export const compositionDiffHandler = (
 			}
 
 			ctx.properties.onPropertyIdsChanged([propertyId], actionState);
-			const actions = ctx.layers.getActionsToPerform(actionState, [propertyId]);
+			const actions = ctx.properties.getActionsToPerform(actionState, {
+				propertyIds: [propertyId],
+			});
 			for (const { layerId, performables } of actions) {
 				executePerformables(ctx, actionState, layerId, performables);
 			}
@@ -269,7 +253,7 @@ export const compositionDiffHandler = (
 		[DiffType.ModifyMultipleLayerProperties]: (diff: ModifyMultipleLayerPropertiesDiff) => {
 			const { propertyIds } = diff;
 			ctx.properties.onPropertyIdsChanged(propertyIds, actionState);
-			const actions = ctx.layers.getActionsToPerform(actionState, propertyIds);
+			const actions = ctx.properties.getActionsToPerform(actionState, { propertyIds });
 			for (const { layerId, performables } of actions) {
 				executePerformables(ctx, actionState, layerId, performables);
 			}

@@ -3,10 +3,6 @@ import { Layer } from "~/composition/compositionTypes";
 import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { manageComposition } from "~/composition/manager/compositionManager";
 import { GraphicManager } from "~/composition/manager/graphicManager";
-import {
-	createPerformableManager,
-	PerformableManager,
-} from "~/composition/manager/performableManager";
 import { populateLayerManager } from "~/composition/manager/populateLayerManager";
 import { PropertyManager } from "~/composition/manager/propertyManager";
 import { getTransformFromTransformGroupId } from "~/composition/transformUtils";
@@ -22,14 +18,11 @@ export interface LayerManager {
 	addLayer: (layer: Layer, actionState: ActionState) => void;
 	onUpdateLayerParent: (layerId: string, actionState: ActionState) => void;
 	updatePropertyStructure: (layer: Layer, actionState: ActionState) => void;
-	removeLayer: (layer: Layer) => void;
+	removeLayer: (layer: Layer, actionState: ActionState) => void;
 	getLayerTransformContainer: (layerId: string) => PIXI.Container;
 	getLayerOwnContentContainer: (layerId: string) => PIXI.Container;
 	getLayerChildLayerContainer: (layerId: string) => PIXI.Container;
 	sendDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
-	getAnimatedPropertyIds: PerformableManager["getAnimatedPropertyIds"];
-	getActionsToPerform: PerformableManager["getActionsToPerform"];
-	getActionsToPerformOnFrameIndexChange: PerformableManager["getActionsToPerformOnFrameIndexChange"];
 	getLayerPropertyMap: (layerId: string) => LayerPropertyMap;
 	onFrameIndexChanged: (actionState: ActionState, frameIndex: number) => void;
 }
@@ -54,7 +47,6 @@ export const createLayerManager = (
 		string,
 		{ layerId: string; manager: ReturnType<typeof manageComposition> }
 	> = {};
-	const performableManager = createPerformableManager(properties);
 	const layerPropertyMapMap: Record<string, LayerPropertyMap> = {};
 
 	const self: LayerManager = {
@@ -64,7 +56,7 @@ export const createLayerManager = (
 				//
 				// Warn about this happening and remove the layer before re-adding.
 				console.warn(`Added already present layer '${layer.id}'.`);
-				self.removeLayer(layer);
+				self.removeLayer(layer, actionState);
 			}
 
 			const transformContainer = new PIXI.Container();
@@ -112,7 +104,6 @@ export const createLayerManager = (
 				subCompositions[layer.id] = { manager, layerId: layer.id };
 			}
 
-			performableManager.addLayer(actionState, layer.id);
 			layerPropertyMapMap[layer.id] = constructLayerPropertyMap(
 				layer.id,
 				actionState.compositionState,
@@ -197,8 +188,6 @@ export const createLayerManager = (
 				const { manager } = subCompositions[layer.id];
 				manager.destroy();
 			}
-
-			performableManager.removeLayer(layer.id);
 		},
 
 		getLayerTransformContainer: (layerId) => {
@@ -245,19 +234,11 @@ export const createLayerManager = (
 
 		updatePropertyStructure: (layer, actionState) => {
 			console.log("update property structe");
-			performableManager.onUpdateLayerStructure(actionState, layer.id);
 			properties.updateStructure(actionState);
 			self.addLayer(layer, actionState);
 		},
 
 		getLayerPropertyMap: (layerId) => layerPropertyMapMap[layerId],
-
-		getAnimatedPropertyIds: performableManager.getAnimatedPropertyIds,
-
-		getActionsToPerform: performableManager.getActionsToPerform,
-
-		getActionsToPerformOnFrameIndexChange:
-			performableManager.getActionsToPerformOnFrameIndexChange,
 	};
 
 	populateLayerManager(compositionId, self, actionState);

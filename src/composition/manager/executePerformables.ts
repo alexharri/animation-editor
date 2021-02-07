@@ -1,11 +1,10 @@
 import * as PIXI from "pixi.js";
 import { CompositionManager } from "~/composition/manager/compositionManager";
-import { Performable } from "~/composition/manager/performableManager";
 import { getTransformFromTransformGroupId } from "~/composition/transformUtils";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { createArrayModifierPIXITransforms } from "~/render/pixi/pixiTransform";
-import { PropertyName, TransformPropertyName } from "~/types";
+import { Performable, PropertyName, TransformPropertyName } from "~/types";
 
 export const executePerformables = (
 	ctx: CompositionManager,

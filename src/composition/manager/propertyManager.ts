@@ -2,12 +2,16 @@ import * as mathjs from "mathjs";
 import { Property } from "~/composition/compositionTypes";
 import { forEachLayerProperty } from "~/composition/compositionUtils";
 import { getCompositionPropertyGraphOrder } from "~/composition/layer/layerComputePropertiesOrder";
+import { createPropertyInfoRegistry } from "~/composition/property/propertyInfoMap";
 import { flowNodeArg } from "~/flow/flowArgs";
 import { computeNodeOutputsFromInputArgs } from "~/flow/flowComputeNodeNew";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
+import { Performable } from "~/types";
+
+type LayerPerformables = { layerId: string; performables: Performable[] };
 
 export interface PropertyManager {
 	addLayer: (actionState: ActionState) => void;
@@ -24,6 +28,14 @@ export interface PropertyManager {
 	onNodeExpressionChange: (nodeId: string, actionState: ActionState) => void;
 	getPropertyIdsAffectedByNodes: (nodeIds: string[], actionState: ActionState) => string[];
 	getPropertyIdsAffectedByFrameIndexInGraphByLayer: () => Record<string, string[]>;
+	getActionsToPerform: (
+		actionState: ActionState,
+		options: {
+			propertyIds?: string[];
+			nodeIds?: string[];
+		},
+	) => Array<{ layerId: string; performables: Performable[] }>;
+	getActionsToPerformOnFrameIndexChange: () => Array<LayerPerformables>;
 }
 
 export const createPropertyManager = (
@@ -42,9 +54,11 @@ export const createPropertyManager = (
 	let propertyValues: Record<string, any> = {};
 	let computed: Record<string, FlowComputeNodeArg[]> = {};
 	let pIdsAffectedByFrameViaGraphByLayer: Record<string, string[]> = {};
+	let propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 
 	const reset = (actionState: ActionState) => {
 		const result = getCompositionPropertyGraphOrder(compositionId, actionState);
+		propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 		nodeToIndex = result.nodeToIndex;
 		nodeToNext = result.nodeToNext;
 		toCompute = result.toCompute;
@@ -400,6 +414,8 @@ export const createPropertyManager = (
 		},
 
 		onFrameIndexChanged: (actionState, frameIndex) => {
+			const animatedPropertyIds = propertyInfo.getAnimatedPropertyIds();
+			self.onPropertyIdsChanged(animatedPropertyIds, actionState, frameIndex);
 			recomputeNodeRefs(actionState, nodeIdsThatEmitFrameIndex, { frameIndex });
 		},
 
@@ -424,6 +440,81 @@ export const createPropertyManager = (
 
 		getPropertyIdsAffectedByFrameIndexInGraphByLayer: () => {
 			return pIdsAffectedByFrameViaGraphByLayer;
+		},
+
+		getActionsToPerform: (actionState, options) => {
+			const { compositionState } = actionState;
+			const performablesByLayer: Record<string, Set<Performable>> = {};
+
+			const propertyIds = [...(options.propertyIds || [])];
+
+			if (options.nodeIds) {
+				propertyIds.push(
+					...self.getPropertyIdsAffectedByNodes(options.nodeIds, actionState),
+				);
+			}
+
+			for (const propertyId of propertyIds) {
+				const property = compositionState.properties[propertyId];
+
+				if (!performablesByLayer[property.layerId]) {
+					performablesByLayer[property.layerId] = new Set();
+				}
+
+				performablesByLayer[property.layerId].add(
+					propertyInfo.properties[propertyId].performable,
+				);
+			}
+
+			const layerIds = Object.keys(performablesByLayer);
+			for (const layerId of layerIds) {
+				const performableSet = performablesByLayer[layerId];
+				if (performableSet.has(Performable.UpdateTransform)) {
+					performableSet.delete(Performable.UpdatePosition);
+				}
+			}
+
+			return layerIds.map((layerId) => ({
+				layerId,
+				performables: [...performablesByLayer[layerId]],
+			}));
+		},
+
+		getActionsToPerformOnFrameIndexChange: () => {
+			const layerIds = [...propertyInfo.layerIdSet];
+
+			const graph_pidsAffectedByFrameInGraphByLayer = self.getPropertyIdsAffectedByFrameIndexInGraphByLayer();
+
+			const layerPerformables: LayerPerformables[] = [];
+			for (const layerId of layerIds) {
+				const allLayerPropertyIds = propertyInfo.propertyIdsByLayer[layerId];
+				const performableSet = new Set<Performable>();
+
+				for (const propertyId of allLayerPropertyIds) {
+					const info = propertyInfo.properties[propertyId];
+					if (info.isAnimated) {
+						performableSet.add(info.performable);
+					}
+				}
+
+				for (const propertyId of graph_pidsAffectedByFrameInGraphByLayer[layerId] || []) {
+					const info = propertyInfo.properties[propertyId];
+					performableSet.add(info.performable);
+				}
+
+				if (performableSet.has(Performable.UpdateTransform)) {
+					performableSet.delete(Performable.UpdatePosition);
+				}
+
+				if (performableSet.size === 0) {
+					continue;
+				}
+
+				const performables = [...performableSet];
+				layerPerformables.push({ layerId, performables });
+			}
+
+			return layerPerformables;
 		},
 	};
 	return self;

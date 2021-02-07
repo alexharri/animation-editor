@@ -227,3 +227,11 @@ export interface KeyboardShortcut {
 }
 
 export type LayerParentPickWhip = { fromId: string; to: Vec2 };
+
+export enum Performable {
+	DrawLayer,
+	UpdatePosition,
+	UpdateTransform,
+	UpdateArrayModifierTransform,
+	UpdateArrayModifierCount,
+}

@@ -1,4 +1,4 @@
-import { LayerManager } from "~/composition/manager/layerManager";
+import { LayerManager } from "~/composition/layer/layerManager";
 import { updateLayerZIndices } from "~/composition/manager/updateCompositionLayerZIndices";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
 

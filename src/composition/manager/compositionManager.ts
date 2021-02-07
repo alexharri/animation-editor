@@ -1,8 +1,8 @@
 import * as PIXI from "pixi.js";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
+import { createLayerManager, LayerManager } from "~/composition/layer/layerManager";
 import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
 import { createGraphicManager, GraphicManager } from "~/composition/manager/graphicManager";
-import { createLayerManager, LayerManager } from "~/composition/manager/layerManager";
 import { createPropertyManager, PropertyManager } from "~/composition/manager/propertyManager";
 import { AreaType } from "~/constants";
 import { Diff, DiffType } from "~/diff/diffs";
