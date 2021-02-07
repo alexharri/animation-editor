@@ -74,6 +74,18 @@ export const compositionDiffHandler = (
 		return compositionId !== layer.compositionId;
 	};
 
+	interface PerformChangeOptions {
+		nodeIds?: string[];
+		propertyIds?: string[];
+	}
+
+	const performChange = (options: PerformChangeOptions) => {
+		const actions = ctx.properties.getActionsToPerform(actionState, options);
+		for (const { layerId, performables } of actions) {
+			executePerformables(ctx, actionState, layerId, performables);
+		}
+	};
+
 	const backwardHandlers: { [diffType: number]: (diff: any) => void } = {
 		[DiffType.AddLayer]: (diff: AddLayerDiff) => {
 			onRemoveLayers(diff.layerIds);
@@ -89,12 +101,7 @@ export const compositionDiffHandler = (
 			}
 
 			ctx.properties.updateStructure(actionState);
-
-			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds: [nodeId] });
-
-			for (const { layerId, performables } of actions) {
-				executePerformables(ctx, actionState, layerId, performables);
-			}
+			performChange({ nodeIds: [nodeId] });
 		},
 	};
 
@@ -130,10 +137,10 @@ export const compositionDiffHandler = (
 				return;
 			}
 
-			const actions = ctx.properties.getActionsToPerformOnFrameIndexChange();
-			ctx.properties.onFrameIndexChanged(actionState, diff.frameIndex);
 			ctx.layers.onFrameIndexChanged(actionState, diff.frameIndex);
+			ctx.properties.onFrameIndexChanged(actionState, diff.frameIndex);
 
+			const actions = ctx.properties.getActionsToPerformOnFrameIndexChange();
 			for (const { layerId, performables } of actions) {
 				executePerformables(ctx, actionState, layerId, performables);
 			}
@@ -146,12 +153,7 @@ export const compositionDiffHandler = (
 			}
 
 			ctx.properties.onNodeStateChange(nodeId, actionState);
-
-			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds: [nodeId] });
-
-			for (const { layerId, performables } of actions) {
-				executePerformables(ctx, actionState, layerId, performables);
-			}
+			performChange({ nodeIds: [nodeId] });
 		},
 		[DiffType.FlowNodeExpression]: (diff: FlowNodeExpressionDiff) => {
 			const { nodeId } = diff;
@@ -162,11 +164,7 @@ export const compositionDiffHandler = (
 
 			ctx.properties.onNodeExpressionChange(nodeId, actionState);
 
-			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds: [nodeId] });
-
-			for (const { layerId, performables } of actions) {
-				executePerformables(ctx, actionState, layerId, performables);
-			}
+			performChange({ nodeIds: [nodeId] });
 		},
 		[DiffType.AddFlowNode]: (diff: AddFlowNodeDiff) => {
 			const { nodeId } = diff;
@@ -191,10 +189,7 @@ export const compositionDiffHandler = (
 			}
 			ctx.properties.updateStructure(actionState);
 
-			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds: [nodeId] });
-			for (const { layerId, performables } of actions) {
-				executePerformables(ctx, actionState, layerId, performables);
-			}
+			performChange({ nodeIds: [nodeId] });
 		},
 		[DiffType.UpdateNodeConnection]: (diff: UpdateNodeConnectionDiff) => {
 			const { nodeIds } = diff;
@@ -207,10 +202,7 @@ export const compositionDiffHandler = (
 
 			ctx.properties.updateStructure(actionState);
 
-			const actions = ctx.properties.getActionsToPerform(actionState, { nodeIds });
-			for (const { layerId, performables } of actions) {
-				executePerformables(ctx, actionState, layerId, performables);
-			}
+			performChange({ nodeIds });
 		},
 		[DiffType.Layer]: (diff: LayerDiff) => {
 			const { layerIds } = diff;
@@ -231,12 +223,7 @@ export const compositionDiffHandler = (
 			}
 
 			ctx.properties.onPropertyIdsChanged([propertyId], actionState);
-			const actions = ctx.properties.getActionsToPerform(actionState, {
-				propertyIds: [propertyId],
-			});
-			for (const { layerId, performables } of actions) {
-				executePerformables(ctx, actionState, layerId, performables);
-			}
+			performChange({ propertyIds: [propertyId] });
 		},
 		[DiffType.TogglePropertyAnimated]: (diff: TogglePropertyAnimatedDiff) => {
 			const { propertyId } = diff;
@@ -253,10 +240,7 @@ export const compositionDiffHandler = (
 		[DiffType.ModifyMultipleLayerProperties]: (diff: ModifyMultipleLayerPropertiesDiff) => {
 			const { propertyIds } = diff;
 			ctx.properties.onPropertyIdsChanged(propertyIds, actionState);
-			const actions = ctx.properties.getActionsToPerform(actionState, { propertyIds });
-			for (const { layerId, performables } of actions) {
-				executePerformables(ctx, actionState, layerId, performables);
-			}
+			performChange({ propertyIds });
 		},
 		[DiffType.LayerParent]: (diff: LayerParentDiff) => {
 			const { layerId } = diff;

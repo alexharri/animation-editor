@@ -26,7 +26,6 @@ export interface PropertyManager {
 	onFrameIndexChanged: (actionState: ActionState, frameIndex: number) => void;
 	onNodeStateChange: (nodeId: string, actionState: ActionState) => void;
 	onNodeExpressionChange: (nodeId: string, actionState: ActionState) => void;
-	getPropertyIdsAffectedByNodes: (nodeIds: string[], actionState: ActionState) => string[];
 	getPropertyIdsAffectedByFrameIndexInGraphByLayer: () => Record<string, string[]>;
 	getActionsToPerform: (
 		actionState: ActionState,
@@ -424,14 +423,12 @@ export const createPropertyManager = (
 		},
 
 		onNodeExpressionChange: (nodeId, actionState) => {
+			// Get expression and update the expression map
 			const node = actionState.flowState.nodes[nodeId] as FlowNode<FlowNodeType.expr>;
-			const { expression } = node.state;
-			expressions[node.id] = mathjs.compile(expression);
-			self.onNodeStateChange(nodeId, actionState);
-		},
+			expressions[node.id] = mathjs.compile(node.state.expression);
 
-		getPropertyIdsAffectedByNodes: (nodeRefs, actionState) => {
-			return getPropertyIdsAffectedByNodes(nodeRefs, actionState);
+			// Recompute the expression node and subsequent nodes
+			self.onNodeStateChange(nodeId, actionState);
 		},
 
 		updateStructure: (actionState) => {
@@ -449,9 +446,7 @@ export const createPropertyManager = (
 			const propertyIds = [...(options.propertyIds || [])];
 
 			if (options.nodeIds) {
-				propertyIds.push(
-					...self.getPropertyIdsAffectedByNodes(options.nodeIds, actionState),
-				);
+				propertyIds.push(...getPropertyIdsAffectedByNodes(options.nodeIds, actionState));
 			}
 
 			for (const propertyId of propertyIds) {
