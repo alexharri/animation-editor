@@ -1,17 +1,14 @@
 import * as PIXI from "pixi.js";
 import { Layer } from "~/composition/compositionTypes";
+import { createLayerInstances } from "~/composition/layer/layerInstances";
 import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { manageComposition } from "~/composition/manager/compositionManager";
 import { GraphicManager } from "~/composition/manager/graphicManager";
 import { populateLayerManager } from "~/composition/manager/populateLayerManager";
 import { PropertyManager } from "~/composition/manager/propertyManager";
-import { getTransformFromTransformGroupId } from "~/composition/transformUtils";
-import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
-import { DEFAULT_LAYER_TRANSFORM } from "~/constants";
 import { adjustDiffsToChildComposition } from "~/diff/adjustDiffsToChildComposition";
 import { Diff } from "~/diff/diffs";
 import { applyPixiLayerTransform } from "~/render/pixi/pixiLayerTransform";
-import { createArrayModifierPIXITransforms } from "~/render/pixi/pixiTransform";
 import { LayerType, TRANSFORM_PROPERTY_NAMES } from "~/types";
 
 export interface LayerManager {
@@ -79,7 +76,7 @@ export const createLayerManager = (
 				graphicManager.getLayerGraphic(actionState, layer);
 			}
 
-			const { getPropertyValue } = properties;
+			const { getPropertyValue: getPropertyValue } = properties;
 			const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
 
 			applyPixiLayerTransform({ transformContainer, getPropertyValue, layer, map });
@@ -110,39 +107,15 @@ export const createLayerManager = (
 			);
 			layerToVisible[layer.id] = true;
 
-			const { compositionState } = actionState;
-			const arrayModifiers = getLayerArrayModifiers(layer.id, compositionState);
-
-			const resolvedModifiers =
-				arrayModifiers.length === 0
-					? [
-							{
-								count: 1,
-								transform: DEFAULT_LAYER_TRANSFORM,
-							},
-					  ]
-					: arrayModifiers.map((modifier) => {
-							const transform = getTransformFromTransformGroupId(
-								modifier.transformGroupId,
-								compositionState,
-								properties.getPropertyValue,
-							);
-							return {
-								count: getPropertyValue(modifier.countId),
-								transform,
-							};
-					  });
-
-			const dimensions = resolvedModifiers.map((item) => item.count);
-			const transforms = resolvedModifiers.map((item) => item.transform);
-
-			const pixiTransforms = createArrayModifierPIXITransforms(dimensions, transforms);
-
-			for (let i = 0; i < pixiTransforms.length; i++) {
-				const graphic = graphicManager.getLayerGraphic(actionState, layer);
-				const g0 = new PIXI.Graphics(graphic.geometry);
-				g0.localTransform.append(pixiTransforms[i].worldTransform);
-				ownContentContainer.addChild(g0);
+			if (layer.type !== LayerType.Composition) {
+				createLayerInstances(
+					actionState,
+					layer,
+					layerPropertyMapMap[layer.id],
+					properties.getPropertyValue,
+					ownContentContainer,
+					graphicManager.getLayerGraphic(actionState, layer),
+				);
 			}
 		},
 

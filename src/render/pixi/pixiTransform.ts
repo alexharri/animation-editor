@@ -1,5 +1,4 @@
 import * as PIXI from "pixi.js";
-import { DEG_TO_RAD_FAC } from "~/constants";
 import { LayerTransform } from "~/types";
 import { constructNdArray, getNdArrayIndex } from "~/util/ndArray";
 
@@ -7,7 +6,7 @@ export const applyPixiTransform = (transform: PIXI.Transform, parentTransform: P
 	transform.updateTransform(parentTransform);
 };
 
-export function createArrayModifierPIXITransforms(
+export function createLayerPIXITransforms(
 	dimensions: number[],
 	transforms: LayerTransform[],
 ): PIXI.Transform[] {
@@ -27,7 +26,7 @@ export function createArrayModifierPIXITransforms(
 			transform.anchor.y,
 			transform.scaleX,
 			transform.scaleY,
-			transform.rotation * DEG_TO_RAD_FAC,
+			transform.rotation,
 			0,
 			0,
 		);

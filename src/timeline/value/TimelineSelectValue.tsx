@@ -30,7 +30,7 @@ export function TimelineSelectValue<T extends string>(props: Props<T>) {
 			const { compositionState } = getActionState();
 			const property = compositionState.properties[propertyId];
 			params.dispatch(compositionActions.setPropertyValue(propertyId, value));
-			params.addDiff((diff) => diff.modifyLayer(property.layerId));
+			params.addDiff((diff) => diff.modifyProperty(property.id));
 			params.submitAction(props.actionName);
 		});
 	};

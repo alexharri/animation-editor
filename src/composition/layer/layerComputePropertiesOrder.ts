@@ -1,6 +1,7 @@
 import * as mathjs from "mathjs";
 import { EvalFunction } from "mathjs";
 import { CompositionState } from "~/composition/compositionReducer";
+import { getPropertyIdsAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
@@ -65,20 +66,25 @@ function propertyOutputNodeHasAffectedProperty(
 	return false;
 }
 
-interface Result {
+export interface LayerGraphsInfo {
+	/**
+	 * Every node that needs to be computed in the graph in the order
+	 * that they need to be computed in.
+	 */
 	toCompute: string[];
 	nodeToNext: Record<string, string[]>;
 	nodeToIndex: Record<string, number>;
 	expressions: Record<string, EvalFunction>;
 	nodeIdsThatEmitFrameIndex: string[];
 	propertyIdToAffectedInputNodes: Partial<Record<string, string[]>>;
-	propertyIdToAffectedOutputNodes: Partial<Record<string, string[]>>;
+	compareNodeIds: (a: string, b: string) => number;
+	propertyIdsAffectedByFrameIndexByLayer: Record<string, string[]>;
 }
 
-export const getCompositionPropertyGraphOrder = (
+export const resolveCompositionLayerGraphs = (
 	compositionId: string,
 	actionState: ActionState,
-): Result => {
+): LayerGraphsInfo => {
 	const { compositionState, flowState } = actionState;
 
 	const visitedByGraph: Record<string, Set<string>> = {};
@@ -95,9 +101,8 @@ export const getCompositionPropertyGraphOrder = (
 
 	const toCompute: string[] = [];
 	const graphToOutputNodes: Record<string, FlowNode<FlowNodeType.property_output>[]> = {};
-	const nodeToNext: Result["nodeToNext"] = {};
-	const propertyIdToAffectedInputNodes: Result["propertyIdToAffectedInputNodes"] = {};
-	const propertyIdToAffectedOutputNodes: Result["propertyIdToAffectedOutputNodes"] = {};
+	const nodeToNext: LayerGraphsInfo["nodeToNext"] = {};
+	const propertyIdToAffectedInputNodes: LayerGraphsInfo["propertyIdToAffectedInputNodes"] = {};
 	const nodeIdsThatEmitFrameIndex: string[] = [];
 	const expressions: Record<string, EvalFunction> = {};
 
@@ -143,20 +148,6 @@ export const getCompositionPropertyGraphOrder = (
 					propertyIdToAffectedInputNodes[propertyId] = [];
 				}
 				propertyIdToAffectedInputNodes[propertyId]!.push(node.id);
-			}
-		}
-		if (node.type === FlowNodeType.property_output) {
-			// Populate `propertyIdToAffectedOutputNodes`
-			const state = node.state as FlowNodeState<FlowNodeType.property_input>;
-			const propertyIds = getFlowPropertyNodeReferencedPropertyIds(
-				compositionState,
-				state.propertyId,
-			);
-			for (const propertyId of propertyIds) {
-				if (!propertyIdToAffectedOutputNodes[propertyId]) {
-					propertyIdToAffectedOutputNodes[propertyId] = [];
-				}
-				propertyIdToAffectedOutputNodes[propertyId]!.push(node.id);
 			}
 		}
 
@@ -270,13 +261,27 @@ export const getCompositionPropertyGraphOrder = (
 		return acc;
 	}, {});
 
+	const propertyIdsAffectedByFrameIndexByLayer = getPropertyIdsAffectedByNodes(
+		actionState,
+		nodeIdsThatEmitFrameIndex,
+		nodeToNext,
+	).reduce<Record<string, string[]>>((acc, propertyId) => {
+		const property = actionState.compositionState.properties[propertyId];
+		if (!acc[property.layerId]) {
+			acc[property.layerId] = [];
+		}
+		acc[property.layerId].push(property.id);
+		return acc;
+	}, {});
+
 	return {
 		toCompute,
 		nodeToIndex,
 		nodeToNext,
 		expressions,
 		propertyIdToAffectedInputNodes,
-		propertyIdToAffectedOutputNodes,
 		nodeIdsThatEmitFrameIndex,
+		propertyIdsAffectedByFrameIndexByLayer,
+		compareNodeIds: (a, b) => nodeToIndex[a] - nodeToIndex[b],
 	};
 };

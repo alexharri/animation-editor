@@ -228,11 +228,40 @@ export const getTransformFromTransformGroupId = (
 				break;
 			}
 			case PropertyName.Rotation: {
-				transform.rotation = getPropertyValue(property.id);
+				transform.rotation = getPropertyValue(property.id) * DEG_TO_RAD_FAC;
 				break;
 			}
 		}
 	});
 
 	return transform;
+};
+
+export const applyIndexTransformRotationCorrection = (
+	indexTransform: LayerTransform,
+	rotationCorrection: number,
+	dimensions: [width: number, height: number],
+) => {
+	const [width, height] = dimensions;
+
+	const origin =
+		indexTransform.originBehavior === "relative" ? indexTransform.origin : Vec2.ORIGIN;
+
+	const scaleDelta = Vec2.new(width, height)
+		.sub(Vec2.new(width, height).scaleXY(indexTransform.scaleX, indexTransform.scaleY))
+		.scale(0.5);
+
+	const atRot = indexTransform.translate
+		.sub(Vec2.new(width, height))
+		.scale(0.5)
+		.add(Vec2.new(width, height));
+
+	const diff = indexTransform.translate.sub(atRot).add(scaleDelta);
+	const dr = diff.rotate(indexTransform.rotation, origin);
+	const sum = atRot.add(dr);
+
+	return {
+		...indexTransform,
+		translate: indexTransform.translate.lerp(sum, rotationCorrection),
+	};
 };
