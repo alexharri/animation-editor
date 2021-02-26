@@ -81,6 +81,8 @@ export const getLayerRectDimensionsAndOffset = (
 			const outerRadius = getPropertyValue(map[PropertyName.OuterRadius]);
 			width = outerRadius * 2;
 			height = outerRadius * 2;
+			offX = -outerRadius;
+			offY = -outerRadius;
 			break;
 		}
 

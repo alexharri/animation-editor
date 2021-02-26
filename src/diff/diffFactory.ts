@@ -9,8 +9,8 @@ export const diffFactory = {
 	layer: (...layerIds: string[]): Diff => {
 		return { type: DiffType.Layer, layerIds };
 	},
-	compositionView: (compositionId: string): Diff => {
-		return { type: DiffType.ModifyCompositionView, compositionId };
+	compositionView: (compositionId: string, scale: number): Diff => {
+		return { type: DiffType.ModifyCompositionView, compositionId, scale };
 	},
 	compositionDimensions: (compositionId: string): Diff => {
 		return { type: DiffType.ModifyCompositionDimensions, compositionId };

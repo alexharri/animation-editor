@@ -36,6 +36,7 @@ export enum DiffType {
  */
 export interface ModifyCompositionViewDiff extends _C {
 	type: DiffType.ModifyCompositionView;
+	scale: number;
 }
 /**
  * Composition width or height was modified

@@ -31,16 +31,16 @@ export const createViewportWheelHandlers = <T extends PossibleAreaTypes>(
 					const diff = pos.sub(initialPos);
 					const action = actions.setPan(areaState.pan.add(diff));
 					if ((<WorkspaceAreaState>areaState).compositionId) {
-						const { compositionId } = areaState as WorkspaceAreaState;
-						params.performDiff((diff) => diff.compositionView(compositionId));
+						const { compositionId, scale } = areaState as WorkspaceAreaState;
+						params.performDiff((diff) => diff.compositionView(compositionId, scale));
 					}
 					params.dispatchToAreaState(areaId, action);
 				});
 
 				params.addListener.once("mouseup", () => {
 					if ((<WorkspaceAreaState>areaState).compositionId) {
-						const { compositionId } = areaState as WorkspaceAreaState;
-						params.addDiff((diff) => diff.compositionView(compositionId));
+						const { compositionId, scale } = areaState as WorkspaceAreaState;
+						params.addDiff((diff) => diff.compositionView(compositionId, scale));
 					}
 					params.submitAction("Pan");
 				});
@@ -77,6 +77,7 @@ export const createViewportWheelHandlers = <T extends PossibleAreaTypes>(
 					viewport.height * (yt * fac) * (isKeyDown("Alt") ? -1 : 0.5),
 				);
 
+				const nextScale = areaState.scale * fac;
 				const panAction = actions.setPan(areaState.pan.sub(diff));
 				const scaleAction = actions.setScale(areaState.scale * fac);
 
@@ -86,7 +87,7 @@ export const createViewportWheelHandlers = <T extends PossibleAreaTypes>(
 				);
 				if ((<WorkspaceAreaState>areaState).compositionId) {
 					const { compositionId } = areaState as WorkspaceAreaState;
-					params.addDiff((diff) => diff.compositionView(compositionId));
+					params.addDiff((diff) => diff.compositionView(compositionId, nextScale));
 				}
 				params.submitAction("Zoom");
 			});
@@ -123,8 +124,8 @@ export const createViewportWheelHandlers = <T extends PossibleAreaTypes>(
 					areaActions.dispatchToAreaState(areaId, scaleAction),
 				);
 				if ((<WorkspaceAreaState>areaState).compositionId) {
-					const { compositionId } = areaState as WorkspaceAreaState;
-					params.addDiff((diff) => diff.compositionView(compositionId));
+					const { compositionId, scale } = areaState as WorkspaceAreaState;
+					params.addDiff((diff) => diff.compositionView(compositionId, scale));
 				}
 				params.submitAction("Zoom");
 			});
@@ -139,8 +140,8 @@ export const createViewportWheelHandlers = <T extends PossibleAreaTypes>(
 
 				params.dispatch(areaActions.dispatchToAreaState(areaId, panAction));
 				if ((<WorkspaceAreaState>areaState).compositionId) {
-					const { compositionId } = areaState as WorkspaceAreaState;
-					params.addDiff((diff) => diff.compositionView(compositionId));
+					const { compositionId, scale } = areaState as WorkspaceAreaState;
+					params.addDiff((diff) => diff.compositionView(compositionId, scale));
 				}
 				params.submitAction("Pan");
 			});

@@ -30,6 +30,7 @@ export interface CompositionManager {
 export const manageComposition = (
 	compositionId: string,
 	parentCompContainer: PIXI.Container,
+	initialScale = 1,
 ): CompositionManager => {
 	const container = new PIXI.Container();
 	container.sortableChildren = true;
@@ -42,6 +43,7 @@ export const manageComposition = (
 		propertyManager,
 		graphicManager,
 		getActionState(),
+		initialScale,
 	);
 
 	const ctx: CompositionManager = {
@@ -85,7 +87,14 @@ export const manageTopLevelComposition = (
 	const background = new PIXI.Graphics();
 	compContainer.addChild(background);
 
-	const ctx = manageComposition(compositionId, compContainer);
+	let initialScale: number;
+	{
+		const area = prevState.area.areas[areaId] as Area<AreaType.Workspace>;
+		const { scale = 1 } = area ? area.state : {};
+		initialScale = scale;
+	}
+
+	const ctx = manageComposition(compositionId, compContainer, initialScale);
 
 	{
 		const composition = prevState.compositionState.compositions[compositionId];

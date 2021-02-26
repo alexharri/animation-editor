@@ -356,3 +356,13 @@ export function interpolateCubicBezier(cubicBezier: CubicBezier, t: number) {
 
 	return Vec2.new(x, y);
 }
+
+export const outlineLine = (line: Line, width: number): Vec2[] => {
+	const rotation = getAngleRadians(line[0], line[1]);
+	const vec = Vec2.new(width, 0).rotate(rotation + Math.PI / 2);
+	const p0 = line[0].add(vec);
+	const p1 = line[0].add(vec.scale(-1));
+	const p2 = line[1].add(vec.scale(-1));
+	const p3 = line[1].add(vec);
+	return [p0, p1, p2, p3];
+};

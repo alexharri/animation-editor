@@ -5,6 +5,7 @@ import {
 	getTransformFromTransformGroupId,
 } from "~/composition/transformUtils";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
+import { DEFAULT_LAYER_TRANSFORM } from "~/constants";
 
 export const getDimensionsAndTransforms = (
 	layerId: string,
@@ -38,6 +39,10 @@ export const getDimensionsAndTransforms = (
 			transform,
 		};
 	});
+
+	if (resolvedModifiers.length < 1) {
+		return { dimensions: [1], transforms: [DEFAULT_LAYER_TRANSFORM] };
+	}
 
 	const dimensions = resolvedModifiers.map((item) => item.count);
 	const transforms = resolvedModifiers.map(({ transform, rotationCorrection }) => {

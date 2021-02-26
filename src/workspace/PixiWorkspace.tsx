@@ -299,16 +299,16 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				height={height}
 				width={width}
 				style={{ position: "absolute", top: 0, left: 0 }}
+				onMouseDown={separateLeftRightMouse({
+					left: onMouseDown,
+					middle: (e) => workspaceHandlers.onPanStart(props.areaId, e),
+				})}
 			/>
 			<canvas
 				ref={guideCanvasRef}
 				height={height}
 				width={width}
-				style={{ position: "absolute", top: 0, left: 0 }}
-				onMouseDown={separateLeftRightMouse({
-					left: onMouseDown,
-					middle: (e) => workspaceHandlers.onPanStart(props.areaId, e),
-				})}
+				style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", opacity: 1 }}
 			/>
 			<div
 				className={s("panTarget")}

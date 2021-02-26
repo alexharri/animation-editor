@@ -11,6 +11,7 @@ import {
 	FrameIndexDiff,
 	LayerDiff,
 	LayerParentDiff,
+	ModifyCompositionViewDiff,
 	ModifyMultipleLayerPropertiesDiff,
 	ModifyPropertyDiff,
 	MoveLayerDiff,
@@ -258,7 +259,9 @@ export const compositionDiffHandler = (
 			ctx.layers.updatePropertyStructure(layer, actionState);
 		},
 		[DiffType.ResizeAreas]: () => {},
-		[DiffType.ModifyCompositionView]: () => {},
+		[DiffType.ModifyCompositionView]: (diff: ModifyCompositionViewDiff) => {
+			ctx.layers.onScaleChange(actionState, diff.scale);
+		},
 	};
 
 	for (const diff of diffs) {
