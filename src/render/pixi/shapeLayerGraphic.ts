@@ -326,7 +326,7 @@ export const updateShapeLayerHitTestGraphic: UpdateGraphicFn<ShapeLayerPropertyM
 	const onStroke = (group: PropertyGroup) => {
 		const { opacity, lineWidth } = getShapeStrokeGroupValues(group, compositionState);
 		drawStrokes = lineWidth > 0 && opacity > 0;
-		strokeWidth = lineWidth;
+		strokeWidth = lineWidth / 2;
 	};
 
 	for (const group of shapeGroups) {

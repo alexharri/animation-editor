@@ -155,7 +155,7 @@ export const createLayerManager = (
 				layerPropertyMapMap[layer.id],
 				properties.getPropertyValue,
 				layerContainers[layer.id],
-				1,
+				scale,
 			);
 		},
 

@@ -1,7 +1,7 @@
 import { EllipseLayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { UpdateGraphicFn } from "~/render/pixi/layerToPixi";
 import { PropertyName } from "~/types";
-import { rgbToBinary } from "~/util/color/convertColor";
+import { hslToRGB, rgbToBinary } from "~/util/color/convertColor";
 
 export const updateEllipseLayerGraphic: UpdateGraphicFn<EllipseLayerPropertyMap> = (
 	_actionState,
@@ -10,15 +10,10 @@ export const updateEllipseLayerGraphic: UpdateGraphicFn<EllipseLayerPropertyMap>
 	map,
 	getPropertyValue,
 ) => {
-	const resolve = (propertyName: PropertyName) => {
-		const propertyId = (map as any)[propertyName];
-		return getPropertyValue(propertyId);
-	};
-
-	const outerRadius = resolve(PropertyName.OuterRadius);
-	const fill = resolve(PropertyName.Fill);
-	const strokeWidth = resolve(PropertyName.StrokeWidth);
-	const strokeColor = resolve(PropertyName.StrokeColor);
+	const outerRadius = getPropertyValue(map[PropertyName.OuterRadius]);
+	const fill = getPropertyValue(map[PropertyName.Fill]);
+	const strokeWidth = getPropertyValue(map[PropertyName.StrokeWidth]);
+	const strokeColor = getPropertyValue(map[PropertyName.StrokeColor]);
 
 	const [r, g, b, a] = fill;
 	graphic.beginFill(rgbToBinary([r, g, b]), a);
@@ -29,4 +24,20 @@ export const updateEllipseLayerGraphic: UpdateGraphicFn<EllipseLayerPropertyMap>
 	}
 
 	graphic.drawEllipse(0, 0, outerRadius, outerRadius);
+};
+
+export const updateEllipseHitTestLayerGraphic: UpdateGraphicFn<EllipseLayerPropertyMap> = (
+	_actionState,
+	_layer,
+	graphic,
+	map,
+	getPropertyValue,
+) => {
+	const outerRadius = getPropertyValue(map[PropertyName.OuterRadius]);
+	const strokeWidth = getPropertyValue(map[PropertyName.StrokeWidth]);
+
+	graphic.beginFill(rgbToBinary(hslToRGB([300, 80, 76])), 1);
+
+	const R = outerRadius + strokeWidth / 2;
+	graphic.drawEllipse(0, 0, R, R);
 };

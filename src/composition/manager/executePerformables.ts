@@ -24,7 +24,6 @@ export const executePerformables = (
 		switch (performable) {
 			case Performable.DrawLayer: {
 				ctx.graphics.updateLayerGraphic(actionState, layer);
-
 				ctx.layers.updateLayerGuides(actionState, layerId);
 				break;
 			}

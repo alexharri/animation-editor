@@ -4,6 +4,7 @@ import { Layer } from "~/composition/compositionTypes";
 import { getLayerRectDimensionsAndOffset } from "~/composition/layer/layerDimensions";
 import { LayerPixiContainers } from "~/composition/layer/layerManager";
 import { LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
+import { updatePixiLayerHitTestGraphic } from "~/render/pixi/layerToPixi";
 import { createLayerPIXITransforms } from "~/render/pixi/pixiTransform";
 import { PropertyName } from "~/types";
 import { rgbToBinary } from "~/util/color/convertColor";
@@ -198,7 +199,7 @@ export const drawGuides = (
 	drawRectGuide(rectGraphic, width, height, offX, offY, scale, layerScale);
 	drawRectCorners(rectCorners, width, height, offX, offY, scale, layerScale);
 	drawAnchorGuide(guideAnchor, anchor, scale, layerScale);
-	// updatePixiLayerHitTestGraphic(actionState, layer, hitTestGraphic, getPropertyValue);
+	updatePixiLayerHitTestGraphic(actionState, layer, hitTestGraphic, getPropertyValue);
 };
 
 export const updateLayerInstanceTransforms = (

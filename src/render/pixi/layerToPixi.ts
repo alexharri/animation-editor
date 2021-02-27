@@ -7,8 +7,14 @@ import {
 	RectLayerPropertyMap,
 	ShapeLayerPropertyMap,
 } from "~/composition/layer/layerPropertyMap";
-import { updateEllipseLayerGraphic } from "~/render/pixi/ellipseLayerGraphic";
-import { updateRectLayerGraphic } from "~/render/pixi/rectLayerGraphic";
+import {
+	updateEllipseHitTestLayerGraphic,
+	updateEllipseLayerGraphic,
+} from "~/render/pixi/ellipseLayerGraphic";
+import {
+	updateRectLayerGraphic,
+	updateRectLayerHitTestGraphic,
+} from "~/render/pixi/rectLayerGraphic";
 import {
 	updateShapeLayerGraphic,
 	updateShapeLayerHitTestGraphic,
@@ -76,7 +82,7 @@ const updateLayerHitTestGraphic: UpdateGraphicFn = (
 				getPropertyValue,
 			);
 		case LayerType.Rect:
-			return updateRectLayerGraphic(
+			return updateRectLayerHitTestGraphic(
 				actionState,
 				layer,
 				graphic,
@@ -84,7 +90,7 @@ const updateLayerHitTestGraphic: UpdateGraphicFn = (
 				getPropertyValue,
 			);
 		case LayerType.Ellipse:
-			return updateEllipseLayerGraphic(
+			return updateEllipseHitTestLayerGraphic(
 				actionState,
 				layer,
 				graphic,
