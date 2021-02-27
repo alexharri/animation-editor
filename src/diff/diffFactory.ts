@@ -63,4 +63,7 @@ export const diffFactory = {
 	modifierOrder: (layerId: string): Diff => {
 		return { type: DiffType.ModifierOrder, layerId };
 	},
+	layerSelection: (compositionId: string): Diff => {
+		return { type: DiffType.LayerSelection, compositionId };
+	},
 };

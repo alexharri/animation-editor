@@ -29,6 +29,7 @@ export enum DiffType {
 	LayerParent = 19,
 	LayerIndexOrLength = 20,
 	ModifierOrder = 21,
+	LayerSelection = 22,
 }
 
 /**
@@ -143,6 +144,11 @@ export interface ModifierOrderDiff {
 	layerId: string;
 }
 
+export interface LayerSelectionDiff {
+	type: DiffType.LayerSelection;
+	compositionId: string;
+}
+
 export type Diff =
 	| ModifyCompositionDimensions
 	| ModifyCompositionViewDiff
@@ -163,4 +169,5 @@ export type Diff =
 	| LayerParentDiff
 	| LayerIndexOrLength
 	| PropertyStructureDiff
-	| ModifierOrderDiff;
+	| ModifierOrderDiff
+	| LayerSelectionDiff;

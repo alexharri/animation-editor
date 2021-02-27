@@ -6,6 +6,7 @@ import {
 	getTimelineIdsReferencedByComposition,
 	reduceCompProperties,
 } from "~/composition/compositionUtils";
+import { getCompositionManagerByAreaId } from "~/composition/manager/compositionManager";
 import {
 	compSelectionFromState,
 	didCompSelectionChange,
@@ -25,17 +26,13 @@ import {
 } from "~/timeline/timelineUtils";
 import { PropertyName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
-import { isVecInPoly } from "~/util/math";
 import { moveToolUtil } from "~/workspace/moveTool/moveToolUtil";
 import { penToolHandlers } from "~/workspace/penTool/penTool";
-import {
-	globalToWorkspacePosition,
-	workspaceLayerBoundingBoxCorners,
-} from "~/workspace/workspaceUtils";
+import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
 export const moveToolHandlers = {
 	onMouseDown: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
-		const { pan: _pan, scale, compositionId } = getAreaActionState<AreaType.Workspace>(areaId);
+		const { compositionId } = getAreaActionState<AreaType.Workspace>(areaId);
 		const actionState = getActionState();
 		const { compositionState, compositionSelectionState } = actionState;
 
@@ -59,39 +56,14 @@ export const moveToolHandlers = {
 			}
 		}
 
-		let layerId = "";
+		const compositionManager = getCompositionManagerByAreaId(areaId);
 
-		const pan = _pan.add(Vec2.new(viewport.width / 2, viewport.height / 2));
-
-		const composition = compositionState.compositions[compositionId];
-		const map = getCompositionRenderValues(
-			actionState,
-			compositionId,
-			composition.frameIndex,
-			{
-				width: composition.width,
-				height: composition.height,
-			},
-			{ recursive: false },
-		);
-
-		for (const currLayerId of composition.layers) {
-			const corners = workspaceLayerBoundingBoxCorners(
-				currLayerId,
-				map,
-				actionState,
-				pan,
-				scale,
-			);
-			const mousePosition = Vec2.fromEvent(e).sub(Vec2.new(viewport.left, viewport.top));
-
-			if (!isVecInPoly(mousePosition, corners)) {
-				continue;
-			}
-
-			layerId = currLayerId;
-			break;
+		if (!compositionManager) {
+			throw new Error(`Did not find composition manager for area '${areaId}'.`);
 		}
+
+		const mousePosition = Vec2.fromEvent(e).sub(Vec2.new(viewport.left, viewport.top));
+		const layerId = compositionManager.layers.getLayerAtPoint(mousePosition);
 
 		if (!layerId) {
 			moveToolHandlers.onMouseDownOut(compositionId);
@@ -249,6 +221,7 @@ export const moveToolHandlers = {
 					moveToolUtil.clearCompositionSelection(op, compositionId);
 					moveToolUtil.addLayerToSelection(op, layerId);
 					op.submit();
+					params.performDiff((diff) => diff.layerSelection(compositionId));
 					return;
 				}
 
@@ -264,6 +237,7 @@ export const moveToolHandlers = {
 				}
 
 				op.submit();
+				params.performDiff((diff) => diff.layerSelection(compositionId));
 			},
 			mouseMove: (params, { moveVector: _moveVector, keyDown }) => {
 				const op = createOperation(params);
@@ -400,6 +374,8 @@ export const moveToolHandlers = {
 				op.submit();
 			},
 			mouseUp: (params, didMove) => {
+				params.addDiff((diff) => diff.layerSelection(compositionId));
+
 				if (additiveSelection && !willBeSelected) {
 					params.submitAction("Remove layer from selection");
 					return;
@@ -441,6 +417,7 @@ export const moveToolHandlers = {
 					timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 				);
 
+				params.addDiff((diff) => diff.layerSelection(compositionId));
 				params.submitAction("Clear composition selection");
 			},
 		);

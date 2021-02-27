@@ -11,6 +11,23 @@ import { getActionState, getActionStateFromApplicationState } from "~/state/stat
 import { store } from "~/state/store";
 import { Area } from "~/types/areaTypes";
 
+const compositionManagersByAreaId: Partial<Record<string, CompositionManager>> = {};
+
+export const getCompositionManagerByAreaId = (areaId: string) => {
+	return compositionManagersByAreaId[areaId];
+};
+
+const registerCompositionManagerByAreaId = (
+	areaId: string,
+	compositionManager: CompositionManager,
+) => {
+	compositionManagersByAreaId[areaId] = compositionManager;
+};
+
+const unregisterCompositionManagerByAreaId = (areaId: string) => {
+	delete compositionManagersByAreaId[areaId];
+};
+
 export interface CompositionManager {
 	compositionId: string;
 	container: PIXI.Container;
@@ -96,6 +113,8 @@ export const manageTopLevelComposition = (
 
 	const ctx = manageComposition(compositionId, compContainer, initialScale);
 
+	registerCompositionManagerByAreaId(areaId, ctx);
+
 	{
 		const composition = prevState.compositionState.compositions[compositionId];
 
@@ -160,6 +179,7 @@ export const manageTopLevelComposition = (
 	});
 
 	return () => {
+		unregisterCompositionManagerByAreaId(areaId);
 		unsubscribeToDiffs(diffToken);
 		ctx.destroy();
 		app.destroy(false, { children: true, baseTexture: true, texture: true });

@@ -180,7 +180,7 @@ export const drawGuides = (
 	containers: LayerPixiContainers,
 	scale: number,
 ) => {
-	const { rectGraphic, guideAnchor, rectCorners, hitTestGraphic } = containers;
+	const { rectLines, guideAnchor, rectCorners, hitTestGraphic } = containers;
 
 	const layerScaleX = getPropertyValue(layerPropertyMap[PropertyName.ScaleX]);
 	const layerScaleY = getPropertyValue(layerPropertyMap[PropertyName.ScaleY]);
@@ -196,7 +196,7 @@ export const drawGuides = (
 	const anchorY = getPropertyValue(layerPropertyMap[PropertyName.AnchorY]);
 	const anchor = Vec2.new(anchorX, anchorY);
 
-	drawRectGuide(rectGraphic, width, height, offX, offY, scale, layerScale);
+	drawRectGuide(rectLines, width, height, offX, offY, scale, layerScale);
 	drawRectCorners(rectCorners, width, height, offX, offY, scale, layerScale);
 	drawAnchorGuide(guideAnchor, anchor, scale, layerScale);
 	updatePixiLayerHitTestGraphic(actionState, layer, hitTestGraphic, getPropertyValue);
