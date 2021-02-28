@@ -6,6 +6,7 @@ import {
 	getTimelineIdsReferencedByComposition,
 	reduceCompProperties,
 } from "~/composition/compositionUtils";
+import { constructLayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { getCompositionManagerByAreaId } from "~/composition/manager/compositionManager";
 import {
 	compSelectionFromState,
@@ -207,6 +208,8 @@ export const moveToolHandlers = {
 			},
 		);
 
+		const map = constructLayerPropertyMap(layerId, compositionState);
+
 		mouseDownMoveAction(e, {
 			keys: ["Shift"],
 			shouldAddToStack: [didCompSelectionChange(compositionId), () => didMove],
@@ -258,7 +261,12 @@ export const moveToolHandlers = {
 				);
 
 				const layerIds = compUtil.getSelectedLayers(compositionId);
-				op.performDiff((diff) => diff.moveLayer(layerIds));
+				op.performDiff((diff) =>
+					diff.modifyMultipleLayerProperties([
+						map[PropertyName.PositionX],
+						map[PropertyName.PositionY],
+					]),
+				);
 
 				for (const layerId of layerIds) {
 					const layer = compositionState.layers[layerId];
@@ -384,8 +392,12 @@ export const moveToolHandlers = {
 				const op = createOperation(params);
 
 				if (didMove) {
-					const layerIds = compUtil.getSelectedLayers(compositionId);
-					params.addDiff((diff) => diff.moveLayer(layerIds));
+					params.addDiff((diff) =>
+						diff.modifyMultipleLayerProperties([
+							map[PropertyName.PositionX],
+							map[PropertyName.PositionY],
+						]),
+					);
 					params.submitAction("Move selected layers", { allowIndexShift: true });
 					return;
 				}

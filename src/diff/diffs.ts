@@ -9,7 +9,6 @@ interface _P {
 }
 
 export enum DiffType {
-	MoveLayer = 0,
 	RemoveLayer = 2,
 	AddLayer = 3,
 	Layer = 4,
@@ -44,12 +43,6 @@ export interface ModifyCompositionViewDiff extends _C {
  */
 export interface ModifyCompositionDimensions extends _C {
 	type: DiffType.ModifyCompositionDimensions;
-}
-/**
- * Layers within a composition were moved
- */
-export interface MoveLayerDiff extends _L {
-	type: DiffType.MoveLayer;
 }
 /**
  * Layer within composition was removed
@@ -152,7 +145,6 @@ export interface LayerSelectionDiff {
 export type Diff =
 	| ModifyCompositionDimensions
 	| ModifyCompositionViewDiff
-	| MoveLayerDiff
 	| RemoveLayerDiff
 	| AddLayerDiff
 	| LayerDiff

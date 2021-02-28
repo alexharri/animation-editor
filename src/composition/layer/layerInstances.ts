@@ -172,6 +172,15 @@ const drawRectCorners = (
 	}
 };
 
+export const drawHitTestGraphic = (
+	actionState: ActionState,
+	layer: Layer,
+	hitTestGraphic: PIXI.Graphics,
+	getPropertyValue: (propertyId: string) => any,
+) => {
+	updatePixiLayerHitTestGraphic(actionState, layer, hitTestGraphic, getPropertyValue);
+};
+
 export const drawGuides = (
 	actionState: ActionState,
 	layer: Layer,
@@ -180,7 +189,7 @@ export const drawGuides = (
 	containers: LayerPixiContainers,
 	scale: number,
 ) => {
-	const { rectLines, guideAnchor, rectCorners, hitTestGraphic } = containers;
+	const { rectLines, guideAnchor, rectCorners } = containers;
 
 	const layerScaleX = getPropertyValue(layerPropertyMap[PropertyName.ScaleX]);
 	const layerScaleY = getPropertyValue(layerPropertyMap[PropertyName.ScaleY]);
@@ -199,7 +208,6 @@ export const drawGuides = (
 	drawRectGuide(rectLines, width, height, offX, offY, scale, layerScale);
 	drawRectCorners(rectCorners, width, height, offX, offY, scale, layerScale);
 	drawAnchorGuide(guideAnchor, anchor, scale, layerScale);
-	updatePixiLayerHitTestGraphic(actionState, layer, hitTestGraphic, getPropertyValue);
 };
 
 export const updateLayerInstanceTransforms = (

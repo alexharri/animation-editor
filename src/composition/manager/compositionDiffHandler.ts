@@ -15,7 +15,6 @@ import {
 	ModifyCompositionViewDiff,
 	ModifyMultipleLayerPropertiesDiff,
 	ModifyPropertyDiff,
-	MoveLayerDiff,
 	PropertyStructureDiff,
 	RemoveFlowNodeDiff,
 	RemoveLayerDiff,
@@ -25,7 +24,7 @@ import {
 import { getFlowNodeAssociatedCompositionId } from "~/flow/flowUtils";
 import { getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
-import { Performable, PropertyName } from "~/types";
+import { Performable } from "~/types";
 
 export const compositionDiffHandler = (
 	ctx: CompositionManager,
@@ -113,26 +112,6 @@ export const compositionDiffHandler = (
 		},
 		[DiffType.RemoveLayer]: (diff: RemoveLayerDiff) => {
 			onRemoveLayers(diff.layerIds);
-		},
-		[DiffType.MoveLayer]: (diff: MoveLayerDiff) => {
-			const { layerIds } = diff;
-			for (const layerId of layerIds) {
-				if (layerDoesNotAffectComposition(layerId)) {
-					break;
-				}
-
-				const map = ctx.layers.getLayerPropertyMap(layerId);
-				const xId = map[PropertyName.PositionX];
-				const yId = map[PropertyName.PositionY];
-
-				ctx.properties.onPropertyIdsChanged([xId, yId], actionState);
-
-				const x = ctx.properties.getPropertyValue(xId);
-				const y = ctx.properties.getPropertyValue(yId);
-
-				const container = ctx.layers.getLayerTransformContainer(layerId);
-				container.position.set(x, y);
-			}
 		},
 		[DiffType.FrameIndex]: (diff: FrameIndexDiff) => {
 			if (compositionId !== diff.compositionId) {

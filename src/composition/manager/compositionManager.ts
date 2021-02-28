@@ -3,6 +3,10 @@ import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { createLayerManager, LayerManager } from "~/composition/layer/layerManager";
 import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
 import { createGraphicManager, GraphicManager } from "~/composition/manager/graphicManager";
+import {
+	createInteractionManager,
+	InteractionManager,
+} from "~/composition/manager/interactionManager";
 import { createPropertyManager, PropertyManager } from "~/composition/manager/propertyManager";
 import { AreaType } from "~/constants";
 import { Diff, DiffType } from "~/diff/diffs";
@@ -32,6 +36,7 @@ export interface CompositionManager {
 	compositionId: string;
 	container: PIXI.Container;
 	layers: LayerManager;
+	interactions: InteractionManager;
 	properties: PropertyManager;
 	graphics: GraphicManager;
 	onDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
@@ -46,17 +51,21 @@ export interface CompositionManager {
 
 export const manageComposition = (
 	compositionId: string,
+	interactionManager: InteractionManager,
 	parentCompContainer: PIXI.Container,
 	initialScale = 1,
 ): CompositionManager => {
 	const container = new PIXI.Container();
 	container.sortableChildren = true;
 
+	parentCompContainer.addChild(container);
+
 	const propertyManager = createPropertyManager(compositionId, getActionState());
 	const graphicManager = createGraphicManager(compositionId, propertyManager);
 	const layerManager = createLayerManager(
 		compositionId,
 		container,
+		interactionManager,
 		propertyManager,
 		graphicManager,
 		getActionState(),
@@ -67,6 +76,7 @@ export const manageComposition = (
 		compositionId,
 		container,
 		layers: layerManager,
+		interactions: interactionManager,
 		graphics: graphicManager,
 		properties: propertyManager,
 		onDiffs: (actionState, diffs, direction) =>
@@ -77,7 +87,6 @@ export const manageComposition = (
 			ctx.container.destroy({ children: true, texture: true, baseTexture: true });
 		},
 	};
-	parentCompContainer.addChild(ctx.container);
 
 	return ctx;
 };
@@ -100,6 +109,7 @@ export const manageTopLevelComposition = (
 	const getHalfStage = () => Vec2.new(canvas.width, canvas.height).scale(0.5);
 
 	const compContainer = new PIXI.Container();
+	const interactionContainer = new PIXI.Container();
 
 	const background = new PIXI.Graphics();
 	compContainer.addChild(background);
@@ -111,7 +121,13 @@ export const manageTopLevelComposition = (
 		initialScale = scale;
 	}
 
-	const ctx = manageComposition(compositionId, compContainer, initialScale);
+	const interactionManager = createInteractionManager(
+		compositionId,
+		areaId,
+		interactionContainer,
+	);
+
+	const ctx = manageComposition(compositionId, interactionManager, compContainer, initialScale);
 
 	registerCompositionManagerByAreaId(areaId, ctx);
 
@@ -125,12 +141,14 @@ export const manageTopLevelComposition = (
 
 		compContainer.scale.set(scale, scale);
 		compContainer.position.set(pan.x, pan.y);
+		interactionContainer.position.set(pan.x, pan.y);
 
 		background.beginFill(0x555555);
 		background.drawRect(0, 0, composition.width, composition.height);
 	}
 
 	app.stage.addChild(compContainer);
+	app.stage.addChild(interactionContainer);
 
 	const diffToken = subscribeToDiffs((diffs, direction) => {
 		const actionState = getActionState();
@@ -149,6 +167,7 @@ export const manageTopLevelComposition = (
 					const pan = area.state.pan.add(getHalfStage());
 					compContainer.scale.set(scale, scale);
 					compContainer.position.set(pan.x, pan.y);
+					interactionContainer.position.set(pan.x, pan.y);
 					break;
 				}
 				case DiffType.ModifyCompositionDimensions: {
@@ -171,6 +190,7 @@ export const manageTopLevelComposition = (
 					const { pan: _pan = Vec2.ORIGIN } = area ? area.state : {};
 					const pan = _pan.add(getHalfStage());
 					compContainer.position.set(pan.x, pan.y);
+					interactionContainer.position.set(pan.x, pan.y);
 				}
 			}
 		}

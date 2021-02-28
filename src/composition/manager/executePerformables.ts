@@ -33,7 +33,7 @@ export const executePerformables = (
 				const y = getPropertyValueByName(PropertyName.PositionY);
 				container.position.set(x, y);
 
-				ctx.layers.updateLayerGuides(actionState, layerId);
+				ctx.layers.updateOwnAndChildLayerGuides(actionState, layerId);
 				break;
 			}
 			case Performable.UpdateTransform: {
@@ -52,7 +52,7 @@ export const executePerformables = (
 				container.pivot.set(xAnchor, yAnchor);
 				container.rotation = rotation * DEG_TO_RAD_FAC;
 
-				ctx.layers.updateLayerGuides(actionState, layerId);
+				ctx.layers.updateOwnAndChildLayerGuides(actionState, layerId);
 				break;
 			}
 			case Performable.UpdateArrayModifierCount: {
