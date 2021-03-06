@@ -13,6 +13,7 @@ const createResolver = (map: LayerPropertyMap, getPropertyValue: (propertyId: st
 export const getPixiLayerMatrix = (
 	map: LayerPropertyMap,
 	getPropertyValue: (propertyId: string) => any,
+	options: { applyAnchor: boolean } = { applyAnchor: true },
 ): PIXI.Matrix => {
 	const resolve = createResolver(map, getPropertyValue);
 
@@ -28,8 +29,8 @@ export const getPixiLayerMatrix = (
 	matrix.setTransform(
 		positionX,
 		positionY,
-		anchorX,
-		anchorY,
+		options.applyAnchor ? anchorX : 0,
+		options.applyAnchor ? anchorY : 0,
 		scaleX,
 		scaleY,
 		rotation * DEG_TO_RAD_FAC,

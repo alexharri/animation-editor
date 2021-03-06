@@ -1,9 +1,15 @@
 import * as PIXI from "pixi.js";
+import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { Layer } from "~/composition/compositionTypes";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { AreaType, Tool } from "~/constants";
 import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
+import { getActionState } from "~/state/stateUtils";
 import { LayerType } from "~/types";
 import { rgbToBinary } from "~/util/color/convertColor";
+import { getMousePosition } from "~/util/mouse";
+import { penToolHandlers } from "~/workspace/penTool/penTool";
+import { constructPenToolContext } from "~/workspace/penTool/penToolContext";
 
 type TransformVec2 = (vec2: Vec2) => Vec2;
 
@@ -79,11 +85,37 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 		const nodePos = ctx.transform(node.position);
 		{
 			// Add node
-			const graphic = new PIXI.Graphics();
-			graphic.beginFill(rgbToBinary([0, 255, 0]));
-			graphic.drawCircle(nodePos.x, nodePos.y, 4);
-			graphic.endFill();
-			ctx.addGraphic(graphic);
+			const container = new PIXI.Container();
+			ctx.addGraphic(container);
+			container.interactive = true;
+			container.on("mousedown", () => {
+				const mousePosition = getMousePosition();
+				const viewport = getAreaViewport(ctx.areaId, AreaType.Workspace);
+				penToolHandlers.nodeMouseDown(
+					constructPenToolContext(mousePosition, ctx.layer.id, ctx.areaId, viewport),
+					pathId,
+					node.id,
+					{ fromMoveTool: getActionState().tool.selected === Tool.move },
+				);
+			});
+
+			{
+				// Visible graphic
+				const graphic = new PIXI.Graphics();
+				graphic.beginFill(rgbToBinary([0, 255, 0]));
+				graphic.drawCircle(nodePos.x, nodePos.y, 4);
+				graphic.endFill();
+				container.addChild(graphic);
+			}
+			{
+				// Interaction area
+				const graphic = new PIXI.Graphics();
+				graphic.beginFill(rgbToBinary([0, 255, 0]));
+				graphic.drawCircle(nodePos.x, nodePos.y, 7);
+				graphic.endFill();
+				graphic.alpha = 0;
+				container.addChild(graphic);
+			}
 		}
 
 		for (const part of [item.left, item.right]) {
@@ -99,15 +131,16 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 				// Point
 				const container = new PIXI.Container();
 				ctx.addGraphic(container);
-				// container.interactive = true;
-				// container.on("mousedown", () => {
-				// 	const mousePosition = getMousePosition();
-				// 	const viewport = getAreaViewport(ctx.areaId, AreaType.Workspace);
-				// 	penToolHandlers.controlPointMouseDown(
-				// 		constructPenToolContext(mousePosition, ctx.layer.id, ctx.areaId, viewport),
-				// 		cp.id,
-				// 	);
-				// });
+				container.interactive = true;
+				container.on("mousedown", () => {
+					console.log("cp mousedown");
+					const mousePosition = getMousePosition();
+					const viewport = getAreaViewport(ctx.areaId, AreaType.Workspace);
+					penToolHandlers.controlPointMouseDown(
+						constructPenToolContext(mousePosition, ctx.layer.id, ctx.areaId, viewport),
+						cp.id,
+					);
+				});
 
 				{
 					// Visible graphic

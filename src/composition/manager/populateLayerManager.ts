@@ -1,4 +1,5 @@
-import { constructLayerMatrix } from "~/composition/layer/constructLayerMatrix";
+import { createLayerViewportMatrices } from "~/composition/layer/constructLayerMatrix";
+import { getLayerRect } from "~/composition/layer/layerDimensions";
 import { LayerManager } from "~/composition/layer/layerManager";
 import { InteractionManager } from "~/composition/manager/interactionManager";
 import { PropertyManager } from "~/composition/manager/propertyManager";
@@ -29,13 +30,19 @@ export const populateLayerManager = (
 	updateLayerZIndices(composition, layerManager);
 
 	for (const layerId of layerIds) {
-		const matrix = constructLayerMatrix(
+		const matrices = createLayerViewportMatrices(
 			actionState,
 			layerManager,
 			propertyManager,
 			layerId,
 			scale,
 		);
-		interactions.addLayer(actionState, layerId, matrix);
+		const rect = getLayerRect(
+			actionState,
+			compositionState.layers[layerId],
+			layerManager.getLayerPropertyMap(layerId),
+			propertyManager.getPropertyValue,
+		);
+		interactions.addLayer(actionState, layerId, matrices, rect);
 	}
 };

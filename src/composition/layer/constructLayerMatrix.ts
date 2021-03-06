@@ -3,24 +3,25 @@ import { LayerManager } from "~/composition/layer/layerManager";
 import { PropertyManager } from "~/composition/manager/propertyManager";
 import { getPixiLayerMatrix } from "~/render/pixi/pixiLayerTransform";
 
-export const constructLayerMatrix = (
+export type LayerMatrices = { content: PIXI.Matrix; position: PIXI.Matrix };
+
+export const createLayerViewportMatrices = (
 	actionState: ActionState,
 	layers: LayerManager,
 	properties: PropertyManager,
 	layerId: string,
 	scale: number,
-): PIXI.Matrix => {
+): LayerMatrices => {
 	const { compositionState } = actionState;
 
 	const layer = compositionState.layers[layerId];
 
-	const matrix = new PIXI.Matrix();
-
-	matrix.scale(scale, scale);
+	const contentMatrix = new PIXI.Matrix();
+	contentMatrix.scale(scale, scale);
 
 	const toAppend: PIXI.Matrix[] = [];
 
-	let parentLayerId = layer.id;
+	let parentLayerId = layer.parentLayerId;
 	while (parentLayerId) {
 		const parentMatrix = getPixiLayerMatrix(
 			layers.getLayerPropertyMap(parentLayerId),
@@ -33,7 +34,21 @@ export const constructLayerMatrix = (
 	}
 
 	toAppend.reverse();
-	toAppend.forEach((parentMatrix) => matrix.append(parentMatrix));
+	toAppend.forEach((parentMatrix) => contentMatrix.append(parentMatrix));
 
-	return matrix;
+	const positionMatrix = new PIXI.Matrix();
+	positionMatrix.append(contentMatrix);
+
+	contentMatrix.append(
+		getPixiLayerMatrix(layers.getLayerPropertyMap(layer.id), properties.getPropertyValue, {
+			applyAnchor: true,
+		}),
+	);
+	positionMatrix.append(
+		getPixiLayerMatrix(layers.getLayerPropertyMap(layer.id), properties.getPropertyValue, {
+			applyAnchor: false,
+		}),
+	);
+
+	return { content: contentMatrix, position: positionMatrix };
 };

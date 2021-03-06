@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import { Layer } from "~/composition/compositionTypes";
-import { constructLayerMatrix } from "~/composition/layer/constructLayerMatrix";
+import { createLayerViewportMatrices } from "~/composition/layer/constructLayerMatrix";
+import { getLayerRect } from "~/composition/layer/layerDimensions";
 import {
 	createLayerInstances,
 	drawGuides,
@@ -339,8 +340,21 @@ export const createLayerManager = (
 				scale,
 			);
 
-			const matrix = constructLayerMatrix(actionState, self, properties, layerId, scale);
-			interactions.update(actionState, layerId, matrix);
+			const matrices = createLayerViewportMatrices(
+				actionState,
+				self,
+				properties,
+				layerId,
+				scale,
+			);
+
+			const rect = getLayerRect(
+				actionState,
+				compositionState.layers[layerId],
+				layerPropertyMapMap[layerId],
+				properties.getPropertyValue,
+			);
+			interactions.update(actionState, layerId, matrices, rect);
 		},
 
 		updateOwnAndChildLayerGuides: (actionState, layerId) => {

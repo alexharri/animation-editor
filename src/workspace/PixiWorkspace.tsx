@@ -253,7 +253,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 
 	const { left, top, width, height } = props;
 
-	const setCursor = useWorkspaceCursor(guideCanvasRef, {
+	const setCursor = useWorkspaceCursor(canvasRef, {
 		compositionId: props.areaState.compositionId,
 		viewport: { width, left, top, height },
 		areaId: props.areaId,
@@ -308,7 +308,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				ref={guideCanvasRef}
 				height={height}
 				width={width}
-				style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", opacity: 1 }}
+				style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", opacity: 0 }}
 			/>
 			<div
 				className={s("panTarget")}

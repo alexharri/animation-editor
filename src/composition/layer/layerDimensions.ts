@@ -100,3 +100,70 @@ export const getLayerRectDimensionsAndOffset = (
 
 	return [width, height, offX, offY];
 };
+
+export const getLayerRect = (
+	actionState: ActionState,
+	layer: Layer,
+	propertyMap: LayerPropertyMap,
+	getPropertyValue: (propertyId: string) => any,
+): Rect => {
+	let width: number;
+	let height: number;
+	let left = 0;
+	let top = 0;
+
+	switch (layer.type) {
+		case LayerType.Composition: {
+			const map = propertyMap as CompositionLayerPropertyMap;
+			width = getPropertyValue(map[PropertyName.Width]);
+			height = getPropertyValue(map[PropertyName.Height]);
+			break;
+		}
+
+		case LayerType.Shape: {
+			const rect = getShapeLayerBoundingRect(actionState, layer);
+
+			if (rect) {
+				width = rect.width;
+				height = rect.height;
+				left = rect.left;
+				top = rect.top;
+			} else {
+				width = 50;
+				height = 50;
+			}
+
+			break;
+		}
+
+		case LayerType.Rect: {
+			const map = propertyMap as RectLayerPropertyMap;
+			width = getPropertyValue(map[PropertyName.Width]);
+			height = getPropertyValue(map[PropertyName.Height]);
+			break;
+		}
+
+		case LayerType.Ellipse: {
+			const map = propertyMap as EllipseLayerPropertyMap;
+			const outerRadius = getPropertyValue(map[PropertyName.OuterRadius]);
+			width = outerRadius * 2;
+			height = outerRadius * 2;
+			left = -outerRadius;
+			top = -outerRadius;
+			break;
+		}
+
+		case LayerType.Line: {
+			const map = propertyMap as LineLayerPropertyMap;
+			width = getPropertyValue(map[PropertyName.Width]);
+			height = 2;
+			top -= 1;
+			break;
+		}
+
+		default:
+			throw new Error(`Unexpected layer type '${layer.type}'.`);
+	}
+
+	return { left, top, width, height };
+};
