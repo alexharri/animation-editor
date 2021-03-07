@@ -204,6 +204,21 @@ export const createLayerManager = (
 			);
 			drawHitTestGraphic(actionState, layer, hitTestGraphic, properties.getPropertyValue);
 			onLayerSelectionChange(actionState, layer.id);
+
+			const matrices = createLayerViewportMatrices(
+				actionState,
+				self,
+				properties,
+				layer.id,
+				scale,
+			);
+			const rect = getLayerRect(
+				actionState,
+				layer,
+				self.getLayerPropertyMap(layer.id),
+				properties.getPropertyValue,
+			);
+			interactions.addLayer(actionState, layer.id, matrices, rect);
 		},
 
 		onUpdateLayerParent: (layerId, actionState) => {
@@ -248,6 +263,8 @@ export const createLayerManager = (
 				const { manager } = subCompositions[layer.id];
 				manager.destroy();
 			}
+
+			interactions.removeLayer(layer.id);
 		},
 
 		getLayerTransformContainer: (layerId) => {
@@ -327,6 +344,12 @@ export const createLayerManager = (
 
 		updateLayerGuides: (actionState, layerId) => {
 			const { compositionState } = actionState;
+			drawHitTestGraphic(
+				actionState,
+				compositionState.layers[layerId],
+				layerContainers[layerId].hitTestGraphic,
+				properties.getPropertyValue,
+			);
 			drawGuides(
 				actionState,
 				compositionState.layers[layerId],
@@ -376,7 +399,7 @@ export const createLayerManager = (
 		},
 	};
 
-	populateLayerManager(compositionId, self, properties, interactions, actionState, scale);
+	populateLayerManager(compositionId, self, actionState);
 
 	return self;
 };

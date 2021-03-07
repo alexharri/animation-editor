@@ -78,6 +78,7 @@ export const compositionDiffHandler = (
 	interface PerformChangeOptions {
 		nodeIds?: string[];
 		propertyIds?: string[];
+		layerIds?: string[];
 	}
 
 	const performChange = (options: PerformChangeOptions) => {
@@ -187,14 +188,11 @@ export const compositionDiffHandler = (
 		},
 		[DiffType.Layer]: (diff: LayerDiff) => {
 			const { layerIds } = diff;
-
 			if (layerDoesNotAffectComposition(layerIds[0])) {
 				return;
 			}
 
-			for (const layerId of layerIds) {
-				executePerformables(ctx, actionState, layerId, [Performable.DrawLayer]);
-			}
+			performChange({ layerIds });
 		},
 		[DiffType.ModifyProperty]: (diff: ModifyPropertyDiff) => {
 			const { propertyId } = diff;

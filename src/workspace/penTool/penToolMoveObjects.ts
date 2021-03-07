@@ -97,3 +97,27 @@ export const penToolMoveObjects = (
 
 	return newState;
 };
+
+export const penToolMovePathIds = (
+	moveVector: Vec2,
+	state: ShapeState,
+	pathIds: string[],
+): ShapeState => {
+	const nodeIds: string[] = [];
+
+	for (const pathId of pathIds) {
+		const { items } = state.paths[pathId];
+		for (const item of items) {
+			nodeIds.push(item.nodeId);
+		}
+	}
+
+	const newState: ShapeState = {
+		...state,
+		nodes: mergeItemInMap(state.nodes, nodeIds, (node) => ({
+			position: node.position.add(moveVector),
+		})),
+	};
+
+	return newState;
+};

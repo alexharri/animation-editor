@@ -23,7 +23,6 @@ export interface Composition {
 	height: number;
 	length: number;
 	frameIndex: number; // Current time
-	shapeMoveVector: Vec2;
 }
 
 export interface Layer {

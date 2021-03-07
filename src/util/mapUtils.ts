@@ -157,9 +157,9 @@ export const createGenMapIdFn = <M extends { [key: string]: any }>(map: M): (() 
 	};
 };
 
-export const reduceIds = <F extends (key: string) => any>(keys: string[], fn: F) => {
-	return keys.reduce<Record<string, ReturnType<F>>>((obj, key) => {
+export const reduceIds = <K extends string, F extends (key: K) => any>(keys: K[], fn: F) => {
+	return keys.reduce<Record<K, ReturnType<F>>>((obj, key) => {
 		obj[key] = fn(key);
 		return obj;
-	}, {});
+	}, {} as any);
 };

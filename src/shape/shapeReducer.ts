@@ -89,10 +89,6 @@ export const shapeActions = {
 		return (shapeId: string, rect: Rect) => action({ shapeId, rect });
 	}),
 
-	applyShapeMoveVector: createAction("shape/APPLY_SHAPE_MOVE_VECTOR", (action) => {
-		return (shapeIds: string[], moveVector: Vec2) => action({ shapeIds, moveVector });
-	}),
-
 	toggleControlPointReflect: createAction("shape/TOGGLE_CP_REFLECT", (action) => {
 		return (shapeId: string, cpId: string) => action({ shapeId, cpId });
 	}),
@@ -313,29 +309,6 @@ export const shapeReducer = (
 
 		case getType(shapeActions.applySelectionRect): {
 			throw new Error("Not implemented");
-		}
-
-		case getType(shapeActions.applyShapeMoveVector): {
-			const { shapeIds, moveVector } = action.payload;
-
-			// Every single element in a shape is relative to a node, so
-			// we can apply a move vector to an entire shape by applying it
-			// to all the nodes of a shape
-
-			const nodeIds: string[] = [];
-
-			for (const shapeId of shapeIds) {
-				const shape = state.shapes[shapeId];
-				nodeIds.push(...shape.nodes);
-			}
-
-			return {
-				...state,
-				nodes: modifyItemsInMap(state.nodes, nodeIds, (node) => ({
-					...node,
-					position: node.position.add(moveVector),
-				})),
-			};
 		}
 
 		case getType(shapeActions.toggleControlPointReflect): {

@@ -191,7 +191,6 @@ export const updateShapeLayerHitTestGraphic: UpdateGraphicFn<ShapeLayerPropertyM
 	_,
 	_getPropertyValue,
 ) => {
-	console.log("rerendering hittest");
 	const { compositionState } = actionState;
 	const shapeGroups = getShapeGroups(actionState, layer);
 	const getCurves = createCurveGetter(actionState);

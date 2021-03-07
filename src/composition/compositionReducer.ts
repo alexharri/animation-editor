@@ -204,11 +204,6 @@ export const compositionActions = {
 		return (modifierId: string, moveBy: -1 | 1) => action({ modifierId, moveBy });
 	}),
 
-	setShapeMoveVector: createAction("comp/SET_SHAPE_MOVE_VECTOR", (action) => {
-		return (compositionId: string, shapeMoveVector: Vec2) =>
-			action({ compositionId, shapeMoveVector });
-	}),
-
 	setPropertyMaintainProportions: createAction("comp/SET_PROP_MAINTAIN_PROPORTIONS", (action) => {
 		return (propertyId: string, maintainProportions: boolean) =>
 			action({ propertyId, maintainProportions });
@@ -847,21 +842,6 @@ export const compositionReducer = (
 					(item: PropertyGroup) => ({
 						...item,
 						properties,
-					}),
-				),
-			};
-		}
-
-		case getType(compositionActions.setShapeMoveVector): {
-			const { compositionId, shapeMoveVector } = action.payload;
-			return {
-				...state,
-				compositions: modifyItemsInMap(
-					state.compositions,
-					compositionId,
-					(composition) => ({
-						...composition,
-						shapeMoveVector,
 					}),
 				),
 			};

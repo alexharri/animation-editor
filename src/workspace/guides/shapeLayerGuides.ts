@@ -97,19 +97,6 @@ const renderCurves = (ctx: Ctx, curves: Curve[]) => {
 	ctx.closePath();
 };
 
-const getShapeMoveVector = (
-	opts: RenderGuidesContext,
-	pathCtx: RenderPathContext,
-	pathId: string,
-) => {
-	const { composition, compositionSelection } = opts;
-	const { pathIdToShapeGroupId } = pathCtx;
-	const shapeGroupId = pathIdToShapeGroupId[pathId];
-	const shapeSelected = compositionSelection.properties[shapeGroupId];
-	const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
-	return shapeMoveVector;
-};
-
 const renderContinueFrom = (
 	ctx: Ctx,
 	opts: RenderGuidesContext,
@@ -305,12 +292,11 @@ const renderPathNodes = (
 	const path = shapeState.paths[pathId];
 	const shape = shapeState.shapes[path.shapeId];
 	const shapeSelection = getShapeSelectionFromState(shape.id, shapeSelectionState);
-	const shapeMoveVector = getShapeMoveVector(opts, pathCtx, pathId);
 	const isPathDirectlySelected = directlySelectedPaths.has(path.id);
 
 	for (const nodeId of shape.nodes) {
 		const node = shapeState.nodes[nodeId];
-		const position = node.position.add(shapeMoveVector);
+		const position = node.position;
 
 		const selected = shapeSelection.nodes[nodeId];
 

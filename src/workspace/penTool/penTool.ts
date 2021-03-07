@@ -49,7 +49,7 @@ import {
 import { pathBoundingRect, pathControlPointsBoundingRect } from "~/util/math/boundingRect";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
 import { constructPenToolContext, PenToolContext } from "~/workspace/penTool/penToolContext";
-import { penToolMoveObjects } from "~/workspace/penTool/penToolMoveObjects";
+import { penToolMoveObjects, penToolMovePathIds } from "~/workspace/penTool/penToolMoveObjects";
 import { workspaceAreaActions } from "~/workspace/workspaceAreaReducer";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
@@ -323,8 +323,15 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
-				params.dispatch(compositionActions.setShapeMoveVector(compositionId, transformed));
+				const transformedMoveVector = transform.matrix.inverse().multiplyVec2(toUse);
+
+				const pathIds = getShapeLayerSelectedPathIds(
+					layerId,
+					compositionState,
+					compositionSelectionState,
+				);
+				const nextState = penToolMovePathIds(transformedMoveVector, shapeState, pathIds);
+				params.dispatch(shapeActions.setState(nextState));
 			},
 			mouseUp: (params, hasMoved) => {
 				selection = compSelectionFromState(
@@ -333,48 +340,6 @@ export const penToolHandlers = {
 				);
 
 				if (hasMoved) {
-					const composition = getActionState().compositionState.compositions[
-						compositionId
-					];
-					const { shapeMoveVector } = composition;
-
-					const shapeIds = reduceLayerPropertiesAndGroups<string[]>(
-						layerId,
-						compositionState,
-						(acc, group) => {
-							if (
-								group.name !== PropertyGroupName.Shape ||
-								!selection.properties[group.id]
-							) {
-								return acc;
-							}
-							// Find path within shape group
-							const propertyNames = group.properties.map(
-								(id) => compositionState.properties[id].name,
-							);
-
-							const pathIndex = propertyNames.indexOf(PropertyName.ShapeLayer_Path);
-
-							if (pathIndex === -1) {
-								return acc;
-							}
-
-							const pathPropertyId = group.properties[pathIndex];
-							const property = compositionState.properties[
-								pathPropertyId
-							] as Property;
-							const pathId = property.value;
-							const { shapeId } = shapeState.paths[pathId];
-							acc.push(shapeId);
-							return acc;
-						},
-						[],
-					);
-
-					params.dispatch(
-						compositionActions.setShapeMoveVector(compositionId, Vec2.ORIGIN),
-						shapeActions.applyShapeMoveVector(shapeIds, shapeMoveVector),
-					);
 					params.submitAction("Move selected shapes", { allowIndexShift: true });
 					return;
 				}
@@ -875,7 +840,8 @@ export const penToolHandlers = {
 	},
 
 	controlPointMouseDown: (ctx: PenToolContext, cpId: string) => {
-		const { shapeState, shapeSelectionState } = ctx;
+		const { shapeSelectionState } = ctx;
+		let shapeState = ctx.shapeState;
 
 		const cp = shapeState.controlPoints[cpId]!;
 		const edge = shapeState.edges[cp.edgeId];
@@ -904,6 +870,7 @@ export const penToolHandlers = {
 			beforeMove: (params) => {
 				if (altKeyDown) {
 					params.dispatch(shapeActions.toggleControlPointReflect(shapeId, cpId));
+					shapeState = getActionState().shapeState;
 				}
 
 				if (!additiveSelection && !selection.controlPoints[cpId]) {
@@ -2283,7 +2250,7 @@ export const penToolHandlers = {
 				}
 			},
 			mouseUp: (params) => {
-				params.submitAction("Create shape layer");
+				params.submitAction("Create new shape on layer");
 			},
 		});
 	},
@@ -2308,6 +2275,7 @@ export const penToolHandlers = {
 		const e1cpId = createCpId();
 
 		mouseDownMoveAction(e, {
+			baseDiff: (diff) => diff.modifyLayer(layerId),
 			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
 			keys: [],
 			beforeMove: (params, { mousePosition }) => {
@@ -2379,6 +2347,7 @@ export const penToolHandlers = {
 					compSelectionActions.addPropertyToSelection(compositionId, propertyId),
 					compSelectionActions.addPropertyToSelection(compositionId, pathPropertyId),
 				);
+				params.performDiff((diff) => diff.addLayer(layerId));
 			},
 			mouseMove: (params, { firstMove, moveVector }) => {
 				if (firstMove) {

@@ -32,6 +32,7 @@ export interface PropertyManager {
 	getActionsToPerform: (
 		actionState: ActionState,
 		options: {
+			layerIds?: string[];
 			propertyIds?: string[];
 			nodeIds?: string[];
 		},
@@ -194,6 +195,13 @@ export const createPropertyManager = (
 				performablesByLayer[property.layerId].add(
 					propertyInfo.properties[propertyId].performable,
 				);
+			}
+
+			for (const layerId of options.layerIds || []) {
+				if (!performablesByLayer[layerId]) {
+					performablesByLayer[layerId] = new Set();
+				}
+				performablesByLayer[layerId].add(Performable.DrawLayer);
 			}
 
 			const layerIds = Object.keys(performablesByLayer);

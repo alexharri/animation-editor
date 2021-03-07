@@ -1,12 +1,14 @@
 import * as PIXI from "pixi.js";
 import { createAnchorGraphic } from "~/composition/interaction/anchorGuide";
+import { createLayerSpecificInteractionGraphics } from "~/composition/interaction/drawInteractions";
 import {
 	createCornersGuideGraphic,
 	createRectGuideGraphic,
 } from "~/composition/interaction/rectGuide";
+import { shouldShowInteractions } from "~/composition/interaction/shouldShowInteraction";
 import { LayerMatrices } from "~/composition/layer/constructLayerMatrix";
-import { shapeLayerInteractions } from "~/composition/layer/shapeLayerInteraction";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { getActionState } from "~/state/stateUtils";
 
 export interface InteractionManager {
 	addLayer: (
@@ -21,6 +23,7 @@ export interface InteractionManager {
 		matrices: LayerMatrices,
 		rect: Rect,
 	) => void;
+	removeLayer: (layerId: string) => void;
 	layerMouseOver: (layerId: string) => void;
 	layerMouseDown: (layerId: string) => void;
 	layerMouseOut: (layerId: string) => void;
@@ -29,6 +32,7 @@ export interface InteractionManager {
 export const _emptyInteractionManager: InteractionManager = {
 	addLayer: () => {},
 	update: () => {},
+	removeLayer: () => {},
 	layerMouseDown: () => {},
 	layerMouseOut: () => {},
 	layerMouseOver: () => {},
@@ -40,20 +44,25 @@ export const createInteractionManager = (
 	container: PIXI.Container,
 ): InteractionManager => {
 	const containersByLayer: Record<string, PIXI.Container[]> = {};
-	const xByLayer: Record<
-		string,
-		{
-			rect: PIXI.Container;
-			anchor: PIXI.Container;
-			corners: PIXI.Container;
-		}
-	> = {};
+	const interactionContainersByLayer: Record<string, InteractionContainers> = {};
 	const isSelectedByLayer: Record<string, boolean> = {};
 
 	const getCompSelection = (actionState: ActionState) => {
 		const { compositionSelectionState } = actionState;
 		const selection = compSelectionFromState(compositionId, compositionSelectionState);
 		return selection;
+	};
+
+	const updateLayerVisibility = (
+		actionState: ActionState,
+		layerId: string,
+		isLayerHovered: boolean,
+	) => {
+		const showInteractions = shouldShowInteractions(actionState, layerId, isLayerHovered);
+		const keys = Object.keys(showInteractions) as Array<keyof typeof showInteractions>;
+		for (const key of keys) {
+			interactionContainersByLayer[layerId][key].visible = showInteractions[key];
+		}
 	};
 
 	const self: InteractionManager = {
@@ -74,25 +83,24 @@ export const createInteractionManager = (
 			const anchorGraphic = createAnchorGraphic(matrices.position);
 			const rectGraphic = createRectGuideGraphic(rect, matrices.content);
 			const cornersGraphic = createCornersGuideGraphic(rect, matrices.content);
+			const layerSpecificGraphic = createLayerSpecificInteractionGraphics(
+				actionState,
+				layerId,
+				areaId,
+				matrices,
+			);
 
-			anchorGraphic.alpha = layerSelected ? 1 : 0;
-			rectGraphic.alpha = layerSelected ? 1 : 0;
-			cornersGraphic.alpha = layerSelected ? 1 : 0;
-
-			xByLayer[layerId] = {
+			interactionContainersByLayer[layerId] = {
 				anchor: anchorGraphic,
 				rect: rectGraphic,
-				corners: cornersGraphic,
+				rectCorners: cornersGraphic,
+				layerSpecific: layerSpecificGraphic,
 			};
 
 			addGraphic(anchorGraphic, 1000);
 			addGraphic(rectGraphic, 900);
 			addGraphic(cornersGraphic, 900);
-
-			const layer = actionState.compositionState.layers[layerId];
-			shapeLayerInteractions(actionState, areaId, addGraphic, layer, (vec2) =>
-				Vec2.new(matrices.content.apply(vec2)),
-			);
+			addGraphic(layerSpecificGraphic, 500);
 
 			containersByLayer[layerId] = graphics;
 
@@ -100,31 +108,40 @@ export const createInteractionManager = (
 				container.addChild(...graphics);
 				container.sortableChildren = true;
 			}
+
+			updateLayerVisibility(actionState, layerId, false);
 		},
 		update: (actionState, layerId, matrices, rect) => {
-			const items = containersByLayer[layerId];
-			for (const item of items) {
+			self.removeLayer(layerId);
+			containersByLayer[layerId] = [];
+			self.addLayer(actionState, layerId, matrices, rect);
+			updateLayerVisibility(actionState, layerId, false);
+		},
+		removeLayer: (layerId) => {
+			for (const item of containersByLayer[layerId]) {
 				item.parent.removeChild(item);
 				item.destroy({ children: true });
 			}
-			containersByLayer[layerId] = [];
-			self.addLayer(actionState, layerId, matrices, rect);
+
+			delete containersByLayer[layerId];
+			delete interactionContainersByLayer[layerId];
+			delete isSelectedByLayer[layerId];
 		},
 		layerMouseOver: (layerId) => {
 			if (isSelectedByLayer[layerId]) {
 				return;
 			}
 
-			xByLayer[layerId].rect.alpha = 1;
+			updateLayerVisibility(getActionState(), layerId, true);
 		},
 		layerMouseOut: (layerId) => {
 			if (isSelectedByLayer[layerId]) {
 				return;
 			}
 
-			xByLayer[layerId].rect.alpha = 0;
+			updateLayerVisibility(getActionState(), layerId, false);
 		},
-		layerMouseDown: (layerId) => {
+		layerMouseDown: (_layerId) => {
 			console.log("Mousedown");
 		},
 	};

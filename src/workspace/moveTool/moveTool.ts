@@ -64,8 +64,8 @@ export const moveToolHandlers = {
 			throw new Error(`Did not find composition manager for area '${areaId}'.`);
 		}
 
-		const mousePosition = Vec2.fromEvent(e).sub(Vec2.new(viewport.left, viewport.top));
-		const layerId = compositionManager.layers.getLayerAtPoint(mousePosition);
+		const viewportMousePosition = Vec2.fromEvent(e).sub(Vec2.new(viewport.left, viewport.top));
+		const layerId = compositionManager.layers.getLayerAtPoint(viewportMousePosition);
 
 		if (!layerId) {
 			moveToolHandlers.onMouseDownOut(compositionId);
@@ -96,60 +96,6 @@ export const moveToolHandlers = {
 
 		const willBeSelected = !compositionSelection.layers[layerId];
 		const additiveSelection = isKeyDown("Shift") || isKeyDown("Command");
-
-		// const addLayerToSelection = (params: RequestActionParams) => {
-		// 	params.dispatch(compSelectionActions.addLayerToSelection(compositionId, layerId));
-		// };
-
-		// const removeLayerFromSelection = (params: RequestActionParams) => {
-		// 	params.dispatch(
-		// 		compSelectionActions.removeLayersFromSelection(compositionId, [layerId]),
-		// 	);
-		// };
-
-		// const clearCompositionSelection = (params: RequestActionParams) => {
-		// 	// Clear composition selection
-		// 	params.dispatch(compSelectionActions.clearCompositionSelection(compositionId));
-
-		// 	// Clear timeline selection of selected properties
-		// 	const timelineIds = getTimelineIdsReferencedByComposition(
-		// 		compositionId,
-		// 		compositionState,
-		// 	);
-		// 	params.dispatch(
-		// 		timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
-		// 	);
-		// };
-
-		// const deselectLayerProperties = (params: RequestActionParams) => {
-		// 	// Deselect all properties and timeline keyframes
-		// 	const propertyIds = reduceLayerPropertiesAndGroups<string[]>(
-		// 		layerId,
-		// 		compositionState,
-		// 		(acc, property) => {
-		// 			acc.push(property.id);
-		// 			return acc;
-		// 		},
-		// 		[],
-		// 	).filter((propertyId) => compositionSelection.properties[propertyId]);
-
-		// 	const timelineIds = propertyIds.reduce<string[]>((acc, propertyId) => {
-		// 		const property = compositionState.properties[propertyId];
-
-		// 		if (property.type === "property" && property.timelineId) {
-		// 			acc.push(property.timelineId);
-		// 		}
-
-		// 		return acc;
-		// 	}, []);
-
-		// 	params.dispatch(
-		// 		compSelectionActions.removePropertiesFromSelection(compositionId, propertyIds),
-		// 	);
-		// 	params.dispatch(
-		// 		timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
-		// 	);
-		// };
 
 		const layerInitialPositions: { [layerId: string]: Vec2 } = {};
 		const layerPositionPropertyIds: { [layerId: string]: [string, string] } = {};
@@ -427,14 +373,13 @@ export const moveToolHandlers = {
 			(params) => {
 				const { compositionState } = getActionState();
 
-				params.dispatch(compSelectionActions.clearCompositionSelection(compositionId));
-
 				const timelineIds = getTimelineIdsReferencedByComposition(
 					compositionId,
 					compositionState,
 				);
 				params.dispatch(
-					timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
+					compSelectionActions.clearCompositionSelection(compositionId),
+					...timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 				);
 
 				params.addDiff((diff) => diff.compositionSelection(compositionId));

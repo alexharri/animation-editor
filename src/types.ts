@@ -1,5 +1,6 @@
 import { keys } from "~/constants";
 import { DiffFactoryFn } from "~/diff/diffFactory";
+import { Key } from "~/listener/keyboard";
 import { RequestActionParams } from "~/listener/requestAction";
 import { Mat2 } from "~/util/math/mat";
 
@@ -235,3 +236,5 @@ export enum Performable {
 	UpdateArrayModifierTransform,
 	UpdateArrayModifierCount,
 }
+
+export type KeyDownMap<K extends Key> = Record<K, boolean>;

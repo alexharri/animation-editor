@@ -25,7 +25,6 @@ function handleSvg(node: SVGSvgNode) {
 			layers: [],
 			length: 120,
 			name: getNonDuplicateName("Composition", existingNames),
-			shapeMoveVector: Vec2.ORIGIN,
 		};
 
 		params.dispatch(compositionActions.setComposition(composition));
