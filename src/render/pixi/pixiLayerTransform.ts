@@ -41,28 +41,6 @@ export const getPixiLayerMatrix = (
 	return matrix;
 };
 
-export const getPixiLayerTransform = (
-	map: LayerPropertyMap,
-	getPropertyValue: (propertyId: string) => any,
-): PIXI.Transform => {
-	const resolve = createResolver(map, getPropertyValue);
-
-	const positionX = resolve(PropertyName.PositionX);
-	const positionY = resolve(PropertyName.PositionY);
-	const anchorX = resolve(PropertyName.AnchorX);
-	const anchorY = resolve(PropertyName.AnchorY);
-	const scaleX = resolve(PropertyName.ScaleX);
-	const scaleY = resolve(PropertyName.ScaleY);
-	const rotation = resolve(PropertyName.Rotation);
-
-	const transform = new PIXI.Transform();
-	transform.scale.set(scaleX, scaleY);
-	transform.rotation = rotation * DEG_TO_RAD_FAC;
-	transform.position.set(positionX, positionY);
-	transform.pivot.set(anchorX, anchorY);
-	return transform;
-};
-
 export const applyPixiLayerTransform = (
 	transformContainer: PIXI.Container,
 	map: LayerPropertyMap,

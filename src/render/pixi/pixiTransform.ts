@@ -2,10 +2,6 @@ import * as PIXI from "pixi.js";
 import { LayerTransform } from "~/types";
 import { constructNdArray, getNdArrayIndex } from "~/util/ndArray";
 
-export const applyPixiTransform = (transform: PIXI.Transform, parentTransform: PIXI.Transform) => {
-	transform.updateTransform(parentTransform);
-};
-
 export function createLayerPIXITransforms(
 	dimensions: number[],
 	transforms: LayerTransform[],
