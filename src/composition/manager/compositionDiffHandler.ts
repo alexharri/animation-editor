@@ -4,6 +4,7 @@ import { updateLayerZIndices } from "~/composition/manager/updateCompositionLaye
 import {
 	AddFlowNodeDiff,
 	AddLayerDiff,
+	CompositionSelectionDiff,
 	Diff,
 	DiffType,
 	FlowNodeExpressionDiff,
@@ -11,7 +12,6 @@ import {
 	FrameIndexDiff,
 	LayerDiff,
 	LayerParentDiff,
-	LayerSelectionDiff,
 	ModifyCompositionViewDiff,
 	ModifyMultipleLayerPropertiesDiff,
 	ModifyPropertyDiff,
@@ -242,7 +242,7 @@ export const compositionDiffHandler = (
 		[DiffType.ModifyCompositionView]: (diff: ModifyCompositionViewDiff) => {
 			ctx.layers.onScaleChange(actionState, diff.scale);
 		},
-		[DiffType.LayerSelection]: (diff: LayerSelectionDiff) => {
+		[DiffType.CompositionSelection]: (diff: CompositionSelectionDiff) => {
 			if (diff.compositionId !== compositionId) {
 				return;
 			}

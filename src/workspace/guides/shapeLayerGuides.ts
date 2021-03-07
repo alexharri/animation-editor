@@ -222,8 +222,6 @@ const renderPathEdges = (
 	const shape = shapeState.shapes[path.shapeId];
 	const shapeSelection = getShapeSelectionFromState(shape.id, shapeSelectionState);
 
-	const shapeMoveVector = getShapeMoveVector(opts, pathCtx, pathId);
-
 	for (let i = 0; i < path.items.length; i += 1) {
 		const { nodeId, left, right, reflectControlPoints } = path.items[i];
 
@@ -252,28 +250,15 @@ const renderPathEdges = (
 			let p0: Vec2;
 			let p1: Vec2;
 
-			if (
-				reflect &&
-				!nodeSelected &&
-				!cpSelected &&
-				otherCpSelected &&
-				(shape.moveVector.x !== 0 || shape.moveVector.y !== 0)
-			) {
+			if (reflect && !nodeSelected && !cpSelected && otherCpSelected) {
 				const otherCp = shapeState.controlPoints[otherCpId!]!;
-				const otherCpPos = otherCp.position.add(shape.moveVector);
+				const otherCpPos = otherCp.position;
 
-				p0 = node.position.add(shapeMoveVector);
+				p0 = node.position;
 				p1 = p0.add(reflectVectorAngle(otherCpPos, cp.position));
 			} else {
-				p0 = node.position.add(shapeMoveVector);
-				if (shapeSelection.nodes[node.id]) {
-					p0 = p0.add(shape.moveVector);
-				}
-
+				p0 = node.position;
 				p1 = p0.add(cp.position);
-				if (shapeSelection.controlPoints[cp.id] && !shapeSelection.nodes[node.id]) {
-					p1 = p1.add(shape.moveVector);
-				}
 			}
 
 			// Render handle line
@@ -325,11 +310,7 @@ const renderPathNodes = (
 
 	for (const nodeId of shape.nodes) {
 		const node = shapeState.nodes[nodeId];
-		let position = node.position.add(shapeMoveVector);
-
-		if (shapeSelection.nodes[node.id]) {
-			position = position.add(shape.moveVector);
-		}
+		const position = node.position.add(shapeMoveVector);
 
 		const selected = shapeSelection.nodes[nodeId];
 
@@ -372,7 +353,7 @@ const renderPathNodes = (
 };
 
 const getTargetObject = (opts: RenderGuidesContext, pathCtx: RenderPathContext, pathId: string) => {
-	const { mousePosition, viewport, shapeState, shapeSelectionState } = opts;
+	const { mousePosition, viewport, shapeState } = opts;
 	const { toViewport } = pathCtx;
 
 	if (opts.tool !== Tool.pen || !mousePosition) {
@@ -380,13 +361,7 @@ const getTargetObject = (opts: RenderGuidesContext, pathCtx: RenderPathContext, 
 	}
 
 	const viewportMousePosition = mousePosition.sub(Vec2.new(viewport.left, viewport.top));
-	return getPathTargetObject(
-		pathId,
-		viewportMousePosition,
-		toViewport,
-		shapeState,
-		shapeSelectionState,
-	);
+	return getPathTargetObject(pathId, viewportMousePosition, toViewport, shapeState);
 };
 
 const renderTargetObject = (
@@ -442,19 +417,12 @@ const renderPath = (
 	pathCtx: RenderPathContext,
 	pathId: string,
 ) => {
-	const { shapeState, shapeSelectionState, viewport, mousePosition } = opts;
+	const { shapeState, viewport, mousePosition } = opts;
 	const { selectedPathIds, directlySelectedPaths, toViewport } = pathCtx;
 
 	const isPathDirectlySelected = directlySelectedPaths.has(pathId);
 
-	const shapeMoveVector = getShapeMoveVector(opts, pathCtx, pathId);
-	const curves = pathIdToCurves(
-		pathId,
-		shapeState,
-		shapeSelectionState,
-		shapeMoveVector,
-		toViewport,
-	);
+	const curves = pathIdToCurves(pathId, shapeState, toViewport);
 	if (curves) {
 		renderCurves(ctx, curves);
 	}

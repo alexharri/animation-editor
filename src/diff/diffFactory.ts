@@ -1,6 +1,6 @@
 import { Diff, DiffType } from "~/diff/diffs";
 
-export type DiffFactoryFn = (factory: typeof diffFactory) => Diff;
+export type DiffFactoryFn = (factory: typeof diffFactory) => Diff | Diff[];
 
 export const diffFactory = {
 	layer: (...layerIds: string[]): Diff => {
@@ -60,7 +60,7 @@ export const diffFactory = {
 	modifierOrder: (layerId: string): Diff => {
 		return { type: DiffType.ModifierOrder, layerId };
 	},
-	layerSelection: (compositionId: string): Diff => {
-		return { type: DiffType.LayerSelection, compositionId };
+	compositionSelection: (compositionId: string): Diff => {
+		return { type: DiffType.CompositionSelection, compositionId };
 	},
 };

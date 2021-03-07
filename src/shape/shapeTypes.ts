@@ -4,7 +4,6 @@ export interface ShapeGraph {
 	id: string;
 	nodes: string[];
 	edges: string[];
-	moveVector: Vec2;
 }
 
 export interface ShapePathItem {

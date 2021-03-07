@@ -8,7 +8,6 @@ import { layerParentSort } from "~/shared/layer/layerParentSort";
 
 export const populateLayerManager = (
 	compositionId: string,
-	compositionContainer: PIXI.Container,
 	layerManager: LayerManager,
 	propertyManager: PropertyManager,
 	interactions: InteractionManager,

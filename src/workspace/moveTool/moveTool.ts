@@ -27,6 +27,7 @@ import {
 } from "~/timeline/timelineUtils";
 import { PropertyName } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
+import { reduceIds } from "~/util/mapUtils";
 import { moveToolUtil } from "~/workspace/moveTool/moveToolUtil";
 import { penToolHandlers } from "~/workspace/penTool/penTool";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
@@ -208,7 +209,9 @@ export const moveToolHandlers = {
 			},
 		);
 
-		const map = constructLayerPropertyMap(layerId, compositionState);
+		const mapByLayer = reduceIds(composition.layers, (layerId) => {
+			return constructLayerPropertyMap(layerId, compositionState);
+		});
 
 		mouseDownMoveAction(e, {
 			keys: ["Shift"],
@@ -224,7 +227,7 @@ export const moveToolHandlers = {
 					moveToolUtil.clearCompositionSelection(op, compositionId);
 					moveToolUtil.addLayerToSelection(op, layerId);
 					op.submit();
-					params.performDiff((diff) => diff.layerSelection(compositionId));
+					params.performDiff((diff) => diff.compositionSelection(compositionId));
 					return;
 				}
 
@@ -240,7 +243,7 @@ export const moveToolHandlers = {
 				}
 
 				op.submit();
-				params.performDiff((diff) => diff.layerSelection(compositionId));
+				params.performDiff((diff) => diff.compositionSelection(compositionId));
 			},
 			mouseMove: (params, { moveVector: _moveVector, keyDown }) => {
 				const op = createOperation(params);
@@ -262,10 +265,12 @@ export const moveToolHandlers = {
 
 				const layerIds = compUtil.getSelectedLayers(compositionId);
 				op.performDiff((diff) =>
-					diff.modifyMultipleLayerProperties([
-						map[PropertyName.PositionX],
-						map[PropertyName.PositionY],
-					]),
+					layerIds.map((layerId) =>
+						diff.modifyMultipleLayerProperties([
+							mapByLayer[layerId][PropertyName.PositionX],
+							mapByLayer[layerId][PropertyName.PositionY],
+						]),
+					),
 				);
 
 				for (const layerId of layerIds) {
@@ -382,7 +387,7 @@ export const moveToolHandlers = {
 				op.submit();
 			},
 			mouseUp: (params, didMove) => {
-				params.addDiff((diff) => diff.layerSelection(compositionId));
+				params.addDiff((diff) => diff.compositionSelection(compositionId));
 
 				if (additiveSelection && !willBeSelected) {
 					params.submitAction("Remove layer from selection");
@@ -392,11 +397,14 @@ export const moveToolHandlers = {
 				const op = createOperation(params);
 
 				if (didMove) {
+					const layerIds = compUtil.getSelectedLayers(compositionId);
 					params.addDiff((diff) =>
-						diff.modifyMultipleLayerProperties([
-							map[PropertyName.PositionX],
-							map[PropertyName.PositionY],
-						]),
+						layerIds.map((layerId) =>
+							diff.modifyMultipleLayerProperties([
+								mapByLayer[layerId][PropertyName.PositionX],
+								mapByLayer[layerId][PropertyName.PositionY],
+							]),
+						),
 					);
 					params.submitAction("Move selected layers", { allowIndexShift: true });
 					return;
@@ -429,7 +437,7 @@ export const moveToolHandlers = {
 					timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 				);
 
-				params.addDiff((diff) => diff.layerSelection(compositionId));
+				params.addDiff((diff) => diff.compositionSelection(compositionId));
 				params.submitAction("Clear composition selection");
 			},
 		);

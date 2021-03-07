@@ -76,15 +76,15 @@ export const createLayerManager = (
 		const { compositionSelectionState } = actionState;
 		const selection = compSelectionFromState(compositionId, compositionSelectionState);
 
-		const containers = layerContainers[layerId];
-		const { rectCorners, rectLines, guideAnchor } = containers;
+		// const containers = layerContainers[layerId];
+		// const { rectCorners, rectLines, guideAnchor } = containers;
 
 		const selected = !!selection.layers[layerId];
 		layerToSelected[layerId] = selected;
 
-		rectCorners.alpha = selected ? 1 : 0;
-		rectLines.alpha = selected ? 1 : 0;
-		guideAnchor.alpha = selected ? 1 : 0;
+		// rectCorners.alpha = selected ? 1 : 0;
+		// rectLines.alpha = selected ? 1 : 0;
+		// guideAnchor.alpha = selected ? 1 : 0;
 	};
 
 	const self: LayerManager = {
@@ -120,9 +120,9 @@ export const createLayerManager = (
 			transformContainer.addChild(ownContentContainer);
 			transformContainer.addChild(childLayerContainer);
 			transformContainer.addChild(hitTestGraphic);
-			transformContainer.addChild(rectLines);
-			transformContainer.addChild(rectCorners);
-			transformContainer.addChild(guideAnchor);
+			// transformContainer.addChild(rectLines);
+			// transformContainer.addChild(rectCorners);
+			// transformContainer.addChild(guideAnchor);
 
 			const compositionSelection = compSelectionFromState(
 				compositionId,
@@ -135,18 +135,13 @@ export const createLayerManager = (
 			hitTestGraphic.interactive = true;
 			hitTestGraphic.alpha = 0;
 			hitTestGraphic.on("mouseover", () => {
-				rectLines.alpha = layerToSelected[layer.id] ? 1 : 1;
-				console.log("mouseover");
+				interactions.layerMouseOver(layer.id);
 			});
 			hitTestGraphic.on("mouseout", () => {
-				rectLines.alpha = layerToSelected[layer.id] ? 1 : 0;
-				console.log("mouseout");
+				interactions.layerMouseOut(layer.id);
 			});
 			hitTestGraphic.on("mousedown", () => {
-				console.log("mousedown");
-				const vec = ownContentContainer.transform.worldTransform.apply(Vec2.new(0, 0));
-				const vec2 = ownContentContainer.transform.worldTransform.apply(Vec2.new(50, 50));
-				console.log(Vec2.new(vec).sub(Vec2.new(vec2)));
+				interactions.layerMouseDown(layer.id);
 			});
 
 			if (layer.type !== LayerType.Composition) {
@@ -326,6 +321,7 @@ export const createLayerManager = (
 
 			for (const layerId of composition.layers) {
 				onLayerSelectionChange(actionState, layerId);
+				self.updateLayerGuides(actionState, layerId);
 			}
 		},
 
@@ -380,15 +376,7 @@ export const createLayerManager = (
 		},
 	};
 
-	populateLayerManager(
-		compositionId,
-		compositionContainer,
-		self,
-		properties,
-		interactions,
-		actionState,
-		scale,
-	);
+	populateLayerManager(compositionId, self, properties, interactions, actionState, scale);
 
 	return self;
 };

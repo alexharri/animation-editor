@@ -220,22 +220,26 @@ const performRequestedAction = (
 		},
 
 		addDiff: (fn) => {
-			const diff = fn(diffFactory);
-			diffs.push(diff);
-			allDiffs.push(diff);
-			// The diff is not performed when added. Added diffs are performed when
+			const result = fn(diffFactory);
+			const diffsToAdd = Array.isArray(result) ? result : [result];
+
+			diffs.push(...diffsToAdd);
+			allDiffs.push(...diffsToAdd);
+			// The diffs are not performed when added. Added diffs are performed when
 			// the action is submitted.
 		},
 
 		performDiff: (fn) => {
-			const diff = fn(diffFactory);
-			allDiffs.push(diff);
-			sendDiffsToSubscribers([diff]);
+			const result = fn(diffFactory);
+			const diffsToPerform = Array.isArray(result) ? result : [result];
+			allDiffs.push(...diffsToPerform);
+			sendDiffsToSubscribers(diffsToPerform);
 		},
 
 		addReverseDiff: (fn) => {
-			const diff = fn(diffFactory);
-			reverseDiffs.push(diff);
+			const result = fn(diffFactory);
+			const diffsToAdd = Array.isArray(result) ? result : [result];
+			reverseDiffs.push(...diffsToAdd);
 		},
 	};
 

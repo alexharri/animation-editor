@@ -49,6 +49,7 @@ import {
 import { pathBoundingRect, pathControlPointsBoundingRect } from "~/util/math/boundingRect";
 import { splitCubicBezier } from "~/util/math/splitCubicBezier";
 import { constructPenToolContext, PenToolContext } from "~/workspace/penTool/penToolContext";
+import { penToolMoveObjects } from "~/workspace/penTool/penToolMoveObjects";
 import { workspaceAreaActions } from "~/workspace/workspaceAreaReducer";
 import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
@@ -101,12 +102,7 @@ export const penToolHandlers = {
 	},
 
 	moveToolMouseDownShapeSelection: (ctx: PenToolContext) => {
-		const {
-			compositionState,
-			compositionSelectionState,
-			shapeState,
-			shapeSelectionState,
-		} = getActionState();
+		const { compositionState, compositionSelectionState, shapeState } = getActionState();
 
 		const { layerId, compositionId } = ctx;
 		const compositionSelection = compSelectionFromState(
@@ -118,13 +114,7 @@ export const penToolHandlers = {
 		let pathId: string | undefined;
 
 		for (const id of pathIds) {
-			const curves = pathIdToCurves(
-				id,
-				shapeState,
-				shapeSelectionState,
-				Vec2.ORIGIN,
-				ctx.normalToViewport,
-			);
+			const curves = pathIdToCurves(id, shapeState, ctx.normalToViewport);
 			if (!curves) {
 				continue;
 			}
@@ -159,6 +149,7 @@ export const penToolHandlers = {
 				// multiple shapes here on mousedown + drag.
 				requestAction({ history: true }, (params) => {
 					params.dispatch(compSelectionActions.clearCompositionSelection(composition.id));
+					params.addDiff((diff) => diff.compositionSelection(compositionId));
 					params.submitAction("Clear composition selection");
 				});
 				return;
@@ -220,6 +211,7 @@ export const penToolHandlers = {
 				}
 
 				params.dispatch(toDispatch);
+				params.addDiff((diff) => diff.compositionSelection(compositionId));
 				params.submitAction("Modify selection");
 			});
 			return;
@@ -524,6 +516,7 @@ export const penToolHandlers = {
 						ctx.areaId,
 						workspaceAreaActions.setFields({ selectionRect: null }),
 					);
+					params.addDiff((diff) => diff.compositionSelection(compositionId));
 					params.submitAction("Modify selection");
 					return;
 				}
@@ -585,6 +578,7 @@ export const penToolHandlers = {
 				}
 
 				params.dispatch(toDispatch);
+				params.addDiff((diff) => diff.compositionSelection(compositionId));
 				params.submitAction("Modify selection");
 			},
 		});
@@ -932,11 +926,6 @@ export const penToolHandlers = {
 				} else {
 					addCpToSelection(params);
 				}
-
-				selection = getShapeSelectionFromState(
-					shapeId,
-					getActionState().shapeSelectionState,
-				);
 			},
 			mouseMove: (params, { moveVector, keyDown }) => {
 				const transform = ctx.layerTransform;
@@ -952,8 +941,16 @@ export const penToolHandlers = {
 						.sub(cpPosTranslated);
 				}
 
-				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
-				params.dispatch(shapeActions.setMoveVector(shapeId, transformed));
+				const normalizedMoveVector = transform.matrix.inverse().multiplyVec2(toUse);
+				selection = getShapeSelectionFromState(
+					shapeId,
+					getActionState().shapeSelectionState,
+				);
+				params.dispatch(
+					shapeActions.setState(
+						penToolMoveObjects(normalizedMoveVector, shapeState, shapeId, selection),
+					),
+				);
 			},
 			mouseUp: (params, hasMoved) => {
 				selection = getShapeSelectionFromState(
@@ -962,7 +959,6 @@ export const penToolHandlers = {
 				);
 
 				if (hasMoved) {
-					params.dispatch(shapeActions.applyMoveVector(shapeId, selection));
 					params.submitAction("Move selected objects in shape", {
 						allowIndexShift: true,
 					});
@@ -1632,11 +1628,6 @@ export const penToolHandlers = {
 				} else {
 					addNodeToSelection(params);
 				}
-
-				selection = getShapeSelectionFromState(
-					shapeId,
-					getActionState().shapeSelectionState,
-				);
 			},
 			mouseMove: (params, { moveVector, keyDown }) => {
 				const transform = ctx.layerTransform;
@@ -1646,8 +1637,16 @@ export const penToolHandlers = {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
-				params.dispatch(shapeActions.setMoveVector(shapeId, transformed));
+				const normalizedMoveVector = transform.matrix.inverse().multiplyVec2(toUse);
+				selection = getShapeSelectionFromState(
+					shapeId,
+					getActionState().shapeSelectionState,
+				);
+				params.dispatch(
+					shapeActions.setState(
+						penToolMoveObjects(normalizedMoveVector, shapeState, shapeId, selection),
+					),
+				);
 			},
 			mouseUp: (params, hasMoved) => {
 				selection = getShapeSelectionFromState(
@@ -1656,7 +1655,6 @@ export const penToolHandlers = {
 				);
 
 				if (hasMoved) {
-					params.dispatch(shapeActions.applyMoveVector(shapeId, selection));
 					params.submitAction("Move selected objects in shape", {
 						allowIndexShift: true,
 					});
@@ -2162,7 +2160,6 @@ export const penToolHandlers = {
 					id: shapeId,
 					nodes: [],
 					edges: [],
-					moveVector: Vec2.new(0, 0),
 				};
 				const path: ShapePath = {
 					id: shapeId,
@@ -2326,7 +2323,6 @@ export const penToolHandlers = {
 					id: shapeId,
 					nodes: [],
 					edges: [],
-					moveVector: Vec2.new(0, 0),
 				};
 				const path: ShapePath = {
 					id: shapeId,

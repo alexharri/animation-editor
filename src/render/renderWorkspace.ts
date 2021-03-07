@@ -96,16 +96,13 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 		ctx,
 		compositionId,
 		compositionState,
-		compositionSelectionState,
 		shapeState,
-		shapeSelectionState,
 		viewport,
 		pan: _pan,
 		scale,
 	} = options;
 
 	const composition = compositionState.compositions[compositionId];
-	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 
 	ctx.clearRect(0, 0, viewport.width, viewport.height);
 
@@ -315,48 +312,10 @@ export const renderWorkspace = (options: Omit<Options, "mousePosition">) => {
 				.add(pan);
 		};
 
-		const pathIdToShapeGroupId = reduceLayerPropertiesAndGroups<{ [pathId: string]: string }>(
-			layer.id,
-			compositionState,
-			(obj, group) => {
-				if (group.name !== PropertyGroupName.Shape) {
-					return obj;
-				}
-				let pathIndex = -1;
-				for (let i = 0; i < group.properties.length; i++) {
-					if (
-						compositionState.properties[group.properties[i]].name ===
-						PropertyName.ShapeLayer_Path
-					) {
-						pathIndex = i;
-						break;
-					}
-				}
-				if (pathIndex === -1) {
-					return obj;
-				}
-				const pathPropertyId = group.properties[pathIndex];
-				const property = compositionState.properties[pathPropertyId] as Property;
-				const pathId = property.value;
-				obj[pathId] = group.id;
-				return obj;
-			},
-			{},
-		);
-
 		const onPath = (property: Property) => {
 			const pathId = property.value;
 			const path = shapeState.paths[pathId];
-			const shapeGroupId = pathIdToShapeGroupId[pathId];
-			const shapeSelected = compositionSelection.properties[shapeGroupId];
-			const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
-			const pathList = pathIdToCurves(
-				pathId,
-				shapeState,
-				shapeSelectionState,
-				shapeMoveVector,
-				toPos,
-			);
+			const pathList = pathIdToCurves(pathId, shapeState, toPos);
 
 			if (!pathList) {
 				return;

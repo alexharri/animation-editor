@@ -1,15 +1,75 @@
 import * as PIXI from "pixi.js";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { Layer } from "~/composition/compositionTypes";
-import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType, Tool } from "~/constants";
-import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
+import { cssVariables } from "~/cssVariables";
+import {
+	getShapeLayerDirectlySelectedPaths,
+	getShapeLayerSelectedPathIds,
+	getShapeSelectionFromState,
+	pathIdToCurves,
+} from "~/shape/shapeUtils";
 import { getActionState } from "~/state/stateUtils";
 import { LayerType } from "~/types";
-import { rgbToBinary } from "~/util/color/convertColor";
+import { hexToRGB, rgbToBinary } from "~/util/color/convertColor";
 import { getMousePosition } from "~/util/mouse";
 import { penToolHandlers } from "~/workspace/penTool/penTool";
 import { constructPenToolContext } from "~/workspace/penTool/penToolContext";
+
+const pathNotSelectedNodeGraphic = new PIXI.Graphics();
+
+const unselectedNodeGraphic = new PIXI.Graphics();
+const selectedNodeGraphic = new PIXI.Graphics();
+
+const unselectedCpGraphic = new PIXI.Graphics();
+const selectedCpGraphic = new PIXI.Graphics();
+
+const primaryColor = rgbToBinary(hexToRGB(cssVariables.primary500));
+const white = rgbToBinary([255, 255, 255]);
+const gray = rgbToBinary([120, 120, 120]);
+
+{
+	pathNotSelectedNodeGraphic.beginFill(primaryColor);
+	pathNotSelectedNodeGraphic.drawCircle(0, 0, 5);
+	pathNotSelectedNodeGraphic.endFill();
+}
+
+{
+	unselectedNodeGraphic.lineStyle(1.5, primaryColor);
+	unselectedNodeGraphic.beginFill(white);
+	unselectedNodeGraphic.drawCircle(0, 0, 5);
+	unselectedNodeGraphic.endFill();
+}
+
+{
+	selectedNodeGraphic.lineStyle(1.5, white);
+	selectedNodeGraphic.beginFill(primaryColor);
+	selectedNodeGraphic.drawCircle(0, 0, 5);
+	selectedNodeGraphic.endFill();
+}
+
+const traceCp = (graphic: PIXI.Graphics) => {
+	const M = 4;
+	graphic.moveTo(0, -M);
+	graphic.lineTo(M, 0);
+	graphic.lineTo(0, M);
+	graphic.lineTo(-M, 0);
+	graphic.closePath();
+};
+
+{
+	unselectedCpGraphic.lineStyle(1.5, primaryColor);
+	unselectedCpGraphic.beginFill(white);
+	traceCp(unselectedCpGraphic);
+	unselectedCpGraphic.endFill();
+}
+
+{
+	selectedCpGraphic.lineStyle(1.5, white);
+	selectedCpGraphic.beginFill(primaryColor);
+	traceCp(selectedCpGraphic);
+	selectedCpGraphic.endFill();
+}
 
 type TransformVec2 = (vec2: Vec2) => Vec2;
 
@@ -18,7 +78,7 @@ interface Ctx {
 	layer: Layer;
 	areaId: string;
 	transform: TransformVec2;
-	addGraphic: (graphic: PIXI.Container) => void;
+	addGraphic: (graphic: PIXI.Container, zIndex: number) => void;
 }
 
 const renderCurves = (ctx: Ctx, curves: Curve[]) => {
@@ -29,7 +89,7 @@ const renderCurves = (ctx: Ctx, curves: Curve[]) => {
 	const graphic = new PIXI.Graphics();
 	const start = curves[0][0];
 
-	graphic.lineStyle(1, rgbToBinary([0, 255, 0]));
+	graphic.lineStyle(1, gray);
 	graphic.moveTo(start.x, start.y);
 
 	for (const curve of curves) {
@@ -43,36 +103,14 @@ const renderCurves = (ctx: Ctx, curves: Curve[]) => {
 	}
 	graphic.moveTo(0, 0);
 
-	ctx.addGraphic(graphic);
+	ctx.addGraphic(graphic, 5);
 };
 
-const getShapeMoveVector = (ctx: Ctx, pathId: string) => {
-	const { layer, actionState } = ctx;
-	const { compositionState, compositionSelectionState } = actionState;
-	const composition = compositionState.compositions[layer.compositionId];
-	const compositionSelection = compSelectionFromState(
-		layer.compositionId,
-		compositionSelectionState,
-	);
-	const pathIdToShapeGroupId = getPathIdToShapeGroupId(layer.id, compositionState);
-	const shapeGroupId = pathIdToShapeGroupId[pathId];
-	const shapeSelected = compositionSelection.properties[shapeGroupId];
-	const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
-	return shapeMoveVector;
-};
-
-const renderPath = (ctx: Ctx, pathId: string) => {
+const renderPath = (ctx: Ctx, pathId: string, directlySelected: boolean) => {
 	const { actionState } = ctx;
 	const { shapeState, shapeSelectionState } = actionState;
-	const shapeMoveVector = getShapeMoveVector(ctx, pathId);
 
-	const curves = pathIdToCurves(
-		pathId,
-		shapeState,
-		shapeSelectionState,
-		shapeMoveVector,
-		ctx.transform,
-	);
+	const curves = pathIdToCurves(pathId, shapeState, ctx.transform);
 	if (curves) {
 		renderCurves(ctx, curves);
 	}
@@ -81,12 +119,13 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 
 	for (const item of path.items) {
 		const node = shapeState.nodes[item.nodeId];
+		const selection = getShapeSelectionFromState(path.shapeId, shapeSelectionState);
 
 		const nodePos = ctx.transform(node.position);
 		{
 			// Add node
 			const container = new PIXI.Container();
-			ctx.addGraphic(container);
+			ctx.addGraphic(container, 15);
 			container.interactive = true;
 			container.on("mousedown", () => {
 				const mousePosition = getMousePosition();
@@ -101,10 +140,11 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 
 			{
 				// Visible graphic
-				const graphic = new PIXI.Graphics();
-				graphic.beginFill(rgbToBinary([0, 255, 0]));
-				graphic.drawCircle(nodePos.x, nodePos.y, 4);
-				graphic.endFill();
+				const toUse = selection.nodes[node.id]
+					? selectedNodeGraphic
+					: unselectedNodeGraphic;
+				const graphic = new PIXI.Graphics(toUse.geometry);
+				graphic.position.set(nodePos.x, nodePos.y);
 				container.addChild(graphic);
 			}
 			{
@@ -116,6 +156,10 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 				graphic.alpha = 0;
 				container.addChild(graphic);
 			}
+		}
+
+		if (!directlySelected) {
+			continue;
 		}
 
 		for (const part of [item.left, item.right]) {
@@ -130,10 +174,9 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 			{
 				// Point
 				const container = new PIXI.Container();
-				ctx.addGraphic(container);
+				ctx.addGraphic(container, 10);
 				container.interactive = true;
 				container.on("mousedown", () => {
-					console.log("cp mousedown");
 					const mousePosition = getMousePosition();
 					const viewport = getAreaViewport(ctx.areaId, AreaType.Workspace);
 					penToolHandlers.controlPointMouseDown(
@@ -144,10 +187,11 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 
 				{
 					// Visible graphic
-					const graphic = new PIXI.Graphics();
-					graphic.beginFill(rgbToBinary([0, 255, 0]));
-					graphic.drawCircle(pos.x, pos.y, 2);
-					graphic.endFill();
+					const toUse = selection.controlPoints[cp.id]
+						? selectedCpGraphic
+						: unselectedCpGraphic;
+					const graphic = new PIXI.Graphics(toUse.geometry);
+					graphic.position.set(pos.x, pos.y);
 					container.addChild(graphic);
 				}
 				{
@@ -164,11 +208,11 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 			{
 				// Line
 				const graphic = new PIXI.Graphics();
-				graphic.lineStyle(1, rgbToBinary([0, 255, 0]));
+				graphic.lineStyle(1, gray);
 				graphic.moveTo(nodePos.x, nodePos.y);
 				graphic.lineTo(pos.x, pos.y);
 				graphic.moveTo(0, 0);
-				ctx.addGraphic(graphic);
+				ctx.addGraphic(graphic, 7);
 			}
 		}
 	}
@@ -177,17 +221,28 @@ const renderPath = (ctx: Ctx, pathId: string) => {
 export const shapeLayerInteractions = (
 	actionState: ActionState,
 	areaId: string,
-	addGraphic: (graphic: PIXI.Container) => void,
+	addGraphic: (graphic: PIXI.Container, zIndex: number) => void,
 	layer: Layer,
 	transform: TransformVec2,
 ) => {
-	const { compositionState } = actionState;
+	const { compositionState, compositionSelectionState } = actionState;
 
 	if (layer.type !== LayerType.Shape) {
 		return;
 	}
 
-	const pathIds = getShapeLayerPathIds(layer.id, compositionState);
+	// const pathIds = getShapeLayerPathIds(layer.id, compositionState);
+	const selectedPathIds = getShapeLayerSelectedPathIds(
+		layer.id,
+		compositionState,
+		compositionSelectionState,
+	);
+
+	const directlySelectedPaths = getShapeLayerDirectlySelectedPaths(
+		layer.id,
+		compositionState,
+		compositionSelectionState,
+	);
 
 	const ctx: Ctx = {
 		actionState,
@@ -197,7 +252,8 @@ export const shapeLayerInteractions = (
 		transform,
 	};
 
-	for (const pathId of pathIds) {
-		renderPath(ctx, pathId);
+	for (const pathId of selectedPathIds) {
+		const directlySelected = directlySelectedPaths.has(pathId);
+		renderPath(ctx, pathId, directlySelected);
 	}
 };

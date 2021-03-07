@@ -1,6 +1,5 @@
 import { Layer } from "~/composition/compositionTypes";
-import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { getPathIdToShapeGroupId, getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
+import { getShapeLayerPathIds, pathIdToCurves } from "~/shape/shapeUtils";
 import { LayerType, PropertyName } from "~/types";
 import { boundingRectOfRects } from "~/util/math";
 import { pathBoundingRect } from "~/util/math/boundingRect";
@@ -14,20 +13,13 @@ const getShapeLayerBoundingRect = (
 	state: GetLayerDimensionsStateRequired,
 	layer: Layer,
 ): Rect | null => {
-	const { compositionState, compositionSelectionState, shapeState, shapeSelectionState } = state;
-
-	const pathIdToShapeGroupId = getPathIdToShapeGroupId(layer.id, compositionState);
+	const { compositionState, shapeState } = state;
 
 	const pathIds = getShapeLayerPathIds(layer.id, compositionState);
-	const composition = compositionState.compositions[layer.compositionId];
-	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
 
 	const rects = pathIds
 		.map((pathId) => {
-			const shapeGroupId = pathIdToShapeGroupId[pathId];
-			const shapeSelected = compositionSelection.properties[shapeGroupId];
-			const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
-			return pathIdToCurves(pathId, shapeState, shapeSelectionState, shapeMoveVector)!;
+			return pathIdToCurves(pathId, shapeState)!;
 		})
 		.filter(Boolean)
 		.map((curves) => pathBoundingRect(curves)!)

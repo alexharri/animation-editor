@@ -3,7 +3,6 @@ import { CubicBezier2D } from "kld-contours";
 import { Layer, Property, PropertyGroup } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
 import { ShapeLayerPropertyMap } from "~/composition/layer/layerPropertyMap";
-import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { UpdateGraphicFn } from "~/render/pixi/layerToPixi";
 import { pixiLineCap, pixiLineJoin } from "~/render/pixi/pixiConstants";
 import {
@@ -19,39 +18,6 @@ import { newTess } from "~/util/math/newTess";
 
 const _Bezier = require("bezier-js").Bezier; // eslint-disable-line
 const Bezier = _Bezier as typeof import("bezier-js");
-
-const computePathIdToShapeGroupId = (actionState: ActionState, layerId: string) => {
-	const { compositionState } = actionState;
-
-	return reduceLayerPropertiesAndGroups<{ [pathId: string]: string }>(
-		layerId,
-		compositionState,
-		(obj, group) => {
-			if (group.name !== PropertyGroupName.Shape) {
-				return obj;
-			}
-			let pathIndex = -1;
-			for (let i = 0; i < group.properties.length; i++) {
-				if (
-					compositionState.properties[group.properties[i]].name ===
-					PropertyName.ShapeLayer_Path
-				) {
-					pathIndex = i;
-					break;
-				}
-			}
-			if (pathIndex === -1) {
-				return obj;
-			}
-			const pathPropertyId = group.properties[pathIndex];
-			const property = compositionState.properties[pathPropertyId] as Property;
-			const pathId = property.value;
-			obj[pathId] = group.id;
-			return obj;
-		},
-		{},
-	);
-};
 
 const tracePath = (graphic: PIXI.Graphics, curves: Curve[]) => {
 	const closedPaths = newTess(curves);
@@ -105,28 +71,12 @@ const getShapeGroups = (actionState: ActionState, layer: Layer) => {
 	).reverse();
 };
 
-const createCurveGetter = (actionState: ActionState, layer: Layer) => {
-	const {
-		compositionState,
-		compositionSelectionState,
-		shapeState,
-		shapeSelectionState,
-	} = actionState;
-	const composition = compositionState.compositions[layer.compositionId];
-	const compositionSelection = compSelectionFromState(
-		layer.compositionId,
-		compositionSelectionState,
-	);
-	const pathIdToShapeGroupId = computePathIdToShapeGroupId(actionState, layer.id);
+const createCurveGetter = (actionState: ActionState) => {
+	const { shapeState } = actionState;
 
 	return (property: Property) => {
 		const pathId = property.value;
-
-		const shapeGroupId = pathIdToShapeGroupId[pathId];
-		const shapeSelected = compositionSelection.properties[shapeGroupId];
-		const shapeMoveVector = shapeSelected ? composition.shapeMoveVector : Vec2.ORIGIN;
-		const curves =
-			pathIdToCurves(pathId, shapeState, shapeSelectionState, shapeMoveVector) || [];
+		const curves = pathIdToCurves(pathId, shapeState) || [];
 
 		const path = shapeState.paths[pathId];
 		const isClosed = isShapePathClosed(path);
@@ -145,7 +95,7 @@ export const updateShapeLayerGraphic: UpdateGraphicFn<ShapeLayerPropertyMap> = (
 	const { compositionState } = actionState;
 
 	const shapeGroups = getShapeGroups(actionState, layer);
-	const getCurves = createCurveGetter(actionState, layer);
+	const getCurves = createCurveGetter(actionState);
 
 	const onPath = (property: Property, options: { forStroke: boolean }) => {
 		const { curves, isClosed } = getCurves(property);
@@ -244,7 +194,7 @@ export const updateShapeLayerHitTestGraphic: UpdateGraphicFn<ShapeLayerPropertyM
 	console.log("rerendering hittest");
 	const { compositionState } = actionState;
 	const shapeGroups = getShapeGroups(actionState, layer);
-	const getCurves = createCurveGetter(actionState, layer);
+	const getCurves = createCurveGetter(actionState);
 
 	let drawStrokes = false;
 	let drawFills = false;
