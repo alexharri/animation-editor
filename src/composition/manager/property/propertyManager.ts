@@ -1,25 +1,30 @@
 import * as mathjs from "mathjs";
 import { resolveCompositionLayerGraphs } from "~/composition/layer/layerComputePropertiesOrder";
+import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { getPropertyIdsAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
 import {
 	computeLayerGraphNodeOutputs,
 	getLayerGraphNodeOutputs,
 } from "~/composition/property/layerGraphNodeOutputs";
 import { createPropertyInfoRegistry } from "~/composition/property/propertyInfoMap";
-import {
-	computeValueByPropertyIdForComposition,
-	updateRawValuesForPropertyIds,
-} from "~/composition/property/propertyRawValues";
+import { updateRawValuesForPropertyIds } from "~/composition/property/propertyRawValues";
 import { recomputePropertyValuesAffectedByNode } from "~/composition/property/recomputePropertyValuesAffectedByNode";
 import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { Performable } from "~/types";
 
 type LayerPerformables = { layerId: string; performables: Performable[] };
 
+interface GetActionsToPerformOptions {
+	layerIds?: string[];
+	propertyIds?: string[];
+	nodeIds?: string[];
+}
+
 export interface PropertyManager {
 	addLayer: (actionState: ActionState) => void;
 	removeLayer: (actionState: ActionState) => void;
 	updateStructure: (actionState: ActionState) => void;
+	store: PropertyStore;
 	getPropertyValue: (propertyId: string) => any;
 	onPropertyIdsChanged: (
 		propertyIds: string[],
@@ -31,13 +36,9 @@ export interface PropertyManager {
 	onNodeExpressionChange: (nodeId: string, actionState: ActionState) => void;
 	getActionsToPerform: (
 		actionState: ActionState,
-		options: {
-			layerIds?: string[];
-			propertyIds?: string[];
-			nodeIds?: string[];
-		},
-	) => Array<{ layerId: string; performables: Performable[] }>;
-	getActionsToPerformOnFrameIndexChange: () => Array<LayerPerformables>;
+		options: GetActionsToPerformOptions,
+	) => LayerPerformables[];
+	getActionsToPerformOnFrameIndexChange: () => LayerPerformables[];
 }
 
 export const createPropertyManager = (
@@ -45,8 +46,7 @@ export const createPropertyManager = (
 	actionState: ActionState,
 ): PropertyManager => {
 	let layerGraphs = resolveCompositionLayerGraphs(compositionId, actionState);
-	let rawValues: Record<string, any> = {};
-	let computedValues: Record<string, any> = {};
+	const propertyStore = new PropertyStore();
 	let nodeOutputMap: Record<string, FlowComputeNodeArg[]> = {};
 	let pIdsAffectedByFrameViaGraphByLayer: Record<string, string[]> = {};
 	let propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
@@ -61,7 +61,7 @@ export const createPropertyManager = (
 		const inputs = getLayerGraphNodeOutputs(
 			actionState,
 			compositionId,
-			rawValues,
+			propertyStore,
 			nodeOutputMap,
 			node,
 			options,
@@ -72,7 +72,7 @@ export const createPropertyManager = (
 			recomputePropertyValuesAffectedByNode(
 				node as FlowNode<FlowNodeType.property_output>,
 				actionState,
-				computedValues,
+				propertyStore,
 				nodeOutputMap,
 			);
 		}
@@ -81,8 +81,7 @@ export const createPropertyManager = (
 	const reset = (actionState: ActionState) => {
 		layerGraphs = resolveCompositionLayerGraphs(compositionId, actionState);
 		propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
-		rawValues = computeValueByPropertyIdForComposition(actionState, compositionId);
-		computedValues = {};
+		propertyStore.reset(actionState, compositionId);
 		nodeOutputMap = {};
 
 		for (const nodeId of layerGraphs.toCompute) {
@@ -127,13 +126,16 @@ export const createPropertyManager = (
 	};
 
 	const self: PropertyManager = {
+		store: propertyStore,
+
 		addLayer: (actionState) => reset(actionState),
 		removeLayer: (actionState) => reset(actionState),
+		updateStructure: (actionState) => reset(actionState),
 
-		getPropertyValue: (propertyId) => computedValues[propertyId] ?? rawValues[propertyId],
+		getPropertyValue: (propertyId) => propertyStore.getPropertyValue(propertyId),
 
 		onPropertyIdsChanged: (propertyIds, actionState, frameIndex) => {
-			updateRawValuesForPropertyIds(actionState, propertyIds, rawValues, frameIndex);
+			updateRawValuesForPropertyIds(actionState, propertyIds, propertyStore, frameIndex);
 
 			const nodeIds: string[] = [];
 			for (const propertyId of propertyIds) {
@@ -163,10 +165,6 @@ export const createPropertyManager = (
 
 			// Recompute the expression node and subsequent nodes
 			self.onNodeStateChange(nodeId, actionState);
-		},
-
-		updateStructure: (actionState) => {
-			reset(actionState);
 		},
 
 		getActionsToPerform: (actionState, options) => {

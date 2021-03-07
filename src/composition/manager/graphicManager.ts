@@ -1,5 +1,5 @@
 import { Layer } from "~/composition/compositionTypes";
-import { PropertyManager } from "~/composition/manager/propertyManager";
+import { PropertyManager } from "~/composition/manager/property/propertyManager";
 import { getPixiLayerGraphic, updatePixiLayerGraphic } from "~/render/pixi/layerToPixi";
 
 export interface GraphicManager {

@@ -1,6 +1,7 @@
 import * as mathjs from "mathjs";
 import { Property } from "~/composition/compositionTypes";
 import { LayerGraphsInfo } from "~/composition/layer/layerComputePropertiesOrder";
+import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { flowNodeArg } from "~/flow/flowArgs";
 import { computeNodeOutputsFromInputArgs } from "~/flow/flowComputeNodeNew";
 import { FlowNodeState } from "~/flow/flowNodeState";
@@ -9,7 +10,7 @@ import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 export const getLayerGraphNodeOutputs = (
 	actionState: ActionState,
 	compositionId: string,
-	rawValues: Record<string, any>,
+	propertyStore: PropertyStore,
 	nodeOutputMap: Record<string, FlowComputeNodeArg[]>,
 	node: FlowNode,
 	options: { frameIndex: number },
@@ -42,12 +43,14 @@ export const getLayerGraphNodeOutputs = (
 
 		switch (property.type) {
 			case "property":
-				return [flowNodeArg.any(rawValues[property.id])];
+				return [flowNodeArg.any(propertyStore.getRawPropertyValue(property.id))];
 			case "compound": {
 				if (property.properties.length !== 2) {
 					throw new Error("Expected compound property to have 2 sub-properties.");
 				}
-				const [x, y] = property.properties.map((propertyId) => rawValues[propertyId]);
+				const [x, y] = property.properties.map((propertyId) =>
+					propertyStore.getRawPropertyValue(propertyId),
+				);
 				return [
 					flowNodeArg.vec2(Vec2.new(x, y)),
 					flowNodeArg.number(x),
@@ -60,14 +63,16 @@ export const getLayerGraphNodeOutputs = (
 					const property = compositionState.properties[propertyId];
 					switch (property.type) {
 						case "compound": {
-							const [x, y] = property.properties.map(
-								(propertyId) => rawValues[propertyId],
+							const [x, y] = property.properties.map((propertyId) =>
+								propertyStore.getRawPropertyValue(propertyId),
 							);
 							result.push(flowNodeArg.vec2(Vec2.new(x, y)));
 							break;
 						}
 						case "property": {
-							result.push(flowNodeArg.any(rawValues[property.id]));
+							result.push(
+								flowNodeArg.any(propertyStore.getRawPropertyValue(property.id)),
+							);
 							break;
 						}
 					}

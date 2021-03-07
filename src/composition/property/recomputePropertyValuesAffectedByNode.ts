@@ -1,9 +1,10 @@
+import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 
 export const recomputePropertyValuesAffectedByNode = (
 	node: FlowNode<FlowNodeType.property_output>,
 	actionState: ActionState,
-	computedValues: Record<string, any>,
+	propertyStore: PropertyStore,
 	nodeOutputMap: Record<string, FlowComputeNodeArg[]>,
 ) => {
 	const { compositionState } = actionState;
@@ -53,10 +54,10 @@ export const recomputePropertyValuesAffectedByNode = (
 
 			const { x, y } = value;
 			const [xId, yId] = property.properties;
-			computedValues[xId] = x;
-			computedValues[yId] = y;
+			propertyStore.setComputedPropertyValue(xId, x);
+			propertyStore.setComputedPropertyValue(yId, y);
 		} else {
-			computedValues[propertyId] = value;
+			propertyStore.setComputedPropertyValue(propertyId, value);
 		}
 	}
 };

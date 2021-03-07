@@ -1,5 +1,6 @@
 import { Property } from "~/composition/compositionTypes";
 import { forEachLayerProperty } from "~/composition/compositionUtils";
+import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 
 export const computeValueByPropertyIdForComposition = (
@@ -33,7 +34,7 @@ export const computeValueByPropertyIdForComposition = (
 export const updateRawValuesForPropertyIds = (
 	actionState: ActionState,
 	propertyIds: string[],
-	rawValues: Record<string, any>,
+	propertyStore: PropertyStore,
 	frameIndex?: number,
 ): void => {
 	const { compositionState, timelineState, timelineSelectionState } = actionState;
@@ -50,6 +51,6 @@ export const updateRawValuesForPropertyIds = (
 					layerIndex: layer.index,
 			  })
 			: property.value;
-		rawValues[property.id] = value;
+		propertyStore.setRawPropertyValue(property.id, value);
 	}
 };

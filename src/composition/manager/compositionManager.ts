@@ -7,7 +7,10 @@ import {
 	createInteractionManager,
 	InteractionManager,
 } from "~/composition/manager/interactionManager";
-import { createPropertyManager, PropertyManager } from "~/composition/manager/propertyManager";
+import {
+	createPropertyManager,
+	PropertyManager,
+} from "~/composition/manager/property/propertyManager";
 import { AreaType } from "~/constants";
 import { Diff, DiffType } from "~/diff/diffs";
 import { subscribeToDiffs, unsubscribeToDiffs } from "~/listener/diffListener";

@@ -15,14 +15,14 @@ import {
 	_emptyInteractionManager,
 } from "~/composition/manager/interactionManager";
 import { populateLayerManager } from "~/composition/manager/populateLayerManager";
-import { PropertyManager } from "~/composition/manager/propertyManager";
+import { PropertyManager } from "~/composition/manager/property/propertyManager";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { adjustDiffsToChildComposition } from "~/diff/adjustDiffsToChildComposition";
 import { Diff } from "~/diff/diffs";
 import { applyPixiLayerTransform } from "~/render/pixi/pixiLayerTransform";
 import { getLayerChildLayers } from "~/shared/layer/layerParentSort";
 import { getActionState } from "~/state/stateUtils";
-import { LayerType, TRANSFORM_PROPERTY_NAMES } from "~/types";
+import { LayerType } from "~/types";
 
 export interface LayerPixiContainers {
 	transformContainer: PIXI.Container;
@@ -236,11 +236,6 @@ export const createLayerManager = (
 				? self.getLayerChildLayerContainer(layer.parentLayerId)
 				: compositionContainer;
 			parentContainer.addChild(layerContainer);
-
-			// Update transform
-			const map = layerPropertyMapMap[layerId];
-			const transformPropertyIds = TRANSFORM_PROPERTY_NAMES.map((name) => map[name]);
-			properties.onPropertyIdsChanged(transformPropertyIds, actionState);
 		},
 
 		removeLayer: (layer) => {
@@ -325,8 +320,6 @@ export const createLayerManager = (
 		},
 
 		updatePropertyStructure: (layer, actionState) => {
-			console.log("update property structe");
-			properties.updateStructure(actionState);
 			self.addLayer(layer, actionState);
 		},
 

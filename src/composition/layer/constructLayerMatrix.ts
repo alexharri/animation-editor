@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { LayerManager } from "~/composition/layer/layerManager";
-import { PropertyManager } from "~/composition/manager/propertyManager";
+import { PropertyManager } from "~/composition/manager/property/propertyManager";
 import { getPixiLayerMatrix } from "~/render/pixi/pixiLayerTransform";
 
 export type LayerMatrices = { content: PIXI.Matrix; position: PIXI.Matrix };
