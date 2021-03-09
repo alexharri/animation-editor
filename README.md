@@ -14,7 +14,9 @@
 
 ## Introduction
 
-The goal of this project is to become a production-grade animation suite for the web, comprised of an editor and a runetime. It is, and will remain, open source and free to use.
+The goal of this project is to become a production-grade animation suite for the web, comprised of an editor and a runetime.
+
+The project is, and will remain, open source and free to use.
 
 Right now this project is just the editor part of the equasion. Once the editors basic feature set reaches maturity, work on the runtime will begin.
 
@@ -81,7 +83,7 @@ The pen tool allows you to create shape layers with arbitrary paths.
 
 ![Pen tool][img_pen_tool]
 
-Shape layers allow the configuration options you would expect:
+Shape layers contain the configuration options you would expect:
 
 -   Fill color and opacity
 -   Stroke width, color and opacity
@@ -101,7 +103,7 @@ The SVG imported supports most basic SVG element types.
 
 ![An imported SVG][img_svg_import]
 
-CSS transforms are supported, but any `matrix` transforms result in the content of the layer being converted to a shape layer with no transform. This is because CSS `matrix` transforms cannot be represented with a single layer transform within this project.
+CSS transforms are supported, but any `matrix` transforms result in the content of the layer being converted to a shape layer with no transform. This is because CSS `matrix` transforms cannot be represented with a single layer transform (shears are not supported).
 
 Styles can be applied to elements via inline styles or a `style` tag, though the support for CSS within `style` is very, very basic (just direct class names and IDs).
 
