@@ -24,7 +24,7 @@ Right now this project is just the editor part of the equasion. Once the editors
 
 Not much yet.
 
-The core of the editor and its main features are approaching stability, but the project is still incredibly inaccessible. The learning curve is very steep and there is no way to save your changes permanently (the project uses localstorage).
+The core of the editor and its main features are approaching stability, but the project is still incredibly inaccessible. The learning curve is very steep and there is no way to save your changes permanently.
 
 What I can offer you is a glimpse into the future. Take a look at the features below and marvel at the feature you may, or may not, be able to use months and years from now!
 
