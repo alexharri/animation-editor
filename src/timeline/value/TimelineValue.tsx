@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Property } from "~/composition/compositionTypes";
-import { CompositionPropertyValuesContext } from "~/shared/composition/compositionRenderValues";
 import { connectActionState } from "~/state/stateUtils";
+import { TimelinePropertyStoreContext } from "~/timeline/context/TimelineValueContext";
 import { TimelinePropertyColorValue } from "~/timeline/value/TimelineColorValue";
 import { TimelineNumberValue } from "~/timeline/value/TimelineNumberValue";
 import { TimelineSelectValue } from "~/timeline/value/TimelineSelectValue";
@@ -16,27 +16,32 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const TimelineValueComponent: React.FC<Props> = (props) => {
-	const ctx = useContext(CompositionPropertyValuesContext);
+	const { propertyId } = props;
 
-	const [value, setValue] = useState(() => ctx.getValue(props.propertyId));
+	const propertyStore = useContext(TimelinePropertyStoreContext);
+
+	const [[rawValue, computedValue], setValues] = useState<[any, any]>(() => [
+		propertyStore.getRawPropertyValue(propertyId),
+		propertyStore.getPropertyValue(propertyId),
+	]);
 
 	useEffect(() => {
-		const unsubscribe = ctx.subscribe(props.propertyId, setValue);
-		return unsubscribe;
-	}, [ctx]);
+		const id = propertyStore.addListener(propertyId, (computedValue, rawValue) =>
+			setValues([rawValue, computedValue]),
+		);
+		return () => propertyStore.removeListener(propertyId, id);
+	}, [propertyStore]);
 
 	if (props.valueType === ValueType.RGBAColor) {
-		return (
-			<TimelinePropertyColorValue propertyId={props.propertyId} value={value.computedValue} />
-		);
+		return <TimelinePropertyColorValue propertyId={props.propertyId} value={computedValue} />;
 	}
 
 	if (props.valueType === ValueType.Number) {
 		return (
 			<TimelineNumberValue
 				propertyId={props.propertyId}
-				computedValue={value.computedValue as number}
-				rawValue={value.rawValue as number}
+				computedValue={computedValue as number}
+				rawValue={rawValue as number}
 			/>
 		);
 	}
@@ -45,7 +50,7 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 		return (
 			<TimelineSelectValue<TransformBehavior>
 				propertyId={props.propertyId}
-				value={value.rawValue}
+				value={rawValue}
 				actionName=""
 				options={[
 					{ value: "absolute_for_computed", label: "Default" },
@@ -59,7 +64,7 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 		return (
 			<TimelineSelectValue<OriginBehavior>
 				propertyId={props.propertyId}
-				value={value.rawValue}
+				value={rawValue}
 				actionName=""
 				options={[
 					{ value: "relative", label: "Relative" },
@@ -73,7 +78,7 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 		return (
 			<TimelineSelectValue<LineJoin>
 				propertyId={props.propertyId}
-				value={value.rawValue}
+				value={rawValue}
 				actionName="Set line join"
 				options={[
 					{ value: "bevel", label: "Bevel" },
@@ -88,7 +93,7 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 		return (
 			<TimelineSelectValue<LineCap>
 				propertyId={props.propertyId}
-				value={value.rawValue}
+				value={rawValue}
 				actionName="Set line cap"
 				options={[
 					{ value: "butt", label: "Butt" },
@@ -103,7 +108,7 @@ const TimelineValueComponent: React.FC<Props> = (props) => {
 		return (
 			<TimelineSelectValue<FillRule>
 				propertyId={props.propertyId}
-				value={value.rawValue}
+				value={rawValue}
 				actionName="Set fill rule"
 				options={[
 					{ value: "evenodd", label: "Even-Odd" },

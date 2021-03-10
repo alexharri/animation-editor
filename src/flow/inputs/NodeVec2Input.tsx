@@ -31,8 +31,10 @@ const NodeVec2InputComponent: React.FC<Props> = (props) => {
 		onChange: (value, params) => {
 			const newVec = Vec2.new(value, vec.y);
 			params.dispatch(flowActions.setNodeInputValue(graphId, nodeId, index, newVec));
+			params.performDiff((diff) => diff.flowNodeState(nodeId));
 		},
 		onChangeEnd: (_type, params) => {
+			params.addDiff((diff) => diff.flowNodeState(nodeId));
 			params.submitAction("Update X value");
 		},
 	});
@@ -41,8 +43,10 @@ const NodeVec2InputComponent: React.FC<Props> = (props) => {
 		onChange: (value, params) => {
 			const newVec = Vec2.new(vec.x, value);
 			params.dispatch(flowActions.setNodeInputValue(graphId, nodeId, index, newVec));
+			params.performDiff((diff) => diff.flowNodeState(nodeId));
 		},
 		onChangeEnd: (_type, params) => {
+			params.addDiff((diff) => diff.flowNodeState(nodeId));
 			params.submitAction("Update Y value");
 		},
 	});
@@ -92,10 +96,9 @@ const NodeVec2InputComponent: React.FC<Props> = (props) => {
 
 const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ flowState },
-	{ graphId, nodeId, index },
+	{ nodeId, index },
 ) => {
-	const graph = flowState.graphs[graphId];
-	const node = graph.nodes[nodeId];
+	const node = flowState.nodes[nodeId];
 	return {
 		input: node.inputs[index],
 	};

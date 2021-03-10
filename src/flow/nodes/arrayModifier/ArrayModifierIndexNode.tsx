@@ -51,7 +51,7 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ graphId, nodeId },
 ) => {
 	const graph = flowState.graphs[graphId];
-	const node = graph.nodes[nodeId];
+	const node = flowState.nodes[nodeId];
 	return {
 		outputs: node.outputs,
 		state: node.state as StateProps["state"],

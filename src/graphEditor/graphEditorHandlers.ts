@@ -105,7 +105,7 @@ export const graphEditorHandlers = {
 					return;
 				}
 
-				const op = createOperation();
+				const op = createOperation(params);
 
 				if (!wasShiftDown) {
 					params.dispatch(
@@ -172,6 +172,7 @@ export const graphEditorHandlers = {
 		let yPan = 0;
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyMultipleLayerProperties(ctx.propertyIds),
 			keys: ["Shift"],
 			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {
@@ -266,7 +267,7 @@ export const graphEditorHandlers = {
 				);
 			},
 			mouseUp: (params, hasMoved) => {
-				const op = createOperation();
+				const op = createOperation(params);
 
 				timelines.forEach(({ id }) => {
 					op.add(timelineActions.setYBounds(id, null), timelineActions.setYPan(id, 0));
@@ -320,10 +321,11 @@ export const graphEditorHandlers = {
 		let direction!: "left" | "right";
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyMultipleLayerProperties(ctx.propertyIds),
 			keys: ["Shift"],
 			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {
-				const op = createOperation();
+				const op = createOperation(params);
 
 				// Clear timeline selection and select only the keyframe we are
 				// operating on.
@@ -354,7 +356,7 @@ export const graphEditorHandlers = {
 				return !!(yUpper || yLower);
 			},
 			mouseMove: (params, { moveVector: _moveVector, mousePosition, keyDown, firstMove }) => {
-				const op = createOperation();
+				const op = createOperation(params);
 
 				if (firstMove) {
 					direction = _moveVector.global.x > 0 ? "right" : "left";
@@ -390,7 +392,7 @@ export const graphEditorHandlers = {
 				params.dispatch(op.actions);
 			},
 			mouseUp: (params, hasMoved) => {
-				const op = createOperation();
+				const op = createOperation(params);
 
 				if (!hasMoved) {
 					// Alt click on keyframe. Remove current control points.
@@ -444,6 +446,7 @@ export const graphEditorHandlers = {
 		let yPan = 0;
 
 		mouseDownMoveAction(ctx.mousePosition.global, {
+			baseDiff: (diff) => diff.modifyMultipleLayerProperties(ctx.propertyIds),
 			keys: ["Shift"],
 			translate: (vec) => ctx.globalToNormal(vec).addY(yPan),
 			beforeMove: (params) => {

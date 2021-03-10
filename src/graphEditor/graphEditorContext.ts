@@ -18,6 +18,7 @@ import { interpolate } from "~/util/math";
 
 export interface GraphEditorContext {
 	timelines: Timeline[];
+	propertyIds: string[];
 	mousePosition: MousePosition;
 	compositionId: string;
 	composition: Composition;
@@ -47,7 +48,7 @@ export const constructGraphEditorContext = (
 	} = getActionState();
 
 	const composition = compositionState.compositions[compositionId];
-	const timelineIds = getSelectedTimelineIdsInComposition(
+	const { timelineIds, propertyIds } = getSelectedTimelineIdsInComposition(
 		compositionId,
 		compositionState,
 		compositionSelectionState,
@@ -102,9 +103,20 @@ export const constructGraphEditorContext = (
 		normal: globalToNormal(globalMousePosition),
 	};
 
+	const layerToModifiedProperties: Record<string, string[]> = {};
+
+	for (const propertyId of propertyIds) {
+		const property = compositionState.properties[propertyId];
+		if (!layerToModifiedProperties[property.layerId]) {
+			layerToModifiedProperties[property.layerId] = [];
+		}
+		layerToModifiedProperties[property.layerId].push(property.id);
+	}
+
 	const ctx: GraphEditorContext = {
 		mousePosition,
 		timelines,
+		propertyIds,
 		compositionId,
 		composition,
 		normalToViewport,

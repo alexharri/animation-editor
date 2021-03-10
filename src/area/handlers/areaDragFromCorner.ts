@@ -1,15 +1,15 @@
-import { requestAction } from "~/listener/requestAction";
-import { exceedsDirectionVector } from "~/util/math/exceedsDirectionVector";
-import { AREA_MIN_CONTENT_WIDTH } from "~/constants";
-import { getActionState } from "~/state/stateUtils";
 import { areaActions } from "~/area/state/areaActions";
-import { CardinalDirection, IntercardinalDirection } from "~/types";
-import { isVecInRect, interpolate, capToRange } from "~/util/math";
-import { AreaRowLayout } from "~/types/areaTypes";
 import { AreaReducerState } from "~/area/state/areaReducer";
 import { computeAreaToParentRow } from "~/area/util/areaToParentRow";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
+import { AREA_MIN_CONTENT_WIDTH } from "~/constants";
+import { requestAction } from "~/listener/requestAction";
+import { getActionState } from "~/state/stateUtils";
+import { CardinalDirection, IntercardinalDirection } from "~/types";
+import { AreaRowLayout } from "~/types/areaTypes";
+import { capToRange, interpolate, isVecInRect } from "~/util/math";
+import { exceedsDirectionVector } from "~/util/math/exceedsDirectionVector";
 
 const directionVectors = {
 	n: { x: 0, y: 1 },
@@ -53,7 +53,7 @@ export const handleAreaDragFromCorner = (
 ) => {
 	const initialMousePosition = Vec2.fromEvent(e);
 
-	requestAction({}, ({ addListener, dispatch, submitAction, cancelAction }) => {
+	requestAction({}, (params) => {
 		const areaState = getActionState().area;
 		const areaToRow = computeAreaToParentRow(areaState);
 		const areaToViewport = computeAreaToViewport(
@@ -72,11 +72,14 @@ export const handleAreaDragFromCorner = (
 		let onMoveFn: (mousePosition: Vec2) => void;
 
 		let onMouseUpFn: () => void = () => {
-			cancelAction();
+			params.cancelAction();
 		};
 
 		function createNewArea(horizontal: boolean) {
-			onMouseUpFn = () => submitAction("Create new area");
+			onMouseUpFn = () => {
+				params.addDiff((diff) => diff.resizeAreas());
+				params.submitAction("Create new area");
+			};
 
 			const getT = (vec: Vec2): number => {
 				const viewportSize = horizontal ? viewport.width : viewport.height;
@@ -99,10 +102,11 @@ export const handleAreaDragFromCorner = (
 			//			mouse was moved in to trigger the creation of the area.
 			//
 			if (!row || (row.orientation === "horizontal") !== horizontal) {
-				dispatch(areaActions.convertAreaToRow(areaId, directionParts, horizontal));
+				params.dispatch(areaActions.convertAreaToRow(areaId, directionParts, horizontal));
 				onMoveFn = (vec) => {
 					const t = getT(vec);
-					dispatch(areaActions.setRowSizes(areaId, [t, 1 - t]));
+					params.dispatch(areaActions.setRowSizes(areaId, [t, 1 - t]));
+					params.performDiff((diff) => diff.resizeAreas());
 				};
 				return;
 			}
@@ -119,7 +123,7 @@ export const handleAreaDragFromCorner = (
 			const insertIndex =
 				areaIndex + (directionParts.indexOf(horizontal ? "w" : "n") !== -1 ? 0 : 1);
 
-			dispatch(areaActions.insertAreaIntoRow(row.id, areaId, insertIndex));
+			params.dispatch(areaActions.insertAreaIntoRow(row.id, areaId, insertIndex));
 
 			// The size to share between the area and the new area is the size of the area
 			// before the action.
@@ -132,7 +136,8 @@ export const handleAreaDragFromCorner = (
 				rowAreas.splice(insertIndex, 0, 0);
 				rowAreas[areaIndex] = sizes[0];
 				rowAreas[areaIndex + 1] = sizes[1];
-				dispatch(areaActions.setRowSizes(row.id, rowAreas));
+				params.dispatch(areaActions.setRowSizes(row.id, rowAreas));
+				params.performDiff((diff) => diff.resizeAreas());
 			};
 		}
 
@@ -147,7 +152,7 @@ export const handleAreaDragFromCorner = (
 			const getEligibleAreaIds = (eligibleAreaIndices: number[]) =>
 				eligibleAreaIndices.map((i) => row.areas[i].id);
 
-			dispatch(
+			params.dispatch(
 				areaActions.setJoinAreasPreview(
 					null,
 					null,
@@ -177,28 +182,30 @@ export const handleAreaDragFromCorner = (
 					areaIndex = eligibleAreaIndex;
 					eligibleAreaIndices = getEligibleAreaIndices(areaState, row, areaIndex);
 
-					dispatch(
+					params.dispatch(
 						areaActions.setJoinAreasPreview(
 							nextAreaId,
 							arrowDirection,
 							getEligibleAreaIds(eligibleAreaIndices),
 						),
 					);
+					params.performDiff((diff) => diff.resizeAreas());
 
 					onMouseUpFn = () => {
 						if (!isVecInRect(lastMousePosition, areaToViewport[eligibleAreaId])) {
-							cancelAction();
+							params.cancelAction();
 							return;
 						}
 
-						dispatch(areaActions.joinAreas(row.id, mergeArea, mergeInto));
-						submitAction("Join areas");
+						params.dispatch(areaActions.joinAreas(row.id, mergeArea, mergeInto));
+						params.addDiff((diff) => diff.resizeAreas());
+						params.submitAction("Join areas");
 					};
 				}
 			};
 		}
 
-		addListener.repeated("mousemove", (e) => {
+		params.addListener.repeated("mousemove", (e) => {
 			const vec = Vec2.fromEvent(e);
 
 			if (onMoveFn) {
@@ -245,7 +252,7 @@ export const handleAreaDragFromCorner = (
 			}
 		});
 
-		addListener.once("mouseup", () => {
+		params.addListener.once("mouseup", () => {
 			onMouseUpFn();
 		});
 	});

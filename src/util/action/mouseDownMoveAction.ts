@@ -1,4 +1,5 @@
 import { keys } from "~/constants";
+import { DiffFactoryFn } from "~/diff/diffFactory";
 import { isKeyDown } from "~/listener/keyboard";
 import {
 	requestAction,
@@ -32,6 +33,11 @@ interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
 	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 	tickShouldUpdate?: (options: MouseMoveOptions<KeyMap>) => boolean;
 	viewport?: Rect;
+
+	/**
+	 * The diff that is performed on every move and is added on submit.
+	 */
+	baseDiff?: DiffFactoryFn;
 }
 
 export const mouseDownMoveAction = <
@@ -148,6 +154,7 @@ export const mouseDownMoveAction = <
 			const callOpts = getOptions();
 			hasCalledMove = true;
 			options.mouseMove(params, callOpts);
+			options.baseDiff && params.performDiff(options.baseDiff);
 		};
 		requestAnimationFrame(tick);
 
@@ -166,6 +173,7 @@ export const mouseDownMoveAction = <
 		});
 
 		params.addListener.once("mouseup", () => {
+			options.baseDiff && params.addDiff(options.baseDiff);
 			options.mouseUp(params, hasMoved);
 		});
 	};

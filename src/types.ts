@@ -1,4 +1,6 @@
 import { keys } from "~/constants";
+import { DiffFactoryFn } from "~/diff/diffFactory";
+import { Key } from "~/listener/keyboard";
 import { RequestActionParams } from "~/listener/requestAction";
 import { Mat2 } from "~/util/math/mat";
 
@@ -11,6 +13,10 @@ export interface Operation {
 	actions: Action[];
 	add: (...actions: Action[]) => void;
 	clear: () => void;
+	addDiff: (fn: DiffFactoryFn) => void;
+	performDiff: (fn: DiffFactoryFn) => void;
+	submit: () => void;
+	state: ActionState;
 }
 
 export type CardinalDirection = "n" | "w" | "s" | "e";
@@ -135,6 +141,25 @@ export enum PropertyName {
 	MiterLimit = 22,
 }
 
+export type TransformPropertyName =
+	| PropertyName.PositionX
+	| PropertyName.PositionY
+	| PropertyName.AnchorX
+	| PropertyName.AnchorY
+	| PropertyName.ScaleX
+	| PropertyName.ScaleY
+	| PropertyName.Rotation;
+
+export const TRANSFORM_PROPERTY_NAMES = [
+	PropertyName.PositionX,
+	PropertyName.PositionY,
+	PropertyName.AnchorX,
+	PropertyName.AnchorY,
+	PropertyName.ScaleX,
+	PropertyName.ScaleY,
+	PropertyName.Rotation,
+] as const;
+
 export type Json = string | number | boolean | null | JsonObject | JsonArray | undefined;
 export type JsonArray = Array<Json>;
 export interface JsonObject {
@@ -203,3 +228,13 @@ export interface KeyboardShortcut {
 }
 
 export type LayerParentPickWhip = { fromId: string; to: Vec2 };
+
+export enum Performable {
+	DrawLayer,
+	UpdatePosition,
+	UpdateTransform,
+	UpdateArrayModifierTransform,
+	UpdateArrayModifierCount,
+}
+
+export type KeyDownMap<K extends Key> = Record<K, boolean>;

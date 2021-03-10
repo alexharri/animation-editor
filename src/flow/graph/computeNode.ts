@@ -1,27 +1,11 @@
 import * as mathjs from "mathjs";
-import { CompositionState } from "~/composition/compositionReducer";
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowComputeContext, FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
-import { PropertyValueMap, RGBAColor, ValueType } from "~/types";
+import { RGBAColor, ValueType } from "~/types";
 import { capToRange, interpolate } from "~/util/math";
 
 const Type = FlowNodeType;
-
-export interface ComputeNodeContext {
-	computed: { [nodeId: string]: FlowComputeNodeArg[] };
-	compositionState: CompositionState;
-	compositionId: string;
-	layerId: string;
-	arrayModifierIndex: number;
-	container: {
-		width: number;
-		height: number;
-	};
-	propertyToValue: PropertyValueMap;
-	frameIndex: number;
-	expressionCache: { [nodeId: string]: mathjs.EvalFunction };
-}
 
 const parseNum = (arg: FlowComputeNodeArg): number => {
 	switch (arg.type) {
@@ -150,6 +134,7 @@ const parseRect = (arg: FlowComputeNodeArg): Rect => {
 const parsers: Partial<Record<ValueType, (arg: FlowComputeNodeArg) => any>> = {
 	[ValueType.Vec2]: parseVec2,
 	[ValueType.Number]: parseNum,
+	[ValueType.RGBAColor]: parseColor,
 	[ValueType.Rect]: parseRect,
 };
 

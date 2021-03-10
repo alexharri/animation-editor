@@ -1,4 +1,5 @@
 import { action } from "typesafe-actions";
+import { Diff } from "~/diff/diffs";
 
 export const historyActions = {
 	moveHistoryIndex: (index: number) => action("history/MOVE_INDEX", { index }),
@@ -29,6 +30,7 @@ export const historyActions = {
 		modifiesHistory: boolean,
 		modifiedKeys: string[],
 		allowIndexShift: boolean,
+		diffs: Diff[],
 	) => {
 		return action("history/SUBMIT_ACTION", {
 			actionId,
@@ -36,6 +38,7 @@ export const historyActions = {
 			modifiesHistory,
 			modifiedKeys,
 			allowIndexShift,
+			diffs,
 		});
 	},
 

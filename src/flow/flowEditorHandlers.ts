@@ -50,8 +50,8 @@ export const flowEditorHandlers = {
 				const selection = flowSelectionFromState(graphId, flowSelectionState);
 				const graph = flowState.graphs[graphId];
 
-				const nodeIds = Object.keys(graph.nodes).reduce<string[]>((arr, nodeId) => {
-					const node = graph.nodes[nodeId];
+				const nodeIds = graph.nodes.reduce<string[]>((arr, nodeId) => {
+					const node = flowState.nodes[nodeId];
 
 					const shouldBeSelected =
 						(isAdditiveSelection && selection.nodes[nodeId]) ||

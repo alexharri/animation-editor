@@ -1,7 +1,7 @@
 import { FlowGraph, FlowNode } from "~/flow/flowTypes";
 import {
 	findInputsThatReferenceFlowNodeOutputs,
-	removeNodeAndReferencesToItInFlowGraph,
+	removeFlowNodeAndReferencesToIt,
 } from "~/flow/flowUtils";
 import "~/globals";
 import { ValueType } from "~/types";
@@ -109,7 +109,7 @@ describe("removeNodeAndReferencesToItInGraph", () => {
 			},
 		};
 
-		const output: ReturnType<typeof removeNodeAndReferencesToItInFlowGraph> = {
+		const output: ReturnType<typeof removeFlowNodeAndReferencesToIt> = {
 			..._graphBase,
 			nodes: {
 				a: {
@@ -133,6 +133,6 @@ describe("removeNodeAndReferencesToItInGraph", () => {
 			},
 		};
 
-		expect(removeNodeAndReferencesToItInFlowGraph("b", graph)).toEqual(output);
+		expect(removeFlowNodeAndReferencesToIt("b", graph)).toEqual(output);
 	});
 });

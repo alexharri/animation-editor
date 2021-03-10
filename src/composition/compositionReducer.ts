@@ -13,14 +13,15 @@ import {
 	reduceCompPropertiesAndGroups,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
-import { createLayer } from "~/composition/layer/createLayer";
-import { createLayerModifierProperties } from "~/composition/layer/layerModifierPropertyGroup";
+import { layerFactory } from "~/composition/factories/layerFactory";
+import { modifierPropertyGroupFactory } from "~/composition/factories/modifierPropertyGroupFactory";
 import { getLayerModifierPropertyGroupId } from "~/composition/util/compositionPropertyUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { LayerType, PropertyGroupName, RGBAColor, RGBColor, TransformBehavior } from "~/types";
 import {
 	addListToMap,
 	createGenMapIdFn,
+	mergeItemInMap,
 	modifyItemsInMap,
 	modifyItemsInUnionMap,
 	removeKeysFromMap,
@@ -62,6 +63,19 @@ export const compositionActions = {
 		) => action({ compositionId, layerIndexShift, selectionState });
 	}),
 
+	setLayerIndex: createAction("comp/SET_LAYER_INDEX", (action) => {
+		return (layerId: string, index: number) => action({ layerId, index });
+	}),
+
+	setLayerPlaybackIndex: createAction("comp/SET_LAYER_PLAYBACK_INDEX", (action) => {
+		return (layerId: string, index: number) => action({ layerId, index });
+	}),
+
+	setLayerIndexAndLength: createAction("comp/SET_LAYER_INDEX_AND_LENGTH", (action) => {
+		return (layerId: string, index: number, length: number) =>
+			action({ layerId, index, length });
+	}),
+
 	moveLayers: createAction("comp/MOVE_LAYERS", (action) => {
 		return (
 			compositionId: string,
@@ -92,6 +106,10 @@ export const compositionActions = {
 	setCompositionDimension: createAction("comp/SET_COMPOSITION_DIMENSIONS", (action) => {
 		return (compositionId: string, which: "width" | "height", value: number) =>
 			action({ compositionId, which, value });
+	}),
+
+	setCompositionLength: createAction("comp/SET_COMPOSITION_LENGTH", (action) => {
+		return (compositionId: string, value: number) => action({ compositionId, value });
 	}),
 
 	/**
@@ -130,7 +148,7 @@ export const compositionActions = {
 	}),
 
 	createNonCompositionLayer: createAction("comp/CREATE_NON_COMP_LAYER", (action) => {
-		return ({ layer, propertiesToAdd }: ReturnType<typeof createLayer>) =>
+		return ({ layer, propertiesToAdd }: ReturnType<typeof layerFactory>) =>
 			action({ layer, propertiesToAdd });
 	}),
 
@@ -184,11 +202,6 @@ export const compositionActions = {
 
 	moveModifier: createAction("comp/MOVE_MODIFIER", (action) => {
 		return (modifierId: string, moveBy: -1 | 1) => action({ modifierId, moveBy });
-	}),
-
-	setShapeMoveVector: createAction("comp/SET_SHAPE_MOVE_VECTOR", (action) => {
-		return (compositionId: string, shapeMoveVector: Vec2) =>
-			action({ compositionId, shapeMoveVector });
 	}),
 
 	setPropertyMaintainProportions: createAction("comp/SET_PROP_MAINTAIN_PROPORTIONS", (action) => {
@@ -468,6 +481,16 @@ export const compositionReducer = (
 			};
 		}
 
+		case getType(compositionActions.setCompositionLength): {
+			const { compositionId, value } = action.payload;
+			return {
+				...state,
+				compositions: mergeItemInMap(state.compositions, compositionId, () => ({
+					length: value,
+				})),
+			};
+		}
+
 		case getType(compositionActions.setPropertyValue): {
 			const { propertyId, value } = action.payload;
 			return {
@@ -527,7 +550,7 @@ export const compositionReducer = (
 				);
 			}
 
-			const { layer, propertiesToAdd } = createLayer({
+			const { layer, propertiesToAdd } = layerFactory({
 				compositionId,
 				type,
 				compositionState: state,
@@ -740,7 +763,7 @@ export const compositionReducer = (
 
 			if (groupIndex === -1) {
 				const createId = createGenMapIdFn(newState.properties);
-				const { group, properties } = createLayerModifierProperties({
+				const { group, properties } = modifierPropertyGroupFactory({
 					compositionId: layer.compositionId,
 					layerId,
 					createId,
@@ -819,21 +842,6 @@ export const compositionReducer = (
 					(item: PropertyGroup) => ({
 						...item,
 						properties,
-					}),
-				),
-			};
-		}
-
-		case getType(compositionActions.setShapeMoveVector): {
-			const { compositionId, shapeMoveVector } = action.payload;
-			return {
-				...state,
-				compositions: modifyItemsInMap(
-					state.compositions,
-					compositionId,
-					(composition) => ({
-						...composition,
-						shapeMoveVector,
 					}),
 				),
 			};
@@ -923,6 +931,29 @@ export const compositionReducer = (
 						return { ...group, viewProperties: [], collapsed: true };
 					},
 				),
+			};
+		}
+
+		case getType(compositionActions.setLayerIndex): {
+			const { layerId, index } = action.payload;
+			return { ...state, layers: mergeItemInMap(state.layers, layerId, () => ({ index })) };
+		}
+
+		case getType(compositionActions.setLayerPlaybackIndex): {
+			const { layerId, index } = action.payload;
+			return {
+				...state,
+				layers: mergeItemInMap(state.layers, layerId, () => ({
+					playbackStartsAtIndex: index,
+				})),
+			};
+		}
+
+		case getType(compositionActions.setLayerIndexAndLength): {
+			const { layerId, index, length } = action.payload;
+			return {
+				...state,
+				layers: mergeItemInMap(state.layers, layerId, () => ({ index, length })),
 			};
 		}
 

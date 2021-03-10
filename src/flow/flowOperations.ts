@@ -9,7 +9,7 @@ const removeSelectedNodesInGraph = (op: Operation, graphId: string): void => {
 
 	const graph = flowState.graphs[graphId];
 	const selection = flowSelectionFromState(graphId, flowSelectionState);
-	const nodeIds = Object.keys(graph.nodes);
+	const nodeIds = graph.nodes;
 
 	for (const nodeId of nodeIds) {
 		if (selection.nodes[nodeId]) {

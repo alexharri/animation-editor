@@ -1,7 +1,7 @@
 import { keys, modifierKeys } from "~/constants";
 import { elementHasKeyboardFocus } from "~/util/focus";
 
-type Key = keyof typeof keys;
+export type Key = keyof typeof keys;
 
 const keyCodes = (Object.keys(keys) as Array<keyof typeof keys>).reduce<{
 	[keyCode: number]: keyof typeof keys;

@@ -1,10 +1,11 @@
-import { FlowGraph } from "~/flow/flowTypes";
+import { FlowState } from "~/flow/state/flowReducers";
 import { getExpressionIO } from "~/util/math/expressions";
 
-export const getExpressionUpdateIO = (expression: string, graph: FlowGraph, nodeId: string) => {
+export const getExpressionUpdateIO = (expression: string, flowState: FlowState, nodeId: string) => {
 	const io = getExpressionIO(expression);
 
-	const node = graph.nodes[nodeId];
+	const node = flowState.nodes[nodeId];
+	const graph = flowState.graphs[node.graphId];
 
 	const outputsToRemove: number[] = [];
 	const outputsToKeep: number[] = [];
@@ -55,9 +56,9 @@ export const getExpressionUpdateIO = (expression: string, graph: FlowGraph, node
 	}> = [];
 
 	// Populate inputs to update (other than node being updated)
-	const nodeIds = Object.keys(graph.nodes);
+	const nodeIds = graph.nodes;
 	for (let i = 0; i < nodeId.length; i += 1) {
-		const node = graph.nodes[nodeIds[i]];
+		const node = flowState.nodes[nodeIds[i]];
 
 		if (node.id === nodeId) {
 			continue;

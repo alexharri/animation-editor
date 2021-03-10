@@ -8,7 +8,7 @@ import {
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
-import { ShapeGraph, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
+import { ShapePath, ShapePathItem, ShapeSelection } from "~/shape/shapeTypes";
 import {
 	FillRule,
 	LayerType,
@@ -18,16 +18,8 @@ import {
 	PropertyName,
 	RGBAColor,
 } from "~/types";
-import {
-	completeCubicBezier,
-	expandRect,
-	getAngleRadians,
-	getDistance,
-	isVecInRect,
-	rectOfVecs,
-} from "~/util/math";
+import { completeCubicBezier, expandRect, getDistance, isVecInRect, rectOfVecs } from "~/util/math";
 import { closestPointOnPath } from "~/util/math/closestPoint";
-import { Mat2 } from "~/util/math/mat";
 import { PenToolContext } from "~/workspace/penTool/penToolContext";
 
 const _emptySelection: ShapeSelection = {
@@ -47,13 +39,9 @@ export const getShapeSelectionFromState = (
 
 export const getItemControlPointPositions = (
 	item: ShapePathItem,
-	shape: ShapeGraph,
 	shapeState: ShapeState,
-	shapeSelectionState: ShapeSelectionState,
 ): [Vec2 | null, Vec2 | null] => {
-	const { nodeId, left, right, reflectControlPoints } = item;
-
-	const selection = getShapeSelectionFromState(shape.id, shapeSelectionState);
+	const { left, right } = item;
 
 	return [left, right].map<Vec2 | null>((_, i, parts) => {
 		const part0 = parts[i];
@@ -68,58 +56,20 @@ export const getItemControlPointPositions = (
 			return null;
 		}
 
-		if (shape.moveVector.x === 0 && shape.moveVector.y === 0) {
-			return cp.position;
-		}
-
-		const part1 = parts[(i + 1) % 2];
-		const otherCpId = part1?.controlPointId;
-
-		const node = shapeState.nodes[nodeId];
-		const nodeSelected = selection.nodes[nodeId];
-		const cpSelected = selection.controlPoints[part0.controlPointId];
-		const otherCpSelected = !!(otherCpId && selection.controlPoints[otherCpId]);
-		const reflect = reflectControlPoints;
-
-		let p1: Vec2;
-
-		if (reflect && !nodeSelected && !cpSelected && otherCpSelected) {
-			const otherCp = shapeState.controlPoints[otherCpId!]!;
-
-			p1 = otherCp!.position.add(shape.moveVector);
-
-			const dist = getDistance(Vec2.new(0, 0), cp.position);
-			const angle = getAngleRadians(Vec2.new(0, 0), p1);
-			const rmat = Mat2.rotation(angle + Math.PI);
-			p1 = rmat.multiplyVec2(Vec2.new(dist, 0));
-		} else {
-			p1 = cp.position;
-			if (selection.controlPoints[cp.id] && !selection.nodes[node.id]) {
-				p1 = p1.add(shape.moveVector);
-			}
-		}
-
-		return p1;
+		return cp.position;
 	}) as [Vec2 | null, Vec2 | null];
 };
 
 export const pathIdToCurves = (
 	pathId: string,
 	shapeState: ShapeState,
-	shapeSelectionState: ShapeSelectionState,
-	shapeMoveVector: Vec2,
 	transformFn?: (vec: Vec2) => Vec2,
 ): Curve[] | null => {
 	const curves: Array<Line | CubicBezier> = [];
 
-	const { items, shapeId } = shapeState.paths[pathId];
+	const { items } = shapeState.paths[pathId];
 
-	const selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
-
-	const shape = shapeState.shapes[shapeId];
-	const itemCpPositions = items.map((item) =>
-		getItemControlPointPositions(item, shape, shapeState, shapeSelectionState),
-	);
+	const itemCpPositions = items.map((item) => getItemControlPointPositions(item, shapeState));
 
 	for (let i = 0; i < items.length; i++) {
 		const inext = i !== items.length - 1 ? i + 1 : 0;
@@ -140,15 +90,8 @@ export const pathIdToCurves = (
 		const [, cp0] = itemCpPositions[i];
 		const [cp1] = itemCpPositions[inext];
 
-		let p0 = shapeState.nodes[item0.nodeId].position.add(shapeMoveVector);
-		let p3 = shapeState.nodes[item1.nodeId].position.add(shapeMoveVector);
-
-		if (selection.nodes[item0.nodeId]) {
-			p0 = p0.add(shape.moveVector);
-		}
-		if (selection.nodes[item1.nodeId]) {
-			p3 = p3.add(shape.moveVector);
-		}
+		let p0 = shapeState.nodes[item0.nodeId].position;
+		let p3 = shapeState.nodes[item1.nodeId].position;
 
 		let p1 = cp0 ? p0.add(cp0) : null;
 		let p2 = cp1 ? p3.add(cp1) : null;
@@ -430,23 +373,16 @@ export const getPathTargetObject = (
 	viewportMousePosition: Vec2,
 	normalToViewport: (vec: Vec2) => Vec2,
 	shapeState: ShapeState,
-	shapeSelectionState: ShapeSelectionState,
 ): PathTargetObject => {
 	const DIST = 7;
 
 	const path = shapeState.paths[pathId];
-	const shape = shapeState.shapes[path.shapeId];
-	const selection = getShapeSelectionFromState(path.shapeId, shapeSelectionState);
-
-	const { moveVector } = shape;
 
 	for (const item of path.items) {
 		const { nodeId, left, right } = item;
 
 		const node = shapeState.nodes[nodeId];
-		const nodeSelected = selection.nodes[nodeId];
-
-		const position = nodeSelected ? node.position.add(moveVector) : node.position;
+		const position = node.position;
 
 		for (const part of [left, right]) {
 			if (!part || !part.controlPointId) {
@@ -455,17 +391,12 @@ export const getPathTargetObject = (
 
 			const { controlPointId } = part;
 			const cp = shapeState.controlPoints[controlPointId]!;
-			const cpSelected = selection.controlPoints[controlPointId];
 
 			if (!cp) {
 				console.log({ part, item, path });
 			}
 
 			let cpPos = position.add(cp.position);
-
-			if (!nodeSelected && cpSelected) {
-				cpPos = cpPos.add(moveVector);
-			}
 
 			if (getDistance(viewportMousePosition, normalToViewport(cpPos)) < DIST) {
 				return {
@@ -483,13 +414,7 @@ export const getPathTargetObject = (
 		}
 	}
 
-	const pathList = pathIdToCurves(
-		pathId,
-		shapeState,
-		shapeSelectionState,
-		Vec2.ORIGIN,
-		normalToViewport,
-	);
+	const pathList = pathIdToCurves(pathId, shapeState, normalToViewport);
 	if (pathList) {
 		for (let i = 0; i < pathList.length; i += 1) {
 			const p = pathList[i];
@@ -517,15 +442,9 @@ export const getPathTargetObjectFromContext = (
 	pathId: string,
 	ctx: PenToolContext,
 ): PathTargetObject => {
-	const { normalToViewport, shapeState, shapeSelectionState, mousePosition } = ctx;
+	const { normalToViewport, shapeState, mousePosition } = ctx;
 
-	return getPathTargetObject(
-		pathId,
-		mousePosition.viewport,
-		normalToViewport,
-		shapeState,
-		shapeSelectionState,
-	);
+	return getPathTargetObject(pathId, mousePosition.viewport, normalToViewport, shapeState);
 };
 
 export const getShapeLayerDirectlySelectedPaths = (
@@ -758,4 +677,19 @@ export const getPathIdToShapeGroupId = (layerId: string, compositionState: Compo
 		},
 		{},
 	);
+};
+
+export const isShapePathClosed = (path: ShapePath): boolean => {
+	if (path.items.length === 1) {
+		return false;
+	}
+
+	const item0 = path.items[0];
+	const item1 = path.items[path.items.length - 1];
+
+	if (!item0.left || !item0.left.edgeId || !item1.right || !item1.right.edgeId) {
+		return false;
+	}
+
+	return item0.left.edgeId === item1.right.edgeId;
 };

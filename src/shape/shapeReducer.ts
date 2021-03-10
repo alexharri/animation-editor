@@ -6,11 +6,8 @@ import {
 	ShapeNode,
 	ShapePath,
 	ShapePathItem,
-	ShapeSelection,
 } from "~/shape/shapeTypes";
 import { addListToMap, modifyItemsInMap, removeKeysFromMap } from "~/util/mapUtils";
-import { getAngleRadians, getDistance } from "~/util/math";
-import { Mat2 } from "~/util/math/mat";
 
 export interface ShapeState {
 	shapes: {
@@ -31,6 +28,10 @@ export interface ShapeState {
 }
 
 export const shapeActions = {
+	setState: createAction("shape/SET_STATE", (action) => {
+		return (state: ShapeState) => action({ state });
+	}),
+
 	setShape: createAction("shape/SET", (action) => {
 		return (shape: ShapeGraph) => action({ shape });
 	}),
@@ -86,18 +87,6 @@ export const shapeActions = {
 
 	applySelectionRect: createAction("shape/APPLY_SELECTION_RECT", (action) => {
 		return (shapeId: string, rect: Rect) => action({ shapeId, rect });
-	}),
-
-	setMoveVector: createAction("shape/SET_MOVE_VECTOR", (action) => {
-		return (shapeId: string, moveVector: Vec2) => action({ shapeId, moveVector });
-	}),
-
-	applyMoveVector: createAction("shape/APPLY_MOVE_VECTOR", (action) => {
-		return (shapeId: string, selection: ShapeSelection) => action({ shapeId, selection });
-	}),
-
-	applyShapeMoveVector: createAction("shape/APPLY_SHAPE_MOVE_VECTOR", (action) => {
-		return (shapeIds: string[], moveVector: Vec2) => action({ shapeIds, moveVector });
 	}),
 
 	toggleControlPointReflect: createAction("shape/TOGGLE_CP_REFLECT", (action) => {
@@ -167,6 +156,10 @@ export const shapeReducer = (
 	action: ShapeAction,
 ): ShapeState => {
 	switch (action.type) {
+		case getType(shapeActions.setState): {
+			return action.payload.state;
+		}
+
 		case getType(shapeActions.setShape): {
 			const { shape } = action.payload;
 			return { ...state, shapes: { ...state.shapes, [shape.id]: shape } };
@@ -316,146 +309,6 @@ export const shapeReducer = (
 
 		case getType(shapeActions.applySelectionRect): {
 			throw new Error("Not implemented");
-		}
-
-		case getType(shapeActions.setMoveVector): {
-			const { shapeId, moveVector } = action.payload;
-			return {
-				...state,
-				shapes: modifyItemsInMap(state.shapes, shapeId, (shape) => ({
-					...shape,
-					moveVector,
-				})),
-			};
-		}
-		case getType(shapeActions.applyMoveVector): {
-			const { shapeId, selection } = action.payload;
-
-			const { moveVector } = state.shapes[shapeId];
-
-			const selectedNodeIds = Object.keys(selection.nodes);
-
-			const newState: ShapeState = {
-				...state,
-				shapes: modifyItemsInMap(
-					state.shapes,
-					shapeId,
-					(shape): ShapeGraph => ({
-						...shape,
-						moveVector: Vec2.new(0, 0),
-					}),
-				),
-				nodes: modifyItemsInMap(state.nodes, selectedNodeIds, (node) => ({
-					...node,
-					position: node.position.add(moveVector),
-				})),
-				controlPoints: { ...state.controlPoints },
-				paths: { ...state.paths },
-			};
-
-			const applyMoveVectorToCp = (cpId: string) => {
-				const cp = state.controlPoints[cpId]!;
-				newState.controlPoints[cpId] = {
-					...cp,
-					position: cp?.position.add(moveVector),
-				};
-			};
-
-			const edgeIds = state.shapes[shapeId].edges;
-			for (const edgeId of edgeIds) {
-				const edge = newState.edges[edgeId];
-
-				if (selection.controlPoints[edge.cp0] && !selection.nodes[edge.n0]) {
-					applyMoveVectorToCp(edge.cp0);
-				}
-
-				if (selection.controlPoints[edge.cp1] && !selection.nodes[edge.n1]) {
-					applyMoveVectorToCp(edge.cp1);
-				}
-			}
-
-			const pathIds = Object.keys(state.paths).filter(
-				(pathId) => state.paths[pathId].shapeId === shapeId,
-			);
-			for (const pathId of pathIds) {
-				let path = newState.paths[pathId];
-
-				for (let i = 0; i < path.items.length; i++) {
-					const item = path.items[i];
-					if (
-						!item.reflectControlPoints ||
-						!item.left?.controlPointId ||
-						!item.right?.controlPointId
-					) {
-						continue;
-					}
-
-					const cpl = item.left.controlPointId;
-					const cpr = item.right.controlPointId;
-
-					const sl = selection.controlPoints[cpl];
-					const sr = selection.controlPoints[cpr];
-
-					if (!sl && !sr) {
-						// Neither is affected. Continue
-						continue;
-					}
-
-					if (sl && sr) {
-						// Both control points were moved. Control points are no longer
-						// being reflected
-						path = {
-							...path,
-							items: path.items.map((item, index) => {
-								if (i !== index) {
-									return item;
-								}
-								return { ...item, reflectControlPoints: false };
-							}),
-						};
-						newState.paths[pathId] = path;
-						continue;
-					}
-
-					// Either left or right are reflecting the other
-					const cp0 = newState.controlPoints[sl ? cpl : cpr]!;
-					const cp1 = newState.controlPoints[sr ? cpl : cpr]!;
-
-					const dist = getDistance(Vec2.new(0, 0), cp1.position);
-					const angle = getAngleRadians(Vec2.new(0, 0), cp0.position);
-					const rmat = Mat2.rotation(angle + Math.PI);
-
-					newState.controlPoints[cp1.id] = {
-						...cp1,
-						position: rmat.multiplyVec2(Vec2.new(dist, 0)),
-					};
-				}
-			}
-
-			return newState;
-		}
-
-		case getType(shapeActions.applyShapeMoveVector): {
-			const { shapeIds, moveVector } = action.payload;
-
-			// Every single element in a shape is relative to a node, so
-			// we can apply a move vector to an entire shape by applying it
-			// to all the nodes of a shape
-
-			const nodeIds: string[] = [];
-
-			for (const shapeId of shapeIds) {
-				const shape = state.shapes[shapeId];
-				nodeIds.push(...shape.nodes);
-			}
-
-			return {
-				...state,
-				nodes: modifyItemsInMap(state.nodes, nodeIds, (node) => ({
-					...node,
-					position: node.position.add(moveVector),
-				})),
-			};
 		}
 
 		case getType(shapeActions.toggleControlPointReflect): {

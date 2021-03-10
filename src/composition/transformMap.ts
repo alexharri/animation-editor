@@ -1,8 +1,6 @@
 import { getLayerArrayModifierIndexTransform } from "~/composition/indexTransforms";
-import {
-	getLayerNameToProperty,
-	getLayerRectDimensionsAndOffset,
-} from "~/composition/layer/layerUtils";
+import { getLayerRectDimensionsAndOffset } from "~/composition/layer/layerRect";
+import { getLayerNameToProperty } from "~/composition/layer/layerUtils";
 import { applyParentTransform, getLayerBaseTransform } from "~/composition/transformUtils";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
@@ -74,9 +72,9 @@ export const computeLayerTransformMap = (
 			getLayerBaseTransform;
 			if (layer.parentLayerId) {
 				const parentTransform = map[layer.parentLayerId].transform;
-				transform = applyParentTransform(transform, parentTransform, false);
+				transform = applyParentTransform(transform, parentTransform);
 			} else {
-				transform = applyParentTransform(transform, parentTransform, true);
+				transform = applyParentTransform(transform, parentTransform);
 			}
 
 			map[layer.id].transform = transform;

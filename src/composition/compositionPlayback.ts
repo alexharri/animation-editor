@@ -23,6 +23,7 @@ export const startPlayback = (compositionId: string, startFrameIndex: number) =>
 
 	requestAction({ history: false }, (params) => {
 		let frameIndex = startFrameIndex;
+		params.addReverseDiff((diff) => diff.frameIndex(compositionId, frameIndex));
 
 		params.addListener.keyboardOnce("Space", "keydown", () => {
 			cancelled = true;
@@ -44,6 +45,7 @@ export const startPlayback = (compositionId: string, startFrameIndex: number) =>
 
 			++frameIndex;
 			playbackMap[compositionId] = { frameIndex };
+			params.performDiff((diff) => diff.frameIndex(compositionId, frameIndex));
 			requestAnimationFrame(tick);
 		};
 		requestAnimationFrame(tick);

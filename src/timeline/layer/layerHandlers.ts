@@ -51,7 +51,7 @@ export const layerHandlers = {
 					return;
 				}
 
-				const op = createOperation();
+				const op = createOperation(params);
 				layerOperations.setLayerParentLayer(op, layerId, target.layerId);
 
 				params.dispatch(op.actions);

@@ -10,7 +10,7 @@ const getAreaActionState = (areaId: string, actionState = getActionState()) =>
 
 const flowShortcuts = {
 	removeSelectedNodes: (areaId: string, params: RequestActionParams) => {
-		const op = createOperation();
+		const op = createOperation(params);
 		const { graphId } = getAreaActionState(areaId);
 		flowOperations.removeSelectedNodesInGraph(op, graphId);
 		params.dispatch(op.actions);
@@ -23,10 +23,7 @@ const wereNodesRemoved: ShouldAddShortcutToStackFn = (areaId, prevState, nextSta
 	const a = prevState.flowState.graphs[graphId];
 	const b = nextState.flowState.graphs[graphId];
 
-	const aNodeIds = Object.keys(a.nodes);
-	const bNodeIds = Object.keys(b.nodes);
-
-	if (aNodeIds.length !== bNodeIds.length) {
+	if (a.nodes.length !== b.nodes.length) {
 		return true;
 	}
 

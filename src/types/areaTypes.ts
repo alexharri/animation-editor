@@ -1,12 +1,12 @@
 import { AreaType } from "~/constants";
 import { FlowAreaState } from "~/flow/state/flowAreaReducer";
 import { TimelineAreaState } from "~/timeline/timelineAreaReducer";
-import { CompositionWorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
+import { WorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 
 interface _AreaStates {
 	[AreaType.FlowEditor]: FlowAreaState;
 	[AreaType.Timeline]: TimelineAreaState;
-	[AreaType.Workspace]: CompositionWorkspaceAreaState;
+	[AreaType.Workspace]: WorkspaceAreaState;
 	[AreaType.History]: {};
 	[AreaType.Project]: {};
 }

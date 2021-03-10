@@ -22,10 +22,10 @@ export const addListToMap = <M extends Partial<{ [key: string]: T }>, T, U exten
 	};
 };
 
-export const modifyItemsInMap = <M extends { [key: string]: T }, T = M[string]>(
+export const modifyItemsInMap = <M extends { [key: string]: any }>(
 	map: M,
 	keys: string | string[],
-	fn: (item: T) => T,
+	fn: (item: M[keyof M]) => M[keyof M],
 ): M => {
 	let obj: M = { ...map };
 
@@ -36,6 +36,25 @@ export const modifyItemsInMap = <M extends { [key: string]: T }, T = M[string]>(
 			throw new Error(`Key '${key}' does not exist in map.`);
 		}
 		(obj as any)[key] = fn(obj[key]);
+	}
+
+	return obj;
+};
+
+export const mergeItemInMap = <M extends { [key: string]: any }>(
+	map: M,
+	keys: string | string[],
+	fn: (item: M[keyof M]) => Partial<M[keyof M]>,
+): M => {
+	let obj: M = { ...map };
+
+	const keyList = typeof keys === "string" ? [keys] : keys;
+
+	for (const key of keyList) {
+		if (!obj.hasOwnProperty(key)) {
+			throw new Error(`Key '${key}' does not exist in map.`);
+		}
+		(obj as any)[key] = { ...obj[key], ...fn(obj[key]) };
 	}
 
 	return obj;
@@ -136,4 +155,11 @@ export const createGenMapIdFn = <M extends { [key: string]: any }>(map: M): (() 
 		keys.push(n);
 		return n.toString();
 	};
+};
+
+export const reduceIds = <K extends string, F extends (key: K) => any>(keys: K[], fn: F) => {
+	return keys.reduce<Record<K, ReturnType<F>>>((obj, key) => {
+		obj[key] = fn(key);
+		return obj;
+	}, {} as any);
 };

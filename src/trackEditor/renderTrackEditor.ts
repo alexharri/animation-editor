@@ -11,6 +11,7 @@ import { cssVariables } from "~/cssVariables";
 import { createGraphEditorNormalToViewportX } from "~/graphEditor/renderGraphEditor";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
+import { LayerType } from "~/types";
 import { renderRect } from "~/util/canvas/renderPrimitives";
 
 interface RenderTimelineOptions {
@@ -25,8 +26,6 @@ interface RenderTimelineOptions {
 	timelines: TimelineState;
 	timelineSelection: TimelineSelectionState;
 	trackDragSelectRect: Rect | null;
-	layerIndexShift: number;
-	layerLengthShift: [number, number];
 }
 
 export const renderTracks = (options: RenderTimelineOptions) => {
@@ -40,29 +39,9 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		viewportHeight,
 		timelines,
 		panY,
-		layerIndexShift,
-		layerLengthShift,
 	} = options;
 
 	const compositionSelection = compSelectionFromState(composition.id, compositionSelectionState);
-
-	const getLayerIndexAndLength = (layerId: string): [number, number] => {
-		const layer = compositionState.layers[layerId];
-
-		if (!compositionSelection.layers[layer.id]) {
-			return [layer.index, layer.length];
-		}
-
-		const compositionLength = compositionState.compositions[layer.compositionId].length;
-
-		const length = Math.min(
-			compositionLength - layer.index,
-			Math.max(0, layer.length - layerLengthShift[0] + layerLengthShift[1]),
-		);
-		const index = Math.max(0, layer.index + layerIndexShift + layerLengthShift[0]);
-
-		return [index, length];
-	};
 
 	ctx.clearRect(0, 0, viewportWidth, viewportHeight);
 	renderRect(
@@ -112,8 +91,28 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 		const layer = compositionState.layers[layerId];
 		const selected = compositionSelection.layers[layerId];
 
-		const [layerIndex, layerLength] = getLayerIndexAndLength(layerId);
-		const keyframeIndexShift = selected ? -layerLengthShift[0] : 0;
+		renderRect(
+			ctx,
+			{ left: 0, width: viewportWidth, top: getY(), height: TIMELINE_LAYER_HEIGHT },
+			{ fillColor: selected ? cssVariables.dark700 : cssVariables.dark600 },
+		);
+		renderEdge(selected ? cssVariables.dark500 : cssVariables.dark400);
+
+		const { index: layerIndex, length: layerLength } = layer;
+
+		if (layer.type === LayerType.Composition) {
+			const compositionId = compositionState.compositionLayerIdToComposition[layer.id];
+			const composition = compositionState.compositions[compositionId];
+			const x0 = toTimelineX(layer.playbackStartsAtIndex);
+			const x1 = toTimelineX(layer.playbackStartsAtIndex + composition.length);
+			const left = x0;
+			const width = x1 - x0;
+			renderRect(
+				ctx,
+				{ left, width, top: getY(), height: TIMELINE_LAYER_HEIGHT },
+				{ fillColor: selected ? cssVariables.gray600 : cssVariables.gray500 },
+			);
+		}
 
 		// Render layer bar
 		const x0 = toTimelineX(layerIndex);
@@ -121,13 +120,6 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 
 		const left = x0;
 		const width = x1 - x0;
-
-		renderRect(
-			ctx,
-			{ left: 0, width: viewportWidth, top: getY(), height: TIMELINE_LAYER_HEIGHT },
-			{ fillColor: cssVariables.gray500 },
-		);
-		renderEdge(selected ? cssVariables.dark700 : cssVariables.dark600);
 
 		renderRect(
 			ctx,
@@ -153,9 +145,9 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 			renderRect(
 				ctx,
 				{ left: 0, width: viewportWidth, top: getY(), height: TIMELINE_LAYER_HEIGHT },
-				{ fillColor: cssVariables.dark800 },
+				{ fillColor: selected ? cssVariables.dark700 : cssVariables.dark600 },
 			);
-			renderEdge(selected ? cssVariables.dark700 : cssVariables.dark600);
+			renderEdge(selected ? cssVariables.dark500 : cssVariables.dark400);
 
 			if (property.type === "group") {
 				let { collapsed, properties } = property;
@@ -179,7 +171,7 @@ export const renderTracks = (options: RenderTimelineOptions) => {
 				for (let j = 0; j < timeline.keyframes.length; j += 1) {
 					const k = timeline.keyframes[j];
 
-					const left = toTimelineX(layerIndex + k.index + keyframeIndexShift);
+					const left = toTimelineX(layerIndex + k.index);
 					const top = getY() + TIMELINE_LAYER_HEIGHT / 2;
 
 					const selected = options.timelineSelection[timeline.id]?.keyframes[k.id];

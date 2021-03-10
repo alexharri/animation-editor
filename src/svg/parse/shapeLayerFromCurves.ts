@@ -112,7 +112,6 @@ export const shapeLayerFromCurves = (
 			id: ctx.createShapeId(),
 			nodes: [],
 			edges: [],
-			moveVector: Vec2.ORIGIN,
 		};
 		shapeId = shape.id;
 		shapes.push(shape);

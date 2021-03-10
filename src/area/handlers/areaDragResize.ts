@@ -1,12 +1,12 @@
-import { requestAction } from "~/listener/requestAction";
-import { AreaRowLayout } from "~/types/areaTypes";
-import { capToRange, interpolate } from "~/util/math";
-import { AREA_MIN_CONTENT_WIDTH } from "~/constants";
 import { areaActions } from "~/area/state/areaActions";
 import { computeAreaRowToMinSize } from "~/area/util/areaRowToMinSize";
-import { getActionState } from "~/state/stateUtils";
 import { computeAreaToViewport } from "~/area/util/areaToViewport";
 import { getAreaRootViewport } from "~/area/util/getAreaViewport";
+import { AREA_MIN_CONTENT_WIDTH } from "~/constants";
+import { requestAction } from "~/listener/requestAction";
+import { getActionState } from "~/state/stateUtils";
+import { AreaRowLayout } from "~/types/areaTypes";
+import { capToRange, interpolate } from "~/util/math";
 
 export const handleDragAreaResize = (
 	_e: React.MouseEvent,
@@ -14,7 +14,7 @@ export const handleDragAreaResize = (
 	horizontal: boolean,
 	areaIndex: number, // 1 is the first separator
 ) => {
-	requestAction({}, ({ addListener, dispatch, submitAction, cancelAction }) => {
+	requestAction({}, (params) => {
 		const areaState = getActionState().area;
 		const areaToViewport = computeAreaToViewport(
 			areaState.layout,
@@ -59,11 +59,11 @@ export const handleDragAreaResize = (
 
 		if (tMin0 + tMin1 >= 0.99) {
 			// There's basically no space available to resize
-			cancelAction();
+			params.cancelAction();
 			return;
 		}
 
-		addListener.repeated("mousemove", (e) => {
+		params.addListener.repeated("mousemove", (e) => {
 			const vec = Vec2.fromEvent(e);
 
 			const t0 = horizontal ? sharedViewport.left : sharedViewport.top;
@@ -80,11 +80,13 @@ export const handleDragAreaResize = (
 			rowAreas[areaIndex - 1] = sizes[0];
 			rowAreas[areaIndex] = sizes[1];
 
-			dispatch(areaActions.setRowSizes(row.id, rowAreas));
+			params.performDiff((diff) => diff.resizeAreas());
+			params.dispatch(areaActions.setRowSizes(row.id, rowAreas));
 		});
 
-		addListener.once("mouseup", () => {
-			submitAction("Resize areas");
+		params.addListener.once("mouseup", () => {
+			params.addDiff((diff) => diff.resizeAreas());
+			params.submitAction("Resize areas");
 		});
 	});
 };

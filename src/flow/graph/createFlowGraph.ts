@@ -1,47 +1,60 @@
 import uuid from "uuid/v4";
 import { DEFAULT_FLOW_NODE_WIDTH } from "~/constants";
-import { FlowGraph, FlowNodeType } from "~/flow/flowTypes";
+import { FlowGraph, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 
-const createFlowGraphBase = () => {
+const createNode = (graphId: string): FlowNode => {
 	const nodeId = "0";
 	return {
+		id: nodeId,
+		graphId,
+		position: Vec2.new(0, 0),
+		state: { layerId: "", propertyId: "" },
+		type: FlowNodeType.property_output,
+		width: DEFAULT_FLOW_NODE_WIDTH,
+		outputs: [],
+		inputs: [],
+	};
+};
+
+const createFlowGraphBase = () => {
+	const graph = {
 		id: uuid(),
-		nodes: {
-			[nodeId]: {
-				id: nodeId,
-				position: Vec2.new(0, 0),
-				state: { layerId: "", propertyId: "" },
-				type: FlowNodeType.property_output,
-				width: DEFAULT_FLOW_NODE_WIDTH,
-				outputs: [],
-				inputs: [],
-			},
-		},
-		selection: {
-			nodes: {},
-		},
+		nodes: [] as string[],
 		moveVector: Vec2.new(0, 0),
 		_addNodeOfTypeOnClick: null,
 		_dragInputTo: null,
 		_dragOutputTo: null,
 		_dragSelectRect: null,
 	};
+	const node = createNode(graph.id);
+	graph.nodes.push(node.id);
+	return { graph, node };
 };
 
-export const createLayerFlowGraph = (layerId: string): FlowGraph => {
+export const createLayerFlowGraph = (layerId: string): { graph: FlowGraph; node: FlowNode } => {
+	const { graph, node } = createFlowGraphBase();
 	return {
-		type: "layer_graph",
-		layerId,
-		propertyId: "",
-		...createFlowGraphBase(),
+		graph: {
+			type: "layer_graph",
+			layerId,
+			propertyId: "",
+			...graph,
+		},
+		node,
 	};
 };
 
-export const createArrayModifierFlowGraph = (propertyId: string): FlowGraph => {
+export const createArrayModifierFlowGraph = (
+	propertyId: string,
+): { graph: FlowGraph; node: FlowNode } => {
+	const { graph, node } = createFlowGraphBase();
 	return {
-		type: "array_modifier_graph",
-		propertyId,
-		layerId: "",
-		...createFlowGraphBase(),
+		graph: {
+			type: "array_modifier_graph",
+			propertyId,
+			layerId: "",
+			...graph,
+		},
+		node,
 	};
 };

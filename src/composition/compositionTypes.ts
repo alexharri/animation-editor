@@ -23,7 +23,6 @@ export interface Composition {
 	height: number;
 	length: number;
 	frameIndex: number; // Current time
-	shapeMoveVector: Vec2;
 }
 
 export interface Layer {
@@ -32,8 +31,31 @@ export interface Layer {
 	graphId: string;
 	type: LayerType;
 	name: string;
-	index: number; // Index of first frame
-	length: number; // Number of frames
+
+	/**
+	 * The frame which the layer is first rendered at.
+	 */
+	index: number;
+
+	/**
+	 * The number of frames that the layer is rendered for.
+	 */
+	length: number;
+
+	/**
+	 * The index of frame 0 of a composition layer. Only applies to composition layers.
+	 *
+	 * The `index` is not relative to this index, they are both absolute indices.
+	 *
+	 * ```
+	 * playbackStartsAtIndex <= index
+	 * ```
+	 */
+	playbackStartsAtIndex: number;
+
+	/**
+	 * The IDs of the top-level properties of the layer.
+	 */
 	properties: string[];
 	collapsed: boolean;
 	parentLayerId: string;

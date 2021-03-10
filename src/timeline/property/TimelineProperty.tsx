@@ -212,6 +212,7 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 			<div
 				className={s("container")}
 				onMouseDown={separateLeftRightMouse({ right: onRightClick })}
+				data-property-ids={property.properties.join(",")}
 			>
 				<div className={s("contentContainer")} style={{ marginLeft }}>
 					<div
@@ -270,6 +271,7 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 		<div
 			className={s("container")}
 			onMouseDown={separateLeftRightMouse({ right: onRightClick })}
+			data-property-id={property.id}
 		>
 			<div className={s("contentContainer")} style={{ marginLeft }}>
 				<div

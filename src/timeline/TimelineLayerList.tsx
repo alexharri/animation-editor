@@ -2,8 +2,8 @@ import React, { useRef } from "react";
 import { TIMELINE_LAYER_HEIGHT } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { useMemoActionState } from "~/hook/useActionState";
-import { CompositionPropertyValuesProvider } from "~/shared/composition/compositionRenderValues";
 import { connectActionState } from "~/state/stateUtils";
+import { TimelinePropertyStoreProvider } from "~/timeline/context/TimelineValueContext";
 import { TimelineLayer } from "~/timeline/layer/TimelineLayer";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
 import { hexToRGBAString } from "~/util/color/convertColor";
@@ -115,7 +115,7 @@ const TimelineLayerListComponent: React.FC<Props> = (props) => {
 	);
 
 	return (
-		<CompositionPropertyValuesProvider compositionId={compositionId}>
+		<TimelinePropertyStoreProvider compositionId={compositionId}>
 			<div
 				className={s("layerWrapper")}
 				ref={layerWrapper}
@@ -137,7 +137,7 @@ const TimelineLayerListComponent: React.FC<Props> = (props) => {
 					<div className={s("previewBar")} style={{ top: previewY }} />
 				)}
 			</div>
-		</CompositionPropertyValuesProvider>
+		</TimelinePropertyStoreProvider>
 	);
 };
 

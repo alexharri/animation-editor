@@ -2,8 +2,8 @@ import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
 import { CompoundProperty } from "~/composition/compositionTypes";
 import { reduceLayerPropertiesAndGroups } from "~/composition/compositionUtils";
+import { arrayModifierPropertiesFactory } from "~/composition/factories/arrayModifierPropertiesFactory";
 import { getLayerTypeName } from "~/composition/layer/layerUtils";
-import { createArrayModifier } from "~/composition/modifiers/arrayModifier";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
 import { FlowNodeState } from "~/flow/flowNodeState";
@@ -13,10 +13,11 @@ import { requestAction } from "~/listener/requestAction";
 import { shapeActions } from "~/shape/shapeReducer";
 import { shapeSelectionActions } from "~/shape/shapeSelectionReducer";
 import { getShapeLayerPathIds } from "~/shape/shapeUtils";
+import { createOperation } from "~/state/operation";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
-import { LayerType, ToDispatch } from "~/types";
-import { createGenMapIdFn } from "~/util/mapUtils";
+import { LayerType } from "~/types";
+import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
 
 interface Options {
 	compositionId: string;
@@ -33,8 +34,15 @@ export const createTimelineContextMenu = (
 
 		if (!layerId && !propertyId) {
 			const createAddLayerFn = (type: LayerType) => () => {
-				params.dispatch(compositionActions.createLayer(compositionId, type));
-				params.dispatch(contextMenuActions.closeContextMenu());
+				const op = createOperation(params);
+
+				const expectedLayerId = createMapNumberId(op.state.compositionState.layers);
+				op.addDiff((diff) => diff.addLayer(expectedLayerId));
+				op.add(
+					compositionActions.createLayer(compositionId, type),
+					contextMenuActions.closeContextMenu(),
+				);
+				op.submit();
 				params.submitAction(`Add ${getLayerTypeName(type)}`);
 			};
 
@@ -59,7 +67,7 @@ export const createTimelineContextMenu = (
 						onSelect: () => {
 							const { compositionState } = getActionState();
 
-							const { propertyId, propertiesToAdd } = createArrayModifier({
+							const { propertyId, propertiesToAdd } = arrayModifierPropertiesFactory({
 								compositionId,
 								layerId,
 								createId: createGenMapIdFn(compositionState.properties),
@@ -73,6 +81,7 @@ export const createTimelineContextMenu = (
 								),
 							);
 							params.dispatch(contextMenuActions.closeContextMenu());
+							params.addDiff((diff) => diff.propertyStructure(layerId));
 							params.submitAction("Add array modifier to layer");
 						},
 					},
@@ -121,13 +130,15 @@ export const createTimelineContextMenu = (
 		// Remove layer
 		if (layerId) {
 			const removeLayer = () => {
-				const { compositionState, flowState, shapeState } = getActionState();
+				const op = createOperation(params);
+
+				const { compositionState, flowState, shapeState } = op.state;
 				const layer = compositionState.layers[layerId];
 
-				const toDispatch: ToDispatch = [
+				op.add(
 					compositionActions.removeLayer(layer.id),
 					contextMenuActions.closeContextMenu(),
-				];
+				);
 
 				// Clear layer selection and property selection
 				const propertyIds = reduceLayerPropertiesAndGroups<string[]>(
@@ -139,7 +150,7 @@ export const createTimelineContextMenu = (
 					},
 					[],
 				);
-				toDispatch.push(
+				op.add(
 					compSelectionActions.removeLayersFromSelection(compositionId, [layerId]),
 					compSelectionActions.removePropertiesFromSelection(compositionId, propertyIds),
 				);
@@ -166,13 +177,13 @@ export const createTimelineContextMenu = (
 				layer.properties.forEach(crawl);
 
 				timelineIdsToRemove.forEach((id) => {
-					toDispatch.push(timelineActions.removeTimeline(id));
-					toDispatch.push(timelineSelectionActions.clear(id));
+					op.add(timelineActions.removeTimeline(id));
+					op.add(timelineSelectionActions.clear(id));
 				});
 
 				// Remove layer graph if it exists
 				if (layer.graphId) {
-					toDispatch.push(flowActions.removeGraph(layer.graphId));
+					op.add(flowActions.removeGraph(layer.graphId));
 				}
 
 				// Remove references to layer in layer graphs in this composition
@@ -190,9 +201,9 @@ export const createTimelineContextMenu = (
 					}
 
 					const graph = flowState.graphs[graphId];
-					const nodeIds = Object.keys(graph.nodes);
+					const nodeIds = graph.nodes;
 					for (let j = 0; j < nodeIds.length; j += 1) {
-						const node = graph.nodes[nodeIds[j]];
+						const node = flowState.nodes[nodeIds[j]];
 
 						if (node.type !== FlowNodeType.property_input) {
 							continue;
@@ -207,7 +218,7 @@ export const createTimelineContextMenu = (
 						// Node references layer.
 						//
 						// Reset node state/outputs and remove all references to it.
-						toDispatch.push(
+						op.add(
 							flowActions.removeReferencesToNodeInGraph(graph.id, node.id),
 							flowActions.setNodeOutputs(graph.id, node.id, []),
 							flowActions.updateNodeState<FlowNodeType.property_input>(
@@ -224,13 +235,14 @@ export const createTimelineContextMenu = (
 					const pathIds = getShapeLayerPathIds(layerId, compositionState);
 					for (const pathId of pathIds) {
 						const { shapeId } = shapeState.paths[pathId];
-						toDispatch.push(shapeActions.removePath(pathId));
-						toDispatch.push(shapeActions.removeShape(shapeId));
-						toDispatch.push(shapeSelectionActions.clearShapeSelection(shapeId));
+						op.add(shapeActions.removePath(pathId));
+						op.add(shapeActions.removeShape(shapeId));
+						op.add(shapeSelectionActions.clearShapeSelection(shapeId));
 					}
 				}
 
-				params.dispatch(toDispatch);
+				op.addDiff((diff) => diff.removeLayer(layerId));
+				op.submit();
 				params.submitAction("Delete layer");
 			};
 

@@ -1,5 +1,5 @@
 import { compositionActions } from "~/composition/compositionReducer";
-import { createLayer } from "~/composition/layer/createLayer";
+import { layerFactory } from "~/composition/factories/layerFactory";
 import { DEFAULT_LAYER_TRANSFORM, DEG_TO_RAD_FAC } from "~/constants";
 import { shapeActions } from "~/shape/shapeReducer";
 import { getActionState } from "~/state/stateUtils";
@@ -37,7 +37,7 @@ function rect(ctx: CompositionFromSvgContext, _node: SVGNode) {
 
 	ctx.op.add(
 		compositionActions.createNonCompositionLayer(
-			createLayer({
+			layerFactory({
 				compositionId: ctx.compositionId,
 				compositionState: ctx.compositionState,
 				type: LayerType.Rect,
@@ -55,7 +55,7 @@ function circle(ctx: CompositionFromSvgContext, _node: SVGNode) {
 
 	ctx.op.add(
 		compositionActions.createNonCompositionLayer(
-			createLayer({
+			layerFactory({
 				compositionId: ctx.compositionId,
 				compositionState: ctx.compositionState,
 				type: LayerType.Ellipse,
@@ -74,7 +74,7 @@ function line(ctx: CompositionFromSvgContext, _node: SVGNode) {
 
 	ctx.op.add(
 		compositionActions.createNonCompositionLayer(
-			createLayer({
+			layerFactory({
 				compositionId: ctx.compositionId,
 				compositionState: ctx.compositionState,
 				type: LayerType.Line,
@@ -107,7 +107,7 @@ function path(ctx: CompositionFromSvgContext, _node: SVGNode) {
 	ctx.op.add(
 		shapeActions.addObjects(shapeLayerObjects.shapeState),
 		compositionActions.createNonCompositionLayer(
-			createLayer({
+			layerFactory({
 				compositionId: ctx.compositionId,
 				compositionState: ctx.compositionState,
 				type: LayerType.Shape,
@@ -132,10 +132,9 @@ function g(ctx: CompositionFromSvgContext, _node: SVGNode) {
 	}
 }
 
-export const svgLayerFactory: Partial<Record<
-	SVGNode["tagName"],
-	(ctx: CompositionFromSvgContext, node: SVGNode) => void
->> = {
+export const svgLayerFactory: Partial<
+	Record<SVGNode["tagName"], (ctx: CompositionFromSvgContext, node: SVGNode) => void>
+> = {
 	circle,
 	line,
 	path,

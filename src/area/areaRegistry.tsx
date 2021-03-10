@@ -9,7 +9,8 @@ import { timelineAreaReducer } from "~/timeline/timelineAreaReducer";
 import { timelineKeyboardShortcuts } from "~/timeline/timelineShortcuts";
 import { KeyboardShortcut } from "~/types";
 import { AreaComponentProps, AreaState } from "~/types/areaTypes";
-import { Workspace } from "~/workspace/Workspace";
+import { PixiWorkspace } from "~/workspace/PixiWorkspace";
+// import { Workspace } from "~/workspace/Workspace";
 import { compositionWorkspaceAreaReducer } from "~/workspace/workspaceAreaReducer";
 import { workspaceKeyboardShortcuts } from "~/workspace/workspaceShortcuts";
 
@@ -17,7 +18,7 @@ export const areaComponentRegistry: {
 	[T in AreaType]: React.ComponentType<AreaComponentProps<AreaState<T>>>;
 } = {
 	[AreaType.Timeline]: Timeline,
-	[AreaType.Workspace]: Workspace,
+	[AreaType.Workspace]: PixiWorkspace,
 	[AreaType.FlowEditor]: FlowEditor,
 	[AreaType.History]: HistoryEditor,
 	[AreaType.Project]: Project,

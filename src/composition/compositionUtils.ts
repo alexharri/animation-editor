@@ -1,6 +1,8 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
-import { LayerType } from "~/types";
+import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
+import { getActionState } from "~/state/stateUtils";
+import { LayerType, PropertyGroupName } from "~/types";
 
 export const reduceVisibleLayerProperties = <T>(
 	layerId: string,
@@ -117,6 +119,114 @@ export function reduceLayerProperties<T>(
 	}
 
 	return acc;
+}
+
+export function forEachLayerProperty(
+	layerId: string,
+	compositionState: CompositionState,
+	fn: (property: Property) => void,
+	options: { ignoreGroups?: PropertyGroupName[] } = {},
+): void {
+	const groupsToIgnore = new Set<PropertyGroupName>();
+
+	if (options.ignoreGroups) {
+		options.ignoreGroups.forEach((name) => groupsToIgnore.add(name));
+	}
+
+	const toIterateOver = [...compositionState.layers[layerId].properties];
+	while (toIterateOver.length) {
+		const propertyId = toIterateOver[0];
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "group" && groupsToIgnore.has(property.name)) {
+			toIterateOver.shift();
+			continue;
+		}
+
+		if (property.type === "property") {
+			fn(property);
+		} else {
+			toIterateOver.push(...property.properties);
+		}
+		toIterateOver.shift();
+	}
+}
+
+export function forEachSubProperty(
+	_propertyId: string,
+	compositionState: CompositionState,
+	fn: (property: Property) => void,
+): void {
+	const property = compositionState.properties[_propertyId];
+
+	if (property.type === "property") {
+		throw new Error(`Property of type "property" has no sub-properties.`);
+	}
+
+	const toIterateOver = [...property.properties];
+	while (toIterateOver.length) {
+		const propertyId = toIterateOver[0];
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "property") {
+			fn(property);
+		} else {
+			toIterateOver.push(...property.properties);
+		}
+		toIterateOver.shift();
+	}
+}
+
+export function findDirectSubProperty(
+	propertyId: string,
+	compositionState: CompositionState,
+	fn: (property: Property) => boolean,
+): Property | null {
+	const property = compositionState.properties[propertyId];
+
+	if (property.type === "property") {
+		throw new Error(`Property of type "property" has no sub-properties.`);
+	}
+
+	const toIterateOver = [...property.properties];
+	for (let i = 0; i < property.properties.length; i++) {
+		const propertyId = toIterateOver[i];
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "property") {
+			const found = fn(property);
+			if (found) {
+				return property;
+			}
+		} else {
+			toIterateOver.push(...property.properties);
+		}
+		toIterateOver.shift();
+	}
+
+	return null;
+}
+
+export function forEachLayerPropertyAndCompoundProperty(
+	layerId: string,
+	compositionState: CompositionState,
+	fn: (property: Property | CompoundProperty) => void,
+): void {
+	const toIterateOver = [...compositionState.layers[layerId].properties];
+	while (toIterateOver.length) {
+		const propertyId = toIterateOver[0];
+		const property = compositionState.properties[propertyId];
+
+		if (property.type === "property") {
+			fn(property);
+		} else if (property.type === "compound") {
+			fn(property);
+			toIterateOver.push(...property.properties);
+		} else {
+			toIterateOver.push(...property.properties);
+		}
+		toIterateOver.shift();
+	}
 }
 
 export function reduceCompProperties<T>(
@@ -320,4 +430,16 @@ export const getParentPropertyInLayer = (
 	return findLayerProperty(layerId, compositionState, (group) => {
 		return group.type === "group" && group.properties.indexOf(propertyId) !== -1;
 	});
+};
+
+export const compUtil = {
+	getSelectedLayers: (compositionId: string) => {
+		const { compositionState, compositionSelectionState } = getActionState();
+		const composition = compositionState.compositions[compositionId];
+		const compositionSelection = compSelectionFromState(
+			compositionId,
+			compositionSelectionState,
+		);
+		return composition.layers.filter((layerId) => compositionSelection.layers[layerId]);
+	},
 };

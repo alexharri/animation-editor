@@ -1,7 +1,6 @@
-import { areaActions } from "~/area/state/areaActions";
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
-import { CompoundProperty, Property } from "~/composition/compositionTypes";
+import { CompoundProperty, Layer, Property } from "~/composition/compositionTypes";
 import {
 	getTimelineIdsReferencedByComposition,
 	getTimelineIdsReferencedByLayer,
@@ -24,8 +23,15 @@ import {
 	trackEditorGlobalToNormal,
 } from "~/timeline/timelineUtils";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
+import { LayerType } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
-import { distanceFromTranslatedX, isVecInRect, rectOfTwoVecs, valueWithinRange } from "~/util/math";
+import {
+	capToRange,
+	distanceFromTranslatedX,
+	isVecInRect,
+	rectOfTwoVecs,
+	valueWithinRange,
+} from "~/util/math";
 
 const actions = {
 	keyframeMouseDown: (
@@ -160,7 +166,7 @@ const actions = {
 					return !selection.keyframes[k.id];
 				});
 
-				const op = createOperation();
+				const op = createOperation(params);
 
 				if (!additiveSelection && anyNotSelected) {
 					op.add(
@@ -242,17 +248,23 @@ const actions = {
 			viewport: Rect;
 		},
 	) => {
+		const { compositionState, compositionSelectionState } = getActionState();
+		const composition = compositionState.compositions[options.compositionId];
+		let compositionSelection = compSelectionFromState(
+			composition.id,
+			compositionSelectionState,
+		);
+
+		let leftMax = -Infinity;
+		let rightMax = Infinity;
+		let layerIds: string[] = [];
+		const layerToIndex: Record<string, number> = {};
+		const compositionLayerToPlaybackIndex: Record<string, number> = {};
+
 		mouseDownMoveAction(e, {
 			keys: [],
 			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
-				const { compositionState, compositionSelectionState } = getActionState();
-				const composition = compositionState.compositions[options.compositionId];
-				const compositionSelection = compSelectionFromState(
-					composition.id,
-					compositionSelectionState,
-				);
-
 				const timelineIds = getTimelineIdsReferencedByComposition(
 					options.compositionId,
 					compositionState,
@@ -293,13 +305,47 @@ const actions = {
 						),
 					);
 				}
+
+				compositionSelection = compSelectionFromState(
+					composition.id,
+					getActionState().compositionSelectionState,
+				);
+
+				layerIds = Object.keys(compositionSelection.layers);
+
+				const updateMax = (index: number, length: number) => {
+					leftMax = Math.max(leftMax, -index);
+					rightMax = Math.min(rightMax, composition.length - (index + length));
+				};
+
+				for (const layerId of layerIds) {
+					const layer = compositionState.layers[layerId];
+					layerToIndex[layerId] = layer.index;
+					updateMax(layer.index, layer.length);
+
+					if (layer.type === LayerType.Composition) {
+						compositionLayerToPlaybackIndex[layerId] = layer.playbackStartsAtIndex;
+					}
+				}
 			},
 			mouseMove: (params, { moveVector }) => {
-				const moveX = Math.round(moveVector.normal.x);
+				const moveX = capToRange(leftMax, rightMax, Math.round(moveVector.normal.x));
 
-				params.dispatchToAreaState(
-					options.timelineAreaId,
-					timelineAreaActions.setFields({ layerIndexShift: moveX }),
+				const op = createOperation(params);
+
+				for (const layerId of layerIds) {
+					const layer = compositionState.layers[layerId];
+					const index = moveX + layerToIndex[layerId];
+					op.add(compositionActions.setLayerIndex(layerId, index));
+
+					if (layer.type === LayerType.Composition) {
+						const index = moveX + compositionLayerToPlaybackIndex[layerId];
+						op.add(compositionActions.setLayerPlaybackIndex(layerId, index));
+					}
+				}
+				params.dispatch(op.actions);
+				params.performDiff((diff) =>
+					diff.frameIndex(composition.id, composition.frameIndex),
 				);
 			},
 			mouseUp: (params, hasMoved) => {
@@ -308,24 +354,8 @@ const actions = {
 					return;
 				}
 
-				const { layerIndexShift } = getAreaActionState<AreaType.Timeline>(
-					options.timelineAreaId,
-				);
-				params.dispatchToAreaState(
-					options.timelineAreaId,
-					timelineAreaActions.setFields({ layerIndexShift: 0 }),
-				);
-
-				const { compositionSelectionState: compositionSelection } = getActionState();
-				params.dispatch(
-					compositionActions.applyLayerIndexShift(
-						options.compositionId,
-						layerIndexShift,
-						compositionSelection,
-					),
-				);
-
-				params.submitAction("Move layer(s)", { allowIndexShift: true });
+				params.addDiff((diff) => diff.frameIndex(composition.id, composition.frameIndex));
+				params.submitAction("Move layers", { allowIndexShift: true });
 			},
 		});
 	},
@@ -345,12 +375,19 @@ const actions = {
 	) => {
 		const { compositionState, compositionSelectionState } = getActionState();
 		const composition = compositionState.compositions[options.compositionId];
-		const compositionSelection = compSelectionFromState(
+		let compositionSelection = compSelectionFromState(
 			composition.id,
 			compositionSelectionState,
 		);
 
+		let leftMax = -Infinity;
+		let rightMax = Infinity;
+		let layerIds: string[] = [];
+		const layersAtStart: Record<string, Layer> = {};
+		const layerLastIndex: Record<string, number> = {};
+
 		mouseDownMoveAction(e, {
+			baseDiff: (diff) => diff.frameIndex(composition.id, composition.frameIndex),
 			keys: [],
 			translateX: (value) => graphEditorGlobalToNormal(value, options),
 			beforeMove: (params) => {
@@ -386,84 +423,73 @@ const actions = {
 						),
 					);
 				}
+
+				compositionSelection = compSelectionFromState(
+					composition.id,
+					getActionState().compositionSelectionState,
+				);
+
+				layerIds = Object.keys(compositionSelection.layers);
+				for (const layerId of layerIds) {
+					const layer = compositionState.layers[layerId];
+					if (which === "start") {
+						leftMax = Math.max(leftMax, -layer.index);
+						rightMax = Math.min(rightMax, layer.length - 1);
+					} else {
+						leftMax = Math.max(leftMax, -(layer.length - 1));
+						rightMax = Math.min(
+							rightMax,
+							composition.length - (layer.index + layer.length),
+						);
+					}
+					layersAtStart[layerId] = layer;
+					layerLastIndex[layerId] = layer.index;
+
+					if (layer.type === LayerType.Composition) {
+						if (which === "start") {
+							leftMax = Math.max(leftMax, layer.playbackStartsAtIndex - layer.index);
+						} else {
+							const compositionId =
+								compositionState.compositionLayerIdToComposition[layer.id];
+							const composition = compositionState.compositions[compositionId];
+							rightMax = Math.min(
+								rightMax,
+								composition.length -
+									layer.length -
+									(layer.index - layer.playbackStartsAtIndex),
+							);
+						}
+					}
+				}
 			},
 			mouseMove: (params, { moveVector }) => {
-				const moveX = Math.round(moveVector.normal.x);
+				const moveX = capToRange(leftMax, rightMax, Math.round(moveVector.normal.x));
+				const start = which === "start";
 
-				const layerLengthShift: [number, number] =
-					which === "start" ? [moveX, 0] : [0, moveX];
+				const op = createOperation(params);
 
-				params.dispatchToAreaState(
-					options.timelineAreaId,
-					timelineAreaActions.setFields({ layerLengthShift }),
-				);
+				for (const layerId of layerIds) {
+					const index = layersAtStart[layerId].index + moveX * (start ? 1 : 0);
+					const length = layersAtStart[layerId].length + moveX * (start ? -1 : 1);
+
+					op.add(compositionActions.setLayerIndexAndLength(layerId, index, length));
+
+					const indexDelta = layerLastIndex[layerId] - index;
+					layerLastIndex[layerId] = index;
+
+					const timelineIds = getTimelineIdsReferencedByLayer(layerId, compositionState);
+					for (const timelineId of timelineIds) {
+						op.add(timelineActions.shiftTimelineIndex(timelineId, indexDelta));
+					}
+				}
+				params.dispatch(op.actions);
 			},
 			mouseUp: (params, hasMoved) => {
 				if (!hasMoved) {
 					params.submitAction("Select layer");
 					return;
 				}
-
-				const { layerLengthShift } = getAreaActionState<AreaType.Timeline>(
-					options.timelineAreaId,
-				);
-				params.dispatch(
-					areaActions.dispatchToAreaState(
-						options.timelineAreaId,
-						timelineAreaActions.setFields({ layerLengthShift: [0, 0] }),
-					),
-				);
-
-				const compositionSelection = getActionState().compositionSelectionState;
-				params.dispatch(
-					compositionActions.applyLayerLengthShift(
-						options.compositionId,
-						layerLengthShift,
-						compositionSelection,
-					),
-				);
-
-				{
-					const toDispatch: any[] = [];
-
-					// Update affected timelines
-					const {
-						compositionState: newCompositionState,
-						compositionSelectionState,
-					} = getActionState();
-
-					const compositionSelection = compSelectionFromState(
-						composition.id,
-						compositionSelectionState,
-					);
-
-					for (let i = 0; i < composition.layers.length; i += 1) {
-						const layerId = composition.layers[i];
-
-						if (!compositionSelection.layers[layerId]) {
-							continue;
-						}
-
-						const oldIndex = compositionState.layers[layerId].index;
-						const newIndex = newCompositionState.layers[layerId].index;
-
-						const shiftBy = oldIndex - newIndex;
-						const timelineIds = getTimelineIdsReferencedByLayer(
-							layerId,
-							compositionState,
-						);
-
-						for (let j = 0; j < timelineIds.length; j += 1) {
-							toDispatch.push(
-								timelineActions.shiftTimelineIndex(timelineIds[j], shiftBy),
-							);
-						}
-					}
-
-					params.dispatch(toDispatch);
-				}
-
-				params.submitAction("Resize layer(s)", { allowIndexShift: true });
+				params.submitAction("Resize layers", { allowIndexShift: true });
 			},
 		});
 	},
@@ -591,9 +617,18 @@ export const trackHandlers = {
 						return;
 					}
 
-					if (
-						valueWithinRange(posTranslated.x, layer.index, layer.index + layer.length)
-					) {
+					let index = layer.index;
+					let length = layer.length;
+
+					if (layer.type === LayerType.Composition) {
+						index = layer.playbackStartsAtIndex;
+						const compositionId =
+							compositionState.compositionLayerIdToComposition[layer.id];
+						const composition = compositionState.compositions[compositionId];
+						length = composition.length;
+					}
+
+					if (valueWithinRange(posTranslated.x, index, index + length)) {
 						actions.layerMouseDown(e, layerId, options);
 						return;
 					}

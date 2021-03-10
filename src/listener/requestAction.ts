@@ -1,5 +1,8 @@
 import { areaActions } from "~/area/state/areaActions";
+import { diffFactory, DiffFactoryFn } from "~/diff/diffFactory";
+import { Diff } from "~/diff/diffs";
 import { addListener as _addListener, removeListener } from "~/listener/addListener";
+import { sendDiffsToSubscribers } from "~/listener/diffListener";
 import { historyActions } from "~/state/history/historyActions";
 import { HistoryState } from "~/state/history/historyReducer";
 import { getActionId, getActionState, getCurrentState } from "~/state/stateUtils";
@@ -38,6 +41,9 @@ export interface RequestActionParams {
 	removeListener: typeof removeListener;
 	execOnComplete: (callback: () => void) => void;
 	done: () => boolean;
+	addDiff: (fn: DiffFactoryFn) => void;
+	performDiff: (fn: DiffFactoryFn) => void;
+	addReverseDiff: (fn: DiffFactoryFn) => void;
 }
 
 export interface RequestActionCallback {
@@ -76,10 +82,23 @@ const performRequestedAction = (
 		}
 	};
 
+	const diffs: Diff[] = [];
+	const allDiffs: Diff[] = [];
+
+	// The diffs to perform to reverse the performed to reverse the diffs
+	// that have been performed by the current action.
+	//
+	// If none are specified, the performed diffs are performed again in
+	// reverse order.
+	const reverseDiffs: Diff[] = [];
+
 	const cancelAction = () => {
 		store.dispatch(historyActions.cancelAction(actionId));
 		onComplete();
 		_cancelAction = null;
+
+		const diffsToPerform = reverseDiffs.length ? reverseDiffs : [...allDiffs].reverse();
+		sendDiffsToSubscribers(diffsToPerform, "backward");
 	};
 	_cancelAction = cancelAction;
 
@@ -156,6 +175,10 @@ const performRequestedAction = (
 				beforeSubmit(params);
 			}
 
+			if (diffs.length) {
+				sendDiffsToSubscribers(diffs);
+			}
+
 			const modifiedKeys: string[] = [];
 			{
 				const state: any = store.getState();
@@ -174,7 +197,14 @@ const performRequestedAction = (
 			}
 
 			store.dispatch(
-				historyActions.submitAction(actionId, name, history, modifiedKeys, allowIndexShift),
+				historyActions.submitAction(
+					actionId,
+					name,
+					history,
+					modifiedKeys,
+					allowIndexShift,
+					diffs,
+				),
 			);
 			onComplete();
 		},
@@ -187,6 +217,29 @@ const performRequestedAction = (
 
 		execOnComplete: (cb) => {
 			onCompleteCallback = cb;
+		},
+
+		addDiff: (fn) => {
+			const result = fn(diffFactory);
+			const diffsToAdd = Array.isArray(result) ? result : [result];
+
+			diffs.push(...diffsToAdd);
+			allDiffs.push(...diffsToAdd);
+			// The diffs are not performed when added. Added diffs are performed when
+			// the action is submitted.
+		},
+
+		performDiff: (fn) => {
+			const result = fn(diffFactory);
+			const diffsToPerform = Array.isArray(result) ? result : [result];
+			allDiffs.push(...diffsToPerform);
+			sendDiffsToSubscribers(diffsToPerform);
+		},
+
+		addReverseDiff: (fn) => {
+			const result = fn(diffFactory);
+			const diffsToAdd = Array.isArray(result) ? result : [result];
+			reverseDiffs.push(...diffsToAdd);
 		},
 	};
 

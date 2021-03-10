@@ -3,9 +3,11 @@ import { ColorPicker } from "~/components/colorPicker/ColorPicker";
 import { compositionActions } from "~/composition/compositionReducer";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuBaseProps, OpenCustomContextMenuOptions } from "~/contextMenu/contextMenuTypes";
+import { DiffFactoryFn } from "~/diff/diffFactory";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { useGetRefRectFn, useRefRect } from "~/hook/useRefRect";
 import { requestAction } from "~/listener/requestAction";
+import { getActionState } from "~/state/stateUtils";
 import styles from "~/timeline/property/TimelineProperty.styles";
 import { RGBAColor, RGBColor } from "~/types";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -29,6 +31,9 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 		const rgb: RGBColor = [r, g, b];
 
 		requestAction({ history: true }, (params) => {
+			const { compositionState } = getActionState();
+			const property = compositionState.properties[props.propertyId];
+
 			const Component: React.FC<ContextMenuBaseProps> = ({ updateRect }) => {
 				const ref = useRef(null);
 				const rect = useRefRect(ref);
@@ -37,6 +42,8 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 				useEffect(() => {
 					updateRect(rect!);
 				}, [rect]);
+
+				const diffFn: DiffFactoryFn = (diff) => diff.modifyProperty(property.id);
 
 				const onChange = (rgbColor: RGBColor) => {
 					latestColor.current = rgbColor;
@@ -47,14 +54,10 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 					}
 
 					params.dispatch(compositionActions.setPropertyValue(props.propertyId, value));
+					params.performDiff(diffFn);
 				};
 
-				// Submit on enter
-				useKeyDownEffect("Enter", (down) => {
-					if (!down) {
-						return;
-					}
-
+				const onSubmit = () => {
 					let changed = false;
 
 					for (let i = 0; i < rgb.length; i += 1) {
@@ -70,12 +73,22 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 					}
 
 					params.dispatch(contextMenuActions.closeContextMenu());
+					params.addDiff(diffFn);
 					params.submitAction("Update color");
+				};
+
+				// Submit on enter
+				useKeyDownEffect("Enter", (down) => {
+					if (!down) {
+						return;
+					}
+
+					onSubmit();
 				});
 
 				return (
 					<div ref={ref} className={s("colorPickerWrapper")}>
-						<ColorPicker rgbColor={rgb} onChange={onChange} />
+						<ColorPicker rgbColor={rgb} onChange={onChange} onSubmit={onSubmit} />
 					</div>
 				);
 			};

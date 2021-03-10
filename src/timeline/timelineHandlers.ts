@@ -63,27 +63,24 @@ export const timelineHandlers = {
 		const { compositionId } = options;
 
 		const composition = getActionState().compositionState.compositions[compositionId];
-
 		const initialPosition = Vec2.fromEvent(e);
 
-		const fn: RequestActionCallback = (params) => {
-			const { addListener, dispatch, submitAction } = params;
+		let frameIndex = composition.frameIndex;
 
+		const fn: RequestActionCallback = (params) => {
 			const onMove = (e?: MouseEvent) => {
 				const pos = e ? Vec2.fromEvent(e) : initialPosition;
 				const x = graphEditorGlobalToNormal(pos.x, options);
-				dispatch(
-					compositionActions.setFrameIndex(
-						composition.id,
-						capToRange(0, composition.length - 1, Math.round(x)),
-					),
-				);
+				frameIndex = capToRange(0, composition.length - 1, Math.round(x));
+				params.dispatch(compositionActions.setFrameIndex(composition.id, frameIndex));
+				params.performDiff((diff) => diff.frameIndex(compositionId, frameIndex));
 			};
-			addListener.repeated("mousemove", onMove);
+			params.addListener.repeated("mousemove", onMove);
 			onMove();
 
-			addListener.once("mouseup", () => {
-				submitAction("Move scrubber");
+			params.addListener.once("mouseup", () => {
+				params.addDiff((diff) => diff.frameIndex(compositionId, frameIndex));
+				params.submitAction("Move scrubber");
 			});
 		};
 		requestAction({ history: true }, fn);
@@ -350,8 +347,9 @@ export const timelineHandlers = {
 			}
 		}
 
-		requestAction({ history: true }, ({ dispatch, submitAction }) => {
-			const op = createOperation();
+		requestAction({ history: true }, (params) => {
+			const { dispatch, submitAction } = params;
+			const op = createOperation(params);
 
 			for (const property of properties) {
 				if (anyHasTimeline) {
@@ -424,25 +422,30 @@ export const timelineHandlers = {
 				selection: timelineSelection[timeline.id],
 			});
 
-			requestAction({ history: true }, ({ dispatch, submitAction }) => {
-				dispatch(
+			requestAction({ history: true }, (params) => {
+				params.dispatch(
 					timelineActions.removeTimeline(timelineId),
 					compositionActions.setPropertyValue(propertyId, value),
 					compositionActions.setPropertyTimelineId(propertyId, ""),
 				);
-				submitAction("Remove timeline from property");
+				params.addDiff((diff) => diff.togglePropertyAnimated(propertyId));
+				params.submitAction("Remove timeline from property");
 			});
 			return;
 		}
 
 		// Create timeline with a single keyframe at the current time
-		requestAction({ history: true }, ({ dispatch, submitAction }) => {
-			const timeline = createTimelineForLayerProperty(property.value, composition.frameIndex);
-			dispatch(
+		requestAction({ history: true }, (params) => {
+			const timeline = createTimelineForLayerProperty(
+				property.value,
+				composition.frameIndex - layer.index,
+			);
+			params.dispatch(
 				timelineActions.setTimeline(timeline.id, timeline),
 				compositionActions.setPropertyTimelineId(propertyId, timeline.id),
 			);
-			submitAction("Add timeline to property");
+			params.addDiff((diff) => diff.togglePropertyAnimated(propertyId));
+			params.submitAction("Add timeline to property");
 		});
 	},
 
@@ -724,10 +727,13 @@ export const timelineHandlers = {
 				return;
 			}
 
-			const graph = createArrayModifierFlowGraph(propertyId);
+			const { graph, node } = createArrayModifierFlowGraph(propertyId);
 
-			dispatch(compositionActions.setPropertyGraphId(propertyId, graph.id));
-			dispatch(flowActions.setGraph(graph));
+			dispatch(
+				compositionActions.setPropertyGraphId(propertyId, graph.id),
+				flowActions.setGraph(graph),
+				flowActions.setNode(node),
+			);
 			submitAction("Create array modifier graph");
 		});
 	},
@@ -749,10 +755,13 @@ export const timelineHandlers = {
 				return;
 			}
 
-			const graph = createLayerFlowGraph(layerId);
+			const { graph, node } = createLayerFlowGraph(layerId);
 
-			dispatch(compositionActions.setLayerGraphId(layerId, graph.id));
-			dispatch(flowActions.setGraph(graph));
+			dispatch(
+				compositionActions.setLayerGraphId(layerId, graph.id),
+				flowActions.setGraph(graph),
+				flowActions.setNode(node),
+			);
 			submitAction("Create layer graph");
 		});
 	},
@@ -849,7 +858,7 @@ export const timelineHandlers = {
 		requestAction(
 			{ history: true, shouldAddToStack: didCompSelectionChange(compositionId) },
 			(params) => {
-				const op = createOperation();
+				const op = createOperation(params);
 
 				if (!additiveSelection) {
 					// Clear other properties and timeline keyframes
@@ -935,6 +944,7 @@ export const timelineHandlers = {
 				}
 
 				params.dispatch(op.actions);
+				params.addDiff((diff) => diff.compositionSelection(property.compositionId));
 				params.submitAction("Select property");
 			},
 		);
@@ -942,7 +952,11 @@ export const timelineHandlers = {
 
 	moveModifierInList: (modifierPropertyId: string, moveBy: -1 | 1) => {
 		requestAction({ history: true }, (params) => {
+			const { compositionState } = getActionState();
+			const property = compositionState.properties[modifierPropertyId];
+
 			params.dispatch(compositionActions.moveModifier(modifierPropertyId, moveBy));
+			params.addDiff((diff) => diff.modifierOrder(property.layerId));
 			params.submitAction("Move modifier");
 		});
 	},

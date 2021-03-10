@@ -2,6 +2,7 @@ import { createAction } from "typesafe-actions";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import {
 	FlowGraph,
+	FlowNode,
 	FlowNodeInput,
 	FlowNodeIO,
 	FlowNodeOutput,
@@ -19,6 +20,13 @@ export const flowActions = {
 
 	removeGraph: createAction("flowGraph/REMOVE_GRAPH", (action) => {
 		return (graphId: string) => action({ graphId });
+	}),
+
+	/**
+	 * Node
+	 */
+	setNode: createAction("flowGraph/SET_NODE", (action) => {
+		return (node: FlowNode) => action({ node });
 	}),
 
 	/**

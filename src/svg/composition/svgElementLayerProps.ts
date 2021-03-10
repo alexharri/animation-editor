@@ -1,4 +1,4 @@
-import { ShapeProperties } from "~/composition/layer/shapeLayerProperties";
+import { ShapeProperties } from "~/composition/factories/shapeLayerPropertiesFactory";
 import { SVGPathNode, SVGPolygonNode, SVGPolylineNode } from "~/svg/svgTypes";
 
 export const svgPathElementLayerProps = (

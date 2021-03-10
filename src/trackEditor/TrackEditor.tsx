@@ -20,8 +20,6 @@ interface OwnProps {
 	panY: number;
 	timelineAreaId: string;
 	trackDragSelectRect: Rect | null;
-	layerIndexShift: number;
-	layerLengthShift: [number, number];
 }
 interface StateProps {
 	composition: Composition;
@@ -52,8 +50,6 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 			composition,
 			timelineSelectionState,
 			viewport,
-			layerIndexShift,
-			layerLengthShift,
 		} = props;
 
 		const timelineIds = getTimelineIdsReferencedByComposition(composition.id, compositionState);
@@ -81,8 +77,6 @@ const TrackEditorComponent: React.FC<Props> = (props) => {
 			viewBounds,
 			viewportHeight: viewport.height,
 			viewportWidth: viewport.width,
-			layerIndexShift,
-			layerLengthShift,
 		});
 	}, [props]);
 

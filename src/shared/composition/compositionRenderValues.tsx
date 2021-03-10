@@ -1,4 +1,3 @@
-import React, { useEffect, useRef } from "react";
 import { CompositionState } from "~/composition/compositionReducer";
 import { CompositionSelectionState } from "~/composition/compositionSelectionReducer";
 import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
@@ -16,17 +15,15 @@ import { computeNodeOutputArgs } from "~/flow/graph/computeNode";
 import { FlowState } from "~/flow/state/flowReducers";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelectionState } from "~/shape/shapeSelectionReducer";
-import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
-import { store } from "~/state/store";
 import { TimelineState } from "~/timeline/timelineReducer";
 import { TimelineSelectionState } from "~/timeline/timelineSelectionReducer";
 import { getTimelineValueAtIndex } from "~/timeline/timelineUtils";
 import { CompositionRenderValues, LayerTransform, LayerType } from "~/types";
 
-function getGraphOutputNodes(graph: FlowGraph) {
+function getGraphOutputNodes(flowState: FlowState, graph: FlowGraph) {
 	const outputNodes: FlowNode<FlowNodeType.property_output>[] = [];
-	for (const key in graph.nodes) {
-		const node = graph.nodes[key];
+	for (const key of graph.nodes) {
+		const node = flowState.nodes[key];
 
 		if (node.type === FlowNodeType.property_output) {
 			outputNodes.push(node as FlowNode<FlowNodeType.property_output>);
@@ -43,7 +40,7 @@ function getGraphOutputNodes(graph: FlowGraph) {
  */
 function getGraphNodesToCompute(
 	outputNodes: FlowNode<FlowNodeType.property_output>[],
-	graph: FlowGraph,
+	flowState: FlowState,
 ) {
 	const visitedNodes = new Set<string>();
 	const toCompute: string[] = [];
@@ -57,7 +54,7 @@ function getGraphNodesToCompute(
 
 		for (const input of node.inputs) {
 			if (input.pointer) {
-				dfs(graph.nodes[input.pointer.nodeId]);
+				dfs(flowState.nodes[input.pointer.nodeId]);
 			}
 		}
 
@@ -83,7 +80,7 @@ interface Context {
 	};
 	timelineState: TimelineState;
 	timelineSelectionState: TimelineSelectionState;
-	graphs: FlowState["graphs"];
+	flowState: FlowState;
 	frameIndex: number;
 }
 
@@ -99,6 +96,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 		timelineState,
 		timelineSelectionState,
 		frameIndex,
+		flowState,
 	} = context;
 
 	const _compProperties: { [compositionId: string]: Property[] } = {};
@@ -165,14 +163,14 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 				continue;
 			}
 
-			const graph = context.graphs[layer.graphId];
-			const outputNodes = getGraphOutputNodes(graph);
+			const graph = context.flowState.graphs[layer.graphId];
+			const outputNodes = getGraphOutputNodes(flowState, graph);
 
 			if (!outputNodes.length) {
 				continue;
 			}
 
-			const toCompute = getGraphNodesToCompute(outputNodes, graph);
+			const toCompute = getGraphNodesToCompute(outputNodes, flowState);
 
 			const ctx: FlowComputeContext = {
 				compositionId: layer.compositionId,
@@ -189,7 +187,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 			};
 
 			for (const nodeId of toCompute) {
-				computed[nodeId] = computeNodeOutputArgs(graph.nodes[nodeId], ctx);
+				computed[nodeId] = computeNodeOutputArgs(flowState.nodes[nodeId], ctx);
 			}
 
 			for (const outputNode of outputNodes) {
@@ -265,8 +263,8 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 					continue;
 				}
 
-				const graph = context.graphs[modifierGroup.graphId];
-				const outputNodes = getGraphOutputNodes(graph);
+				const graph = flowState.graphs[modifierGroup.graphId];
+				const outputNodes = getGraphOutputNodes(flowState, graph);
 
 				if (!outputNodes.length) {
 					continue;
@@ -282,7 +280,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 				const expressionCache = {};
 
 				for (let i = 0; i < count; i++) {
-					const toCompute = getGraphNodesToCompute(outputNodes, graph);
+					const toCompute = getGraphNodesToCompute(outputNodes, flowState);
 
 					const computed: { [nodeId: string]: FlowComputeNodeArg[] } = {};
 
@@ -299,7 +297,7 @@ const _compute = (context: Context, options: Options): CompositionRenderValues =
 					};
 
 					for (const nodeId of toCompute) {
-						computed[nodeId] = computeNodeOutputArgs(graph.nodes[nodeId], ctx);
+						computed[nodeId] = computeNodeOutputArgs(flowState.nodes[nodeId], ctx);
 					}
 
 					for (const outputNode of outputNodes) {
@@ -441,7 +439,7 @@ export const getCompositionRenderValues = (
 		compositionSelectionState: state.compositionSelectionState,
 		shapeState: state.shapeState,
 		shapeSelectionState: state.shapeSelectionState,
-		graphs: state.flowState.graphs,
+		flowState: state.flowState,
 		timelineSelectionState: state.timelineSelectionState,
 		timelineState: state.timelineState,
 		container,
@@ -450,156 +448,4 @@ export const getCompositionRenderValues = (
 
 	const map = _compute(context, options);
 	return map;
-};
-
-type Value = { rawValue: any; computedValue: any };
-
-export const CompositionPropertyValuesContext = React.createContext<{
-	subscribe: (propertyId: string, listener: (value: Value) => void) => () => void;
-	getValue: (propertyId: string) => Value;
-}>({} as any);
-
-export const CompositionPropertyValuesProvider: React.FC<{
-	compositionId: string;
-}> = ({ children, compositionId }) => {
-	const getMap = (state: ActionState): CompositionRenderValues => {
-		const composition = state.compositionState.compositions[compositionId];
-		const { frameIndex, width, height } = composition;
-		return getCompositionRenderValues(
-			state,
-			compositionId,
-			frameIndex,
-			{ width, height },
-			{ recursive: false },
-		);
-	};
-
-	const lastMapRef = useRef<CompositionRenderValues>(getMap(getActionState()));
-	const lastStateRef = useRef<ActionState | null>(null);
-	const shouldRenderRef = useRef(true);
-	const nRef = useRef(0);
-	const listenersRef = useRef<
-		Array<{ id: string; propertyId: string; listener: (value: Value) => void }>
-	>([]);
-
-	useEffect(() => {
-		const unsub = store.subscribe(() => {
-			if (shouldRenderRef.current) {
-				return;
-			}
-
-			const prevState = lastStateRef.current;
-			const nextState = getActionStateFromApplicationState(store.getState());
-
-			lastStateRef.current = nextState;
-
-			shouldRenderRef.current = (() => {
-				if (!prevState) {
-					return true;
-				}
-
-				if (prevState.compositionState !== nextState.compositionState) {
-					return true;
-				}
-
-				if (prevState.timelineState !== nextState.timelineState) {
-					return true;
-				}
-
-				return false;
-			})();
-		});
-
-		return unsub;
-	}, []);
-
-	const render = () => {
-		const map = getMap(getActionState());
-		const lastMap = lastMapRef.current;
-
-		lastMapRef.current = map;
-		shouldRenderRef.current = false;
-
-		const listeners = listenersRef.current;
-		for (const { listener, propertyId } of listeners) {
-			const rawValue = map.properties[propertyId].rawValue;
-			const lastRawValue = lastMap.properties[propertyId].rawValue;
-
-			const computedValue = map.properties[propertyId].computedValue;
-			const lastComputedValue = lastMap.properties[propertyId].computedValue;
-
-			if (computedValue === lastComputedValue && rawValue === lastRawValue) {
-				continue;
-			}
-
-			listener(map.properties[propertyId]);
-		}
-	};
-
-	useEffect(() => {
-		let mounted = true;
-
-		const tick = () => {
-			if (mounted) {
-				requestAnimationFrame(tick);
-			}
-
-			const shouldRender = shouldRenderRef.current;
-
-			if (!shouldRender) {
-				return;
-			}
-
-			shouldRenderRef.current = false;
-			render();
-		};
-		tick();
-
-		return () => {
-			mounted = false;
-		};
-	}, []);
-
-	const getValue = (propertyId: string, retry = false): Value => {
-		const map = lastMapRef.current;
-		const value = map.properties[propertyId];
-
-		if (!value && !retry) {
-			// Property may have been rendered before the context updated.
-			//
-			// In that case, we attempt to render again with the current state
-			// and try to get the value again.
-			//
-			// If rendering does not result in a value, we allow the component
-			// calling to receive the invalid value and throw.
-			render();
-			return getValue(propertyId, true);
-		}
-
-		return value;
-	};
-
-	const subscribe = (propertyId: string, listener: (value: Value) => void) => {
-		const id = (++nRef.current).toString();
-
-		listenersRef.current.push({ id, propertyId, listener });
-
-		return function unsubscribe() {
-			const listeners = listenersRef.current;
-			for (let i = 0; i < listeners.length; i += 1) {
-				if (listeners[i].id !== id) {
-					continue;
-				}
-
-				listeners.splice(i, 1);
-				break;
-			}
-		};
-	};
-
-	return (
-		<CompositionPropertyValuesContext.Provider value={{ getValue, subscribe }}>
-			{children}
-		</CompositionPropertyValuesContext.Provider>
-	);
 };

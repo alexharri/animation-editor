@@ -713,10 +713,10 @@ export const getSelectedTimelineIdsInComposition = (
 	compositionId: string,
 	compositionState: CompositionState,
 	compositionSelectionState: CompositionSelectionState,
-) => {
+): { timelineIds: string[]; propertyIds: string[] } => {
 	const compositionSelection = compSelectionFromState(compositionId, compositionSelectionState);
 
-	return reduceCompProperties<string[]>(
+	return reduceCompProperties<{ timelineIds: string[]; propertyIds: string[] }>(
 		compositionId,
 		compositionState,
 		(acc, property) => {
@@ -734,11 +734,12 @@ export const getSelectedTimelineIdsInComposition = (
 					!compoundProperty.separated &&
 					compositionSelection.properties[compoundProperty.id])
 			) {
-				acc.push(property.timelineId);
+				acc.timelineIds.push(property.timelineId);
+				acc.propertyIds.push(property.id);
 			}
 
 			return acc;
 		},
-		[],
+		{ timelineIds: [], propertyIds: [] },
 	);
 };

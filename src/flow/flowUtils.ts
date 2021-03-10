@@ -1,6 +1,8 @@
-import { FlowGraph, FlowNodeType } from "~/flow/flowTypes";
+import { CompositionState } from "~/composition/compositionReducer";
+import { FlowNodeType } from "~/flow/flowTypes";
+import { FlowState } from "~/flow/state/flowReducers";
 import { FlowGraphSelection, FlowSelectionState } from "~/flow/state/flowSelectionReducer";
-import { isMapShallowEqual, removeKeysFromMap } from "~/util/mapUtils";
+import { isMapShallowEqual, mergeItemInMap, removeKeysFromMap } from "~/util/mapUtils";
 
 const flowNodeTypeToLabel: Record<FlowNodeType, string> = {
 	[FlowNodeType.array_modifier_index]: "Index",
@@ -76,11 +78,17 @@ export const flowEditorPositionToViewport = (
 		.add(Vec2.new(options.viewport.width / 2, options.viewport.height / 2));
 };
 
-export const findInputsThatReferenceFlowNodeOutputs = (nodeId: string, graph: FlowGraph) => {
+export const findInputsThatReferenceFlowNodeOutputs = (
+	graphId: string,
+	nodeId: string,
+	flowState: FlowState,
+) => {
 	const results: Array<{ nodeId: string; inputIndex: number }> = [];
 
-	for (const key in graph.nodes) {
-		const node = graph.nodes[key];
+	const graph = flowState.graphs[graphId];
+
+	for (const key of graph.nodes) {
+		const node = flowState.nodes[key];
 
 		for (let i = 0; i < node.inputs.length; i += 1) {
 			const input = node.inputs[i];
@@ -98,20 +106,23 @@ export const findInputsThatReferenceFlowNodeOutputs = (nodeId: string, graph: Fl
 	return results;
 };
 
-export const removeReferencesToNodeInFlowGraph = (nodeId: string, graph: FlowGraph): FlowGraph => {
-	const refs = findInputsThatReferenceFlowNodeOutputs(nodeId, graph);
+export const removeReferencesToFlowNode = (nodeId: string, flowState: FlowState): FlowState => {
+	const node = flowState.nodes[nodeId];
+	const { graphId } = node;
+	const refs = findInputsThatReferenceFlowNodeOutputs(graphId, nodeId, flowState);
 
-	const newGraph: FlowGraph = {
-		...graph,
-		nodes: { ...graph.nodes },
+	const newState: FlowState = {
+		...flowState,
+		graphs: { ...flowState.graphs },
+		nodes: { ...flowState.nodes },
 	};
 
 	for (let i = 0; i < refs.length; i += 1) {
 		const { inputIndex, nodeId } = refs[i];
 
-		const node = newGraph.nodes[nodeId];
+		const node = newState.nodes[nodeId];
 
-		newGraph.nodes[nodeId] = {
+		newState.nodes[nodeId] = {
 			...node,
 			inputs: node.inputs.map((input, i) =>
 				i === inputIndex
@@ -124,21 +135,23 @@ export const removeReferencesToNodeInFlowGraph = (nodeId: string, graph: FlowGra
 		};
 	}
 
-	return newGraph;
+	return newState;
 };
 
-export const removeNodeAndReferencesToItInFlowGraph = (
+export const removeFlowNodeAndReferencesToIt = (
 	nodeId: string,
-	graph: FlowGraph,
-): FlowGraph => {
-	let newGraph = removeReferencesToNodeInFlowGraph(nodeId, graph);
+	flowState: FlowState,
+): FlowState => {
+	const node = flowState.nodes[nodeId];
+	const { graphId } = node;
 
-	newGraph = {
-		...graph,
-		nodes: removeKeysFromMap(newGraph.nodes, [nodeId]),
-	};
+	const newState = removeReferencesToFlowNode(nodeId, flowState);
 
-	return newGraph;
+	newState.graphs = mergeItemInMap(newState.graphs, graphId, (graph) => ({
+		nodes: graph.nodes.filter((id) => id !== nodeId),
+	}));
+	newState.nodes = removeKeysFromMap(newState.nodes, [nodeId]);
+	return newState;
 };
 
 export const flowSelectionFromState = (
@@ -162,4 +175,62 @@ export const didFlowSelectionChange: (
 	}
 
 	return false;
+};
+
+export function getFlowPropertyNodeReferencedPropertyIds(
+	compositionState: CompositionState,
+	propertyId: string,
+) {
+	if (!propertyId) {
+		// The property_* node has not selected a property.
+		return [];
+	}
+
+	const property = compositionState.properties[propertyId];
+
+	switch (property.type) {
+		case "property":
+			return [property.id];
+		case "compound":
+			return [...property.properties];
+		case "group": {
+			const propertyIds: string[] = [];
+			for (const propertyId of property.properties) {
+				const p = compositionState.properties[propertyId];
+				switch (p.type) {
+					case "property": {
+						propertyIds.push(p.id);
+						break;
+					}
+					case "compound": {
+						propertyIds.push(...p.properties);
+						break;
+					}
+				}
+			}
+			return propertyIds;
+		}
+		default:
+			throw new Error("Unexpected property type");
+	}
+}
+
+/**
+ * Returns undefined if the graph is not a layer graph (e.g. Array Modifier Graph).
+ */
+export const getFlowNodeAssociatedCompositionId = (
+	nodeId: string,
+	actionState: ActionState,
+): string | undefined => {
+	const { flowState, compositionState } = actionState;
+
+	const node = flowState.nodes[nodeId];
+	const graph = flowState.graphs[node.graphId];
+
+	if (!graph.layerId) {
+		return undefined;
+	}
+
+	const layer = compositionState.layers[graph.layerId];
+	return layer.compositionId;
 };
