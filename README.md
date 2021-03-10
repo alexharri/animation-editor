@@ -97,7 +97,7 @@ A single shape layer may contain any number of paths.
 
 ## SVG Import
 
-Note: The SVG importer is still very much a work-in-progress,. The SVG spec is incredibly feature rich, so the imported result may differ significantly from the source SVG.
+Note: The SVG importer is still very much a work-in-progress. The SVG spec is incredibly feature rich, so the imported result may differ significantly from the source SVG.
 
 The SVG imported supports most basic SVG element types.
 
