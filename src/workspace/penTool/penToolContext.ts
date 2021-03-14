@@ -15,7 +15,6 @@ export interface PenToolContext {
 	layerId: string;
 	matrix: PIXI.Matrix;
 	normalToViewport: (vec: Vec2) => Vec2;
-	normalToGlobal: (vec: Vec2) => Vec2;
 	globalToNormal: (vec: Vec2) => Vec2;
 	viewportToNormal: (vec: Vec2) => Vec2;
 	shapeState: ShapeState;
@@ -54,9 +53,6 @@ export const constructPenToolContext = (
 	const viewportToNormal = (vec: Vec2) => {
 		return Vec2.new(matrices.content.applyInverse(vec));
 	};
-	const normalToGlobal = (vec: Vec2) => {
-		return normalToViewport(vec).addX(viewport.left).addY(viewport.top);
-	};
 
 	const mousePosition: MousePosition = {
 		global: globalMousePosition,
@@ -70,7 +66,6 @@ export const constructPenToolContext = (
 		layerId,
 		matrix: matrices.content,
 		normalToViewport,
-		normalToGlobal,
 		viewportToNormal,
 		globalToNormal,
 		shapeState: actionState.shapeState,

@@ -41,6 +41,7 @@ export class Vec2 {
 			this._y = vecOrX.y;
 		}
 		this.atOrigin = this.x === 0 && this.y === 0;
+		this.apply = this.apply.bind(this);
 	}
 
 	set x(value: number) {
@@ -158,7 +159,12 @@ export class Vec2 {
 	}
 
 	public apply(fn: (vec: Vec2) => { x: number; y: number }): Vec2 {
-		return Vec2.new(fn(this));
+		try {
+			return Vec2.new(fn(this));
+		} catch (e) {
+			console.log(this);
+			return Vec2.new(0, 0);
+		}
 	}
 
 	public length(): number {

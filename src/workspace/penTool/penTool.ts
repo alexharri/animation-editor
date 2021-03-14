@@ -902,7 +902,7 @@ export const penToolHandlers = {
 				);
 				params.dispatch(
 					shapeActions.setState(
-						penToolMoveObjects(toUse, shapeState, shapeId, selection),
+						penToolMoveObjects(toUse, shapeState, shapeId, selection, ctx.matrix),
 					),
 				);
 			},
@@ -1588,7 +1588,13 @@ export const penToolHandlers = {
 				);
 				params.dispatch(
 					shapeActions.setState(
-						penToolMoveObjects(moveVector.normal, shapeState, shapeId, selection),
+						penToolMoveObjects(
+							moveVector.normal,
+							shapeState,
+							shapeId,
+							selection,
+							ctx.matrix,
+						),
 					),
 				);
 			},
