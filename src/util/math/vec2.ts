@@ -157,8 +157,8 @@ export class Vec2 {
 		return Vec2.new(Math.round(this.x), Math.round(this.y));
 	}
 
-	public apply(fn: (vec: Vec2) => Vec2): Vec2 {
-		return fn(this);
+	public apply(fn: (vec: Vec2) => { x: number; y: number }): Vec2 {
+		return Vec2.new(fn(this));
 	}
 
 	public length(): number {
@@ -208,7 +208,7 @@ declare global {
 		public multiplyMat2(mat2: Mat2, anchor?: Vec2): Vec2;
 		public copy(): Vec2;
 		public round(): Vec2;
-		public apply(fn: (vec2: Vec2) => Vec2): Vec2;
+		public apply(fn: (vec2: Vec2) => { x: number; y: number }): Vec2;
 		public length(): number;
 		public eq(vec: Vec2): boolean;
 	}

@@ -147,15 +147,15 @@ const renderPath = (ctx: Ctx, pathId: string, directlySelected: boolean) => {
 				graphic.position.set(nodePos.x, nodePos.y);
 				container.addChild(graphic);
 			}
-			{
-				// Interaction area
-				const graphic = new PIXI.Graphics();
-				graphic.beginFill(rgbToBinary([0, 255, 0]));
-				graphic.drawCircle(nodePos.x, nodePos.y, 7);
-				graphic.endFill();
-				graphic.alpha = 0;
-				container.addChild(graphic);
-			}
+			// {
+			// 	// Interaction area
+			// 	const graphic = new PIXI.Graphics();
+			// 	graphic.beginFill(rgbToBinary([0, 255, 0]));
+			// 	graphic.drawCircle(nodePos.x, nodePos.y, 7);
+			// 	graphic.endFill();
+			// 	graphic.alpha = 0;
+			// 	container.addChild(graphic);
+			// }
 		}
 
 		if (!directlySelected) {
@@ -194,15 +194,15 @@ const renderPath = (ctx: Ctx, pathId: string, directlySelected: boolean) => {
 					graphic.position.set(pos.x, pos.y);
 					container.addChild(graphic);
 				}
-				{
-					// Interaction area
-					const graphic = new PIXI.Graphics();
-					graphic.beginFill(rgbToBinary([0, 255, 0]));
-					graphic.drawCircle(pos.x, pos.y, 5);
-					graphic.endFill();
-					graphic.alpha = 0;
-					container.addChild(graphic);
-				}
+				// {
+				// 	// Interaction area
+				// 	const graphic = new PIXI.Graphics();
+				// 	graphic.beginFill(rgbToBinary([0, 255, 0]));
+				// 	graphic.drawCircle(pos.x, pos.y, 5);
+				// 	graphic.endFill();
+				// 	graphic.alpha = 0;
+				// 	container.addChild(graphic);
+				// }
 			}
 
 			{

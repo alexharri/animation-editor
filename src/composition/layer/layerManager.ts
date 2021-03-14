@@ -207,8 +207,7 @@ export const createLayerManager = (
 
 			const matrices = createLayerViewportMatrices(
 				actionState,
-				self,
-				properties,
+				properties.getPropertyValue,
 				layer.id,
 				scale,
 			);
@@ -354,8 +353,7 @@ export const createLayerManager = (
 
 			const matrices = createLayerViewportMatrices(
 				actionState,
-				self,
-				properties,
+				properties.getPropertyValue,
 				layerId,
 				scale,
 			);

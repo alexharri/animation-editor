@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
+import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { PropertyName } from "~/types";
 
@@ -37,6 +37,43 @@ export const getPixiLayerMatrix = (
 		0,
 		0,
 	);
+
+	return matrix;
+};
+
+export const getRealPixiLayerMatrix = (
+	actionState: ActionState,
+	layerId: string,
+	getPropertyValue: (propertyId: string) => any,
+) => {
+	const matrices: PIXI.Matrix[] = [];
+
+	const { compositionState } = actionState;
+
+	let curr = compositionState.layers[layerId];
+
+	while (curr.parentLayerId) {
+		const next = compositionState.layers[curr.parentLayerId];
+		matrices.push(
+			getPixiLayerMatrix(
+				constructLayerPropertyMap(layerId, compositionState),
+				getPropertyValue,
+				{ applyAnchor: true },
+			),
+		);
+		curr = next;
+	}
+
+	const matrix = new PIXI.Matrix();
+
+	matrix.append(
+		getPixiLayerMatrix(constructLayerPropertyMap(layerId, compositionState), getPropertyValue, {
+			applyAnchor: true,
+		}),
+	);
+	for (const parentMatrix of matrices) {
+		matrix.append(parentMatrix);
+	}
 
 	return matrix;
 };
