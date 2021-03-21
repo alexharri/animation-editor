@@ -6,8 +6,10 @@ import {
 	getTimelineIdsReferencedByComposition,
 	reduceCompProperties,
 } from "~/composition/compositionUtils";
+import { createParentLayerViewportMatrices } from "~/composition/layer/constructLayerMatrix";
 import { constructLayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { getCompositionManagerByAreaId } from "~/composition/manager/compositionManager";
+import { createPropertyManager } from "~/composition/manager/property/propertyManager";
 import {
 	compSelectionFromState,
 	didCompSelectionChange,
@@ -16,7 +18,6 @@ import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction } from "~/listener/requestAction";
 import { getShapeLayerSelectedPathIds, getSingleSelectedShapeLayerId } from "~/shape/shapeUtils";
-import { getCompositionRenderValues } from "~/shared/composition/compositionRenderValues";
 import { createOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
@@ -30,7 +31,6 @@ import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { reduceIds } from "~/util/mapUtils";
 import { moveToolUtil } from "~/workspace/moveTool/moveToolUtil";
 import { penToolHandlers } from "~/workspace/penTool/penTool";
-import { globalToWorkspacePosition } from "~/workspace/workspaceUtils";
 
 export const moveToolHandlers = {
 	onMouseDown: (e: React.MouseEvent, areaId: string, viewport: Rect) => {
@@ -142,27 +142,30 @@ export const moveToolHandlers = {
 
 		let didMove = false;
 
-		const renderValues = getCompositionRenderValues(
-			actionState,
-			compositionId,
-			composition.frameIndex,
-			{
-				width: composition.width,
-				height: composition.height,
-			},
-			{
-				recursive: false,
-			},
-		);
-
 		const mapByLayer = reduceIds(composition.layers, (layerId) => {
 			return constructLayerPropertyMap(layerId, compositionState);
 		});
 
+		const createGlobalToNormal = (layerId: string) => {
+			const propertyManager = createPropertyManager(compositionId, actionState);
+			const matrices = createParentLayerViewportMatrices(
+				actionState,
+				propertyManager.getPropertyValue,
+				layerId,
+				scale,
+			);
+			const globalToNormal = (vec: Vec2) => {
+				return vec
+					.subXY(viewport.left, viewport.top)
+					.sub(pan.addX(viewport.width / 2).addY(viewport.height / 2))
+					.apply((vec) => matrices.position.applyInverse(vec));
+			};
+			return globalToNormal;
+		};
+
 		mouseDownMoveAction(e, {
 			keys: ["Shift"],
 			shouldAddToStack: [didCompSelectionChange(compositionId), () => didMove],
-			translate: (vec) => globalToWorkspacePosition(vec, viewport, scale, pan),
 			beforeMove: (params) => {
 				const op = createOperation(params);
 
@@ -191,7 +194,7 @@ export const moveToolHandlers = {
 				op.submit();
 				params.performDiff((diff) => diff.compositionSelection(compositionId));
 			},
-			mouseMove: (params, { moveVector: _moveVector, keyDown }) => {
+			mouseMove: (params, { initialMousePosition, mousePosition }) => {
 				const op = createOperation(params);
 
 				// Layer was deselected, do not move selected layers.
@@ -221,15 +224,11 @@ export const moveToolHandlers = {
 
 				for (const layerId of layerIds) {
 					const layer = compositionState.layers[layerId];
-					let moveVector = _moveVector.normal.copy();
+					const globalToNormal = createGlobalToNormal(layerId);
 
-					if (keyDown.Shift) {
-						if (Math.abs(moveVector.x) > Math.abs(moveVector.y)) {
-							moveVector.y = 0;
-						} else {
-							moveVector.x = 0;
-						}
-					}
+					const n_mousePosition = globalToNormal(mousePosition.global);
+					const n_initialMousePosition = globalToNormal(initialMousePosition.global);
+					let toUse = n_mousePosition.sub(n_initialMousePosition);
 
 					if (layer.parentLayerId) {
 						// Check if any layer in the parent chain is selected, if so skip
@@ -249,9 +248,6 @@ export const moveToolHandlers = {
 						if (hasSelectedParent(layer.parentLayerId)) {
 							continue;
 						}
-
-						const transform = renderValues.transforms[layer.parentLayerId].transform;
-						moveVector = transform.matrix.inverse().multiplyVec2(moveVector);
 					}
 
 					i: for (let i = 0; i < 2; i += 1) {
@@ -259,7 +255,7 @@ export const moveToolHandlers = {
 
 						const propertyId = layerPositionPropertyIds[layerId][i];
 						const initialValue = layerInitialPositions[layerId][axis];
-						const value = initialValue + moveVector[axis];
+						const value = initialValue + toUse[axis];
 
 						const property = compositionState.properties[propertyId] as Property;
 

@@ -171,7 +171,7 @@ const renderPath = (ctx: Ctx, pathId: string, directlySelected: boolean) => {
 				// {
 				// 	// Interaction area
 				// 	const graphic = new PIXI.Graphics();
-				// 	graphic.beginFill(rgbToBinary([0, 255, 0]));
+				// 	graphic.beginFill(zrgbToBinary([0, 255, 0]));
 				// 	graphic.drawCircle(pos.x, pos.y, 5);
 				// 	graphic.endFill();
 				// 	graphic.alpha = 0;

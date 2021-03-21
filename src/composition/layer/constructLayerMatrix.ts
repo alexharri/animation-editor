@@ -58,3 +58,39 @@ export const createLayerViewportMatrices = (
 
 	return { content: contentMatrix, position: positionMatrix };
 };
+
+export const createParentLayerViewportMatrices = (
+	actionState: ActionState,
+	getPropertyValue: (propertyId: string) => any,
+	layerId: string,
+	scale: number,
+): LayerMatrices => {
+	const { compositionState } = actionState;
+
+	const layer = compositionState.layers[layerId];
+
+	const contentMatrix = new PIXI.Matrix();
+	contentMatrix.scale(scale, scale);
+
+	const toAppend: PIXI.Matrix[] = [];
+
+	let parentLayerId = layer.parentLayerId;
+	while (parentLayerId) {
+		const parentMatrix = getPixiLayerMatrix(
+			constructLayerPropertyMap(parentLayerId, compositionState),
+			getPropertyValue,
+		);
+		toAppend.push(parentMatrix);
+
+		const parentLayer = compositionState.layers[parentLayerId];
+		parentLayerId = parentLayer.parentLayerId;
+	}
+
+	toAppend.reverse();
+	toAppend.forEach((parentMatrix) => contentMatrix.append(parentMatrix));
+
+	const positionMatrix = new PIXI.Matrix();
+	positionMatrix.append(contentMatrix);
+
+	return { content: contentMatrix, position: positionMatrix };
+};

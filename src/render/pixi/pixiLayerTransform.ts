@@ -56,7 +56,7 @@ export const getRealPixiLayerMatrix = (
 		const next = compositionState.layers[curr.parentLayerId];
 		matrices.push(
 			getPixiLayerMatrix(
-				constructLayerPropertyMap(layerId, compositionState),
+				constructLayerPropertyMap(next.id, compositionState),
 				getPropertyValue,
 				{ applyAnchor: true },
 			),
@@ -66,14 +66,14 @@ export const getRealPixiLayerMatrix = (
 
 	const matrix = new PIXI.Matrix();
 
+	for (const parentMatrix of matrices) {
+		matrix.append(parentMatrix);
+	}
 	matrix.append(
 		getPixiLayerMatrix(constructLayerPropertyMap(layerId, compositionState), getPropertyValue, {
 			applyAnchor: true,
 		}),
 	);
-	for (const parentMatrix of matrices) {
-		matrix.append(parentMatrix);
-	}
 
 	return matrix;
 };

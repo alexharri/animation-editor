@@ -70,7 +70,7 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 
 	const onRemoveParent = (params: RequestActionParams) => {
 		const op = createOperation(params);
-		layerOperations.removeLayerParentLayer(op, props.layerId);
+		layerOperations.removeLayerParentLayer(op, getActionState(), props.layerId);
 		params.dispatch(op.actions);
 		params.addDiff((diff) => diff.layerParent(props.layerId));
 		params.submitAction("Remove layer's parent layer");
@@ -78,7 +78,7 @@ const TimelineLayerParentComponent: React.FC<Props> = (props) => {
 
 	const onSelectParent = (params: RequestActionParams, parentId: string) => {
 		const op = createOperation(params);
-		layerOperations.setLayerParentLayer(op, props.layerId, parentId);
+		layerOperations.setLayerParentLayer(op, getActionState(), props.layerId, parentId);
 		params.dispatch(op.actions);
 		params.addDiff((diff) => diff.layerParent(props.layerId));
 		params.submitAction("Set layer's parent layer");

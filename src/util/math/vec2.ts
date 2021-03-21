@@ -3,13 +3,24 @@
 import { getDistance, interpolate, rotateVec2CCW } from "~/util/math";
 import { Mat2 } from "~/util/math/mat";
 
+type IVec2 = Vec2 | { x: number; y: number } | { left: number; top: number };
+
+const resolveVec2 = (data: IVec2): Vec2 => {
+	if (data instanceof Vec2) {
+		return data;
+	}
+
+	if (typeof (data as any).left === "number") {
+		return new Vec2((data as any).left, (data as any).top);
+	}
+
+	return new Vec2((data as any).x, (data as any).y);
+};
+
 export class Vec2 {
-	public static new(vec: { x: number; y: number } | { left: number; top: number }): Vec2;
+	public static new(vec: IVec2): Vec2;
 	public static new(x: number, y: number): Vec2;
-	public static new(
-		vecOrX: number | { x: number; y: number } | { left: number; top: number },
-		y?: number,
-	) {
+	public static new(vecOrX: number | IVec2, y?: number) {
 		if (typeof vecOrX === "number") {
 			return new Vec2(vecOrX, y!);
 		}
@@ -59,12 +70,13 @@ export class Vec2 {
 		return this._y;
 	}
 
-	public add(vec: Vec2): Vec2 {
-		if (vec.atOrigin) {
+	public add(vec: IVec2): Vec2 {
+		const v = resolveVec2(vec);
+		if (v.atOrigin) {
 			return this;
 		}
 
-		return new Vec2(this.x + vec.x, this.y + vec.y);
+		return new Vec2(this.x + v.x, this.y + v.y);
 	}
 
 	public addX(x: number): Vec2 {
@@ -76,11 +88,12 @@ export class Vec2 {
 	}
 
 	public sub(vec: Vec2): Vec2 {
-		if (vec.atOrigin) {
+		const v = resolveVec2(vec);
+		if (v.atOrigin) {
 			return this;
 		}
 
-		return new Vec2(this.x - vec.x, this.y - vec.y);
+		return new Vec2(this.x - v.x, this.y - v.y);
 	}
 
 	public subX(x: number): Vec2 {
@@ -95,50 +108,50 @@ export class Vec2 {
 		return new Vec2(this.x - x, this.y - y);
 	}
 
-	public scale(scale: number, anchor = Vec2.new(0, 0)): Vec2 {
+	public scale(scale: number, anchor: IVec2 = Vec2.new(0, 0)): Vec2 {
 		if (scale === 1) {
 			return this;
 		}
 
-		return new Vec2(
-			anchor.x + (this.x - anchor.x) * scale,
-			anchor.y + (this.y - anchor.y) * scale,
-		);
+		const a = resolveVec2(anchor);
+		return new Vec2(a.x + (this.x - a.x) * scale, a.y + (this.y - a.y) * scale);
 	}
 
-	public scaleX(scale: number, anchor = Vec2.new(0, 0)): Vec2 {
+	public scaleX(scale: number, anchor: IVec2 = Vec2.new(0, 0)): Vec2 {
 		if (scale === 1) {
 			return this;
 		}
 
-		return new Vec2(anchor.x + (this.x - anchor.x) * scale, this.y);
+		const a = resolveVec2(anchor);
+		return new Vec2(a.x + (this.x - a.x) * scale, this.y);
 	}
 
-	public scaleY(scale: number, anchor = Vec2.new(0, 0)): Vec2 {
+	public scaleY(scale: number, anchor: IVec2 = Vec2.new(0, 0)): Vec2 {
 		if (scale === 1) {
 			return this;
 		}
 
-		return new Vec2(this.x, anchor.y + (this.y - anchor.y) * scale);
+		const a = resolveVec2(anchor);
+		return new Vec2(this.x, a.y + (this.y - a.y) * scale);
 	}
 
-	public scaleXY(scaleX: number, scaleY: number, anchor = Vec2.new(0, 0)): Vec2 {
+	public scaleXY(scaleX: number, scaleY: number, anchor: IVec2 = Vec2.new(0, 0)): Vec2 {
 		if (scaleX === 1 && scaleY === 1) {
 			return this;
 		}
 
-		return new Vec2(
-			anchor.x + (this.x - anchor.x) * scaleX,
-			anchor.y + (this.y - anchor.y) * scaleY,
-		);
+		const a = resolveVec2(anchor);
+		return new Vec2(a.x + (this.x - a.x) * scaleX, a.y + (this.y - a.y) * scaleY);
 	}
 
-	public rotate(rad: number, anchor = Vec2.new(0, 0)): Vec2 {
-		return rotateVec2CCW(this, rad, anchor) as Vec2;
+	public rotate(rad: number, anchor: IVec2 = Vec2.new(0, 0)): Vec2 {
+		const a = resolveVec2(anchor);
+		return rotateVec2CCW(this, rad, a) as Vec2;
 	}
 
-	public multiplyMat2(mat2: Mat2, anchor = Vec2.new(0, 0)): Vec2 {
-		return mat2.multiplyVec2(this.sub(anchor)).add(anchor) as Vec2;
+	public multiplyMat2(mat2: Mat2, anchor: IVec2 = Vec2.new(0, 0)): Vec2 {
+		const a = resolveVec2(anchor);
+		return mat2.multiplyVec2(this.sub(a)).add(a) as Vec2;
 	}
 
 	public copy(): Vec2 {
@@ -150,29 +163,26 @@ export class Vec2 {
 	 *
 	 * A `t` value of `0` is this vector, 1 is `vec`
 	 */
-	public lerp(vec: Vec2, t: number): Vec2 {
-		return new Vec2(interpolate(this.x, vec.x, t), interpolate(this.y, vec.y, t));
+	public lerp(vec: IVec2, t: number): Vec2 {
+		const v = resolveVec2(vec);
+		return new Vec2(interpolate(this.x, v.x, t), interpolate(this.y, v.y, t));
 	}
 
 	public round(): Vec2 {
 		return Vec2.new(Math.round(this.x), Math.round(this.y));
 	}
 
-	public apply(fn: (vec: Vec2) => { x: number; y: number }): Vec2 {
-		try {
-			return Vec2.new(fn(this));
-		} catch (e) {
-			console.log(this);
-			return Vec2.new(0, 0);
-		}
+	public apply(fn: (vec: Vec2) => IVec2): Vec2 {
+		return resolveVec2(fn(this));
 	}
 
 	public length(): number {
 		return getDistance(Vec2.ORIGIN, this);
 	}
 
-	public eq(vec: Vec2): boolean {
-		return vec.x === this.x && vec.y === this.y;
+	public eq(vec: IVec2): boolean {
+		const v = resolveVec2(vec);
+		return v.x === this.x && v.y === this.y;
 	}
 
 	// @ts-ignore
@@ -198,24 +208,24 @@ declare global {
 		constructor(vec: { x: number; y: number });
 		constructor(x: number, y: number);
 
-		public add(vec: Vec2): Vec2;
+		public add(vec: IVec2): Vec2;
 		public addX(x: number): Vec2;
 		public addY(y: number): Vec2;
-		public lerp(vec: Vec2, t: number): Vec2;
-		public sub(vec: Vec2): Vec2;
+		public lerp(vec: IVec2, t: number): Vec2;
+		public sub(vec: IVec2): Vec2;
 		public subX(x: number): Vec2;
 		public subY(y: number): Vec2;
 		public subXY(x: number, y: number): Vec2;
-		public scale(scale: number, anchor?: Vec2): Vec2;
-		public scaleX(scale: number, anchor?: Vec2): Vec2;
-		public scaleY(scale: number, anchor?: Vec2): Vec2;
-		public scaleXY(scaleX: number, scaleY: number, anchor?: Vec2): Vec2;
-		public rotate(rad: number, anchor?: Vec2): Vec2;
-		public multiplyMat2(mat2: Mat2, anchor?: Vec2): Vec2;
+		public scale(scale: number, anchor?: IVec2): Vec2;
+		public scaleX(scale: number, anchor?: IVec2): Vec2;
+		public scaleY(scale: number, anchor?: IVec2): Vec2;
+		public scaleXY(scaleX: number, scaleY: number, anchor?: IVec2): Vec2;
+		public rotate(rad: number, anchor?: IVec2): Vec2;
+		public multiplyMat2(mat2: Mat2, anchor?: IVec2): Vec2;
 		public copy(): Vec2;
 		public round(): Vec2;
-		public apply(fn: (vec2: Vec2) => { x: number; y: number }): Vec2;
+		public apply(fn: (vec2: Vec2) => IVec2): Vec2;
 		public length(): number;
-		public eq(vec: Vec2): boolean;
+		public eq(vec: IVec2): boolean;
 	}
 }
