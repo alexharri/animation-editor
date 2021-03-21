@@ -2249,7 +2249,6 @@ export const penToolHandlers = {
 		const e1cpId = createCpId();
 
 		mouseDownMoveAction(e, {
-			baseDiff: (diff) => diff.modifyLayer(layerId),
 			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
 			keys: [],
 			beforeMove: (params, { mousePosition }) => {
@@ -2377,9 +2376,10 @@ export const penToolHandlers = {
 						shapeActions.setControlPointPosition(e1cpId, moveVector.normal.scale(-1)),
 					);
 				}
+				params.performDiff((diff) => diff.modifyLayer(layerId));
 			},
 			mouseUp: (params) => {
-				params.addDiff((diff) => diff.addLayer(layerId));
+				params.addDiff((diff) => diff.addLayer(layerId), { perform: false });
 				params.submitAction("Create shape layer");
 			},
 		});

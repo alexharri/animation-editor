@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
-import { createLayerManager, LayerManager } from "~/composition/layer/layerManager";
+import { LayerManager } from "~/composition/layer/LayerManager";
 import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
 import { createGraphicManager, GraphicManager } from "~/composition/manager/graphicManager";
 import { HitTestManager } from "~/composition/manager/hitTest/HitTestManager";
@@ -93,14 +93,14 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 			  )
 			: _emptyInteractionManager;
 
-	const layerManager = createLayerManager(
+	const layerManager = new LayerManager({
 		compositionId,
-		container,
+		compositionContainer: container,
 		propertyManager,
 		graphicManager,
 		hitTestManager,
-		getActionState(),
-	);
+		actionState: getActionState(),
+	});
 
 	const ctx: CompositionManager = {
 		compositionId,

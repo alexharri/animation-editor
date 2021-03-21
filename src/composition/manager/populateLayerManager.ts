@@ -1,22 +1,15 @@
-import { LayerManager } from "~/composition/layer/layerManager";
+import { LayerManager } from "~/composition/layer/LayerManager";
 import { updateLayerZIndices } from "~/composition/manager/updateCompositionLayerZIndices";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
 
-export const populateLayerManager = (
-	compositionId: string,
-	layerManager: LayerManager,
-	actionState: ActionState,
-) => {
+export const populateLayerManager = (actionState: ActionState, layerManager: LayerManager) => {
 	const { compositionState } = actionState;
 
-	const composition = compositionState.compositions[compositionId];
+	const composition = compositionState.compositions[layerManager.compositionId];
 
 	const layerIds = layerParentSort(composition.layers, compositionState);
-
-	for (let i = 0; i < layerIds.length; i++) {
-		const layerId = layerIds[i];
-		const layer = compositionState.layers[layerId];
-		layerManager.addLayer(layer, actionState);
+	for (const layerId of layerIds) {
+		layerManager.addLayer(actionState, layerId);
 	}
 
 	updateLayerZIndices(composition, layerManager);

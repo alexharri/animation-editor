@@ -32,7 +32,7 @@ export interface RequestActionParams {
 	removeListener: typeof removeListener;
 	execOnComplete: (callback: () => void) => void;
 	done: () => boolean;
-	addDiff: (fn: DiffFactoryFn) => void;
+	addDiff: (fn: DiffFactoryFn, options?: { perform: boolean }) => void;
 	performDiff: (fn: DiffFactoryFn) => void;
 	addReverseDiff: (fn: DiffFactoryFn) => void;
 }
@@ -75,6 +75,7 @@ const performRequestedAction = (
 
 	const diffs: Diff[] = [];
 	const allDiffs: Diff[] = [];
+	const addedButNotPerformedDiffs: Diff[] = [];
 
 	// The diffs to perform to reverse the performed to reverse the diffs
 	// that have been performed by the current action.
@@ -192,7 +193,7 @@ const performRequestedAction = (
 					history,
 					modifiedKeys,
 					allowIndexShift,
-					diffs,
+					[...diffs, ...addedButNotPerformedDiffs],
 				),
 			);
 			onComplete();
@@ -208,14 +209,18 @@ const performRequestedAction = (
 			onCompleteCallback = cb;
 		},
 
-		addDiff: (fn) => {
+		addDiff: (fn, options = { perform: true }) => {
 			const result = fn(diffFactory);
 			const diffsToAdd = Array.isArray(result) ? result : [result];
 
-			diffs.push(...diffsToAdd);
-			allDiffs.push(...diffsToAdd);
-			// The diffs are not performed when added. Added diffs are performed when
-			// the action is submitted.
+			if (options.perform) {
+				diffs.push(...diffsToAdd);
+				allDiffs.push(...diffsToAdd);
+				// The diffs are not performed when added. Added diffs are performed when
+				// the action is submitted.
+			} else {
+				addedButNotPerformedDiffs.push(...diffsToAdd);
+			}
 		},
 
 		performDiff: (fn) => {

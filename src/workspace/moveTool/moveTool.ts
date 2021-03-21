@@ -65,7 +65,10 @@ export const moveToolHandlers = {
 		}
 
 		const viewportMousePosition = Vec2.fromEvent(e).sub(Vec2.new(viewport.left, viewport.top));
-		const layerId = compositionManager.layers.getLayerAtPoint(viewportMousePosition);
+		const layerId = compositionManager.layers.getLayerAtPoint(
+			actionState,
+			viewportMousePosition,
+		);
 
 		if (!layerId) {
 			moveToolHandlers.onMouseDownOut(compositionId);

@@ -48,7 +48,7 @@ export const compositionDiffHandler = (
 				continue;
 			}
 
-			ctx.layers.addLayer(layer, actionState);
+			ctx.layers.addLayer(actionState, layerId);
 		}
 	};
 	const onRemoveLayers = (layerIds: string[]) => {
@@ -59,7 +59,7 @@ export const compositionDiffHandler = (
 				continue;
 			}
 
-			ctx.layers.removeLayer(layer, actionState);
+			ctx.layers.removeLayer(layerId);
 		}
 	};
 
@@ -190,8 +190,7 @@ export const compositionDiffHandler = (
 			}
 
 			const property = compositionState.properties[propertyId];
-			const layer = compositionState.layers[property.layerId];
-			ctx.layers.updatePropertyStructure(layer, actionState);
+			ctx.layers.updatePropertyStructure(actionState, property.layerId);
 		},
 		[DiffType.ModifyMultipleLayerProperties]: (diff: ModifyMultipleLayerPropertiesDiff) => {
 			const { propertyIds } = diff;
@@ -199,18 +198,16 @@ export const compositionDiffHandler = (
 		},
 		[DiffType.LayerParent]: (diff: LayerParentDiff) => {
 			const { layerId } = diff;
-			ctx.layers.onUpdateLayerParent(layerId, actionState);
+			ctx.layers.onUpdateLayerParent(actionState, layerId);
 			executePerformables(ctx, actionState, layerId, [Performable.UpdateTransform]);
 		},
 		[DiffType.PropertyStructure]: (diff: PropertyStructureDiff) => {
 			const { layerId } = diff;
-			const layer = actionState.compositionState.layers[layerId];
-			ctx.layers.updatePropertyStructure(layer, actionState);
+			ctx.layers.updatePropertyStructure(actionState, layerId);
 		},
 		[DiffType.ModifierOrder]: (diff: PropertyStructureDiff) => {
 			const { layerId } = diff;
-			const layer = actionState.compositionState.layers[layerId];
-			ctx.layers.updatePropertyStructure(layer, actionState);
+			ctx.layers.updatePropertyStructure(actionState, layerId);
 		},
 		[DiffType.ResizeAreas]: () => {},
 		[DiffType.ModifyCompositionView]: (_diff: ModifyCompositionViewDiff) => {},
