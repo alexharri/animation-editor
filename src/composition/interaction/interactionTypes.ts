@@ -3,4 +3,5 @@ interface InteractionContainers {
 	rect: PIXI.Container;
 	rectCorners: PIXI.Container;
 	layerSpecific: PIXI.Container;
+	preview: PIXI.Container;
 }

@@ -24,7 +24,8 @@ export const executePerformables = (
 		switch (performable) {
 			case Performable.DrawLayer: {
 				ctx.graphics.updateLayerGraphic(actionState, layer);
-				ctx.layers.updateLayerGuides(actionState, layerId);
+				ctx.interactions.update(actionState, layerId);
+				ctx.hitTest.update(actionState, layerId);
 				break;
 			}
 			case Performable.UpdatePosition: {
@@ -33,7 +34,7 @@ export const executePerformables = (
 				const y = getPropertyValueByName(PropertyName.PositionY);
 				container.position.set(x, y);
 
-				ctx.layers.updateOwnAndChildLayerGuides(actionState, layerId);
+				ctx.interactions.updateOwnAndChildLayerGuides(actionState, layerId);
 				break;
 			}
 			case Performable.UpdateTransform: {
@@ -52,7 +53,7 @@ export const executePerformables = (
 				container.pivot.set(xAnchor, yAnchor);
 				container.rotation = rotation * DEG_TO_RAD_FAC;
 
-				ctx.layers.updateOwnAndChildLayerGuides(actionState, layerId);
+				ctx.interactions.updateOwnAndChildLayerGuides(actionState, layerId);
 				break;
 			}
 			case Performable.UpdateArrayModifierCount: {

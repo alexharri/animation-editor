@@ -348,22 +348,6 @@ export const getTimelineIdsReferencedByComposition = (
 	);
 };
 
-export const getPropertyIdsRecursive = (
-	propertyId: string,
-	compositionState: CompositionState,
-): string[] => {
-	const propertyIds: string[] = [];
-	function crawl(propertyId: string) {
-		propertyIds.push(propertyId);
-		const property = compositionState.properties[propertyId];
-		if (property.type === "group") {
-			property.properties.forEach(crawl);
-		}
-	}
-	crawl(propertyId);
-	return propertyIds;
-};
-
 export const findLayerProperty = <T extends Property | CompoundProperty | PropertyGroup>(
 	layerId: string,
 	compositionState: CompositionState,

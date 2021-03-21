@@ -1,6 +1,6 @@
 import { compositionConstants } from "~/composition/compositionConstants";
 import { CompositionState } from "~/composition/compositionReducer";
-import { CompoundProperty, Property, PropertyGroup } from "~/composition/compositionTypes";
+import { CompoundProperty, PropertyGroup } from "~/composition/compositionTypes";
 import { CompoundPropertyName, PropertyGroupName, PropertyName } from "~/types";
 
 export const getLayerPropertyLabel = (name: PropertyName): string => {
@@ -17,35 +17,6 @@ export const getLayerPropertyGroupLabel = (name: PropertyGroupName): string => {
 	const key = PropertyGroupName[name] as keyof typeof PropertyGroupName;
 	return compositionConstants.propertyGroupNameToLabel[key];
 };
-
-export function getLayerCompositionProperties(
-	layerId: string,
-	compositionState: CompositionState,
-): Property[] {
-	const properties: Property[] = [];
-
-	function crawl(propertyId: string) {
-		const property = compositionState.properties[propertyId];
-
-		if (property.type === "group") {
-			// Do not crawl modifiers
-			if (property.name !== PropertyGroupName.Modifiers) {
-				property.properties.forEach(crawl);
-			}
-			return;
-		}
-
-		if (property.type === "compound") {
-			property.properties.forEach(crawl);
-			return;
-		}
-
-		properties.push(property);
-	}
-	compositionState.layers[layerId].properties.forEach(crawl);
-
-	return properties;
-}
 
 export const getLayerModifierPropertyGroupId = (
 	layerId: string,
@@ -69,36 +40,6 @@ export const getLayerModifierPropertyGroupId = (
 	}
 
 	return layer.properties[index];
-};
-
-export const getLayerArrayModifierCountPropertyId = (
-	layerId: string,
-	compositionState: CompositionState,
-): string | null => {
-	const modifierGroupId = getLayerModifierPropertyGroupId(layerId, compositionState);
-
-	if (!modifierGroupId) {
-		return null;
-	}
-
-	const modifierGroup = compositionState.properties[modifierGroupId] as PropertyGroup;
-
-	for (const propertyId of modifierGroup.properties) {
-		const arrayModifierGroup = compositionState.properties[propertyId] as PropertyGroup;
-
-		if (arrayModifierGroup.name !== PropertyGroupName.ArrayModifier) {
-			continue;
-		}
-
-		for (let j = 0; j < arrayModifierGroup.properties.length; j += 1) {
-			const property = compositionState.properties[arrayModifierGroup.properties[j]];
-			if (property.name === PropertyName.ArrayModifier_Count) {
-				return property.id;
-			}
-		}
-	}
-
-	return null;
 };
 
 export const getLayerArrayModifiers = (layerId: string, compositionState: CompositionState) => {

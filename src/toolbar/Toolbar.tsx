@@ -39,40 +39,39 @@ const ToolbarComponent: React.FC<Props> = (props) => {
 
 	const onItemClick = (tool: Tool) => {
 		requestAnimationFrame(() => {
-			requestAction({}, ({ dispatch, submitAction }) => {
-				dispatch(toolActions.setTool(tool));
-				submitAction("Set tool");
+			requestAction({}, (params) => {
+				params.dispatch(toolActions.setTool(tool));
+				params.performDiff((diff) => diff.tool());
+				params.submitAction("Set tool");
 			});
 		});
 	};
 
 	const onGroupClick = (index: number) => {
-		requestAction(
-			{},
-			({ addListener, cancelAction, dispatch, submitAction, execOnComplete }) => {
-				dispatch(toolActions.setOpenGroupIndex(index));
+		requestAction({}, (params) => {
+			params.dispatch(toolActions.setOpenGroupIndex(index));
 
-				onGroupItemClick.current = (tool: Tool) => {
-					dispatch(toolActions.setTool(tool));
-					submitAction("Set tool");
-				};
+			onGroupItemClick.current = (tool: Tool) => {
+				params.dispatch(toolActions.setTool(tool));
+				params.performDiff((diff) => diff.tool());
+				params.submitAction("Set tool");
+			};
 
-				setTimeout(() => {
-					addListener.repeated("mousedown", (e) => {
-						if (
-							group.current !== e.target &&
-							!group.current?.contains(e.target as HTMLDivElement)
-						) {
-							cancelAction();
-						}
-					});
+			setTimeout(() => {
+				params.addListener.repeated("mousedown", (e) => {
+					if (
+						group.current !== e.target &&
+						!group.current?.contains(e.target as HTMLDivElement)
+					) {
+						params.cancelAction();
+					}
 				});
+			});
 
-				execOnComplete(() => {
-					onGroupItemClick.current = null;
-				});
-			},
-		);
+			params.execOnComplete(() => {
+				onGroupItemClick.current = null;
+			});
+		});
 	};
 
 	return (

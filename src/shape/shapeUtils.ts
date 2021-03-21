@@ -37,7 +37,7 @@ export const getShapeSelectionFromState = (
 	return selection;
 };
 
-export const getItemControlPointPositions = (
+const getItemControlPointPositions = (
 	item: ShapePathItem,
 	shapeState: ShapeState,
 ): [Vec2 | null, Vec2 | null] => {

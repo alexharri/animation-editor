@@ -1,6 +1,35 @@
 import * as PIXI from "pixi.js";
 import { LayerTransform } from "~/types";
+import { Mat2 } from "~/util/math/mat";
 import { constructNdArray, getNdArrayIndex } from "~/util/ndArray";
+
+export const adjustPIXITransformToParent = (
+	transform: PIXI.Transform,
+	parentTransform: PIXI.Transform,
+): PIXI.Transform => {
+	const translateDiff = Vec2.new(transform.position)
+		.sub(parentTransform.position)
+		.add(parentTransform.pivot);
+
+	const rmat = Mat2.rotation(-parentTransform.rotation);
+	const position = translateDiff
+		.multiplyMat2(rmat, parentTransform.pivot)
+		.scaleXY(1 / parentTransform.scale.x, 1 / parentTransform.scale.y, parentTransform.pivot);
+
+	const pivot = transform.pivot;
+
+	const rotation = transform.rotation - parentTransform.rotation;
+	const scaleX = transform.scale.x / parentTransform.scale.x;
+	const scaleY = transform.scale.y / parentTransform.scale.y;
+
+	const t = new PIXI.Transform();
+	t.position.set(position.x, position.y);
+	t.pivot.set(pivot.x, pivot.y);
+	t.scale.set(scaleX, scaleY);
+	t.rotation = rotation;
+
+	return t;
+};
 
 export function createLayerPIXITransforms(
 	dimensions: number[],

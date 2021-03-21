@@ -125,11 +125,12 @@ export const updatePixiLayerGraphic = (
 
 export const updatePixiLayerHitTestGraphic = (
 	actionState: ActionState,
-	layer: Layer,
+	layerId: string,
 	graphic: PIXI.Graphics,
 	getPropertyValue: (propertyId: string) => any,
 ): void => {
-	const map = constructLayerPropertyMap(layer.id, actionState.compositionState);
+	const map = constructLayerPropertyMap(layerId, actionState.compositionState);
 	graphic.clear();
+	const layer = actionState.compositionState.layers[layerId];
 	updateLayerHitTestGraphic(actionState, layer, graphic, map, getPropertyValue);
 };

@@ -12,7 +12,7 @@ interface TargetGroup {
 	targets: Target[];
 }
 
-export const getLayerTargetsWithinComposition = (
+const getLayerTargetsWithinComposition = (
 	composition: Composition,
 	layerWrapper: HTMLDivElement,
 ): Target[] => {

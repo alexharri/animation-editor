@@ -9,7 +9,7 @@ import { timelineAreaReducer } from "~/timeline/timelineAreaReducer";
 import { timelineKeyboardShortcuts } from "~/timeline/timelineShortcuts";
 import { KeyboardShortcut } from "~/types";
 import { AreaComponentProps, AreaState } from "~/types/areaTypes";
-import { PixiWorkspace } from "~/workspace/PixiWorkspace";
+import { PixiWorkspace } from "~/workspace/Workspace";
 // import { Workspace } from "~/workspace/Workspace";
 import { compositionWorkspaceAreaReducer } from "~/workspace/workspaceAreaReducer";
 import { workspaceKeyboardShortcuts } from "~/workspace/workspaceShortcuts";

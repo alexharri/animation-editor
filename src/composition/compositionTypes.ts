@@ -149,13 +149,6 @@ export type Property = {
 	  }
 );
 
-export interface PropertyToValueMap {
-	[propertyId: string]: {
-		rawValue: unknown;
-		computedValue: unknown;
-	};
-}
-
 export interface CreatePropertyOptions {
 	createId: () => string;
 	compositionId: string;
@@ -165,11 +158,6 @@ export interface CreatePropertyOptions {
 export interface CreateLayerPropertyGroup {
 	group: PropertyGroup;
 	properties: Array<Property | CompoundProperty | PropertyGroup>;
-}
-
-export interface CreateLayerCompoundProperty {
-	compoundProperty: CompoundProperty;
-	properties: Property[];
 }
 
 export interface CompositionSelection {

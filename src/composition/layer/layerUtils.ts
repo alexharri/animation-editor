@@ -1,30 +1,13 @@
 import { compositionConstants } from "~/composition/compositionConstants";
 import { CompositionState } from "~/composition/compositionReducer";
-import { getLayerCompositionProperties } from "~/composition/util/compositionPropertyUtils";
 import { TIMELINE_HEADER_HEIGHT, TIMELINE_LAYER_HEIGHT } from "~/constants";
 import { getTimelineTrackYPositions } from "~/trackEditor/trackEditorUtils";
-import { LayerType, NameToProperty, PropertyName, PropertyValueMap } from "~/types";
+import { LayerType } from "~/types";
 import { isVecInRect } from "~/util/math";
 
 export const getLayerTypeName = (type: LayerType): string => {
 	const key = LayerType[type] as keyof typeof LayerType;
 	return compositionConstants.layerTypeToName[key];
-};
-
-export const getLayerNameToProperty = (
-	propertyValueMap: PropertyValueMap,
-	compositionState: CompositionState,
-	layerId: string,
-) => {
-	const properties = getLayerCompositionProperties(layerId, compositionState);
-
-	const nameToProperty = properties.reduce<NameToProperty>((obj, p) => {
-		const value = propertyValueMap[p.id];
-		(obj as any)[PropertyName[p.name]] = value.computedValue;
-		return obj;
-	}, {} as any);
-
-	return nameToProperty;
 };
 
 export const getPickWhipLayerTarget = (

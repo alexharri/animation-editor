@@ -1,7 +1,5 @@
 import * as PIXI from "pixi.js";
-import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { Layer } from "~/composition/compositionTypes";
-import { AreaType, Tool } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import {
 	getShapeLayerDirectlySelectedPaths,
@@ -9,12 +7,8 @@ import {
 	getShapeSelectionFromState,
 	pathIdToCurves,
 } from "~/shape/shapeUtils";
-import { getActionState } from "~/state/stateUtils";
 import { LayerType } from "~/types";
 import { hexToRGB, rgbToBinary } from "~/util/color/convertColor";
-import { getMousePosition } from "~/util/mouse";
-import { penToolHandlers } from "~/workspace/penTool/penTool";
-import { constructPenToolContext } from "~/workspace/penTool/penToolContext";
 
 const pathNotSelectedNodeGraphic = new PIXI.Graphics();
 
@@ -126,17 +120,6 @@ const renderPath = (ctx: Ctx, pathId: string, directlySelected: boolean) => {
 			// Add node
 			const container = new PIXI.Container();
 			ctx.addGraphic(container, 15);
-			container.interactive = true;
-			container.on("mousedown", () => {
-				const mousePosition = getMousePosition();
-				const viewport = getAreaViewport(ctx.areaId, AreaType.Workspace);
-				penToolHandlers.nodeMouseDown(
-					constructPenToolContext(mousePosition, ctx.layer.id, ctx.areaId, viewport),
-					pathId,
-					node.id,
-					{ fromMoveTool: getActionState().tool.selected === Tool.move },
-				);
-			});
 
 			{
 				// Visible graphic
@@ -147,15 +130,15 @@ const renderPath = (ctx: Ctx, pathId: string, directlySelected: boolean) => {
 				graphic.position.set(nodePos.x, nodePos.y);
 				container.addChild(graphic);
 			}
-			{
-				// Interaction area
-				const graphic = new PIXI.Graphics();
-				graphic.beginFill(rgbToBinary([0, 255, 0]));
-				graphic.drawCircle(nodePos.x, nodePos.y, 7);
-				graphic.endFill();
-				graphic.alpha = 0;
-				container.addChild(graphic);
-			}
+			// {
+			// 	// Interaction area
+			// 	const graphic = new PIXI.Graphics();
+			// 	graphic.beginFill(rgbToBinary([0, 255, 0]));
+			// 	graphic.drawCircle(nodePos.x, nodePos.y, 7);
+			// 	graphic.endFill();
+			// 	graphic.alpha = 0;
+			// 	container.addChild(graphic);
+			// }
 		}
 
 		if (!directlySelected) {
@@ -175,15 +158,6 @@ const renderPath = (ctx: Ctx, pathId: string, directlySelected: boolean) => {
 				// Point
 				const container = new PIXI.Container();
 				ctx.addGraphic(container, 10);
-				container.interactive = true;
-				container.on("mousedown", () => {
-					const mousePosition = getMousePosition();
-					const viewport = getAreaViewport(ctx.areaId, AreaType.Workspace);
-					penToolHandlers.controlPointMouseDown(
-						constructPenToolContext(mousePosition, ctx.layer.id, ctx.areaId, viewport),
-						cp.id,
-					);
-				});
 
 				{
 					// Visible graphic
@@ -194,15 +168,15 @@ const renderPath = (ctx: Ctx, pathId: string, directlySelected: boolean) => {
 					graphic.position.set(pos.x, pos.y);
 					container.addChild(graphic);
 				}
-				{
-					// Interaction area
-					const graphic = new PIXI.Graphics();
-					graphic.beginFill(rgbToBinary([0, 255, 0]));
-					graphic.drawCircle(pos.x, pos.y, 5);
-					graphic.endFill();
-					graphic.alpha = 0;
-					container.addChild(graphic);
-				}
+				// {
+				// 	// Interaction area
+				// 	const graphic = new PIXI.Graphics();
+				// 	graphic.beginFill(zrgbToBinary([0, 255, 0]));
+				// 	graphic.drawCircle(pos.x, pos.y, 5);
+				// 	graphic.endFill();
+				// 	graphic.alpha = 0;
+				// 	container.addChild(graphic);
+				// }
 			}
 
 			{

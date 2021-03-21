@@ -52,7 +52,7 @@ export const layerHandlers = {
 				}
 
 				const op = createOperation(params);
-				layerOperations.setLayerParentLayer(op, layerId, target.layerId);
+				layerOperations.setLayerParentLayer(op, getActionState(), layerId, target.layerId);
 
 				params.dispatch(op.actions);
 				params.dispatchToAreaState(

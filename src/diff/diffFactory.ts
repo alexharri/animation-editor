@@ -63,4 +63,7 @@ export const diffFactory = {
 	compositionSelection: (compositionId: string): Diff => {
 		return { type: DiffType.CompositionSelection, compositionId };
 	},
+	tool: (): Diff => {
+		return { type: DiffType.Tool };
+	},
 };

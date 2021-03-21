@@ -10,19 +10,10 @@ import { store } from "~/state/store";
 import { Action } from "~/types";
 
 let _n = 0;
-let _activeRequestToken: null | string = null;
-
-export const getActiveRequestToken = (): null | string => _activeRequestToken;
-
-let _cancelAction: (() => void) | null = null;
-
-export const requestActionCancellation = (): void => {
-	_cancelAction?.();
-};
 
 export type ShouldAddToStackFn = (prevState: ActionState, nextState: ActionState) => boolean;
 
-export interface RequestActionOptions {
+interface RequestActionOptions {
 	history?: boolean;
 	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 	beforeSubmit?: (params: RequestActionParams) => void;
@@ -41,7 +32,7 @@ export interface RequestActionParams {
 	removeListener: typeof removeListener;
 	execOnComplete: (callback: () => void) => void;
 	done: () => boolean;
-	addDiff: (fn: DiffFactoryFn) => void;
+	addDiff: (fn: DiffFactoryFn, options?: { perform: boolean }) => void;
 	performDiff: (fn: DiffFactoryFn) => void;
 	addReverseDiff: (fn: DiffFactoryFn) => void;
 }
@@ -84,6 +75,7 @@ const performRequestedAction = (
 
 	const diffs: Diff[] = [];
 	const allDiffs: Diff[] = [];
+	const addedButNotPerformedDiffs: Diff[] = [];
 
 	// The diffs to perform to reverse the performed to reverse the diffs
 	// that have been performed by the current action.
@@ -95,12 +87,10 @@ const performRequestedAction = (
 	const cancelAction = () => {
 		store.dispatch(historyActions.cancelAction(actionId));
 		onComplete();
-		_cancelAction = null;
 
 		const diffsToPerform = reverseDiffs.length ? reverseDiffs : [...allDiffs].reverse();
 		sendDiffsToSubscribers(diffsToPerform, "backward");
 	};
-	_cancelAction = cancelAction;
 
 	store.dispatch(historyActions.startAction(actionId));
 
@@ -203,7 +193,7 @@ const performRequestedAction = (
 					history,
 					modifiedKeys,
 					allowIndexShift,
-					diffs,
+					[...diffs, ...addedButNotPerformedDiffs],
 				),
 			);
 			onComplete();
@@ -219,14 +209,18 @@ const performRequestedAction = (
 			onCompleteCallback = cb;
 		},
 
-		addDiff: (fn) => {
+		addDiff: (fn, options = { perform: true }) => {
 			const result = fn(diffFactory);
 			const diffsToAdd = Array.isArray(result) ? result : [result];
 
-			diffs.push(...diffsToAdd);
-			allDiffs.push(...diffsToAdd);
-			// The diffs are not performed when added. Added diffs are performed when
-			// the action is submitted.
+			if (options.perform) {
+				diffs.push(...diffsToAdd);
+				allDiffs.push(...diffsToAdd);
+				// The diffs are not performed when added. Added diffs are performed when
+				// the action is submitted.
+			} else {
+				addedButNotPerformedDiffs.push(...diffsToAdd);
+			}
 		},
 
 		performDiff: (fn) => {

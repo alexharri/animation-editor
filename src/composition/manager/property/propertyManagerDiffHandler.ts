@@ -169,6 +169,9 @@ export const propertyManagerDiffHandler = (
 		[DiffType.ResizeAreas]: () => {},
 		[DiffType.ModifyCompositionView]: (_diff: ModifyCompositionViewDiff) => {},
 		[DiffType.CompositionSelection]: (_diff: CompositionSelectionDiff) => {},
+		[DiffType.MouseMove]: () => {},
+		[DiffType.MouseOut]: () => {},
+		[DiffType.Tool]: () => {},
 	};
 
 	for (const diff of diffs) {

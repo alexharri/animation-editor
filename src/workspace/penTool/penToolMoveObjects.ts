@@ -1,3 +1,4 @@
+import * as PIXI from "pixi.js";
 import { ShapeState } from "~/shape/shapeReducer";
 import { ShapeSelection } from "~/shape/shapeTypes";
 import { mergeItemInMap } from "~/util/mapUtils";
@@ -8,6 +9,7 @@ export const penToolMoveObjects = (
 	state: ShapeState,
 	shapeId: string,
 	selection: ShapeSelection,
+	matrix: PIXI.Matrix,
 ): ShapeState => {
 	const selectedNodeIds = Object.keys(selection.nodes);
 
@@ -54,6 +56,7 @@ export const penToolMoveObjects = (
 				continue;
 			}
 
+			const node = newState.nodes[item.nodeId];
 			const cpl = item.left.controlPointId;
 			const cpr = item.right.controlPointId;
 
@@ -85,12 +88,21 @@ export const penToolMoveObjects = (
 			const cp0 = newState.controlPoints[sl ? cpl : cpr]!;
 			const cp1 = newState.controlPoints[sr ? cpl : cpr]!;
 
-			const dist = getDistance(Vec2.new(0, 0), cp1.position);
-			const angle = getAngleRadians(Vec2.new(0, 0), cp0.position);
+			const g_nodePos = node.position.apply((vec) => matrix.apply(vec));
+			const g_cp0 = node.position.add(cp0.position).apply((vec) => matrix.apply(vec));
+			const g_cp1 = node.position.add(cp1.position).apply((vec) => matrix.apply(vec));
+
+			const dist = getDistance(g_nodePos, g_cp1);
+			const angle = getAngleRadians(g_nodePos, g_cp0);
+
+			const g_cp1Reflected = rotateVec2CCW(Vec2.new(dist, 0), angle + Math.PI).add(g_nodePos);
+			const cp1Reflected = g_cp1Reflected
+				.apply((vec) => matrix.applyInverse(vec))
+				.sub(node.position);
 
 			newState.controlPoints[cp1.id] = {
 				...cp1,
-				position: rotateVec2CCW(Vec2.new(dist, 0), angle + Math.PI),
+				position: cp1Reflected,
 			};
 		}
 	}

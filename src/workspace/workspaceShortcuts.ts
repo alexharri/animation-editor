@@ -9,8 +9,7 @@ const workspaceShortcuts = {
 	selectTool: (tool: Tool) => (_: string, params: RequestActionParams) => {
 		const op = createOperation(params);
 		workspaceOperations.selectTool(op, tool);
-
-		params.dispatch(op.actions);
+		op.submit();
 	},
 };
 

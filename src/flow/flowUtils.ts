@@ -48,26 +48,6 @@ export const flowEditorGlobalToNormal = (
 	return Vec2.new(x, y);
 };
 
-export const flowEditorGlobalToNormalRect = (
-	globalRect: Rect,
-	viewport: Rect,
-	scale: number,
-	pan: Vec2,
-): Rect => {
-	let { left, top, width, height } = globalRect;
-	left -= viewport.left;
-	top -= viewport.top;
-	left /= scale;
-	top /= scale;
-	left -= pan.x / scale;
-	top -= pan.y / scale;
-	left -= viewport.width / 2 / scale;
-	top -= viewport.height / 2 / scale;
-	width *= scale;
-	height *= scale;
-	return { left, top, width, height };
-};
-
 export const flowEditorPositionToViewport = (
 	vec2: Vec2,
 	options: { viewport: Rect; scale: number; pan: Vec2 },

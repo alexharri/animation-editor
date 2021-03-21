@@ -316,21 +316,18 @@ export const penToolHandlers = {
 				);
 			},
 			mouseMove: (params, { moveVector, keyDown }) => {
-				const transform = ctx.layerTransform;
 				let toUse = moveVector.normal;
 
 				if (keyDown.Shift) {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformedMoveVector = transform.matrix.inverse().multiplyVec2(toUse);
-
 				const pathIds = getShapeLayerSelectedPathIds(
 					layerId,
 					compositionState,
 					compositionSelectionState,
 				);
-				const nextState = penToolMovePathIds(transformedMoveVector, shapeState, pathIds);
+				const nextState = penToolMovePathIds(toUse, shapeState, pathIds);
 				params.dispatch(shapeActions.setState(nextState));
 			},
 			mouseUp: (params, hasMoved) => {
@@ -389,7 +386,6 @@ export const penToolHandlers = {
 
 				if (hasMoved) {
 					const rect = selectionRect!;
-					const transform = ctx.layerTransform;
 					const toDispatch: any[] = [];
 
 					const directlySelected = getShapeLayerDirectlySelectedPaths(
@@ -423,18 +419,7 @@ export const penToolHandlers = {
 							toDispatch.push(shapeSelectionActions.clearShapeSelection(shapeId));
 						}
 
-						const toPos = (vec: Vec2) => {
-							return vec
-								.sub(transform.anchor)
-								.apply((vec) => {
-									if (transform.rotation) {
-										return vec.rotate(transform.rotation);
-									}
-									return vec;
-								})
-								.apply((vec) => vec.scaleXY(transform.scaleX, transform.scaleY))
-								.add(transform.translate);
-						};
+						const toPos = ctx.normalToViewport;
 
 						for (const { nodeId, left, right } of path.items) {
 							const node = shapeState.nodes[nodeId];
@@ -835,6 +820,7 @@ export const penToolHandlers = {
 			);
 
 			params.dispatch(toDispatch);
+			params.addDiff((diff) => diff.modifyLayer(ctx.layerId));
 			params.submitAction("Split path");
 		});
 	},
@@ -845,6 +831,7 @@ export const penToolHandlers = {
 
 		const cp = shapeState.controlPoints[cpId]!;
 		const edge = shapeState.edges[cp.edgeId];
+		const node = shapeState.nodes[edge.cp0 === cpId ? edge.n0 : edge.n1];
 		const shapeId = edge.shapeId;
 
 		let selection = getShapeSelectionFromState(shapeId, shapeSelectionState);
@@ -895,27 +882,27 @@ export const penToolHandlers = {
 				}
 			},
 			mouseMove: (params, { moveVector, keyDown }) => {
-				const transform = ctx.layerTransform;
 				let toUse = moveVector.normal;
 
 				if (keyDown.Shift) {
-					const cpPosTranslated = cp.position
-						.scaleXY(transform.scaleX, transform.scaleY)
-						.rotate(transform.rotation);
-					toUse = toUse
-						.add(cpPosTranslated)
-						.apply(projectVecTo45DegAngle)
-						.sub(cpPosTranslated);
+					const cpPosViewport = ctx.normalToViewport(cp.position.add(node.position));
+					const nodePosViewport = ctx.normalToViewport(node.position);
+
+					let temp = cpPosViewport.sub(nodePosViewport).add(moveVector.viewport);
+					temp = projectVecTo45DegAngle(temp);
+					temp = temp.add(nodePosViewport);
+					temp = ctx.viewportToNormal(temp);
+					const nNormal = ctx.viewportToNormal(nodePosViewport);
+					toUse = temp.sub(nNormal).sub(cp.position);
 				}
 
-				const normalizedMoveVector = transform.matrix.inverse().multiplyVec2(toUse);
 				selection = getShapeSelectionFromState(
 					shapeId,
 					getActionState().shapeSelectionState,
 				);
 				params.dispatch(
 					shapeActions.setState(
-						penToolMoveObjects(normalizedMoveVector, shapeState, shapeId, selection),
+						penToolMoveObjects(toUse, shapeState, shapeId, selection, ctx.matrix),
 					),
 				);
 			},
@@ -1316,6 +1303,7 @@ export const penToolHandlers = {
 			}
 
 			params.dispatch(toDispatch);
+			params.addDiff((diff) => diff.modifyLayer(ctx.layerId));
 			params.submitAction("Remove node");
 		});
 	},
@@ -1462,17 +1450,15 @@ export const penToolHandlers = {
 					}
 				}
 
-				const transform = ctx.layerTransform;
 				let toUse = moveVector.normal;
 
 				if (keyDown.Shift) {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 				toDispatch.push(
-					shapeActions.setControlPointPosition(rcpl, transformed.scale(-1)),
-					shapeActions.setControlPointPosition(rcpr, transformed),
+					shapeActions.setControlPointPosition(rcpl, moveVector.normal.scale(-1)),
+					shapeActions.setControlPointPosition(rcpr, moveVector.normal),
 				);
 				params.dispatch(toDispatch);
 			},
@@ -1502,10 +1488,12 @@ export const penToolHandlers = {
 						params.dispatch(shapeActions.removeControlPoint(cpId));
 					}
 
+					params.addDiff((diff) => diff.modifyLayer(ctx.layerId));
 					params.submitAction("Remove node control points");
 					return;
 				}
 
+				params.addDiff((diff) => diff.modifyLayer(ctx.layerId));
 				params.submitAction("New node control points");
 			},
 		});
@@ -1596,22 +1584,20 @@ export const penToolHandlers = {
 					addNodeToSelection(params);
 				}
 			},
-			mouseMove: (params, { moveVector, keyDown }) => {
-				const transform = ctx.layerTransform;
-				let toUse = moveVector.normal;
-
-				if (keyDown.Shift) {
-					toUse = projectVecTo45DegAngle(toUse);
-				}
-
-				const normalizedMoveVector = transform.matrix.inverse().multiplyVec2(toUse);
+			mouseMove: (params, { moveVector }) => {
 				selection = getShapeSelectionFromState(
 					shapeId,
 					getActionState().shapeSelectionState,
 				);
 				params.dispatch(
 					shapeActions.setState(
-						penToolMoveObjects(normalizedMoveVector, shapeState, shapeId, selection),
+						penToolMoveObjects(
+							moveVector.normal,
+							shapeState,
+							shapeId,
+							selection,
+							ctx.matrix,
+						),
 					),
 				);
 			},
@@ -1690,10 +1676,7 @@ export const penToolHandlers = {
 					compSelectionActions.addPropertyToSelection(ctx.compositionId, pathPropertyId!),
 				);
 
-				const transform = ctx.layerTransform;
-				const toUse = mousePosition.normal
-					.sub(transform.translate)
-					.multiplyMat2(transform.matrix.inverse());
+				const toUse = mousePosition.normal;
 
 				const newNode: ShapeNode = {
 					id: newNodeId,
@@ -1766,14 +1749,13 @@ export const penToolHandlers = {
 			mouseMove: (params, { firstMove, moveVector, keyDown }) => {
 				const toDispatch: any[] = [];
 
-				const transform = ctx.layerTransform;
 				let toUse = moveVector.normal;
 
 				if (keyDown.Shift) {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
+				const transformed = toUse;
 
 				const prevCpPos = transformed.scale(-1);
 				const nextCpPos = transformed;
@@ -2014,14 +1996,11 @@ export const penToolHandlers = {
 			mouseMove: (params, { firstMove, moveVector, keyDown }) => {
 				const toDispatch: ToDispatch = [];
 
-				const transform = ctx.layerTransform;
 				let toUse = moveVector.normal;
 
 				if (keyDown.Shift) {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
-
-				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
 
 				const createCpId = createGenMapIdFn(getActionState().shapeState.controlPoints);
 
@@ -2051,7 +2030,7 @@ export const penToolHandlers = {
 						const cp: ShapeControlPoint = {
 							id: rcpl,
 							edgeId,
-							position: transformed,
+							position: moveVector.normal,
 						};
 						toDispatch.push(
 							shapeActions.setControlPoint(cp),
@@ -2064,7 +2043,7 @@ export const penToolHandlers = {
 						const cp: ShapeControlPoint = {
 							id: rcpr,
 							edgeId,
-							position: transformed.scale(-1),
+							position: moveVector.normal.scale(-1),
 						};
 						toDispatch.push(
 							shapeActions.setControlPoint(cp),
@@ -2076,8 +2055,8 @@ export const penToolHandlers = {
 
 				// Set reflected control point positions
 				toDispatch.push(
-					shapeActions.setControlPointPosition(rcpl, transformed),
-					shapeActions.setControlPointPosition(rcpr, transformed.scale(-1)),
+					shapeActions.setControlPointPosition(rcpl, moveVector.normal),
+					shapeActions.setControlPointPosition(rcpr, moveVector.normal.scale(-1)),
 				);
 				params.dispatch(toDispatch);
 			},
@@ -2140,15 +2119,11 @@ export const penToolHandlers = {
 						},
 					],
 				};
-				const transform = ctx.layerTransform;
-				const toUse = mousePosition.normal
-					.sub(transform.translate)
-					.multiplyMat2(transform.matrix.inverse());
 
 				const node: ShapeNode = {
 					id: nodeId,
 					shapeId,
-					position: toUse,
+					position: mousePosition.normal,
 				};
 				params.dispatch(
 					shapeActions.setShape(shape),
@@ -2186,14 +2161,13 @@ export const penToolHandlers = {
 				);
 			},
 			mouseMove: (params, { firstMove, moveVector, keyDown }) => {
-				const transform = ctx.layerTransform;
 				let toUse = moveVector.normal;
 
 				if (keyDown.Shift) {
 					toUse = projectVecTo45DegAngle(toUse);
 				}
 
-				const transformed = transform.matrix.inverse().multiplyVec2(toUse);
+				const transformed = toUse;
 
 				if (firstMove) {
 					const e0: ShapeEdge = {
@@ -2275,7 +2249,6 @@ export const penToolHandlers = {
 		const e1cpId = createCpId();
 
 		mouseDownMoveAction(e, {
-			baseDiff: (diff) => diff.modifyLayer(layerId),
 			translate: (pos) => globalToWorkspacePosition(pos, viewport, scale, pan),
 			keys: [],
 			beforeMove: (params, { mousePosition }) => {
@@ -2403,9 +2376,10 @@ export const penToolHandlers = {
 						shapeActions.setControlPointPosition(e1cpId, moveVector.normal.scale(-1)),
 					);
 				}
+				params.performDiff((diff) => diff.modifyLayer(layerId));
 			},
 			mouseUp: (params) => {
-				params.addDiff((diff) => diff.addLayer(layerId));
+				params.addDiff((diff) => diff.addLayer(layerId), { perform: false });
 				params.submitAction("Create shape layer");
 			},
 		});
