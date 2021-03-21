@@ -14,7 +14,7 @@ export const getCompositionPlayback = (compositionId: string): null | { frameInd
 	return playbackMap[compositionId] || null;
 };
 
-export const startPlayback = (compositionId: string, startFrameIndex: number) => {
+const startPlayback = (compositionId: string, startFrameIndex: number) => {
 	if (playbackMap[compositionId] || getIsActionInProgress()) {
 		return;
 	}

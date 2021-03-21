@@ -186,13 +186,6 @@ export const translateRect = (rect: Rect, translationVector: Vec2): Rect => {
 	};
 };
 
-export const reflectVectorAngle = (reflectionOf: Vec2, vecToReflect: Vec2): Vec2 => {
-	const origin = Vec2.new(0, 0);
-	const dist = getDistance(origin, vecToReflect);
-	const angle = getAngleRadians(origin, reflectionOf);
-	return rotateVec2CCW(Vec2.new(dist, 0), angle + Math.PI);
-};
-
 export const translateRectAsVec = (rect: Rect, transformFn: (vec: Vec2) => Vec2): Rect => {
 	const { x: left, y: top } = transformFn(Vec2.new(rect.left, rect.top));
 	const v0 = transformFn(Vec2.new(0, 0));
@@ -281,23 +274,6 @@ export const distanceFromTranslatedX = (
 	return Math.abs(aScaled - bScaled);
 };
 
-export const isVecInPoly = (vec: Vec2, poly: Vec2[]) => {
-	const { x, y } = vec;
-
-	let inside = false;
-
-	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-		const intersect =
-			poly[i].y > y !== poly[j].y > y &&
-			x < ((poly[j].x - poly[i].x) * (y - poly[i].y)) / (poly[j].y - poly[i].y) + poly[i].x;
-		if (intersect) {
-			inside = !inside;
-		}
-	}
-
-	return inside;
-};
-
 function _completeCubicBezierCalcP2(p3: Vec2, p1: Vec2): Vec2 {
 	return Vec2.new(p1.x + (p3.x - p1.x) * 0.4, p1.y + (p3.y - p1.y) * 0.4);
 }
@@ -322,15 +298,6 @@ export function quadraticToCubicBezier(p0: Vec2, p1: Vec2, p2: Vec2): CubicBezie
 	const cp1 = p2.add(p1.sub(p2).scale(2 / 3));
 	return [p0, cp0, cp1, p2];
 }
-
-export const rectCorners = (rect: Rect): Vec2[] => {
-	return [
-		[1, 0],
-		[1, 1],
-		[0, 1],
-		[0, 0],
-	].map(([x, y]) => Vec2.new(rect.left + x * rect.width, rect.top + y * rect.height));
-};
 
 export const splitLine = (line: Line, t: number): [Line, Line] => {
 	const p = line[0].lerp(line[1], t);

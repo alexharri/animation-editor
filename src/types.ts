@@ -37,11 +37,6 @@ export interface LayerTransform {
 	matrix: Mat2;
 }
 
-export interface ParentIndexTransform {
-	baseTransform: LayerTransform;
-	indexTransform: LayerTransform;
-}
-
 export enum ValueType {
 	Number = "number",
 	Vec2 = "vec2",
@@ -168,35 +163,6 @@ export interface JsonObject {
 
 export type KeySelectionMap = Partial<{ [key: string]: true }>;
 
-export interface PropertyValueMap {
-	[propertyId: string]: {
-		computedValue: any;
-		rawValue: any;
-	};
-}
-
-export interface ArrayModifierPropertyValueMap {
-	[propertyId: string]: { [index: number]: any };
-}
-
-export interface CompositionRenderValues {
-	properties: PropertyValueMap;
-	arrayModifierProperties: ArrayModifierPropertyValueMap;
-	transforms: {
-		[layerId: string]: {
-			transform: LayerTransform;
-			indexTransforms: Array<{
-				[index: number]: LayerTransform;
-			}>;
-		};
-	};
-	compositionLayers: {
-		[layerId: string]: CompositionRenderValues;
-	};
-	frameIndex: number;
-	parent?: CompositionRenderValues;
-}
-
 export type TransformBehavior = "recursive" | "absolute_for_computed";
 export type OriginBehavior = "relative" | "absolute";
 export type FillRule = "evenodd" | "nonzero";
@@ -208,8 +174,6 @@ export interface MousePosition {
 	viewport: Vec2;
 	normal: Vec2;
 }
-
-export type NameToProperty = { [key in keyof typeof PropertyName]: any };
 
 export type ShortcutFn = (areaId: string, params: RequestActionParams) => void;
 export type ShouldAddShortcutToStackFn = (

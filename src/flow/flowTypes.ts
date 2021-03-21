@@ -1,7 +1,5 @@
-import { EvalFunction } from "mathjs";
-import { CompositionState } from "~/composition/compositionReducer";
 import { FlowNodeState } from "~/flow/flowNodeState";
-import { PropertyValueMap, ValueType } from "~/types";
+import { ValueType } from "~/types";
 
 export enum FlowNodeType {
 	empty = "empty",
@@ -45,21 +43,6 @@ export type FlowComputeNodeArg = {
 	type: ValueType;
 	value: any;
 };
-
-export interface FlowComputeContext {
-	computed: { [nodeId: string]: FlowComputeNodeArg[] };
-	compositionState: CompositionState;
-	compositionId: string;
-	layerId: string;
-	arrayModifierIndex: number;
-	container: {
-		width: number;
-		height: number;
-	};
-	propertyToValue: PropertyValueMap;
-	frameIndex: number;
-	expressionCache: { [nodeId: string]: EvalFunction };
-}
 
 export interface FlowGraph {
 	type: "layer_graph" | "array_modifier_graph";
@@ -117,9 +100,4 @@ export interface FlowNodeOutput {
 export interface FlowNodeIO {
 	inputs: FlowNodeInput[];
 	outputs: FlowNodeOutput[];
-}
-
-export interface FlowNodeReference {
-	graphId: string;
-	nodeId: string;
 }

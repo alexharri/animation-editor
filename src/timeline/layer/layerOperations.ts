@@ -1,12 +1,12 @@
 import * as PIXI from "pixi.js";
 import { compositionActions } from "~/composition/compositionReducer";
+import { constructLayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { createPropertyManager } from "~/composition/manager/property/propertyManager";
-import { getLayerTransformProperties } from "~/composition/transformUtils";
 import { RAD_TO_DEG_FAC } from "~/constants";
 import { getRealPixiLayerMatrix } from "~/render/pixi/pixiLayerTransform";
 import { adjustPIXITransformToParent } from "~/render/pixi/pixiTransform";
 import { getActionState } from "~/state/stateUtils";
-import { Operation } from "~/types";
+import { Operation, PropertyName } from "~/types";
 
 const setLayerParentLayer = (
 	op: Operation,
@@ -18,6 +18,7 @@ const setLayerParentLayer = (
 	const layer = compositionState.layers[layerId];
 
 	const propertyManager = createPropertyManager(layer.compositionId, actionState);
+	const map = constructLayerPropertyMap(layerId, compositionState);
 
 	const layerTransform = getRealPixiLayerMatrix(
 		actionState,
@@ -33,16 +34,14 @@ const setLayerParentLayer = (
 	const transform = adjustPIXITransformToParent(layerTransform, parentTransform);
 	const { pivot, position, rotation, scale } = transform;
 
-	const properties = getLayerTransformProperties(layerId, compositionState);
-
 	op.add(
-		compositionActions.setPropertyValue(properties.anchorX.id, pivot.x),
-		compositionActions.setPropertyValue(properties.anchorY.id, pivot.y),
-		compositionActions.setPropertyValue(properties.positionX.id, position.x),
-		compositionActions.setPropertyValue(properties.positionY.id, position.y),
-		compositionActions.setPropertyValue(properties.rotation.id, rotation * RAD_TO_DEG_FAC),
-		compositionActions.setPropertyValue(properties.scaleX.id, scale.x),
-		compositionActions.setPropertyValue(properties.scaleY.id, scale.y),
+		compositionActions.setPropertyValue(map[PropertyName.AnchorX], pivot.x),
+		compositionActions.setPropertyValue(map[PropertyName.AnchorY], pivot.y),
+		compositionActions.setPropertyValue(map[PropertyName.PositionX], position.x),
+		compositionActions.setPropertyValue(map[PropertyName.PositionY], position.y),
+		compositionActions.setPropertyValue(map[PropertyName.Rotation], rotation * RAD_TO_DEG_FAC),
+		compositionActions.setPropertyValue(map[PropertyName.ScaleX], scale.x),
+		compositionActions.setPropertyValue(map[PropertyName.ScaleY], scale.y),
 		compositionActions.setLayerParentLayerId(layerId, parentId),
 	);
 };
@@ -51,6 +50,7 @@ const removeLayerParentLayer = (op: Operation, actionState: ActionState, layerId
 	const layer = compositionState.layers[layerId];
 
 	const propertyManager = createPropertyManager(layer.compositionId, actionState);
+	const map = constructLayerPropertyMap(layerId, compositionState);
 
 	const transform = getRealPixiLayerMatrix(
 		actionState,
@@ -59,16 +59,14 @@ const removeLayerParentLayer = (op: Operation, actionState: ActionState, layerId
 	).decompose(new PIXI.Transform());
 	const { pivot, position, rotation, scale } = transform;
 
-	const properties = getLayerTransformProperties(layerId, compositionState);
-
 	op.add(
-		compositionActions.setPropertyValue(properties.anchorX.id, pivot.x),
-		compositionActions.setPropertyValue(properties.anchorY.id, pivot.y),
-		compositionActions.setPropertyValue(properties.positionX.id, position.x),
-		compositionActions.setPropertyValue(properties.positionY.id, position.y),
-		compositionActions.setPropertyValue(properties.rotation.id, rotation * RAD_TO_DEG_FAC),
-		compositionActions.setPropertyValue(properties.scaleX.id, scale.x),
-		compositionActions.setPropertyValue(properties.scaleY.id, scale.y),
+		compositionActions.setPropertyValue(map[PropertyName.AnchorX], pivot.x),
+		compositionActions.setPropertyValue(map[PropertyName.AnchorY], pivot.y),
+		compositionActions.setPropertyValue(map[PropertyName.PositionX], position.x),
+		compositionActions.setPropertyValue(map[PropertyName.PositionY], position.y),
+		compositionActions.setPropertyValue(map[PropertyName.Rotation], rotation * RAD_TO_DEG_FAC),
+		compositionActions.setPropertyValue(map[PropertyName.ScaleX], scale.x),
+		compositionActions.setPropertyValue(map[PropertyName.ScaleY], scale.y),
 		compositionActions.setLayerParentLayerId(layerId, ""),
 	);
 };

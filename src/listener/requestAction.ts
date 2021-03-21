@@ -10,19 +10,10 @@ import { store } from "~/state/store";
 import { Action } from "~/types";
 
 let _n = 0;
-let _activeRequestToken: null | string = null;
-
-export const getActiveRequestToken = (): null | string => _activeRequestToken;
-
-let _cancelAction: (() => void) | null = null;
-
-export const requestActionCancellation = (): void => {
-	_cancelAction?.();
-};
 
 export type ShouldAddToStackFn = (prevState: ActionState, nextState: ActionState) => boolean;
 
-export interface RequestActionOptions {
+interface RequestActionOptions {
 	history?: boolean;
 	shouldAddToStack?: ShouldAddToStackFn | ShouldAddToStackFn[];
 	beforeSubmit?: (params: RequestActionParams) => void;
@@ -95,12 +86,10 @@ const performRequestedAction = (
 	const cancelAction = () => {
 		store.dispatch(historyActions.cancelAction(actionId));
 		onComplete();
-		_cancelAction = null;
 
 		const diffsToPerform = reverseDiffs.length ? reverseDiffs : [...allDiffs].reverse();
 		sendDiffsToSubscribers(diffsToPerform, "backward");
 	};
-	_cancelAction = cancelAction;
 
 	store.dispatch(historyActions.startAction(actionId));
 
