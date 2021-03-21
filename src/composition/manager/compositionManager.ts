@@ -3,10 +3,12 @@ import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { createLayerManager, LayerManager } from "~/composition/layer/layerManager";
 import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
 import { createGraphicManager, GraphicManager } from "~/composition/manager/graphicManager";
+import { HitTestManager } from "~/composition/manager/hitTest/HitTestManager";
 import {
 	createInteractionManager,
 	InteractionManager,
-} from "~/composition/manager/interactionManager";
+	_emptyInteractionManager,
+} from "~/composition/manager/interaction/interactionManager";
 import {
 	createPropertyManager,
 	PropertyManager,
@@ -42,6 +44,7 @@ export interface CompositionManager {
 	interactions: InteractionManager;
 	properties: PropertyManager;
 	graphics: GraphicManager;
+	hitTest: HitTestManager;
 	onDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
 
 	/**
@@ -52,12 +55,23 @@ export interface CompositionManager {
 	destroy: () => void;
 }
 
-export const manageComposition = (
-	compositionId: string,
-	interactionManager: InteractionManager,
-	parentCompContainer: PIXI.Container,
-	initialScale = 1,
-): CompositionManager => {
+interface ManageCompositionOptions {
+	compositionId: string;
+	parentCompContainer: PIXI.Container;
+	areaId?: string;
+	interactionContainer?: PIXI.Container;
+	initialScale?: number;
+}
+
+export const manageComposition = (options: ManageCompositionOptions): CompositionManager => {
+	const {
+		compositionId,
+		areaId,
+		parentCompContainer,
+		interactionContainer,
+		initialScale = 1,
+	} = options;
+
 	const container = new PIXI.Container();
 	container.sortableChildren = true;
 
@@ -65,14 +79,27 @@ export const manageComposition = (
 
 	const propertyManager = createPropertyManager(compositionId, getActionState());
 	const graphicManager = createGraphicManager(compositionId, propertyManager);
+	const hitTestManager = new HitTestManager({ compositionId, propertyManager });
+
+	const interactionManager =
+		interactionContainer && areaId
+			? createInteractionManager(
+					compositionId,
+					areaId,
+					propertyManager,
+					hitTestManager,
+					interactionContainer,
+					initialScale,
+			  )
+			: _emptyInteractionManager;
+
 	const layerManager = createLayerManager(
 		compositionId,
 		container,
-		interactionManager,
 		propertyManager,
 		graphicManager,
+		hitTestManager,
 		getActionState(),
-		initialScale,
 	);
 
 	const ctx: CompositionManager = {
@@ -81,6 +108,7 @@ export const manageComposition = (
 		layers: layerManager,
 		interactions: interactionManager,
 		graphics: graphicManager,
+		hitTest: hitTestManager,
 		properties: propertyManager,
 		onDiffs: (actionState, diffs, direction) =>
 			compositionDiffHandler(ctx, actionState, diffs, direction),
@@ -114,6 +142,24 @@ export const manageTopLevelComposition = (
 	const compContainer = new PIXI.Container();
 	const interactionContainer = new PIXI.Container();
 
+	app.view.onmousemove = (e) => {
+		ctx.onDiffs(
+			getActionState(),
+			[{ type: DiffType.MouseMove, mousePosition: Vec2.new(e) }],
+			"forward",
+		);
+	};
+	app.view.onmouseover = (e) => {
+		ctx.onDiffs(
+			getActionState(),
+			[{ type: DiffType.MouseMove, mousePosition: Vec2.new(e) }],
+			"forward",
+		);
+	};
+	app.view.onmouseout = () => {
+		ctx.onDiffs(getActionState(), [{ type: DiffType.MouseOut }], "forward");
+	};
+
 	const background = new PIXI.Graphics();
 	compContainer.addChild(background);
 
@@ -124,13 +170,13 @@ export const manageTopLevelComposition = (
 		initialScale = scale;
 	}
 
-	const interactionManager = createInteractionManager(
+	const ctx = manageComposition({
 		compositionId,
-		areaId,
 		interactionContainer,
-	);
-
-	const ctx = manageComposition(compositionId, interactionManager, compContainer, initialScale);
+		parentCompContainer: compContainer,
+		initialScale,
+		areaId,
+	});
 
 	registerCompositionManagerByAreaId(areaId, ctx);
 

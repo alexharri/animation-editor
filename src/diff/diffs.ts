@@ -29,6 +29,9 @@ export enum DiffType {
 	LayerIndexOrLength = 20,
 	ModifierOrder = 21,
 	CompositionSelection = 22,
+	MouseMove = 23,
+	MouseOut = 24,
+	Tool = 25,
 }
 
 /**
@@ -142,6 +145,19 @@ export interface CompositionSelectionDiff {
 	compositionId: string;
 }
 
+export interface MouseMoveDiff {
+	type: DiffType.MouseMove;
+	mousePosition: Vec2;
+}
+
+export interface MouseOutDiff {
+	type: DiffType.MouseOut;
+}
+
+export interface ToolDiff {
+	type: DiffType.Tool;
+}
+
 export type Diff =
 	| ModifyCompositionDimensions
 	| ModifyCompositionViewDiff
@@ -162,4 +178,7 @@ export type Diff =
 	| LayerIndexOrLength
 	| PropertyStructureDiff
 	| ModifierOrderDiff
-	| CompositionSelectionDiff;
+	| CompositionSelectionDiff
+	| MouseMoveDiff
+	| MouseOutDiff
+	| ToolDiff;

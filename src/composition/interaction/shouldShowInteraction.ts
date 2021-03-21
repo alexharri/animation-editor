@@ -34,5 +34,6 @@ export function shouldShowInteractions(
 		rect: showRect,
 		rectCorners: showCorners,
 		layerSpecific: true,
+		preview: true,
 	};
 }

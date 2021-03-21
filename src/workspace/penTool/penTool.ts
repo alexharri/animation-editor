@@ -1303,6 +1303,7 @@ export const penToolHandlers = {
 			}
 
 			params.dispatch(toDispatch);
+			params.addDiff((diff) => diff.modifyLayer(ctx.layerId));
 			params.submitAction("Remove node");
 		});
 	},
@@ -1487,10 +1488,12 @@ export const penToolHandlers = {
 						params.dispatch(shapeActions.removeControlPoint(cpId));
 					}
 
+					params.addDiff((diff) => diff.modifyLayer(ctx.layerId));
 					params.submitAction("Remove node control points");
 					return;
 				}
 
+				params.addDiff((diff) => diff.modifyLayer(ctx.layerId));
 				params.submitAction("New node control points");
 			},
 		});

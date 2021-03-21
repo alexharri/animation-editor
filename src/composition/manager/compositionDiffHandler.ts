@@ -1,5 +1,6 @@
 import { CompositionManager } from "~/composition/manager/compositionManager";
 import { executePerformables } from "~/composition/manager/executePerformables";
+import { interactionManagerDiffHandler } from "~/composition/manager/interaction/interactionManagerDiffHandler";
 import { propertyManagerDiffHandler } from "~/composition/manager/property/propertyManagerDiffHandler";
 import { updateLayerZIndices } from "~/composition/manager/updateCompositionLayerZIndices";
 import {
@@ -212,21 +213,25 @@ export const compositionDiffHandler = (
 			ctx.layers.updatePropertyStructure(layer, actionState);
 		},
 		[DiffType.ResizeAreas]: () => {},
-		[DiffType.ModifyCompositionView]: (diff: ModifyCompositionViewDiff) => {
-			ctx.layers.onScaleChange(actionState, diff.scale);
-		},
-		[DiffType.CompositionSelection]: (diff: CompositionSelectionDiff) => {
-			if (diff.compositionId !== compositionId) {
-				return;
-			}
-
-			ctx.layers.onSelectionChange(actionState);
-		},
+		[DiffType.ModifyCompositionView]: (_diff: ModifyCompositionViewDiff) => {},
+		[DiffType.CompositionSelection]: (_diff: CompositionSelectionDiff) => {},
+		[DiffType.MouseMove]: () => {},
+		[DiffType.MouseOut]: () => {},
+		[DiffType.Tool]: () => {},
 	};
 
 	propertyManagerDiffHandler(
 		compositionId,
 		ctx.properties,
+		actionState,
+		diffs,
+		direction,
+		ctx.prevState,
+	);
+
+	interactionManagerDiffHandler(
+		compositionId,
+		ctx.interactions,
 		actionState,
 		diffs,
 		direction,

@@ -1,26 +1,15 @@
 import * as PIXI from "pixi.js";
 import { Layer } from "~/composition/compositionTypes";
-import { createLayerViewportMatrices } from "~/composition/layer/constructLayerMatrix";
-import { getLayerRect } from "~/composition/layer/layerDimensions";
-import {
-	createLayerInstances,
-	drawGuides,
-	drawHitTestGraphic,
-} from "~/composition/layer/layerInstances";
+import { createLayerInstances } from "~/composition/layer/layerInstances";
 import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { manageComposition } from "~/composition/manager/compositionManager";
 import { GraphicManager } from "~/composition/manager/graphicManager";
-import {
-	InteractionManager,
-	_emptyInteractionManager,
-} from "~/composition/manager/interactionManager";
+import { HitTestManager } from "~/composition/manager/hitTest/HitTestManager";
 import { populateLayerManager } from "~/composition/manager/populateLayerManager";
 import { PropertyManager } from "~/composition/manager/property/propertyManager";
-import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { adjustDiffsToChildComposition } from "~/diff/adjustDiffsToChildComposition";
 import { Diff } from "~/diff/diffs";
 import { applyPixiLayerTransform } from "~/render/pixi/pixiLayerTransform";
-import { getLayerChildLayers } from "~/shared/layer/layerParentSort";
 import { getActionState } from "~/state/stateUtils";
 import { LayerType } from "~/types";
 
@@ -28,10 +17,6 @@ export interface LayerPixiContainers {
 	transformContainer: PIXI.Container;
 	childLayerContainer: PIXI.Container;
 	ownContentContainer: PIXI.Container;
-	guideAnchor: PIXI.Container;
-	rectCorners: PIXI.Graphics;
-	hitTestGraphic: PIXI.Graphics;
-	rectLines: PIXI.Graphics;
 }
 
 export interface LayerManager {
@@ -45,107 +30,55 @@ export interface LayerManager {
 	sendDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
 	getLayerPropertyMap: (layerId: string) => LayerPropertyMap;
 	onFrameIndexChanged: (actionState: ActionState, frameIndex: number) => void;
-	updateLayerGuides: (actionState: ActionState, layerId: string) => void;
-	updateOwnAndChildLayerGuides: (actionState: ActionState, layerId: string) => void;
-	onScaleChange: (actionState: ActionState, scale: number) => void;
-	onSelectionChange: (actionState: ActionState) => void;
 	getLayerAtPoint: (point: Vec2) => string | undefined;
 }
 
 export const createLayerManager = (
 	compositionId: string,
 	compositionContainer: PIXI.Container,
-	interactions: InteractionManager,
 	properties: PropertyManager,
 	graphicManager: GraphicManager,
+	hitTestManager: HitTestManager,
 	actionState: ActionState,
-	initialScale = 1,
 ): LayerManager => {
 	const layerContainers: Record<string, LayerPixiContainers> = {};
 	const layerToVisible: Record<string, boolean> = {};
-	const layerToSelected: Record<string, boolean> = {};
 	const subCompositions: Record<
 		string,
 		{ layerId: string; manager: ReturnType<typeof manageComposition> }
 	> = {};
 	const layerPropertyMapMap: Record<string, LayerPropertyMap> = {};
 
-	let scale = initialScale;
-
-	const onLayerSelectionChange = (actionState: ActionState, layerId: string) => {
-		const { compositionSelectionState } = actionState;
-		const selection = compSelectionFromState(compositionId, compositionSelectionState);
-
-		// const containers = layerContainers[layerId];
-		// const { rectCorners, rectLines, guideAnchor } = containers;
-
-		const selected = !!selection.layers[layerId];
-		layerToSelected[layerId] = selected;
-
-		// rectCorners.alpha = selected ? 1 : 0;
-		// rectLines.alpha = selected ? 1 : 0;
-		// guideAnchor.alpha = selected ? 1 : 0;
-	};
-
 	const self: LayerManager = {
 		addLayer: (layer, actionState) => {
 			if (layerContainers[layer.id]) {
 				// Layer is already present.
 				//
-				// Warn about this happening and remove the layer before re-adding.
+				// Warn about this happening.
 				console.warn(`Added already present layer '${layer.id}'.`);
-				self.removeLayer(layer, actionState);
+				return;
 			}
 
 			const transformContainer = new PIXI.Container();
 			const ownContentContainer = new PIXI.Container();
 			const childLayerContainer = new PIXI.Container();
-			const guideAnchor = new PIXI.Container();
-			const rectLines = new PIXI.Graphics();
-			const hitTestGraphic = new PIXI.Graphics();
-			const rectCorners = new PIXI.Graphics();
 
 			layerContainers[layer.id] = {
 				transformContainer,
 				ownContentContainer,
 				childLayerContainer,
-				guideAnchor,
-				rectCorners,
-				hitTestGraphic,
-				rectLines,
 			};
 
 			// The layer's transform affects both its own content and the content
 			// of its child layers, so we add both to the transform container.
 			transformContainer.addChild(ownContentContainer);
 			transformContainer.addChild(childLayerContainer);
-			transformContainer.addChild(hitTestGraphic);
-			// transformContainer.addChild(rectLines);
-			// transformContainer.addChild(rectCorners);
-			// transformContainer.addChild(guideAnchor);
-
-			const compositionSelection = compSelectionFromState(
-				compositionId,
-				actionState.compositionSelectionState,
-			);
-
-			const layerSelected = !!compositionSelection.layers[layer.id];
-			layerToSelected[layer.id] = layerSelected;
-
-			hitTestGraphic.interactive = true;
-			hitTestGraphic.alpha = 0;
-			hitTestGraphic.on("mouseover", () => {
-				interactions.layerMouseOver(layer.id);
-			});
-			hitTestGraphic.on("mouseout", () => {
-				interactions.layerMouseOut(layer.id);
-			});
-			hitTestGraphic.on("mousedown", () => {
-				interactions.layerMouseDown(layer.id);
-			});
 
 			if (layer.type !== LayerType.Composition) {
 				graphicManager.getLayerGraphic(actionState, layer);
+
+				const hitTestGraphic = hitTestManager.getGraphic(actionState, layer.id);
+				transformContainer.addChild(hitTestGraphic);
 			}
 
 			const { getPropertyValue: getPropertyValue } = properties;
@@ -169,11 +102,8 @@ export const createLayerManager = (
 				// of the layer container up to date.
 				const { compositionState } = actionState;
 				const compositionId = compositionState.compositionLayerIdToComposition[layer.id];
-				const manager = manageComposition(
-					compositionId,
-					_emptyInteractionManager,
-					ownContentContainer,
-				);
+				const parentCompContainer = ownContentContainer;
+				const manager = manageComposition({ parentCompContainer, compositionId });
 				subCompositions[layer.id] = { manager, layerId: layer.id };
 			}
 
@@ -193,31 +123,6 @@ export const createLayerManager = (
 					graphicManager.getLayerGraphic(actionState, layer),
 				);
 			}
-
-			drawGuides(
-				actionState,
-				layer,
-				layerPropertyMapMap[layer.id],
-				properties.getPropertyValue,
-				layerContainers[layer.id],
-				scale,
-			);
-			drawHitTestGraphic(actionState, layer, hitTestGraphic, properties.getPropertyValue);
-			onLayerSelectionChange(actionState, layer.id);
-
-			const matrices = createLayerViewportMatrices(
-				actionState,
-				properties.getPropertyValue,
-				layer.id,
-				scale,
-			);
-			const rect = getLayerRect(
-				actionState,
-				layer,
-				self.getLayerPropertyMap(layer.id),
-				properties.getPropertyValue,
-			);
-			interactions.addLayer(actionState, layer.id, matrices, rect);
 		},
 
 		onUpdateLayerParent: (layerId, actionState) => {
@@ -244,6 +149,7 @@ export const createLayerManager = (
 			transformContainer.destroy({ children: true }); // Also destroys ownContent
 
 			graphicManager.deleteLayerGraphic(layer.id);
+			hitTestManager.deleteGraphic(layer.id);
 
 			// Remove the container from the registry
 			delete layerContainers[layer.id];
@@ -257,8 +163,6 @@ export const createLayerManager = (
 				const { manager } = subCompositions[layer.id];
 				manager.destroy();
 			}
-
-			interactions.removeLayer(layer.id);
 		},
 
 		getLayerTransformContainer: (layerId) => {
@@ -308,8 +212,7 @@ export const createLayerManager = (
 			const composition = compositionState.compositions[compositionId];
 
 			for (const layerId of composition.layers) {
-				const containers = layerContainers[layerId];
-				const { hitTestGraphic } = containers;
+				const hitTestGraphic = hitTestManager.getGraphic(actionState, layerId);
 				if (hitTestGraphic.containsPoint(point)) {
 					return layerId;
 				}
@@ -323,71 +226,6 @@ export const createLayerManager = (
 		},
 
 		getLayerPropertyMap: (layerId) => layerPropertyMapMap[layerId],
-
-		onSelectionChange: (actionState) => {
-			const { compositionState } = actionState;
-			const composition = compositionState.compositions[compositionId];
-
-			for (const layerId of composition.layers) {
-				onLayerSelectionChange(actionState, layerId);
-				self.updateLayerGuides(actionState, layerId);
-			}
-		},
-
-		updateLayerGuides: (actionState, layerId) => {
-			const { compositionState } = actionState;
-			drawHitTestGraphic(
-				actionState,
-				compositionState.layers[layerId],
-				layerContainers[layerId].hitTestGraphic,
-				properties.getPropertyValue,
-			);
-			drawGuides(
-				actionState,
-				compositionState.layers[layerId],
-				layerPropertyMapMap[layerId],
-				properties.getPropertyValue,
-				layerContainers[layerId],
-				scale,
-			);
-
-			const matrices = createLayerViewportMatrices(
-				actionState,
-				properties.getPropertyValue,
-				layerId,
-				scale,
-			);
-
-			const rect = getLayerRect(
-				actionState,
-				compositionState.layers[layerId],
-				layerPropertyMapMap[layerId],
-				properties.getPropertyValue,
-			);
-			interactions.update(actionState, layerId, matrices, rect);
-		},
-
-		updateOwnAndChildLayerGuides: (actionState, layerId) => {
-			const { compositionState } = actionState;
-			self.updateLayerGuides(actionState, layerId);
-
-			const childLayers = getLayerChildLayers(layerId, compositionState);
-			for (const layerId of childLayers) {
-				self.updateLayerGuides(actionState, layerId);
-			}
-		},
-
-		onScaleChange: (actionState, nextScale) => {
-			if (scale === nextScale) {
-				return;
-			}
-			scale = nextScale;
-			const { compositionState } = actionState;
-			const composition = compositionState.compositions[compositionId];
-			for (const layerId of composition.layers) {
-				self.updateLayerGuides(actionState, layerId);
-			}
-		},
 	};
 
 	populateLayerManager(compositionId, self, actionState);
