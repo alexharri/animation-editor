@@ -153,11 +153,6 @@ export function renderLine(
 	ctx.setLineDash([]);
 }
 
-interface RenderCubicBezierOptions {
-	color: string;
-	strokeWidth: number;
-}
-
 interface TraceOptions {
 	move?: boolean;
 }
@@ -172,26 +167,4 @@ export function traceCubicBezier(
 		ctx.moveTo(p0.x, p0.y);
 	}
 	ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
-}
-
-export function renderCubicBezier(
-	ctx: CanvasRenderingContext2D,
-	bezier: CubicBezier,
-	opts: RenderCubicBezierOptions,
-): void {
-	const { color, strokeWidth } = opts;
-
-	ctx.beginPath();
-	traceCubicBezier(ctx, bezier, { move: true });
-	ctx.strokeStyle = color;
-	ctx.lineWidth = strokeWidth;
-	ctx.stroke();
-}
-
-export function traceCurve(ctx: Ctx, curve: Curve, traceOptions: TraceOptions = {}): void {
-	if (curve.length === 2) {
-		traceLine(ctx, curve, traceOptions);
-	} else {
-		traceCubicBezier(ctx, curve, traceOptions);
-	}
 }
