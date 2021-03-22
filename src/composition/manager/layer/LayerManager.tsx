@@ -1,15 +1,20 @@
 import * as PIXI from "pixi.js";
-import { createLayerInstances } from "~/composition/layer/layerInstances";
+import {
+	createLayerInstances,
+	updateLayerInstanceTransforms,
+} from "~/composition/layer/layerInstances";
 import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { manageComposition } from "~/composition/manager/compositionManager";
-import { GraphicManager } from "~/composition/manager/graphicManager";
+import { GraphicManager } from "~/composition/manager/graphic/GraphicManager";
 import { HitTestManager } from "~/composition/manager/hitTest/HitTestManager";
+import { InteractionManager } from "~/composition/manager/interaction/interactionManager";
 import { populateLayerManager } from "~/composition/manager/populateLayerManager";
 import { PropertyManager } from "~/composition/manager/property/propertyManager";
+import { DEG_TO_RAD_FAC } from "~/constants";
 import { adjustDiffsToChildComposition } from "~/diff/adjustDiffsToChildComposition";
 import { Diff } from "~/diff/diffs";
 import { applyPixiLayerTransform } from "~/render/pixi/pixiLayerTransform";
-import { LayerType } from "~/types";
+import { LayerType, Performable, PropertyName, TransformPropertyName } from "~/types";
 
 export interface LayerPixiContainers {
 	transformContainer: PIXI.Container;
@@ -23,7 +28,7 @@ interface Options {
 	compositionId: string;
 	compositionContainer: PIXI.Container;
 	propertyManager: PropertyManager;
-	graphicManager: GraphicManager;
+	interactionManager: InteractionManager;
 	hitTestManager: HitTestManager;
 	actionState: ActionState;
 }
@@ -33,6 +38,7 @@ export class LayerManager {
 
 	private options: Options;
 	private graphicManager: GraphicManager;
+	private interactionManager: InteractionManager;
 	private hitTestManager: HitTestManager;
 	private propertyManager: PropertyManager;
 	private layerContainers: Record<string, LayerPixiContainers> = {};
@@ -43,11 +49,23 @@ export class LayerManager {
 	constructor(options: Options) {
 		this.options = options;
 		this.compositionId = this.options.compositionId;
-		this.graphicManager = this.options.graphicManager;
+		this.interactionManager = this.options.interactionManager;
 		this.hitTestManager = this.options.hitTestManager;
 		this.propertyManager = this.options.propertyManager;
 
+		this.graphicManager = new GraphicManager({ propertyManager: options.propertyManager });
+
 		populateLayerManager(this.options.actionState, this);
+	}
+
+	public updateLayerZIndices(actionState: ActionState) {
+		const composition = actionState.compositionState.compositions[this.compositionId];
+
+		for (let i = 0; i < composition.layers.length; i++) {
+			const layerId = composition.layers[i];
+			const container = this.getLayerTransformContainer(layerId);
+			container.zIndex = composition.layers.length - i;
+		}
 	}
 
 	public addLayer(actionState: ActionState, layerId: string) {
@@ -79,10 +97,10 @@ export class LayerManager {
 
 		if (layer.type !== LayerType.Composition) {
 			this.graphicManager.getLayerGraphic(actionState, layer);
-
-			const hitTestGraphic = this.hitTestManager.getGraphic(actionState, layerId);
-			transformContainer.addChild(hitTestGraphic);
 		}
+
+		const hitTestGraphic = this.hitTestManager.getGraphic(actionState, layerId);
+		transformContainer.addChild(hitTestGraphic);
 
 		const { getPropertyValue } = this.propertyManager;
 		const map = constructLayerPropertyMap(layerId, actionState.compositionState);
@@ -128,23 +146,6 @@ export class LayerManager {
 		}
 	}
 
-	public onUpdateLayerParent(actionState: ActionState, layerId: string) {
-		const layer = actionState.compositionState.layers[layerId];
-
-		if (layer.compositionId !== this.compositionId) {
-			// Layer is not in composition. No work to be done.
-			return;
-		}
-
-		const layerContainer = this.getLayerTransformContainer(layer.id);
-		layerContainer.parent.removeChild(layerContainer);
-
-		const parentContainer = layer.parentLayerId
-			? this.getLayerChildLayerContainer(layer.parentLayerId)
-			: this.options.compositionContainer;
-		parentContainer.addChild(layerContainer);
-	}
-
 	public removeLayer(layerId: string) {
 		// Destroy the PIXI container
 		const { transformContainer } = this.layerContainers[layerId];
@@ -168,14 +169,23 @@ export class LayerManager {
 		}
 	}
 
-	public getLayerTransformContainer(layerId: string) {
-		return this.layerContainers[layerId].transformContainer;
-	}
-	public getLayerOwnContentContainer(layerId: string) {
-		return this.layerContainers[layerId].ownContentContainer;
-	}
-	public getLayerChildLayerContainer(layerId: string) {
-		return this.layerContainers[layerId].childLayerContainer;
+	public onUpdateLayerParent(actionState: ActionState, layerId: string) {
+		const layer = actionState.compositionState.layers[layerId];
+
+		if (layer.compositionId !== this.compositionId) {
+			// Layer is not in composition. No work to be done.
+			return;
+		}
+
+		const layerContainer = this.getLayerTransformContainer(layer.id);
+		layerContainer.parent.removeChild(layerContainer);
+
+		const parentContainer = layer.parentLayerId
+			? this.getLayerChildLayerContainer(layer.parentLayerId)
+			: this.options.compositionContainer;
+		parentContainer.addChild(layerContainer);
+
+		this.executePerformable(actionState, layerId, Performable.UpdateTransform);
 	}
 
 	// Send some diffs to the sub-composition managers.
@@ -223,10 +233,110 @@ export class LayerManager {
 	}
 
 	public updatePropertyStructure(actionState: ActionState, layerId: string) {
-		this.addLayer(actionState, layerId);
+		this.executePerformable(actionState, layerId, Performable.DrawLayer);
+		this.executePerformable(actionState, layerId, Performable.UpdateTransform);
+		this.executePerformable(actionState, layerId, Performable.UpdateArrayModifierTransform);
+		this.executePerformable(actionState, layerId, Performable.UpdateArrayModifierCount);
 	}
 
-	public getLayerPropertyMap(layerId: string) {
+	public executePerformable(actionState: ActionState, layerId: string, performable: Performable) {
+		const layer = actionState.compositionState.layers[layerId];
+
+		switch (performable) {
+			case Performable.DrawLayer: {
+				if (layer.type !== LayerType.Composition) {
+					this.graphicManager.updateLayerGraphic(actionState, layer);
+				}
+				this.interactionManager.update(actionState, layerId);
+				this.hitTestManager.update(actionState, layerId);
+				break;
+			}
+			case Performable.UpdatePosition: {
+				this.updatePosition(layerId);
+				this.interactionManager.updateOwnAndChildLayerGuides(actionState, layerId);
+				break;
+			}
+			case Performable.UpdateTransform: {
+				this.updateTransform(layerId);
+				this.interactionManager.updateOwnAndChildLayerGuides(actionState, layerId);
+				break;
+			}
+			case Performable.UpdateArrayModifierCount: {
+				if (layer.type !== LayerType.Composition) {
+					const ownContentContainer = this.getLayerOwnContentContainer(layer.id);
+					ownContentContainer.removeChildren();
+
+					createLayerInstances(
+						actionState,
+						layer,
+						this.layerPropertyMapMap[layerId],
+						this.propertyManager.getPropertyValue,
+						ownContentContainer,
+						this.graphicManager.getLayerGraphic(actionState, layer),
+					);
+				}
+				break;
+			}
+			case Performable.UpdateArrayModifierTransform: {
+				const ownContentContainer = this.getLayerOwnContentContainer(layer.id);
+
+				if (layer.type !== LayerType.Composition) {
+					updateLayerInstanceTransforms(
+						actionState,
+						layer,
+						this.layerPropertyMapMap[layerId],
+						this.propertyManager.getPropertyValue,
+						ownContentContainer,
+					);
+				}
+				break;
+			}
+		}
+	}
+
+	private getLayerTransformContainer(layerId: string) {
+		return this.layerContainers[layerId].transformContainer;
+	}
+
+	private getLayerOwnContentContainer(layerId: string) {
+		return this.layerContainers[layerId].ownContentContainer;
+	}
+
+	private getLayerChildLayerContainer(layerId: string) {
+		return this.layerContainers[layerId].childLayerContainer;
+	}
+
+	private getLayerPropertyMap(layerId: string) {
 		return this.layerPropertyMapMap[layerId];
+	}
+
+	private updateTransform(layerId: string) {
+		const container = this.getLayerTransformContainer(layerId);
+
+		const map = this.getLayerPropertyMap(layerId);
+		const getPropertyValueByName = (name: TransformPropertyName): any => {
+			return this.propertyManager.getPropertyValue(map[name]);
+		};
+
+		const xPos = getPropertyValueByName(PropertyName.PositionX);
+		const yPos = getPropertyValueByName(PropertyName.PositionY);
+		const xAnchor = getPropertyValueByName(PropertyName.AnchorX);
+		const yAnchor = getPropertyValueByName(PropertyName.AnchorY);
+		const xScale = getPropertyValueByName(PropertyName.ScaleX);
+		const yScale = getPropertyValueByName(PropertyName.ScaleY);
+		const rotation = getPropertyValueByName(PropertyName.Rotation);
+
+		container.position.set(xPos, yPos);
+		container.scale.set(xScale, yScale);
+		container.pivot.set(xAnchor, yAnchor);
+		container.rotation = rotation * DEG_TO_RAD_FAC;
+	}
+
+	private updatePosition(layerId: string) {
+		const container = this.getLayerTransformContainer(layerId);
+		const map = this.layerPropertyMapMap[layerId];
+		const x = this.propertyManager.getPropertyValue(map[PropertyName.PositionX]);
+		const y = this.propertyManager.getPropertyValue(map[PropertyName.PositionY]);
+		container.position.set(x, y);
 	}
 }

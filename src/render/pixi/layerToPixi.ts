@@ -1,12 +1,14 @@
 import * as PIXI from "pixi.js";
 import { Layer } from "~/composition/compositionTypes";
 import {
+	CompositionLayerPropertyMap,
 	constructLayerPropertyMap,
 	EllipseLayerPropertyMap,
 	LayerPropertyMap,
 	RectLayerPropertyMap,
 	ShapeLayerPropertyMap,
 } from "~/composition/layer/layerPropertyMap";
+import { updateCompositionLayerHitTestGraphic } from "~/render/pixi/compositionLayerGraphic";
 import {
 	updateEllipseHitTestLayerGraphic,
 	updateEllipseLayerGraphic,
@@ -61,6 +63,8 @@ const updateLayerGraphic: UpdateGraphicFn = (
 				map as EllipseLayerPropertyMap,
 				getPropertyValue,
 			);
+		case LayerType.Composition:
+			throw new Error(`Updating the graphic of a Composition layer is not supported.`);
 	}
 	throw new Error("Not implemented");
 };
@@ -95,6 +99,14 @@ const updateLayerHitTestGraphic: UpdateGraphicFn = (
 				layer,
 				graphic,
 				map as EllipseLayerPropertyMap,
+				getPropertyValue,
+			);
+		case LayerType.Composition:
+			return updateCompositionLayerHitTestGraphic(
+				actionState,
+				layer,
+				graphic,
+				map as CompositionLayerPropertyMap,
 				getPropertyValue,
 			);
 	}

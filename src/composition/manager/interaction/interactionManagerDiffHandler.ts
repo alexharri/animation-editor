@@ -1,25 +1,13 @@
 import { InteractionManager } from "~/composition/manager/interaction/interactionManager";
 import {
-	AddFlowNodeDiff,
 	AddLayerDiff,
 	CompositionSelectionDiff,
 	Diff,
 	DiffType,
-	FlowNodeExpressionDiff,
-	FlowNodeStateDiff,
-	FrameIndexDiff,
-	LayerDiff,
-	LayerParentDiff,
 	ModifyCompositionViewDiff,
-	ModifyMultipleLayerPropertiesDiff,
-	ModifyPropertyDiff,
 	MouseMoveDiff,
-	PropertyStructureDiff,
-	RemoveFlowNodeDiff,
 	RemoveLayerDiff,
-	TogglePropertyAnimatedDiff,
 	ToolDiff,
-	UpdateNodeConnectionDiff,
 } from "~/diff/diffs";
 
 export const interactionManagerDiffHandler = (
@@ -67,20 +55,6 @@ export const interactionManagerDiffHandler = (
 		[DiffType.RemoveLayer]: (diff: RemoveLayerDiff) => {
 			onRemoveLayers(diff.layerIds);
 		},
-		[DiffType.FrameIndex]: (_diff: FrameIndexDiff) => {},
-		[DiffType.FlowNodeState]: (_diff: FlowNodeStateDiff) => {},
-		[DiffType.FlowNodeExpression]: (_diff: FlowNodeExpressionDiff) => {},
-		[DiffType.AddFlowNode]: (_diff: AddFlowNodeDiff) => {},
-		[DiffType.RemoveFlowNode]: (_diff: RemoveFlowNodeDiff) => {},
-		[DiffType.UpdateNodeConnection]: (_diff: UpdateNodeConnectionDiff) => {},
-		[DiffType.Layer]: (_diff: LayerDiff) => {},
-		[DiffType.ModifyProperty]: (_diff: ModifyPropertyDiff) => {},
-		[DiffType.TogglePropertyAnimated]: (_diff: TogglePropertyAnimatedDiff) => {},
-		[DiffType.ModifyMultipleLayerProperties]: (_diff: ModifyMultipleLayerPropertiesDiff) => {},
-		[DiffType.LayerParent]: (_diff: LayerParentDiff) => {},
-		[DiffType.PropertyStructure]: (_diff: PropertyStructureDiff) => {},
-		[DiffType.ModifierOrder]: (_diff: PropertyStructureDiff) => {},
-		[DiffType.ResizeAreas]: () => {},
 		[DiffType.MouseMove]: (diff: MouseMoveDiff) => {
 			interactions.mouseMove(actionState, diff.mousePosition);
 		},
@@ -89,6 +63,15 @@ export const interactionManagerDiffHandler = (
 		},
 		[DiffType.MouseOut]: (_diff: MouseMoveDiff) => {
 			interactions.mouseOut(actionState);
+		},
+		[DiffType.MouseMove]: (diff: MouseMoveDiff) => {
+			interactions.mouseMove(actionState, diff.mousePosition);
+		},
+		[DiffType.MouseOut]: (_diff: MouseMoveDiff) => {
+			interactions.mouseOut(actionState);
+		},
+		[DiffType.Tool]: (_diff: ToolDiff) => {
+			interactions.onToolChange(actionState);
 		},
 		[DiffType.ModifyCompositionView]: (diff: ModifyCompositionViewDiff) => {
 			if (compositionId !== diff.compositionId) {
@@ -120,7 +103,6 @@ export const interactionManagerDiffHandler = (
 		}
 		const fn = forwardHandlers[diff.type];
 		if (!fn) {
-			console.warn(`No handler for diff of type '${diff.type}'.`);
 			continue;
 		}
 		fn(diff);

@@ -464,7 +464,7 @@ export const timelineHandlers = {
 				params.dispatch(
 					timelineIds.map((timelineId) => timelineSelectionActions.clear(timelineId)),
 				);
-
+				params.addDiff((diff) => diff.compositionSelection(compositionId));
 				params.submitAction("Clear timeline selection");
 			},
 		);
@@ -677,6 +677,7 @@ export const timelineHandlers = {
 					);
 
 					if (moveLayers.type === "invalid") {
+						params.addDiff((diff) => diff.compositionSelection(compositionId));
 						params.submitAction("Add layer to selection");
 						return;
 					}
@@ -700,6 +701,7 @@ export const timelineHandlers = {
 
 				addLayerToSelection(params);
 
+				params.addDiff((diff) => diff.compositionSelection(compositionId));
 				params.submitAction("Add layer to selection");
 				// See if we are moving layer to an eligible target
 			},

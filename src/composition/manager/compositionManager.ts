@@ -1,14 +1,13 @@
 import * as PIXI from "pixi.js";
 import { getAreaViewport } from "~/area/util/getAreaViewport";
-import { LayerManager } from "~/composition/layer/LayerManager";
-import { compositionDiffHandler } from "~/composition/manager/compositionDiffHandler";
-import { createGraphicManager, GraphicManager } from "~/composition/manager/graphicManager";
+import { passDiffsToManagers } from "~/composition/manager/compositionDiffHandler";
 import { HitTestManager } from "~/composition/manager/hitTest/HitTestManager";
 import {
 	createInteractionManager,
 	InteractionManager,
 	_emptyInteractionManager,
 } from "~/composition/manager/interaction/interactionManager";
+import { LayerManager } from "~/composition/manager/layer/LayerManager";
 import {
 	createPropertyManager,
 	PropertyManager,
@@ -43,7 +42,6 @@ export interface CompositionManager {
 	layers: LayerManager;
 	interactions: InteractionManager;
 	properties: PropertyManager;
-	graphics: GraphicManager;
 	hitTest: HitTestManager;
 	onDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
 
@@ -78,7 +76,6 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 	parentCompContainer.addChild(container);
 
 	const propertyManager = createPropertyManager(compositionId, getActionState());
-	const graphicManager = createGraphicManager(compositionId, propertyManager);
 	const hitTestManager = new HitTestManager({ compositionId, propertyManager });
 
 	const interactionManager =
@@ -97,8 +94,8 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 		compositionId,
 		compositionContainer: container,
 		propertyManager,
-		graphicManager,
 		hitTestManager,
+		interactionManager,
 		actionState: getActionState(),
 	});
 
@@ -107,11 +104,10 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 		container,
 		layers: layerManager,
 		interactions: interactionManager,
-		graphics: graphicManager,
 		hitTest: hitTestManager,
 		properties: propertyManager,
 		onDiffs: (actionState, diffs, direction) =>
-			compositionDiffHandler(ctx, actionState, diffs, direction),
+			passDiffsToManagers(ctx, actionState, diffs, direction),
 		prevState: getActionState(),
 		destroy: () => {
 			parentCompContainer.removeChild(ctx.container);

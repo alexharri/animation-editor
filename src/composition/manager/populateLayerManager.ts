@@ -1,5 +1,4 @@
-import { LayerManager } from "~/composition/layer/LayerManager";
-import { updateLayerZIndices } from "~/composition/manager/updateCompositionLayerZIndices";
+import { LayerManager } from "~/composition/manager/layer/LayerManager";
 import { layerParentSort } from "~/shared/layer/layerParentSort";
 
 export const populateLayerManager = (actionState: ActionState, layerManager: LayerManager) => {
@@ -12,5 +11,5 @@ export const populateLayerManager = (actionState: ActionState, layerManager: Lay
 		layerManager.addLayer(actionState, layerId);
 	}
 
-	updateLayerZIndices(composition, layerManager);
+	layerManager.updateLayerZIndices(actionState);
 };

@@ -1,4 +1,4 @@
-import { constructLayerPropertyMap } from "~/composition/layer/layerPropertyMap";
+import { LayerManager } from "~/composition/manager/layer/LayerManager";
 import { PropertyManager } from "~/composition/manager/property/propertyManager";
 import {
 	AddFlowNodeDiff,
@@ -19,32 +19,38 @@ import {
 	UpdateNodeConnectionDiff,
 } from "~/diff/diffs";
 import { getFlowNodeAssociatedCompositionId } from "~/flow/flowUtils";
-import { TRANSFORM_PROPERTY_NAMES } from "~/types";
 
-export const propertyManagerDiffHandler = (
+export const layerManagerDiffHandler = (
 	compositionId: string,
-	properties: PropertyManager,
+	layerManager: LayerManager,
+	propertyManager: PropertyManager,
 	actionState: ActionState,
 	diffs: Diff[],
 	direction: "forward" | "backward",
 	prevState: ActionState,
 ) => {
+	let shouldUpdateZIndices = false;
+
 	const onAddLayers = (layerIds: string[]) => {
+		shouldUpdateZIndices = true;
 		for (const layerId of layerIds) {
 			const layer = actionState.compositionState.layers[layerId];
 			if (layer.compositionId !== compositionId) {
 				continue;
 			}
-			properties.addLayer(actionState);
+
+			layerManager.addLayer(actionState, layerId);
 		}
 	};
 	const onRemoveLayers = (layerIds: string[]) => {
+		shouldUpdateZIndices = true;
 		for (const layerId of layerIds) {
 			const layer = prevState.compositionState.layers[layerId];
 			if (layer.compositionId !== compositionId) {
 				continue;
 			}
-			properties.removeLayer(actionState);
+
+			layerManager.removeLayer(layerId);
 		}
 	};
 
@@ -60,108 +66,147 @@ export const propertyManagerDiffHandler = (
 		return compositionId !== layer.compositionId;
 	};
 
+	interface PerformChangeOptions {
+		nodeIds?: string[];
+		propertyIds?: string[];
+		layerIds?: string[];
+	}
+
+	const performChange = (options: PerformChangeOptions) => {
+		const actions = propertyManager.getActionsToPerform(actionState, options);
+		for (const { layerId, performables } of actions) {
+			for (const performable of performables) {
+				layerManager.executePerformable(actionState, layerId, performable);
+			}
+		}
+	};
+
 	const backwardHandlers: { [diffType: number]: (diff: any) => void } = {
-		[DiffType.AddLayer]: (diff: AddLayerDiff) => onRemoveLayers(diff.layerIds),
-		[DiffType.RemoveLayer]: (diff: RemoveLayerDiff) => onAddLayers(diff.layerIds),
+		[DiffType.AddLayer]: (diff: AddLayerDiff) => {
+			onRemoveLayers(diff.layerIds);
+		},
+		[DiffType.RemoveLayer]: (diff: RemoveLayerDiff) => {
+			onAddLayers(diff.layerIds);
+		},
 		[DiffType.RemoveFlowNode]: (diff: RemoveFlowNodeDiff) => {
-			if (nodeDoesNotAffectComposition(diff.nodeId)) {
+			const { nodeId } = diff;
+
+			if (nodeDoesNotAffectComposition(nodeId)) {
 				return;
 			}
-			properties.updateStructure(actionState);
+
+			performChange({ nodeIds: [nodeId] });
 		},
 	};
 
 	const forwardHandlers: { [diffType: number]: (diff: any) => void } = {
-		[DiffType.AddLayer]: (diff: AddLayerDiff) => onAddLayers(diff.layerIds),
-		[DiffType.RemoveLayer]: (diff: RemoveLayerDiff) => onRemoveLayers(diff.layerIds),
+		[DiffType.AddLayer]: (diff: AddLayerDiff) => {
+			onAddLayers(diff.layerIds);
+		},
+		[DiffType.RemoveLayer]: (diff: RemoveLayerDiff) => {
+			onRemoveLayers(diff.layerIds);
+		},
 		[DiffType.FrameIndex]: (diff: FrameIndexDiff) => {
 			if (compositionId !== diff.compositionId) {
 				return;
 			}
-			properties.onFrameIndexChanged(actionState, diff.frameIndex);
+
+			layerManager.onFrameIndexChanged(actionState, diff.frameIndex);
+
+			const actions = propertyManager.getActionsToPerformOnFrameIndexChange();
+			for (const { layerId, performables } of actions) {
+				for (const performable of performables) {
+					layerManager.executePerformable(actionState, layerId, performable);
+				}
+			}
 		},
 		[DiffType.FlowNodeState]: (diff: FlowNodeStateDiff) => {
 			const { nodeId } = diff;
-			if (nodeDoesNotAffectComposition(diff.nodeId)) {
+			if (nodeDoesNotAffectComposition(nodeId)) {
 				return;
 			}
-			properties.onNodeStateChange(nodeId, actionState);
+			performChange({ nodeIds: [nodeId] });
 		},
 		[DiffType.FlowNodeExpression]: (diff: FlowNodeExpressionDiff) => {
 			const { nodeId } = diff;
 			if (nodeDoesNotAffectComposition(nodeId)) {
 				return;
 			}
-			properties.onNodeExpressionChange(nodeId, actionState);
+			performChange({ nodeIds: [nodeId] });
 		},
-		[DiffType.AddFlowNode]: (diff: AddFlowNodeDiff) => {
-			if (nodeDoesNotAffectComposition(diff.nodeId)) {
-				return;
-			}
-
-			// A newly added node does not affect the rest of the graph until
-			// connections are made. However, we need to register the node for
-			// future operation.
-			properties.updateStructure(actionState);
+		[DiffType.AddFlowNode]: (_diff: AddFlowNodeDiff) => {
+			// See comment in propertyManagerDiffHandler
 		},
 		[DiffType.RemoveFlowNode]: (diff: RemoveFlowNodeDiff) => {
+			const { nodeId } = diff;
 			const { flowState } = prevState;
-			const { graphId } = flowState.nodes[diff.nodeId];
+			const { graphId } = flowState.nodes[nodeId];
 			const { layerId } = flowState.graphs[graphId];
 
 			if (layerDoesNotAffectComposition(layerId)) {
 				return;
 			}
-			properties.updateStructure(actionState);
+			performChange({ nodeIds: [nodeId] });
 		},
 		[DiffType.UpdateNodeConnection]: (diff: UpdateNodeConnectionDiff) => {
-			if (nodeDoesNotAffectComposition(diff.nodeIds[0])) {
+			const { nodeIds } = diff;
+			if (nodeDoesNotAffectComposition(nodeIds[0])) {
 				return;
 			}
-			properties.updateStructure(actionState);
+			performChange({ nodeIds });
 		},
-		[DiffType.Layer]: (_diff: LayerDiff) => {
-			// This diff is used when a property changed that the property manager
-			// does not care about. Currently only used for shape layers.
-			//
-			// When paths become animatable, this diff should be removed in favor
-			// of the standard "properties modified" diff.
+		[DiffType.Layer]: (diff: LayerDiff) => {
+			const { layerIds } = diff;
+			if (layerDoesNotAffectComposition(layerIds[0])) {
+				return;
+			}
+			performChange({ layerIds });
 		},
 		[DiffType.ModifyProperty]: (diff: ModifyPropertyDiff) => {
 			const { propertyId } = diff;
 			if (propertyDoesNotAffectComposition(propertyId)) {
 				return;
 			}
-			properties.onPropertyIdsChanged([propertyId], actionState);
+			performChange({ propertyIds: [propertyId] });
 		},
 		[DiffType.TogglePropertyAnimated]: (diff: TogglePropertyAnimatedDiff) => {
-			if (propertyDoesNotAffectComposition(diff.propertyId)) {
+			const { propertyId } = diff;
+			const { compositionState } = actionState;
+
+			if (propertyDoesNotAffectComposition(propertyId)) {
 				return;
 			}
-			properties.updateStructure(actionState);
+
+			const property = compositionState.properties[propertyId];
+			layerManager.updatePropertyStructure(actionState, property.layerId);
 		},
 		[DiffType.ModifyMultipleLayerProperties]: (diff: ModifyMultipleLayerPropertiesDiff) => {
-			properties.onPropertyIdsChanged(diff.propertyIds, actionState);
+			const { propertyIds } = diff;
+			if (propertyDoesNotAffectComposition(propertyIds[0])) {
+				return;
+			}
+			performChange({ propertyIds });
 		},
 		[DiffType.LayerParent]: (diff: LayerParentDiff) => {
-			if (layerDoesNotAffectComposition(diff.layerId)) {
+			const { layerId } = diff;
+			if (layerDoesNotAffectComposition(layerId)) {
 				return;
 			}
-			const map = constructLayerPropertyMap(diff.layerId, actionState.compositionState);
-			const transformPropertyIds = TRANSFORM_PROPERTY_NAMES.map((name) => map[name]);
-			properties.onPropertyIdsChanged(transformPropertyIds, actionState);
+			layerManager.onUpdateLayerParent(actionState, layerId);
 		},
 		[DiffType.PropertyStructure]: (diff: PropertyStructureDiff) => {
-			if (layerDoesNotAffectComposition(diff.layerId)) {
+			const { layerId } = diff;
+			if (layerDoesNotAffectComposition(layerId)) {
 				return;
 			}
-			properties.updateStructure(actionState);
+			layerManager.updatePropertyStructure(actionState, layerId);
 		},
 		[DiffType.ModifierOrder]: (diff: PropertyStructureDiff) => {
-			if (layerDoesNotAffectComposition(diff.layerId)) {
+			const { layerId } = diff;
+			if (layerDoesNotAffectComposition(layerId)) {
 				return;
 			}
-			properties.updateStructure(actionState);
+			layerManager.updatePropertyStructure(actionState, layerId);
 		},
 	};
 
@@ -178,5 +223,9 @@ export const propertyManagerDiffHandler = (
 			continue;
 		}
 		fn(diff);
+	}
+
+	if (shouldUpdateZIndices) {
+		layerManager.updateLayerZIndices(actionState);
 	}
 };
