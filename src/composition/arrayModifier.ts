@@ -1,3 +1,4 @@
+import * as PIXI from "pixi.js";
 import { getLayerRectDimensionsAndOffset } from "~/composition/layer/layerDimensions";
 import { LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import {
@@ -5,14 +6,13 @@ import {
 	getTransformFromTransformGroupId,
 } from "~/composition/transformUtils";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
-import { DEFAULT_LAYER_TRANSFORM } from "~/constants";
 
-export const getDimensionsAndTransforms = (
+export const getDimensionsAndMatrices = (
 	layerId: string,
 	actionState: ActionState,
 	layerPropertyMap: LayerPropertyMap,
 	getPropertyValue: (propertyId: string) => any,
-) => {
+): { dimensions: number[]; matrices: PIXI.Matrix[] } => {
 	const { compositionState } = actionState;
 	const layer = compositionState.layers[layerId];
 
@@ -41,7 +41,7 @@ export const getDimensionsAndTransforms = (
 	});
 
 	if (resolvedModifiers.length < 1) {
-		return { dimensions: [1], transforms: [DEFAULT_LAYER_TRANSFORM] };
+		return { dimensions: [1], matrices: [new PIXI.Matrix()] };
 	}
 
 	const dimensions = resolvedModifiers.map((item) => item.count);
@@ -55,6 +55,21 @@ export const getDimensionsAndTransforms = (
 			height,
 		]);
 	});
+	const matrices = transforms.map((transform) => {
+		const matrix = new PIXI.Matrix();
+		matrix.setTransform(
+			transform.translate.x,
+			transform.translate.y,
+			transform.anchor.x,
+			transform.anchor.y,
+			transform.scaleX,
+			transform.scaleY,
+			transform.rotation,
+			0,
+			0,
+		);
+		return matrix;
+	});
 
-	return { dimensions, transforms };
+	return { dimensions, matrices };
 };
