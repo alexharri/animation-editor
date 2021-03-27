@@ -1,8 +1,23 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { forEachSubProperty } from "~/composition/compositionUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
-import { LayerTransform, PropertyName } from "~/types";
+import { LayerTransform, PropertyGroupName, PropertyName } from "~/types";
 import { Mat2 } from "~/util/math/mat";
+
+export const getLayerTransform = (
+	layerId: string,
+	compositionState: CompositionState,
+	getPropertyValue: (propertyId: string) => any,
+): LayerTransform => {
+	const layer = compositionState.layers[layerId];
+	for (const propertyId of layer.properties) {
+		const group = compositionState.properties[propertyId];
+		if (group.name === PropertyGroupName.Transform) {
+			return getTransformFromTransformGroupId(group.id, compositionState, getPropertyValue);
+		}
+	}
+	throw new Error(`Layer '${layerId}' has no transform group.`);
+};
 
 export const getTransformFromTransformGroupId = (
 	transformGroupId: string,

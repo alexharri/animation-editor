@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import { getDimensionsAndMatrices } from "~/composition/arrayModifier";
 import {
 	createLayerInstances,
 	updateLayerInstanceTransforms,
@@ -13,13 +14,21 @@ import { PropertyManager } from "~/composition/manager/property/propertyManager"
 import { DEG_TO_RAD_FAC } from "~/constants";
 import { adjustDiffsToChildComposition } from "~/diff/adjustDiffsToChildComposition";
 import { Diff } from "~/diff/diffs";
-import { applyPixiLayerTransform } from "~/render/pixi/pixiLayerTransform";
-import { LayerType, Performable, PropertyName, TransformPropertyName } from "~/types";
+import { applyPixiLayerTransform, getPixiLayerMatrix } from "~/render/pixi/pixiLayerTransform";
+import { getLayerChildLayers } from "~/shared/layer/layerParentSort";
+import {
+	LayerDimension,
+	LayerType,
+	Performable,
+	PropertyName,
+	TransformPropertyName,
+} from "~/types";
 
 export interface LayerPixiContainers {
 	transformContainer: PIXI.Container;
 	childLayerContainer: PIXI.Container;
 	ownContentContainer: PIXI.Container;
+	instanceContainer: PIXI.Container;
 }
 
 type Subcomposition = { layerId: string; manager: ReturnType<typeof manageComposition> };
@@ -31,6 +40,8 @@ interface Options {
 	interactionManager: InteractionManager;
 	hitTestManager: HitTestManager;
 	actionState: ActionState;
+	depth: number;
+	dimensions?: LayerDimension[];
 }
 
 export class LayerManager {
@@ -45,6 +56,7 @@ export class LayerManager {
 	private layerToVisible: Record<string, boolean> = {};
 	private subCompositions: Record<string, Subcomposition> = {};
 	private layerPropertyMapMap: Record<string, LayerPropertyMap> = {};
+	private parentDimensions: LayerDimension[];
 
 	constructor(options: Options) {
 		this.options = options;
@@ -54,6 +66,8 @@ export class LayerManager {
 		this.propertyManager = this.options.propertyManager;
 
 		this.graphicManager = new GraphicManager({ propertyManager: options.propertyManager });
+
+		this.parentDimensions = this.options.dimensions || [];
 
 		populateLayerManager(this.options.actionState, this);
 	}
@@ -81,6 +95,7 @@ export class LayerManager {
 		const layer = compositionState.layers[layerId];
 
 		const transformContainer = new PIXI.Container();
+		const instanceContainer = new PIXI.Container();
 		const ownContentContainer = new PIXI.Container();
 		const childLayerContainer = new PIXI.Container();
 
@@ -88,6 +103,7 @@ export class LayerManager {
 			transformContainer,
 			ownContentContainer,
 			childLayerContainer,
+			instanceContainer,
 		};
 
 		// The layer's transform affects both its own content and the content
@@ -114,19 +130,7 @@ export class LayerManager {
 
 		// Add the layer to the parent container
 		parentContainer.addChild(transformContainer);
-
-		if (layer.type === LayerType.Composition) {
-			// The layer is a composition layer.
-			//
-			// We don't render the composition directly. Instead we create a
-			// sub-composition manager which takes care of keeping the content
-			// of the layer container up to date.
-			const { compositionState } = actionState;
-			const compositionId = compositionState.compositionLayerIdToComposition[layerId];
-			const parentCompContainer = ownContentContainer;
-			const manager = manageComposition({ parentCompContainer, compositionId });
-			this.subCompositions[layerId] = { manager, layerId: layerId };
-		}
+		this.options.compositionContainer.addChild(instanceContainer);
 
 		this.layerPropertyMapMap[layerId] = constructLayerPropertyMap(
 			layerId,
@@ -137,20 +141,45 @@ export class LayerManager {
 		if (layer.type !== LayerType.Composition) {
 			createLayerInstances(
 				actionState,
+				this.parentDimensions,
 				layer,
 				this.layerPropertyMapMap[layerId],
 				getPropertyValue,
-				ownContentContainer,
+				instanceContainer,
 				this.graphicManager.getLayerGraphic(actionState, layer),
 			);
+		}
+
+		if (layer.type === LayerType.Composition) {
+			// The layer is a composition layer.
+			//
+			// We don't render the composition directly. Instead we create a
+			// sub-composition manager which takes care of keeping the content
+			// of the layer container up to date.
+			const { compositionState } = actionState;
+			const compositionId = compositionState.compositionLayerIdToComposition[layerId];
+			const parentCompContainer = instanceContainer;
+			const manager = manageComposition({
+				parentCompContainer,
+				compositionId,
+				dimensions: [
+					...this.parentDimensions,
+					...this.getCompositionLayerParentDimensions(actionState, layerId),
+				],
+				depth: this.options.depth + 1,
+			});
+			this.subCompositions[layerId] = { manager, layerId: layerId };
 		}
 	}
 
 	public removeLayer(layerId: string) {
 		// Destroy the PIXI container
-		const { transformContainer } = this.layerContainers[layerId];
-		transformContainer.parent.removeChild(transformContainer);
-		transformContainer.destroy({ children: true }); // Also destroys ownContent
+		const { transformContainer, instanceContainer } = this.layerContainers[layerId];
+
+		for (const container of [transformContainer, instanceContainer]) {
+			container.parent.removeChild(container);
+			container.destroy({ children: true }); // Also destroys ownContent
+		}
 
 		this.graphicManager.deleteLayerGraphic(layerId);
 		this.hitTestManager.deleteGraphic(layerId);
@@ -254,43 +283,90 @@ export class LayerManager {
 			case Performable.UpdatePosition: {
 				this.updatePosition(layerId);
 				this.interactionManager.updateOwnAndChildLayerGuides(actionState, layerId);
-				break;
+				// break;
 			}
 			case Performable.UpdateTransform: {
 				this.updateTransform(layerId);
 				this.interactionManager.updateOwnAndChildLayerGuides(actionState, layerId);
-				break;
+				// break;
 			}
+
 			case Performable.UpdateArrayModifierCount: {
 				if (layer.type !== LayerType.Composition) {
-					const ownContentContainer = this.getLayerOwnContentContainer(layer.id);
-					ownContentContainer.removeChildren();
+					const instancesContainer = this.getLayerInstancesContainer(layer.id);
+					instancesContainer.removeChildren();
 
 					createLayerInstances(
 						actionState,
+						this.parentDimensions,
 						layer,
 						this.layerPropertyMapMap[layerId],
 						this.propertyManager.getPropertyValue,
-						ownContentContainer,
+						instancesContainer,
 						this.graphicManager.getLayerGraphic(actionState, layer),
 					);
+				} else {
+					const { manager } = this.subCompositions[layer.id];
+					manager.layers.onDimensionsChange(actionState, [
+						...this.parentDimensions,
+						...this.getCompositionLayerParentDimensions(actionState, layerId),
+					]);
+				}
+
+				const childLayers = getLayerChildLayers(layerId, actionState.compositionState);
+				for (const layerId of childLayers) {
+					this.executePerformable(actionState, layerId, performable);
 				}
 				break;
 			}
+
+			case Performable.UpdatePosition:
+			case Performable.UpdateTransform:
 			case Performable.UpdateArrayModifierTransform: {
-				const ownContentContainer = this.getLayerOwnContentContainer(layer.id);
+				const instancesContainer = this.getLayerInstancesContainer(layer.id);
 
 				if (layer.type !== LayerType.Composition) {
 					updateLayerInstanceTransforms(
 						actionState,
+						this.parentDimensions,
 						layer,
 						this.layerPropertyMapMap[layerId],
 						this.propertyManager.getPropertyValue,
-						ownContentContainer,
+						instancesContainer,
 					);
+				} else {
+					const { manager } = this.subCompositions[layer.id];
+					manager.layers.onDimensionsUpdate(actionState, [
+						...this.parentDimensions,
+						...this.getCompositionLayerParentDimensions(actionState, layerId),
+					]);
 				}
 				break;
 			}
+		}
+	}
+
+	public onDimensionsChange(actionState: ActionState, dimensions: LayerDimension[]) {
+		this.parentDimensions = dimensions;
+		const composition = actionState.compositionState.compositions[this.compositionId];
+		for (const layerId of composition.layers) {
+			/**
+			 * @todo this current does not consider that updating a layer also updates
+			 * that childs layers. A lot of work may be being repeated here.
+			 */
+			this.executePerformable(actionState, layerId, Performable.UpdateArrayModifierCount);
+		}
+	}
+
+	public onDimensionsUpdate(actionState: ActionState, dimensions: LayerDimension[]) {
+		this.parentDimensions = dimensions;
+		const composition = actionState.compositionState.compositions[this.compositionId];
+		for (const layerId of composition.layers) {
+			/**
+			 * @todo this current does not consider that updating a layer also updates
+			 * that childs layers. A lot of work may be being repeated here.
+			 */
+			this.executePerformable(actionState, layerId, Performable.UpdateArrayModifierTransform);
 		}
 	}
 
@@ -298,12 +374,42 @@ export class LayerManager {
 		return this.layerContainers[layerId].transformContainer;
 	}
 
-	private getLayerOwnContentContainer(layerId: string) {
-		return this.layerContainers[layerId].ownContentContainer;
+	// private getLayerOwnContentContainer(layerId: string) {
+	// 	return this.layerContainers[layerId].ownContentContainer;
+	// }
+
+	private getLayerInstancesContainer(layerId: string) {
+		return this.layerContainers[layerId].instanceContainer;
 	}
 
 	private getLayerChildLayerContainer(layerId: string) {
 		return this.layerContainers[layerId].childLayerContainer;
+	}
+
+	private getCompositionLayerParentDimensions(
+		actionState: ActionState,
+		layerId: string,
+	): LayerDimension[] {
+		const layerMatrix = getPixiLayerMatrix(
+			this.layerPropertyMapMap[layerId],
+			this.propertyManager.getPropertyValue,
+		);
+
+		const { dimensions, matrices } = getDimensionsAndMatrices(
+			layerId,
+			actionState,
+			this.layerPropertyMapMap[layerId],
+			this.propertyManager.getPropertyValue,
+		);
+
+		return [
+			{ type: "parent", count: 1, matrix: layerMatrix },
+			...dimensions.map<LayerDimension>((count, i) => ({
+				type: "array",
+				count,
+				matrix: matrices[i],
+			})),
+		];
 	}
 
 	private getLayerPropertyMap(layerId: string) {

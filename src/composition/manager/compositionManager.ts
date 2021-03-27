@@ -17,6 +17,7 @@ import { Diff, DiffType } from "~/diff/diffs";
 import { subscribeToDiffs, unsubscribeToDiffs } from "~/listener/diffListener";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
+import { LayerDimension } from "~/types";
 import { Area } from "~/types/areaTypes";
 
 const compositionManagersByAreaId: Partial<Record<string, CompositionManager>> = {};
@@ -59,6 +60,8 @@ interface ManageCompositionOptions {
 	areaId?: string;
 	interactionContainer?: PIXI.Container;
 	initialScale?: number;
+	depth: number;
+	dimensions?: LayerDimension[];
 }
 
 export const manageComposition = (options: ManageCompositionOptions): CompositionManager => {
@@ -67,7 +70,9 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 		areaId,
 		parentCompContainer,
 		interactionContainer,
+		depth,
 		initialScale = 1,
+		dimensions,
 	} = options;
 
 	const container = new PIXI.Container();
@@ -76,7 +81,7 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 	parentCompContainer.addChild(container);
 
 	const propertyManager = createPropertyManager(compositionId, getActionState());
-	const hitTestManager = new HitTestManager({ compositionId, propertyManager });
+	const hitTestManager = new HitTestManager({ compositionId, propertyManager, depth });
 
 	const interactionManager =
 		interactionContainer && areaId
@@ -97,6 +102,8 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 		hitTestManager,
 		interactionManager,
 		actionState: getActionState(),
+		dimensions,
+		depth,
 	});
 
 	const ctx: CompositionManager = {
@@ -172,6 +179,7 @@ export const manageTopLevelComposition = (
 		parentCompContainer: compContainer,
 		initialScale,
 		areaId,
+		depth: 0,
 	});
 
 	registerCompositionManagerByAreaId(areaId, ctx);

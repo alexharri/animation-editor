@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { LayerTransform } from "~/types";
+import { LayerDimension } from "~/types";
 import { Mat2 } from "~/util/math/mat";
 import { constructNdArray, getNdArrayIndex } from "~/util/ndArray";
 
@@ -31,51 +31,87 @@ export const adjustPIXITransformToParent = (
 	return t;
 };
 
+interface Item {
+	type: "array" | "parent";
+	count: number;
+	matrix: PIXI.Matrix;
+	fromComp?: boolean;
+}
+
+type ParentDimensions = LayerDimension[];
+
 export function createLayerPIXITransforms(
-	dimensions: number[],
-	transforms: LayerTransform[],
-): PIXI.Transform[] {
-	for (const n of dimensions) {
+	parentDimensions: ParentDimensions,
+	parentMatrices: PIXI.Matrix[],
+	_dimensions: number[],
+	_matrices: PIXI.Matrix[],
+): PIXI.Matrix[] {
+	// const x: LayerTransform = {
+	// 	...DEFAULT_LAYER_TRANSFORM,
+	// 	translate: Vec2.new(10, 0),
+	// };
+
+	// dimensions = [5, ...dimensions];
+	// transforms = [x, ...transforms];
+
+	const baseMatrix = new PIXI.Matrix();
+
+	// for (const matrix of parentMatrices) {
+	// 	baseMatrix.append(matrix);
+	// }
+
+	for (const n of _dimensions) {
 		if (n < 1) {
 			// If any dimension has a count of 0, the total count is 0.
 			return [];
 		}
 	}
 
-	const pixiTransforms = transforms.map((transform) => {
-		const t = new PIXI.Transform();
-		t.worldTransform.setTransform(
-			transform.translate.x,
-			transform.translate.y,
-			transform.anchor.x,
-			transform.anchor.y,
-			transform.scaleX,
-			transform.scaleY,
-			transform.rotation,
-			0,
-			0,
-		);
-		return t;
-	});
+	const items: Item[] = [];
 
-	const ndArray = constructNdArray<PIXI.Transform | null>(dimensions, null);
+	items.push(...parentDimensions.map((x) => ({ ...x })));
+	items.push(
+		...parentMatrices.map<Item>((matrix) => ({
+			type: "parent",
+			count: 1,
+			matrix,
+		})),
+	);
+	items.push(
+		..._dimensions.map<Item>((count, i) => ({
+			type: "array",
+			count,
+			matrix: _matrices[i],
+		})),
+	);
 
-	const dIndices = dimensions.map(() => 0);
+	for (const item of items) {
+		if (item.count < 1) {
+			// If any dimension has a count of 0, the total count is 0.
+			return [];
+		}
+	}
+
+	const dimensions = items.map((item) => item.count);
+	const matrices = items.map((item) => item.matrix);
+
+	const ndArray = constructNdArray<PIXI.Matrix | null>(dimensions, null);
+	const dIndices = items.map(() => 0);
 
 	let i = 0;
 	while (i !== -1) {
 		const index = getNdArrayIndex(dimensions, dIndices);
 
-		const t = new PIXI.Transform();
+		const m = baseMatrix.clone();
 
 		for (let j = 0; j < dIndices.length; j++) {
-			const nApplications = dIndices[j];
-			const toApply = pixiTransforms[j];
+			const nApplications = dIndices[j] + (items[j].type === "array" ? 0 : 1);
+			const toApply = matrices[j];
 			for (let k = 0; k < nApplications; k++) {
-				t.worldTransform.append(toApply.worldTransform);
+				m.append(toApply);
 			}
 		}
-		ndArray[index] = t;
+		ndArray[index] = m;
 
 		// Loop stuff
 		i = dIndices.length - 1;
@@ -85,5 +121,5 @@ export function createLayerPIXITransforms(
 		dIndices[i]++;
 	}
 
-	return ndArray as PIXI.Transform[];
+	return ndArray as PIXI.Matrix[];
 }
