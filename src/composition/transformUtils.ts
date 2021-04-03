@@ -71,6 +71,54 @@ export const getTransformFromTransformGroupId = (
 	return transform;
 };
 
+export const getPropertyIdsFromTransformGroupId = (
+	transformGroupId: string,
+	compositionState: CompositionState,
+) => {
+	let positionX!: string;
+	let positionY!: string;
+	let anchorX!: string;
+	let anchorY!: string;
+	let scaleX!: string;
+	let scaleY!: string;
+	let rotation!: string;
+
+	forEachSubProperty(transformGroupId, compositionState, (property) => {
+		switch (property.name) {
+			case PropertyName.PositionX: {
+				positionX = property.id;
+				break;
+			}
+			case PropertyName.PositionY: {
+				positionY = property.id;
+				break;
+			}
+			case PropertyName.AnchorX: {
+				anchorX = property.id;
+				break;
+			}
+			case PropertyName.AnchorY: {
+				anchorY = property.id;
+				break;
+			}
+			case PropertyName.ScaleX: {
+				scaleX = property.id;
+				break;
+			}
+			case PropertyName.ScaleY: {
+				scaleY = property.id;
+				break;
+			}
+			case PropertyName.Rotation: {
+				rotation = property.id;
+				break;
+			}
+		}
+	});
+
+	return { positionX, positionY, anchorX, anchorY, scaleX, scaleY, rotation };
+};
+
 export const applyIndexTransformRotationCorrection = (
 	indexTransform: LayerTransform,
 	rotationCorrection: number,
@@ -98,4 +146,30 @@ export const applyIndexTransformRotationCorrection = (
 		...indexTransform,
 		translate: indexTransform.translate.lerp(sum, rotationCorrection),
 	};
+};
+
+export const getRotationCorrectedPosition = (
+	positionX: number,
+	positionY: number,
+	scaleX: number,
+	scaleY: number,
+	rotation: number,
+	rotationCorrection: number,
+	dimensions: [width: number, height: number],
+): [x: number, y: number] => {
+	const position = Vec2.new(positionX, positionY);
+	const [width, height] = dimensions;
+
+	const scaleDelta = Vec2.new(width, height)
+		.sub(Vec2.new(width, height).scaleXY(scaleX, scaleY))
+		.scale(0.5);
+
+	const atRot = position.sub(Vec2.new(width, height)).scale(0.5).add(Vec2.new(width, height));
+
+	const diff = position.sub(atRot).add(scaleDelta);
+	const dr = diff.rotate(rotation);
+	const sum = atRot.add(dr);
+
+	const p = position.lerp(sum, rotationCorrection);
+	return [p.x, p.y];
 };

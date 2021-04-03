@@ -203,8 +203,14 @@ export enum Performable {
 
 export type KeyDownMap<K extends Key> = Record<K, boolean>;
 
-export interface LayerDimension {
-	type: "array" | "parent";
-	count: number;
-	matrix: PIXI.Matrix;
-}
+export type LayerDimension =
+	| {
+			type: "array" | "parent";
+			count: number;
+			matrix: PIXI.Matrix;
+	  }
+	| {
+			type: "array_with_graph";
+			count: number;
+			matrices: PIXI.Matrix[];
+	  };

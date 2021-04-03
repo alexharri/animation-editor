@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { getDimensionsAndMatrices } from "~/composition/arrayModifier";
+import { getLayerDimensions } from "~/composition/arrayModifier";
 import { Layer } from "~/composition/compositionTypes";
 import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { updatePixiLayerHitTestGraphic } from "~/render/pixi/layerToPixi";
@@ -15,12 +15,14 @@ const getAllDimensionsAndMatrices = (
 	layer: Layer,
 	layerPropertyMap: LayerPropertyMap,
 	getPropertyValue: (propertyId: string) => any,
+	getPropertyValueAtIndex: (propertyId: string, index: number) => any,
 ): PIXI.Matrix[] => {
-	let { dimensions, matrices } = getDimensionsAndMatrices(
+	let layerDimensions = getLayerDimensions(
 		layer.id,
 		actionState,
 		layerPropertyMap,
 		getPropertyValue,
+		getPropertyValueAtIndex,
 	);
 
 	const layerMatrix = getPixiLayerMatrix(layerPropertyMap, getPropertyValue);
@@ -39,8 +41,7 @@ const getAllDimensionsAndMatrices = (
 	return createLayerPIXITransforms(
 		parentDimensions,
 		[...parentMatrices, layerMatrix],
-		dimensions,
-		matrices,
+		layerDimensions,
 	);
 };
 
@@ -50,6 +51,7 @@ export const createLayerInstances = (
 	layer: Layer,
 	layerPropertyMap: LayerPropertyMap,
 	getPropertyValue: (propertyId: string) => any,
+	getPropertyValueAtIndex: (propertyId: string, index: number) => any,
 	ownContentContainer: PIXI.Container,
 	graphic: PIXI.Graphics,
 ) => {
@@ -59,6 +61,7 @@ export const createLayerInstances = (
 		layer,
 		layerPropertyMap,
 		getPropertyValue,
+		getPropertyValueAtIndex,
 	);
 
 	for (let i = 0; i < pixiTransforms.length; i++) {
@@ -83,6 +86,7 @@ export const updateLayerInstanceTransforms = (
 	layer: Layer,
 	layerPropertyMap: LayerPropertyMap,
 	getPropertyValue: (propertyId: string) => any,
+	getPropertyValueAtIndex: (propertyId: string, index: number) => any,
 	ownContentContainer: PIXI.Container,
 ) => {
 	const pixiTransforms = getAllDimensionsAndMatrices(
@@ -91,6 +95,7 @@ export const updateLayerInstanceTransforms = (
 		layer,
 		layerPropertyMap,
 		getPropertyValue,
+		getPropertyValueAtIndex,
 	);
 
 	const children = ownContentContainer.children;

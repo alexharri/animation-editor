@@ -78,7 +78,6 @@ export interface LayerGraphsInfo {
 	nodeIdsThatEmitFrameIndex: string[];
 	propertyIdToAffectedInputNodes: Partial<Record<string, string[]>>;
 	compareNodeIds: (a: string, b: string) => number;
-	arrayModifierGroupToCount: Record<string, string>;
 }
 
 export const resolveCompositionLayerGraphs = (
@@ -109,7 +108,6 @@ export const resolveCompositionLayerGraphs = (
 		return obj;
 	}, {});
 
-	const arrayModifierGroupToCount: Record<string, string> = {};
 	const toCompute: string[] = [];
 	const graphToOutputNodes: Record<string, FlowNode<FlowNodeType.property_output>[]> = {};
 	const nodeToNext: Record<string, string[]> = {};
@@ -232,7 +230,7 @@ export const resolveCompositionLayerGraphs = (
 		toCompute.push(node.id);
 	}
 
-	const onGraphId = (graphId: string) => {
+	const onGraphId = (graphId: string, isArrayModifier: boolean) => {
 		const graph = flowState.graphs[graphId];
 
 		const outputNodes = findGraphOutputNodes(graph, flowState);
@@ -249,7 +247,7 @@ export const resolveCompositionLayerGraphs = (
 		if (!layer.graphId) {
 			continue;
 		}
-		onGraphId(layer.graphId);
+		onGraphId(layer.graphId, false);
 	}
 
 	// At this point we've iterated over every single layer graph.
@@ -261,18 +259,17 @@ export const resolveCompositionLayerGraphs = (
 	// For this reason the order that array modifier graphs are computed in does
 	// not matter. All that matters is that they run after the layer graphs have
 	// run.
-	for (const layerId of composition.layers) {
-		const arrayModifiers = getLayerArrayModifiers(layerId, compositionState);
-		for (const arrayModifier of arrayModifiers) {
-			const { modifierGroupId, countId } = arrayModifier;
-			const group = compositionState.properties[modifierGroupId] as PropertyGroup;
-			if (!group.graphId) {
-				continue;
-			}
-			arrayModifierGroupToCount[modifierGroupId] = countId;
-			onGraphId(group.graphId);
-		}
-	}
+	// for (const layerId of composition.layers) {
+	// 	const arrayModifiers = getLayerArrayModifiers(layerId, compositionState);
+	// 	for (const arrayModifier of arrayModifiers) {
+	// 		const { modifierGroupId } = arrayModifier;
+	// 		const group = compositionState.properties[modifierGroupId] as PropertyGroup;
+	// 		if (!group.graphId) {
+	// 			continue;
+	// 		}
+	// 		onGraphId(group.graphId, true);
+	// 	}
+	// }
 
 	// Given a graph like so:
 	//
@@ -298,7 +295,6 @@ export const resolveCompositionLayerGraphs = (
 		expressions,
 		propertyIdToAffectedInputNodes,
 		nodeIdsThatEmitFrameIndex,
-		arrayModifierGroupToCount,
 		compareNodeIds: (a, b) => nodeToIndex[a] - nodeToIndex[b],
 	};
 };

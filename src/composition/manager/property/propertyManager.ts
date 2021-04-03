@@ -8,7 +8,10 @@ import {
 } from "~/composition/property/layerGraphNodeOutputs";
 import { createPropertyInfoRegistry } from "~/composition/property/propertyInfoMap";
 import { updateRawValuesForPropertyIds } from "~/composition/property/propertyRawValues";
-import { recomputePropertyValuesAffectedByNode } from "~/composition/property/recomputePropertyValuesAffectedByNode";
+import {
+	recomputePropertyValueArraysAffectedByNode,
+	recomputePropertyValuesAffectedByNode,
+} from "~/composition/property/recomputePropertyValuesAffectedByNode";
 import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { Performable } from "~/types";
 
@@ -47,7 +50,8 @@ export const createPropertyManager = (
 ): PropertyManager => {
 	let layerGraphs = resolveCompositionLayerGraphs(compositionId, actionState);
 	const propertyStore = new PropertyStore();
-	let nodeOutputMap: Record<string, FlowComputeNodeArg[]> = {};
+	let layerGraphNodeOutputMap: Record<string, FlowComputeNodeArg[]> = {};
+	let arrayModifierGraphNodeOutputMap: Record<string, FlowComputeNodeArg[][]> = {};
 	let pIdsAffectedByFrameViaGraphByLayer: Record<string, string[]> = {};
 	let propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 
@@ -57,23 +61,56 @@ export const createPropertyManager = (
 		options: { frameIndex: number },
 	) {
 		const { flowState } = actionState;
+		const { frameIndex } = options;
 		const node = flowState.nodes[nodeId];
+		const graph = flowState.graphs[node.graphId];
+
+		if (graph.type === "array_modifier_graph") {
+			const countPropertyId = layerGraphs.arrayModifierGroupToCount[graph.propertyId];
+			const count = propertyStore.getPropertyValue(countPropertyId);
+
+			arrayModifierGraphNodeOutputMap[node.id] = Array.from({ length: count }).map((_, i) => {
+				const inputs = getLayerGraphNodeOutputs(
+					"array_modifier",
+					actionState,
+					compositionId,
+					propertyStore,
+					layerGraphNodeOutputMap,
+					arrayModifierGraphNodeOutputMap,
+					node,
+					{ frameIndex, arrayModifierIndex: i },
+				);
+				return computeLayerGraphNodeOutputs(node, inputs, layerGraphs);
+			});
+			if (node.type === FlowNodeType.property_output) {
+				recomputePropertyValueArraysAffectedByNode(
+					node as FlowNode<FlowNodeType.property_output>,
+					actionState,
+					propertyStore,
+					arrayModifierGraphNodeOutputMap,
+				);
+			}
+			return;
+		}
+
 		const inputs = getLayerGraphNodeOutputs(
+			"layer",
 			actionState,
 			compositionId,
 			propertyStore,
-			nodeOutputMap,
+			layerGraphNodeOutputMap,
+			arrayModifierGraphNodeOutputMap,
 			node,
-			options,
+			{ frameIndex, arrayModifierIndex: -1 },
 		);
-		nodeOutputMap[node.id] = computeLayerGraphNodeOutputs(node, inputs, layerGraphs);
+		layerGraphNodeOutputMap[node.id] = computeLayerGraphNodeOutputs(node, inputs, layerGraphs);
 
 		if (node.type === FlowNodeType.property_output) {
 			recomputePropertyValuesAffectedByNode(
 				node as FlowNode<FlowNodeType.property_output>,
 				actionState,
 				propertyStore,
-				nodeOutputMap,
+				layerGraphNodeOutputMap,
 			);
 		}
 	}
@@ -82,7 +119,7 @@ export const createPropertyManager = (
 		layerGraphs = resolveCompositionLayerGraphs(compositionId, actionState);
 		propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 		propertyStore.reset(actionState, compositionId);
-		nodeOutputMap = {};
+		layerGraphNodeOutputMap = {};
 
 		for (const nodeId of layerGraphs.toCompute) {
 			const { frameIndex } = actionState.compositionState.compositions[compositionId];

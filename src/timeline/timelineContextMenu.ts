@@ -34,15 +34,13 @@ export const createTimelineContextMenu = (
 
 		if (!layerId && !propertyId) {
 			const createAddLayerFn = (type: LayerType) => () => {
-				const op = createOperation(params);
-
-				const expectedLayerId = createMapNumberId(op.state.compositionState.layers);
-				op.addDiff((diff) => diff.addLayer(expectedLayerId));
-				op.add(
+				const { compositionState } = getActionState();
+				const expectedLayerId = createMapNumberId(compositionState.layers);
+				params.dispatch(
 					compositionActions.createLayer(compositionId, type),
 					contextMenuActions.closeContextMenu(),
 				);
-				op.submit();
+				params.addDiff((diff) => diff.addLayer(expectedLayerId));
 				params.submitAction(`Add ${getLayerTypeName(type)}`);
 			};
 
