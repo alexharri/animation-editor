@@ -207,10 +207,15 @@ export const getFlowNodeAssociatedCompositionId = (
 	const node = flowState.nodes[nodeId];
 	const graph = flowState.graphs[node.graphId];
 
-	if (!graph.layerId) {
-		return undefined;
+	if (graph.layerId) {
+		const layer = compositionState.layers[graph.layerId];
+		return layer.compositionId;
 	}
 
-	const layer = compositionState.layers[graph.layerId];
-	return layer.compositionId;
+	if (graph.propertyId) {
+		const property = compositionState.properties[graph.propertyId];
+		return property.compositionId;
+	}
+
+	return undefined;
 };

@@ -711,7 +711,7 @@ export const timelineHandlers = {
 	onPropertyGraphMouseDown: (e: React.MouseEvent, propertyId: string): void => {
 		e.stopPropagation();
 
-		const compositionState = getActionState().compositionState;
+		const { flowState, compositionState } = getActionState();
 		const property = compositionState.properties[propertyId];
 
 		if (property.name !== PropertyGroupName.ArrayModifier) {
@@ -729,7 +729,7 @@ export const timelineHandlers = {
 				return;
 			}
 
-			const { graph, node } = createArrayModifierFlowGraph(propertyId);
+			const { graph, node } = createArrayModifierFlowGraph(propertyId, flowState);
 
 			dispatch(
 				compositionActions.setPropertyGraphId(propertyId, graph.id),
@@ -743,7 +743,7 @@ export const timelineHandlers = {
 	onLayerGraphMouseDown: (e: React.MouseEvent, layerId: string): void => {
 		e.stopPropagation();
 
-		const compositionState = getActionState().compositionState;
+		const { flowState, compositionState } = getActionState();
 		const layer = compositionState.layers[layerId];
 
 		requestAction({ history: true }, (params) => {
@@ -757,7 +757,7 @@ export const timelineHandlers = {
 				return;
 			}
 
-			const { graph, node } = createLayerFlowGraph(layerId);
+			const { graph, node } = createLayerFlowGraph(layerId, flowState);
 
 			dispatch(
 				compositionActions.setLayerGraphId(layerId, graph.id),

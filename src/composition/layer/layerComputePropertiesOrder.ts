@@ -1,7 +1,9 @@
 import * as mathjs from "mathjs";
 import { EvalFunction } from "mathjs";
 import { CompositionState } from "~/composition/compositionReducer";
+import { PropertyGroup } from "~/composition/compositionTypes";
 import { getPropertyIdsAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
+import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
@@ -73,12 +75,12 @@ export interface LayerGraphsInfo {
 	 */
 	toCompute: string[];
 	nodeToNext: Record<string, string[]>;
-	nodeToIndex: Record<string, number>;
 	expressions: Record<string, EvalFunction>;
 	nodeIdsThatEmitFrameIndex: string[];
 	propertyIdToAffectedInputNodes: Partial<Record<string, string[]>>;
 	compareNodeIds: (a: string, b: string) => number;
 	propertyIdsAffectedByFrameIndexByLayer: Record<string, string[]>;
+	arrayModifierGroupToCount: Record<string, string>;
 }
 
 export const resolveCompositionLayerGraphs = (
@@ -87,24 +89,50 @@ export const resolveCompositionLayerGraphs = (
 ): LayerGraphsInfo => {
 	const { compositionState, flowState } = actionState;
 
-	const visitedByGraph: Record<string, Set<string>> = {};
-
 	const composition = compositionState.compositions[compositionId];
 
-	// Create a visited set for each graph
+	const layerGraphIds: string[] = [];
+	const arrayModifierGraphId: string[] = [];
+
 	for (const layerId of composition.layers) {
 		const layer = compositionState.layers[layerId];
-		if (layer.graphId) {
-			visitedByGraph[layer.graphId] = new Set();
+		layer.graphId && layerGraphIds.push(layer.graphId);
+
+		for (const { modifierGroupId } of getLayerArrayModifiers(layerId, compositionState)) {
+			const group = compositionState.properties[modifierGroupId] as PropertyGroup;
+			group.graphId && arrayModifierGraphId.push(group.graphId);
 		}
 	}
 
+	const graphIds: string[] = [...layerGraphIds, ...arrayModifierGraphId];
+
+	const visitedByGraph = graphIds.reduce<Record<string, Set<string>>>((obj, graphId) => {
+		obj[graphId] = new Set();
+		return obj;
+	}, {});
+
+	const arrayModifierGroupToCount: Record<string, string> = {};
 	const toCompute: string[] = [];
 	const graphToOutputNodes: Record<string, FlowNode<FlowNodeType.property_output>[]> = {};
-	const nodeToNext: LayerGraphsInfo["nodeToNext"] = {};
-	const propertyIdToAffectedInputNodes: LayerGraphsInfo["propertyIdToAffectedInputNodes"] = {};
+	const nodeToNext: Record<string, string[]> = {};
+	const propertyIdToAffectedInputNodes: Partial<Record<string, string[]>> = {};
 	const nodeIdsThatEmitFrameIndex: string[] = [];
 	const expressions: Record<string, EvalFunction> = {};
+
+	// Populate `nodeToNext` and `expressions`
+	for (const graphId of graphIds) {
+		const graph = flowState.graphs[graphId];
+		for (const nodeId of graph.nodes) {
+			nodeToNext[nodeId] = [];
+
+			const node = flowState.nodes[nodeId];
+			if (node.type === FlowNodeType.expr) {
+				const state = node.state as FlowNodeState<FlowNodeType.expr>;
+				const evalFn = mathjs.compile(state.expression);
+				expressions[node.id] = evalFn;
+			}
+		}
+	}
 
 	function dfs(node: FlowNode, visitedInTrip: Set<string>) {
 		if (visitedByGraph[node.graphId].has(node.id)) {
@@ -206,33 +234,7 @@ export const resolveCompositionLayerGraphs = (
 		toCompute.push(node.id);
 	}
 
-	// Populate `nodeToNext` and `expressions`
-	for (const layerId of composition.layers) {
-		const layer = compositionState.layers[layerId];
-		if (!layer.graphId) {
-			continue;
-		}
-		const graph = flowState.graphs[layer.graphId];
-		for (const nodeId of graph.nodes) {
-			nodeToNext[nodeId] = [];
-
-			const node = flowState.nodes[nodeId];
-			if (node.type === FlowNodeType.expr) {
-				const state = node.state as FlowNodeState<FlowNodeType.expr>;
-				const evalFn = mathjs.compile(state.expression);
-				expressions[node.id] = evalFn;
-			}
-		}
-	}
-
-	// Run dfs on the output nodes of every graph
-	for (const layerId of composition.layers) {
-		const layer = compositionState.layers[layerId];
-		if (!layer.graphId) {
-			continue;
-		}
-
-		const { graphId } = layer;
+	const onGraphId = (graphId: string) => {
 		const graph = flowState.graphs[graphId];
 
 		const outputNodes = findGraphOutputNodes(graph, flowState);
@@ -240,6 +242,37 @@ export const resolveCompositionLayerGraphs = (
 
 		for (const outputNode of outputNodes) {
 			dfs(outputNode, new Set());
+		}
+	};
+
+	// Run dfs on the output nodes of every graph
+	for (const layerId of composition.layers) {
+		const layer = compositionState.layers[layerId];
+		if (!layer.graphId) {
+			continue;
+		}
+		onGraphId(layer.graphId);
+	}
+
+	// At this point we've iterated over every single layer graph.
+	//
+	// We now iterate over the array modifier graphs of each layer. Array modifier
+	// graphs reference the computed values of properties, but do not affect the
+	// computed values themselves.
+	//
+	// For this reason the order that array modifier graphs are computed in does
+	// not matter. All that matters is that they run after the layer graphs have
+	// run.
+	for (const layerId of composition.layers) {
+		const arrayModifiers = getLayerArrayModifiers(layerId, compositionState);
+		for (const arrayModifier of arrayModifiers) {
+			const { modifierGroupId, countId } = arrayModifier;
+			const group = compositionState.properties[modifierGroupId] as PropertyGroup;
+			if (!group.graphId) {
+				continue;
+			}
+			arrayModifierGroupToCount[modifierGroupId] = countId;
+			onGraphId(group.graphId);
 		}
 	}
 
@@ -276,11 +309,11 @@ export const resolveCompositionLayerGraphs = (
 
 	return {
 		toCompute,
-		nodeToIndex,
 		nodeToNext,
 		expressions,
 		propertyIdToAffectedInputNodes,
 		nodeIdsThatEmitFrameIndex,
+		arrayModifierGroupToCount,
 		propertyIdsAffectedByFrameIndexByLayer,
 		compareNodeIds: (a, b) => nodeToIndex[a] - nodeToIndex[b],
 	};

@@ -1,55 +1,59 @@
 import * as PIXI from "pixi.js";
-import { getDimensionsAndMatrices } from "~/composition/arrayModifier";
+import { getArrayModifierLayerDimensions } from "~/composition/arrayModifier";
 import { Layer } from "~/composition/compositionTypes";
 import { constructLayerPropertyMap, LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
+import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { updatePixiLayerHitTestGraphic } from "~/render/pixi/layerToPixi";
 import { getPixiLayerMatrix } from "~/render/pixi/pixiLayerTransform";
 import { createLayerPIXITransforms } from "~/render/pixi/pixiTransform";
 import { LayerDimension } from "~/types";
 
-type ParentDimensions = LayerDimension[];
-
 const getAllDimensionsAndMatrices = (
 	actionState: ActionState,
-	parentDimensions: ParentDimensions,
+	parentDimensions: LayerDimension[],
 	layer: Layer,
 	layerPropertyMap: LayerPropertyMap,
-	getPropertyValue: (propertyId: string) => any,
+	propertyStore: PropertyStore,
 ): PIXI.Matrix[] => {
-	let { dimensions, matrices } = getDimensionsAndMatrices(
+	const arrayModifierLayerDimensions = getArrayModifierLayerDimensions(
 		layer.id,
 		actionState,
 		layerPropertyMap,
-		getPropertyValue,
+		propertyStore,
 	);
 
-	const layerMatrix = getPixiLayerMatrix(layerPropertyMap, getPropertyValue);
+	const layerMatrix = getPixiLayerMatrix(layerPropertyMap, propertyStore.getPropertyValue);
 
-	const parentMatrices = [];
+	const parentLayerMatrices = [];
 	let parentLayer = actionState.compositionState.layers[layer.parentLayerId];
 	while (parentLayer) {
 		const parentMatrix = getPixiLayerMatrix(
 			constructLayerPropertyMap(parentLayer.id, actionState.compositionState),
-			getPropertyValue,
+			propertyStore.getPropertyValue,
 		);
-		parentMatrices.push(parentMatrix);
+		parentLayerMatrices.push(parentMatrix);
 		parentLayer = actionState.compositionState.layers[parentLayer.parentLayerId];
 	}
 
-	return createLayerPIXITransforms(
-		parentDimensions,
-		[...parentMatrices, layerMatrix],
-		dimensions,
-		matrices,
-	);
+	const matrix = new PIXI.Matrix();
+	for (const parentLayerMatrix of parentLayerMatrices) {
+		matrix.append(parentLayerMatrix);
+	}
+	matrix.append(layerMatrix);
+
+	return createLayerPIXITransforms([
+		...parentDimensions,
+		{ type: "parent", count: 1, matrix },
+		...arrayModifierLayerDimensions,
+	]);
 };
 
 export const createLayerInstances = (
 	actionState: ActionState,
-	parentDimensions: ParentDimensions,
+	parentDimensions: LayerDimension[],
 	layer: Layer,
 	layerPropertyMap: LayerPropertyMap,
-	getPropertyValue: (propertyId: string) => any,
+	propertyStore: PropertyStore,
 	ownContentContainer: PIXI.Container,
 	graphic: PIXI.Graphics,
 ) => {
@@ -58,7 +62,7 @@ export const createLayerInstances = (
 		parentDimensions,
 		layer,
 		layerPropertyMap,
-		getPropertyValue,
+		propertyStore,
 	);
 
 	for (let i = 0; i < pixiTransforms.length; i++) {
@@ -79,10 +83,10 @@ export const drawHitTestGraphic = (
 
 export const updateLayerInstanceTransforms = (
 	actionState: ActionState,
-	parentDimensions: ParentDimensions,
+	parentDimensions: LayerDimension[],
 	layer: Layer,
 	layerPropertyMap: LayerPropertyMap,
-	getPropertyValue: (propertyId: string) => any,
+	propertyStore: PropertyStore,
 	ownContentContainer: PIXI.Container,
 ) => {
 	const pixiTransforms = getAllDimensionsAndMatrices(
@@ -90,7 +94,7 @@ export const updateLayerInstanceTransforms = (
 		parentDimensions,
 		layer,
 		layerPropertyMap,
-		getPropertyValue,
+		propertyStore,
 	);
 
 	const children = ownContentContainer.children;

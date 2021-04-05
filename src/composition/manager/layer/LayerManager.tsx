@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { getDimensionsAndMatrices } from "~/composition/arrayModifier";
+import { getArrayModifierLayerDimensions } from "~/composition/arrayModifier";
 import {
 	createLayerInstances,
 	updateLayerInstanceTransforms,
@@ -118,10 +118,10 @@ export class LayerManager {
 		const hitTestGraphic = this.hitTestManager.getGraphic(actionState, layerId);
 		transformContainer.addChild(hitTestGraphic);
 
-		const { getPropertyValue } = this.propertyManager;
+		const { store } = this.propertyManager;
 		const map = constructLayerPropertyMap(layerId, actionState.compositionState);
 
-		applyPixiLayerTransform(transformContainer, map, getPropertyValue);
+		applyPixiLayerTransform(transformContainer, map, store.getPropertyValue);
 
 		let parentContainer = this.options.compositionContainer;
 		if (layer.parentLayerId) {
@@ -144,7 +144,7 @@ export class LayerManager {
 				this.parentDimensions,
 				layer,
 				this.layerPropertyMapMap[layerId],
-				getPropertyValue,
+				store,
 				instanceContainer,
 				this.graphicManager.getLayerGraphic(actionState, layer),
 			);
@@ -301,7 +301,7 @@ export class LayerManager {
 						this.parentDimensions,
 						layer,
 						this.layerPropertyMapMap[layerId],
-						this.propertyManager.getPropertyValue,
+						this.propertyManager.store,
 						instancesContainer,
 						this.graphicManager.getLayerGraphic(actionState, layer),
 					);
@@ -331,7 +331,7 @@ export class LayerManager {
 						this.parentDimensions,
 						layer,
 						this.layerPropertyMapMap[layerId],
-						this.propertyManager.getPropertyValue,
+						this.propertyManager.store,
 						instancesContainer,
 					);
 				} else {
@@ -395,21 +395,14 @@ export class LayerManager {
 			this.propertyManager.getPropertyValue,
 		);
 
-		const { dimensions, matrices } = getDimensionsAndMatrices(
+		const layerDimensions = getArrayModifierLayerDimensions(
 			layerId,
 			actionState,
 			this.layerPropertyMapMap[layerId],
-			this.propertyManager.getPropertyValue,
+			this.propertyManager.store,
 		);
 
-		return [
-			{ type: "parent", count: 1, matrix: layerMatrix },
-			...dimensions.map<LayerDimension>((count, i) => ({
-				type: "array",
-				count,
-				matrix: matrices[i],
-			})),
-		];
+		return [{ type: "parent", count: 1, matrix: layerMatrix }, ...layerDimensions];
 	}
 
 	private getLayerPropertyMap(layerId: string) {

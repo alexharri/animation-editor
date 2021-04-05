@@ -8,15 +8,17 @@ import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 
 export const getLayerGraphNodeOutputs = (
+	type: "layer" | "array_modifier",
 	actionState: ActionState,
 	compositionId: string,
 	propertyStore: PropertyStore,
 	nodeOutputMap: Record<string, FlowComputeNodeArg[]>,
+	arrayModifierGraphNodeOutputMap: Record<string, FlowComputeNodeArg[][]>,
 	node: FlowNode,
-	options: { frameIndex: number },
+	options: { frameIndex: number; arrayModifierIndex: number },
 ): FlowComputeNodeArg[] => {
 	if (node.type === FlowNodeType.array_modifier_index) {
-		return [flowNodeArg.number(-1)];
+		return [flowNodeArg.number(options.arrayModifierIndex)];
 	}
 	if (node.type === FlowNodeType.composition) {
 		const composition = actionState.compositionState.compositions[compositionId];
@@ -86,7 +88,12 @@ export const getLayerGraphNodeOutputs = (
 
 	return node.inputs.map((input) => {
 		if (input.pointer) {
-			const outputs = nodeOutputMap[input.pointer.nodeId];
+			const outputs =
+				type === "layer"
+					? nodeOutputMap[input.pointer.nodeId]
+					: arrayModifierGraphNodeOutputMap[input.pointer.nodeId][
+							options.arrayModifierIndex
+					  ];
 			return outputs[input.pointer.outputIndex];
 		}
 		return { type: input.type, value: input.value };

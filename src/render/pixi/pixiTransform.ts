@@ -31,72 +31,43 @@ export const adjustPIXITransformToParent = (
 	return t;
 };
 
-interface Item {
-	type: "array" | "parent";
-	count: number;
-	matrix: PIXI.Matrix;
-	fromComp?: boolean;
-}
-
-type ParentDimensions = LayerDimension[];
-
-export function createLayerPIXITransforms(
-	parentDimensions: ParentDimensions,
-	parentMatrices: PIXI.Matrix[],
-	_dimensions: number[],
-	_matrices: PIXI.Matrix[],
-): PIXI.Matrix[] {
-	// const x: LayerTransform = {
-	// 	...DEFAULT_LAYER_TRANSFORM,
-	// 	translate: Vec2.new(10, 0),
-	// };
-
-	// dimensions = [5, ...dimensions];
-	// transforms = [x, ...transforms];
-
+export function createLayerPIXITransforms(layerDimensions: LayerDimension[]): PIXI.Matrix[] {
 	const baseMatrix = new PIXI.Matrix();
 
-	// for (const matrix of parentMatrices) {
-	// 	baseMatrix.append(matrix);
-	// }
-
-	for (const n of _dimensions) {
-		if (n < 1) {
+	for (const { count } of layerDimensions) {
+		if (count < 1) {
 			// If any dimension has a count of 0, the total count is 0.
 			return [];
 		}
 	}
 
-	const items: Item[] = [];
-
-	items.push(...parentDimensions.map((x) => ({ ...x })));
-	items.push(
-		...parentMatrices.map<Item>((matrix) => ({
-			type: "parent",
-			count: 1,
-			matrix,
-		})),
-	);
-	items.push(
-		..._dimensions.map<Item>((count, i) => ({
-			type: "array",
-			count,
-			matrix: _matrices[i],
-		})),
-	);
-
-	for (const item of items) {
-		if (item.count < 1) {
-			// If any dimension has a count of 0, the total count is 0.
-			return [];
-		}
-	}
-
-	const dimensions = items.map((item) => item.count);
-	const matrices = items.map((item) => item.matrix);
+	const dimensions = layerDimensions.map((item) => item.count);
 
 	const ndArray = constructNdArray<PIXI.Matrix | null>(dimensions, null);
-	const dIndices = items.map(() => 0);
+	const dIndices = layerDimensions.map(() => 0);
+
+	const getNApplications = (j: number) => {
+		switch (layerDimensions[j].type) {
+			case "array":
+			case "array_with_graph":
+			case "array_with_graph_recursive":
+				return dIndices[j];
+			case "parent":
+				return dIndices[j] + 1;
+		}
+	};
+	const getMatricesToApply = (j: number) => {
+		const item = layerDimensions[j];
+		switch (item.type) {
+			case "array":
+			case "parent":
+			case "array_with_graph": {
+				return Array.from({ length: item.count }).map(() => item.matrix);
+			}
+			case "array_with_graph_recursive":
+				return item.matrices;
+		}
+	};
 
 	let i = 0;
 	while (i !== -1) {
@@ -105,10 +76,16 @@ export function createLayerPIXITransforms(
 		const m = baseMatrix.clone();
 
 		for (let j = 0; j < dIndices.length; j++) {
-			const nApplications = dIndices[j] + (items[j].type === "array" ? 0 : 1);
-			const toApply = matrices[j];
+			const item = layerDimensions[j];
+			const nApplications = getNApplications(j);
+			const toApply = getMatricesToApply(j);
+
 			for (let k = 0; k < nApplications; k++) {
-				m.append(toApply);
+				m.append(toApply[k]);
+			}
+			if (item.type === "array_with_graph") {
+				const absM = item.absoluteMatrices[nApplications];
+				m.append(absM);
 			}
 		}
 		ndArray[index] = m;

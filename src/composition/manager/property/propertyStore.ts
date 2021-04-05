@@ -11,6 +11,12 @@ export class PropertyStore {
 	private listenersByPropertyId: Partial<
 		Record<string, Array<{ id: string; fn: ListenerFn }>>
 	> = {};
+	private computedValueArrays: Partial<Record<string, any[]>> = {};
+
+	constructor() {
+		this.getPropertyValue = this.getPropertyValue.bind(this);
+		this.getPropertyValueAtIndex = this.getPropertyValueAtIndex.bind(this);
+	}
 
 	public getPropertyValue(propertyId: string): any {
 		return this.computedValues[propertyId] ?? this.rawValues[propertyId];
@@ -21,12 +27,25 @@ export class PropertyStore {
 	public getRawPropertyValue(propertyId: string): any {
 		return this.rawValues[propertyId];
 	}
+	public getPropertyValueAtIndex(propertyId: string, index: number): any {
+		if (typeof this.computedValueArrays[propertyId]?.[index] !== "undefined") {
+			return this.computedValueArrays[propertyId]![index];
+		}
+		return this.getPropertyValue(propertyId);
+	}
+	public propertyHasIndexValues(propertyId: string): boolean {
+		return !!this.computedValueArrays[propertyId];
+	}
 	public setComputedPropertyValue(propertyId: string, computedPropertyValue: any) {
 		this.computedValues[propertyId] = computedPropertyValue;
 		this.executeListeners(propertyId);
 	}
 	public setRawPropertyValue(propertyId: string, rawPropertyValue: any) {
 		this.rawValues[propertyId] = rawPropertyValue;
+		this.executeListeners(propertyId);
+	}
+	public setComputedValueArray(propertyId: string, valueArray: any[]) {
+		this.computedValueArrays[propertyId] = valueArray;
 		this.executeListeners(propertyId);
 	}
 	public reset(actionState: ActionState, compositionId: string) {

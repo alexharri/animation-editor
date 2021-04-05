@@ -27,7 +27,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const FlowNodeBodyComponent: React.FC<Props> = (props) => {
-	const { top, left, width, type, allowResize = true, zIndex } = props;
+	const { nodeId, top, left, width, type, allowResize = true, zIndex } = props;
 	const { selected } = props;
 
 	return (
@@ -39,7 +39,9 @@ const FlowNodeBodyComponent: React.FC<Props> = (props) => {
 				right: (e) => nodeHandlers.onRightClick(e, props.graphId, props.nodeId),
 			})}
 		>
-			<div className={s("header", { selected })}>{getFlowNodeLabel(type)}</div>
+			<div className={s("header", { selected })}>
+				{`(${nodeId}) ` + getFlowNodeLabel(type)}
+			</div>
 			{props.children}
 			{allowResize && (
 				<div
