@@ -144,8 +144,7 @@ export class LayerManager {
 				this.parentDimensions,
 				layer,
 				this.layerPropertyMapMap[layerId],
-				store.getPropertyValue,
-				store.getPropertyValueAtIndex,
+				store,
 				instanceContainer,
 				this.graphicManager.getLayerGraphic(actionState, layer),
 			);
@@ -271,7 +270,6 @@ export class LayerManager {
 
 	public executePerformable(actionState: ActionState, layerId: string, performable: Performable) {
 		const layer = actionState.compositionState.layers[layerId];
-		console.log(performable);
 
 		switch (performable) {
 			case Performable.DrawLayer: {
@@ -303,8 +301,7 @@ export class LayerManager {
 						this.parentDimensions,
 						layer,
 						this.layerPropertyMapMap[layerId],
-						this.propertyManager.getPropertyValue,
-						this.propertyManager.store.getPropertyValueAtIndex,
+						this.propertyManager.store,
 						instancesContainer,
 						this.graphicManager.getLayerGraphic(actionState, layer),
 					);
@@ -334,8 +331,7 @@ export class LayerManager {
 						this.parentDimensions,
 						layer,
 						this.layerPropertyMapMap[layerId],
-						this.propertyManager.getPropertyValue,
-						this.propertyManager.store.getPropertyValueAtIndex,
+						this.propertyManager.store,
 						instancesContainer,
 					);
 				} else {
@@ -403,8 +399,7 @@ export class LayerManager {
 			layerId,
 			actionState,
 			this.layerPropertyMapMap[layerId],
-			this.propertyManager.getPropertyValue,
-			this.propertyManager.store.getPropertyValueAtIndex,
+			this.propertyManager.store,
 		);
 
 		return [{ type: "parent", count: 1, matrix: layerMatrix }, ...layerDimensions];

@@ -97,10 +97,16 @@ export function createLayerPIXITransforms(
 		const m = baseMatrix.clone();
 
 		for (let j = 0; j < dIndices.length; j++) {
+			const item = items[j];
 			const nApplications = getNApplications(j);
 			const toApply = getMatricesToApply(j);
+
 			for (let k = 0; k < nApplications; k++) {
 				m.append(toApply[k]);
+			}
+			if (item.type === "array_with_graph") {
+				const absM = item.absoluteMatrices[nApplications];
+				m.append(absM);
 			}
 		}
 		ndArray[index] = m;

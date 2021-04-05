@@ -52,7 +52,6 @@ export const createPropertyManager = (
 	const propertyStore = new PropertyStore();
 	let layerGraphNodeOutputMap: Record<string, FlowComputeNodeArg[]> = {};
 	let arrayModifierGraphNodeOutputMap: Record<string, FlowComputeNodeArg[][]> = {};
-	let pIdsAffectedByFrameViaGraphByLayer: Record<string, string[]> = {};
 	let propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 
 	function computeNode(
@@ -268,7 +267,9 @@ export const createPropertyManager = (
 					}
 				}
 
-				for (const propertyId of pIdsAffectedByFrameViaGraphByLayer[layerId] || []) {
+				for (const propertyId of layerGraphs.propertyIdsAffectedByFrameIndexByLayer[
+					layerId
+				] || []) {
 					const info = propertyInfo.properties[propertyId];
 					performableSet.add(info.performable);
 				}

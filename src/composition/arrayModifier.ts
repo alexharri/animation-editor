@@ -2,6 +2,7 @@ import * as PIXI from "pixi.js";
 import { PropertyGroup } from "~/composition/compositionTypes";
 import { getLayerRectDimensionsAndOffset } from "~/composition/layer/layerDimensions";
 import { LayerPropertyMap } from "~/composition/layer/layerPropertyMap";
+import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import {
 	applyIndexTransformRotationCorrection,
 	getPropertyIdsFromTransformGroupId,
@@ -83,8 +84,7 @@ export const getLayerDimensions = (
 	layerId: string,
 	actionState: ActionState,
 	layerPropertyMap: LayerPropertyMap,
-	getPropertyValue: (propertyId: string) => any,
-	getPropertyValueAtIndex: (propertyId: string, index: number) => any,
+	propertyStore: PropertyStore,
 ): LayerDimension[] => {
 	const { compositionState } = actionState;
 	const layer = compositionState.layers[layerId];
@@ -94,7 +94,7 @@ export const getLayerDimensions = (
 			actionState,
 			layer,
 			layerPropertyMap,
-			getPropertyValue,
+			propertyStore.getPropertyValue,
 		);
 		return [width, height];
 	};
@@ -105,20 +105,21 @@ export const getLayerDimensions = (
 	for (const arrayModifier of arrayModifiers) {
 		const { modifierGroupId, countId, rotationCorrectionId, transformGroupId } = arrayModifier;
 		const group = compositionState.properties[modifierGroupId] as PropertyGroup;
-		const count = getPropertyValue(countId);
-		const rotationCorrection = getPropertyValue(rotationCorrectionId);
+		const count = propertyStore.getPropertyValue(countId);
+		const rotationCorrection = propertyStore.getPropertyValue(rotationCorrectionId);
 		const transformIds = getPropertyIdsFromTransformGroupId(transformGroupId, compositionState);
 
 		if (!group.graphId) {
-			let positionX = getPropertyValue(transformIds.positionX);
-			let positionY = getPropertyValue(transformIds.positionY);
-			const anchorX = getPropertyValue(transformIds.anchorX);
-			const anchorY = getPropertyValue(transformIds.anchorY);
-			const scaleX = getPropertyValue(transformIds.scaleX);
-			const scaleY = getPropertyValue(transformIds.scaleY);
-			const rotation = getPropertyValue(transformIds.rotation) * DEG_TO_RAD_FAC;
+			let positionX = propertyStore.getPropertyValue(transformIds.positionX);
+			let positionY = propertyStore.getPropertyValue(transformIds.positionY);
+			const anchorX = propertyStore.getPropertyValue(transformIds.anchorX);
+			const anchorY = propertyStore.getPropertyValue(transformIds.anchorY);
+			const scaleX = propertyStore.getPropertyValue(transformIds.scaleX);
+			const scaleY = propertyStore.getPropertyValue(transformIds.scaleY);
+			const rotation = propertyStore.getPropertyValue(transformIds.rotation) * DEG_TO_RAD_FAC;
 
 			[positionX, positionY] = getRotationCorrectedPosition(
+				layer.type,
 				positionX,
 				positionY,
 				scaleX,
@@ -145,17 +146,53 @@ export const getLayerDimensions = (
 		}
 
 		const matrices: PIXI.Matrix[] = [];
+		const absoluteMatrices: PIXI.Matrix[] = [];
+
+		const absolute = {
+			positionX: propertyStore.propertyHasIndexValues(transformIds.positionX),
+			positionY: propertyStore.propertyHasIndexValues(transformIds.positionY),
+			anchorX: propertyStore.propertyHasIndexValues(transformIds.anchorX),
+			anchorY: propertyStore.propertyHasIndexValues(transformIds.anchorY),
+			scaleX: propertyStore.propertyHasIndexValues(transformIds.scaleX),
+			scaleY: propertyStore.propertyHasIndexValues(transformIds.scaleY),
+			rotation: propertyStore.propertyHasIndexValues(transformIds.rotation),
+		};
+
+		const atIndex = (propertyId: string, i: number) => {
+			return propertyStore.getPropertyValueAtIndex(propertyId, i);
+		};
 
 		for (let i = 0; i < count; i++) {
-			let positionX = getPropertyValueAtIndex(transformIds.positionX, i);
-			let positionY = getPropertyValueAtIndex(transformIds.positionY, i);
-			const anchorX = getPropertyValueAtIndex(transformIds.anchorX, i);
-			const anchorY = getPropertyValueAtIndex(transformIds.anchorY, i);
-			const scaleX = getPropertyValueAtIndex(transformIds.scaleX, i);
-			const scaleY = getPropertyValueAtIndex(transformIds.scaleY, i);
-			const rotation = getPropertyValueAtIndex(transformIds.rotation, i) * DEG_TO_RAD_FAC;
+			const absoluteMatrix = new PIXI.Matrix();
+			absoluteMatrix.setTransform(
+				absolute.positionX ? atIndex(transformIds.positionX, i) : 0,
+				absolute.positionY ? atIndex(transformIds.positionY, i) : 0,
+				absolute.anchorX ? atIndex(transformIds.anchorX, i) : 0,
+				absolute.anchorY ? atIndex(transformIds.anchorY, i) : 0,
+				absolute.scaleX ? atIndex(transformIds.scaleX, i) : 1,
+				absolute.scaleY ? atIndex(transformIds.scaleY, i) : 1,
+				absolute.rotation ? atIndex(transformIds.rotation, i) * DEG_TO_RAD_FAC : 0,
+				0,
+				0,
+			);
+			absoluteMatrices.push(absoluteMatrix);
+		}
+
+		const getValue = (propertyId: string) => {
+			return propertyStore.getPropertyValue(propertyId);
+		};
+
+		for (let i = 0; i < count; i++) {
+			let positionX = getValue(transformIds.positionX);
+			let positionY = getValue(transformIds.positionY);
+			const anchorX = getValue(transformIds.anchorX);
+			const anchorY = getValue(transformIds.anchorY);
+			const scaleX = getValue(transformIds.scaleX);
+			const scaleY = getValue(transformIds.scaleY);
+			const rotation = getValue(transformIds.rotation) * DEG_TO_RAD_FAC;
 
 			[positionX, positionY] = getRotationCorrectedPosition(
+				layer.type,
 				positionX,
 				positionY,
 				scaleX,
@@ -180,7 +217,13 @@ export const getLayerDimensions = (
 			matrices.push(matrix);
 		}
 
-		layerDimensions.push({ type: "array_with_graph", count, matrices });
+		layerDimensions.push({
+			type: "array_with_graph",
+			count,
+			matrices,
+			absoluteMatrices,
+			absolute,
+		});
 	}
 
 	return layerDimensions;

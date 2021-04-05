@@ -28,10 +28,13 @@ export class PropertyStore {
 		return this.rawValues[propertyId];
 	}
 	public getPropertyValueAtIndex(propertyId: string, index: number): any {
-		if (this.computedValueArrays[propertyId]?.[index]) {
+		if (typeof this.computedValueArrays[propertyId]?.[index] !== "undefined") {
 			return this.computedValueArrays[propertyId]![index];
 		}
 		return this.getPropertyValue(propertyId);
+	}
+	public propertyHasIndexValues(propertyId: string): boolean {
+		return !!this.computedValueArrays[propertyId];
 	}
 	public setComputedPropertyValue(propertyId: string, computedPropertyValue: any) {
 		this.computedValues[propertyId] = computedPropertyValue;

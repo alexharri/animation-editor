@@ -2,6 +2,7 @@ import * as mathjs from "mathjs";
 import { EvalFunction } from "mathjs";
 import { CompositionState } from "~/composition/compositionReducer";
 import { PropertyGroup } from "~/composition/compositionTypes";
+import { getPropertyIdsAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
@@ -78,6 +79,7 @@ export interface LayerGraphsInfo {
 	nodeIdsThatEmitFrameIndex: string[];
 	propertyIdToAffectedInputNodes: Partial<Record<string, string[]>>;
 	compareNodeIds: (a: string, b: string) => number;
+	propertyIdsAffectedByFrameIndexByLayer: Record<string, string[]>;
 	arrayModifierGroupToCount: Record<string, string>;
 }
 
@@ -292,6 +294,19 @@ export const resolveCompositionLayerGraphs = (
 		return acc;
 	}, {});
 
+	const propertyIdsAffectedByFrameIndexByLayer = getPropertyIdsAffectedByNodes(
+		actionState,
+		nodeIdsThatEmitFrameIndex,
+		nodeToNext,
+	).reduce<Record<string, string[]>>((acc, propertyId) => {
+		const property = actionState.compositionState.properties[propertyId];
+		if (!acc[property.layerId]) {
+			acc[property.layerId] = [];
+		}
+		acc[property.layerId].push(property.id);
+		return acc;
+	}, {});
+
 	return {
 		toCompute,
 		nodeToNext,
@@ -299,6 +314,7 @@ export const resolveCompositionLayerGraphs = (
 		propertyIdToAffectedInputNodes,
 		nodeIdsThatEmitFrameIndex,
 		arrayModifierGroupToCount,
+		propertyIdsAffectedByFrameIndexByLayer,
 		compareNodeIds: (a, b) => nodeToIndex[a] - nodeToIndex[b],
 	};
 };

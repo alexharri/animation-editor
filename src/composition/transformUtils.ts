@@ -1,7 +1,7 @@
 import { CompositionState } from "~/composition/compositionReducer";
 import { forEachSubProperty } from "~/composition/compositionUtils";
 import { DEG_TO_RAD_FAC } from "~/constants";
-import { LayerTransform, PropertyGroupName, PropertyName } from "~/types";
+import { LayerTransform, LayerType, PropertyGroupName, PropertyName } from "~/types";
 import { Mat2 } from "~/util/math/mat";
 
 export const getLayerTransform = (
@@ -149,6 +149,7 @@ export const applyIndexTransformRotationCorrection = (
 };
 
 export const getRotationCorrectedPosition = (
+	layerType: LayerType,
 	positionX: number,
 	positionY: number,
 	scaleX: number,
@@ -158,6 +159,12 @@ export const getRotationCorrectedPosition = (
 	dimensions: [width: number, height: number],
 ): [x: number, y: number] => {
 	const position = Vec2.new(positionX, positionY);
+
+	if (layerType === LayerType.Ellipse) {
+		const p = position.rotate(rotationCorrection * 0.5 * rotation);
+		return [p.x, p.y];
+	}
+
 	const [width, height] = dimensions;
 
 	const scaleDelta = Vec2.new(width, height)
