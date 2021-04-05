@@ -213,7 +213,7 @@ export const createPropertyManager = (
 				propertyIds.push(
 					...getPropertyIdsAffectedByNodes(
 						actionState,
-						layerGraphs.nodeIdsThatEmitFrameIndex,
+						options.nodeIds,
 						layerGraphs.nodeToNext,
 					),
 				);

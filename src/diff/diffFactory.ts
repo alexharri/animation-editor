@@ -42,9 +42,6 @@ export const diffFactory = {
 	flowNodeExpression: (nodeId: string): Diff => {
 		return { type: DiffType.FlowNodeExpression, nodeId };
 	},
-	removeFlowNode: (nodeId: string): Diff => {
-		return { type: DiffType.RemoveFlowNode, nodeId };
-	},
 	addFlowNode: (nodeId: string): Diff => {
 		return { type: DiffType.AddFlowNode, nodeId };
 	},

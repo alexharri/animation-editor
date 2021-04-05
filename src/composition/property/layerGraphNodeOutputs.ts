@@ -94,6 +94,7 @@ export const getLayerGraphNodeOutputs = (
 					: arrayModifierGraphNodeOutputMap[input.pointer.nodeId][
 							options.arrayModifierIndex
 					  ];
+
 			return outputs[input.pointer.outputIndex];
 		}
 		return { type: input.type, value: input.value };

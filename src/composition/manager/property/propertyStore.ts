@@ -51,6 +51,7 @@ export class PropertyStore {
 	public reset(actionState: ActionState, compositionId: string) {
 		this.rawValues = computeValueByPropertyIdForComposition(actionState, compositionId);
 		this.computedValues = {};
+		this.computedValueArrays = {};
 	}
 	public addListener(propertyId: string, fn: ListenerFn) {
 		if (!this.listenersByPropertyId[propertyId]) {
