@@ -113,7 +113,7 @@ export const resolveCompositionLayerGraphs = (
 
 	const arrayModifierGroupToCount: Record<string, string> = {};
 	const toCompute: string[] = [];
-	const graphToOutputNodes: Record<string, FlowNode<FlowNodeType.property_output>[]> = {};
+	const graphToOutputNodes: Record<string, FlowNode[]> = {};
 	const nodeToNext: Record<string, string[]> = {};
 	const propertyIdToAffectedInputNodes: Partial<Record<string, string[]>> = {};
 	const nodeIdsThatEmitFrameIndex: string[] = [];
@@ -191,13 +191,13 @@ export const resolveCompositionLayerGraphs = (
 			const state = node.state as FlowNodeState<FlowNodeType.property_input>;
 
 			const thisGraph = flowState.graphs[node.graphId];
-			const referencesThisLayer = thisGraph.layerId === state.layerId;
+			const referencesAnotherLayer = thisGraph.layerId !== state.layerId;
 			const referencesSpecificLayerAndProperty = !!(state.layerId && state.propertyId);
 			const referencedGraphId =
 				referencesSpecificLayerAndProperty &&
 				compositionState.layers[state.layerId].graphId;
 
-			if (!referencesThisLayer && referencedGraphId) {
+			if (referencesAnotherLayer && referencedGraphId) {
 				// The node references the property of a different layer with a graph.
 				//
 				// See if the layer graph of that layer contains a `property_output`
@@ -273,6 +273,18 @@ export const resolveCompositionLayerGraphs = (
 			}
 			arrayModifierGroupToCount[modifierGroupId] = countId;
 			onGraphId(group.graphId);
+			const graph = flowState.graphs[group.graphId];
+
+			// When the count of an array modifier updates, every single node in the
+			// respective array modifier graph must be updated.
+			//
+			// This is because we currently compute every node N times and store the
+			// results in a `Record<string, any[]>`.
+			//
+			// Optimally, we would only store a list of N values for the nodes who are
+			// downstream from an `array_modifier_index` nodes. Other nodes do not need
+			// to be computed more than once.
+			propertyIdToAffectedInputNodes[countId] = [...graph.nodes];
 		}
 	}
 

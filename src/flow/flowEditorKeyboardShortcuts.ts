@@ -13,7 +13,7 @@ const flowShortcuts = {
 		const op = createOperation(params);
 		const { graphId } = getAreaActionState(areaId);
 		flowOperations.removeSelectedNodesInGraph(op, graphId);
-		params.dispatch(op.actions);
+		op.submit();
 	},
 };
 

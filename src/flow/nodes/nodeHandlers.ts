@@ -2,6 +2,7 @@ import { getAreaViewport } from "~/area/util/getAreaViewport";
 import { AreaType, FLOW_NODE_MIN_WIDTH } from "~/constants";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { flowValidInputsToOutputsMap } from "~/flow/flowIO";
+import { flowOperations } from "~/flow/flowOperations";
 import {
 	didFlowSelectionChange,
 	flowEditorGlobalToNormal,
@@ -16,6 +17,7 @@ import {
 } from "~/flow/util/flowNodeHeight";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
+import { createOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { getDistance } from "~/util/math";
 
@@ -80,7 +82,7 @@ const getAllOutputsOfType = (flowState: FlowState, nodeId: string, inputIndex: n
 };
 
 export const nodeHandlers = {
-	onRightClick: (e: React.MouseEvent, graphId: string, nodeId: string) => {
+	onRightClick: (e: React.MouseEvent, graphId: string, _nodeId: string) => {
 		requestAction({ history: true }, (params) => {
 			params.dispatch(
 				contextMenuActions.openContextMenu(
@@ -89,12 +91,12 @@ export const nodeHandlers = {
 						{
 							label: "Delete node",
 							onSelect: () => {
-								params.dispatch(
-									contextMenuActions.closeContextMenu(),
-									flowActions.removeNode(graphId, nodeId),
-								);
-								params.addDiff((diff) => diff.removeFlowNode(nodeId));
-								params.submitAction("Remove node");
+								const op = createOperation(params);
+								flowOperations.removeSelectedNodesInGraph(op, graphId);
+								op.submit();
+
+								params.dispatch(contextMenuActions.closeContextMenu());
+								params.submitAction("Remove selected nodes");
 							},
 							default: true,
 						},

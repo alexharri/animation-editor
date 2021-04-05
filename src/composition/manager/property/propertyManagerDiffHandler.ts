@@ -13,7 +13,6 @@ import {
 	ModifyMultipleLayerPropertiesDiff,
 	ModifyPropertyDiff,
 	PropertyStructureDiff,
-	RemoveFlowNodeDiff,
 	RemoveLayerDiff,
 	TogglePropertyAnimatedDiff,
 	UpdateNodeConnectionDiff,
@@ -48,8 +47,8 @@ export const propertyManagerDiffHandler = (
 		}
 	};
 
-	const nodeDoesNotAffectComposition = (nodeId: string) => {
-		return compositionId !== getFlowNodeAssociatedCompositionId(nodeId, actionState);
+	const nodeDoesNotAffectComposition = (nodeId: string, state = actionState) => {
+		return compositionId !== getFlowNodeAssociatedCompositionId(nodeId, state);
 	};
 	const propertyDoesNotAffectComposition = (propertyId: string) => {
 		const property = actionState.compositionState.properties[propertyId];
@@ -63,12 +62,6 @@ export const propertyManagerDiffHandler = (
 	const backwardHandlers: { [diffType: number]: (diff: any) => void } = {
 		[DiffType.AddLayer]: (diff: AddLayerDiff) => onRemoveLayers(diff.layerIds),
 		[DiffType.RemoveLayer]: (diff: RemoveLayerDiff) => onAddLayers(diff.layerIds),
-		[DiffType.RemoveFlowNode]: (diff: RemoveFlowNodeDiff) => {
-			if (nodeDoesNotAffectComposition(diff.nodeId)) {
-				return;
-			}
-			properties.updateStructure(actionState);
-		},
 	};
 
 	const forwardHandlers: { [diffType: number]: (diff: any) => void } = {
@@ -102,20 +95,13 @@ export const propertyManagerDiffHandler = (
 			// A newly added node does not affect the rest of the graph until
 			// connections are made. However, we need to register the node for
 			// future operation.
-			properties.updateStructure(actionState);
-		},
-		[DiffType.RemoveFlowNode]: (diff: RemoveFlowNodeDiff) => {
-			const { flowState } = prevState;
-			const { graphId } = flowState.nodes[diff.nodeId];
-			const { layerId } = flowState.graphs[graphId];
-
-			if (layerDoesNotAffectComposition(layerId)) {
-				return;
-			}
+			//
+			// Right now those "future operations" just include changing the
+			// value (state) of the recently added node.
 			properties.updateStructure(actionState);
 		},
 		[DiffType.UpdateNodeConnection]: (diff: UpdateNodeConnectionDiff) => {
-			if (nodeDoesNotAffectComposition(diff.nodeIds[0])) {
+			if (nodeDoesNotAffectComposition(diff.nodeIds[0], prevState)) {
 				return;
 			}
 			properties.updateStructure(actionState);

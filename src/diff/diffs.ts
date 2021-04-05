@@ -22,7 +22,6 @@ export enum DiffType {
 	ModifyMultipleLayerProperties = 13,
 	FlowNodeState = 14,
 	FlowNodeExpression = 15,
-	RemoveFlowNode = 16,
 	UpdateNodeConnection = 17,
 	AddFlowNode = 18,
 	LayerParent = 19,
@@ -104,11 +103,6 @@ export interface FlowNodeExpressionDiff {
 	nodeId: string;
 }
 
-export interface RemoveFlowNodeDiff {
-	type: DiffType.RemoveFlowNode;
-	nodeId: string;
-}
-
 export interface AddFlowNodeDiff {
 	type: DiffType.AddFlowNode;
 	nodeId: string;
@@ -171,7 +165,6 @@ export type Diff =
 	| ModifyMultipleLayerPropertiesDiff
 	| FlowNodeStateDiff
 	| FlowNodeExpressionDiff
-	| RemoveFlowNodeDiff
 	| AddFlowNodeDiff
 	| UpdateNodeConnectionDiff
 	| LayerParentDiff

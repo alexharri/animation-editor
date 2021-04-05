@@ -4,7 +4,7 @@ import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
 
 export function getPropertyIdsAffectedByNodes(
 	actionState: ActionState,
-	nodeIdsThatEmitFrameIndex: string[],
+	nodeIds: string[],
 	nodeToNext: Record<string, string[]>,
 ): string[] {
 	const found = new Set<string>();
@@ -30,7 +30,7 @@ export function getPropertyIdsAffectedByNodes(
 			propertyIds.forEach((propertyId) => propertyIdSet.add(propertyId));
 		}
 	}
-	for (const nodeId of nodeIdsThatEmitFrameIndex) {
+	for (const nodeId of nodeIds) {
 		dfs(nodeId);
 	}
 	return [...propertyIdSet];

@@ -1,11 +1,10 @@
 import { flowSelectionFromState } from "~/flow/flowUtils";
 import { flowActions } from "~/flow/state/flowActions";
 import { flowSelectionActions } from "~/flow/state/flowSelectionReducer";
-import { getActionState } from "~/state/stateUtils";
 import { Operation } from "~/types";
 
 const removeSelectedNodesInGraph = (op: Operation, graphId: string): void => {
-	const { flowState, flowSelectionState } = getActionState();
+	const { compositionState, flowState, flowSelectionState } = op.state;
 
 	const graph = flowState.graphs[graphId];
 	const selection = flowSelectionFromState(graphId, flowSelectionState);
@@ -16,6 +15,20 @@ const removeSelectedNodesInGraph = (op: Operation, graphId: string): void => {
 			op.add(flowActions.removeNode(graphId, nodeId));
 			op.add(flowSelectionActions.removeNode(graphId, nodeId));
 		}
+	}
+
+	switch (graph.type) {
+		case "layer_graph": {
+			op.addDiff((diff) => diff.propertyStructure(graph.layerId));
+			break;
+		}
+		case "array_modifier_graph": {
+			const property = compositionState.properties[graph.propertyId];
+			op.addDiff((diff) => diff.propertyStructure(property.layerId));
+			break;
+		}
+		default:
+			throw new Error(`Unexpected graph type '${graph.type}'.`);
 	}
 };
 

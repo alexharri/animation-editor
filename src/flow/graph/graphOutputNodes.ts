@@ -8,6 +8,7 @@ export const findGraphOutputNodes = (
 	const nodeIds = graph.nodes;
 
 	const outputNodes: FlowNode<FlowNodeType.property_output>[] = [];
+
 	for (const nodeId of nodeIds) {
 		const node = flowState.nodes[nodeId];
 		if (node.type === FlowNodeType.property_output) {

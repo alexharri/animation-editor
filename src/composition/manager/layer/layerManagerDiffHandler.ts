@@ -13,7 +13,6 @@ import {
 	ModifyMultipleLayerPropertiesDiff,
 	ModifyPropertyDiff,
 	PropertyStructureDiff,
-	RemoveFlowNodeDiff,
 	RemoveLayerDiff,
 	TogglePropertyAnimatedDiff,
 	UpdateNodeConnectionDiff,
@@ -54,8 +53,8 @@ export const layerManagerDiffHandler = (
 		}
 	};
 
-	const nodeDoesNotAffectComposition = (nodeId: string) => {
-		return compositionId !== getFlowNodeAssociatedCompositionId(nodeId, actionState);
+	const nodeDoesNotAffectComposition = (nodeId: string, state = actionState) => {
+		return compositionId !== getFlowNodeAssociatedCompositionId(nodeId, state);
 	};
 	const propertyDoesNotAffectComposition = (propertyId: string) => {
 		const property = actionState.compositionState.properties[propertyId];
@@ -87,15 +86,6 @@ export const layerManagerDiffHandler = (
 		},
 		[DiffType.RemoveLayer]: (diff: RemoveLayerDiff) => {
 			onAddLayers(diff.layerIds);
-		},
-		[DiffType.RemoveFlowNode]: (diff: RemoveFlowNodeDiff) => {
-			const { nodeId } = diff;
-
-			if (nodeDoesNotAffectComposition(nodeId)) {
-				return;
-			}
-
-			performChange({ nodeIds: [nodeId] });
 		},
 	};
 
@@ -136,17 +126,6 @@ export const layerManagerDiffHandler = (
 		},
 		[DiffType.AddFlowNode]: (_diff: AddFlowNodeDiff) => {
 			// See comment in propertyManagerDiffHandler
-		},
-		[DiffType.RemoveFlowNode]: (diff: RemoveFlowNodeDiff) => {
-			const { nodeId } = diff;
-			const { flowState } = prevState;
-			const { graphId } = flowState.nodes[nodeId];
-			const { layerId } = flowState.graphs[graphId];
-
-			if (layerDoesNotAffectComposition(layerId)) {
-				return;
-			}
-			performChange({ nodeIds: [nodeId] });
 		},
 		[DiffType.UpdateNodeConnection]: (diff: UpdateNodeConnectionDiff) => {
 			const { nodeIds } = diff;
