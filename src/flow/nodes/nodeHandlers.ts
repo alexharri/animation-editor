@@ -17,7 +17,7 @@ import {
 } from "~/flow/util/flowNodeHeight";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionCallback } from "~/listener/requestAction";
-import { createOperation } from "~/state/operation";
+import { createOperation, performOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { getDistance } from "~/util/math";
 
@@ -82,14 +82,16 @@ const getAllOutputsOfType = (flowState: FlowState, nodeId: string, inputIndex: n
 };
 
 export const nodeHandlers = {
-	onRightClick: (e: React.MouseEvent, graphId: string, _nodeId: string) => {
+	onRightClick: (e: React.MouseEvent, graphId: string, nodeId: string) => {
 		requestAction({ history: true }, (params) => {
+			performOperation(params, (op) => flowOperations.selectNode(op, nodeId));
+
 			params.dispatch(
 				contextMenuActions.openContextMenu(
 					"Node",
 					[
 						{
-							label: "Delete node",
+							label: "Delete node(s)",
 							onSelect: () => {
 								const op = createOperation(params);
 								flowOperations.removeSelectedNodesInGraph(op, graphId);

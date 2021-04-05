@@ -32,3 +32,12 @@ export const createOperation = (params: RequestActionParams): Operation => {
 
 	return self;
 };
+
+export const performOperation = (
+	params: RequestActionParams,
+	fn: (op: Operation) => void,
+): void => {
+	const op = createOperation(params);
+	fn(op);
+	op.submit();
+};

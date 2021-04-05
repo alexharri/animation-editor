@@ -17,8 +17,7 @@ const compositionShortcuts = {
 
 		const op = createOperation(params);
 		timelineOperations.viewTransformProperties(op, compositionId, propertyNames);
-
-		params.dispatch(op.actions);
+		op.submit();
 	},
 
 	viewAnimatedProperties: (areaId: string, params: RequestActionParams) => {
@@ -26,8 +25,7 @@ const compositionShortcuts = {
 
 		const op = createOperation(params);
 		timelineOperations.viewAnimatedProperties(op, compositionId);
-
-		params.dispatch(op.actions);
+		op.submit();
 	},
 };
 

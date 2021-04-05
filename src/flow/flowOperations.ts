@@ -3,6 +3,18 @@ import { flowActions } from "~/flow/state/flowActions";
 import { flowSelectionActions } from "~/flow/state/flowSelectionReducer";
 import { Operation } from "~/types";
 
+function selectNode(op: Operation, nodeId: string): void {
+	const { flowState, flowSelectionState } = op.state;
+	const node = flowState.nodes[nodeId];
+
+	const selection = flowSelectionFromState(node.graphId, flowSelectionState);
+
+	// If the node is selected, do nothing.
+	if (!selection.nodes[nodeId]) {
+		op.add(flowSelectionActions.setSelectedNodesInGraph(node.graphId, [nodeId]));
+	}
+}
+
 const removeSelectedNodesInGraph = (op: Operation, graphId: string): void => {
 	const { compositionState, flowState, flowSelectionState } = op.state;
 
@@ -38,6 +50,7 @@ const removeGraph = (op: Operation, graphId: string): void => {
 };
 
 export const flowOperations = {
+	selectNode,
 	removeSelectedNodesInGraph,
 	removeGraph,
 };

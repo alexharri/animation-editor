@@ -45,8 +45,7 @@ function handleSvg(node: SVGSvgNode) {
 				svgLayerFactory[child.tagName]!(ctx, child);
 			}
 
-			params.dispatch(ctx.op.actions);
-			ctx.op.clear();
+			ctx.op.submit();
 			ctx.compositionState = getActionState().compositionState;
 		}
 

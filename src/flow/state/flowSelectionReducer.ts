@@ -31,7 +31,7 @@ export interface FlowGraphSelection {
 }
 
 export interface FlowSelectionState {
-	[timelineId: string]: FlowGraphSelection;
+	[graphId: string]: FlowGraphSelection;
 }
 
 const _emptySelection: FlowGraphSelection = { nodes: {} };
