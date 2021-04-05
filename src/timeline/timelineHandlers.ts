@@ -920,7 +920,7 @@ export const timelineHandlers = {
 					}
 				}
 
-				params.dispatch(op.actions);
+				op.submit();
 				params.addDiff((diff) => diff.compositionSelection(property.compositionId));
 				params.submitAction("Select property");
 			},

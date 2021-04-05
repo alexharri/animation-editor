@@ -205,7 +205,7 @@ const actions = {
 					}
 				}
 
-				params.dispatch(op.actions);
+				op.submit();
 			},
 			mouseMove: (params, { moveVector }) => {
 				const moveX = Math.round(moveVector.normal.x);
@@ -343,7 +343,7 @@ const actions = {
 						op.add(compositionActions.setLayerPlaybackIndex(layerId, index));
 					}
 				}
-				params.dispatch(op.actions);
+				op.submit();
 				params.performDiff((diff) =>
 					diff.frameIndex(composition.id, composition.frameIndex),
 				);
@@ -482,7 +482,7 @@ const actions = {
 						op.add(timelineActions.shiftTimelineIndex(timelineId, indexDelta));
 					}
 				}
-				params.dispatch(op.actions);
+				op.submit();
 			},
 			mouseUp: (params, hasMoved) => {
 				if (!hasMoved) {

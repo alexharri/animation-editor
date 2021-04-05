@@ -129,7 +129,7 @@ export const graphEditorHandlers = {
 						timelineAreaActions.setFields({ dragSelectRect: null }),
 					),
 				);
-				params.dispatch(op.actions);
+				op.submit();
 				params.submitAction("Select keyframes");
 			},
 		});
@@ -287,7 +287,7 @@ export const graphEditorHandlers = {
 							null,
 						),
 					);
-					params.dispatch(op.actions);
+					op.submit();
 					params.submitAction("Remove control point");
 					return;
 				} else {
@@ -300,7 +300,7 @@ export const graphEditorHandlers = {
 					);
 				}
 
-				params.dispatch(op.actions);
+				op.submit();
 				params.submitAction("Move control point");
 			},
 		});
@@ -349,7 +349,7 @@ export const graphEditorHandlers = {
 					),
 				);
 
-				params.dispatch(op.actions);
+				op.submit();
 			},
 			tickShouldUpdate: ({ mousePosition }) => {
 				const [yUpper, yLower] = getYUpperLower(viewport, mousePosition.global);
@@ -389,7 +389,7 @@ export const graphEditorHandlers = {
 						valueShift,
 					}),
 				);
-				params.dispatch(op.actions);
+				op.submit();
 			},
 			mouseUp: (params, hasMoved) => {
 				const op = createOperation(params);
@@ -410,7 +410,7 @@ export const graphEditorHandlers = {
 							null,
 						),
 					);
-					params.dispatch(op.actions);
+					op.submit();
 					params.submitAction("Remove keyframe control points");
 					return;
 				}
@@ -425,7 +425,7 @@ export const graphEditorHandlers = {
 					op.add(timelineActions.applyControlPointShift(id, selection));
 				});
 
-				params.dispatch(op.actions);
+				op.submit();
 				params.submitAction("Create control points");
 			},
 		});

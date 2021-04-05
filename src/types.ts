@@ -10,7 +10,6 @@ export type Action = { type: string; payload: any };
 export type ToDispatch = Action[];
 
 export interface Operation {
-	actions: Action[];
 	add: (...actions: Action[]) => void;
 	clear: () => void;
 	addDiff: (fn: DiffFactoryFn) => void;
