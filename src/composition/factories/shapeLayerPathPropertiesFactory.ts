@@ -5,7 +5,6 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { transformPropertiesFactory } from "~/composition/factories/transformPropertiesFactory";
-import { TimelineColors } from "~/constants";
 import {
 	FillRule,
 	LineCap,
@@ -13,7 +12,6 @@ import {
 	PropertyGroupName,
 	PropertyName,
 	RGBAColor,
-	ValueFormat,
 	ValueType,
 } from "~/types";
 
@@ -76,7 +74,6 @@ export const createShapeLayerShapeGroup = (
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 			{
@@ -88,7 +85,6 @@ export const createShapeLayerShapeGroup = (
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 			{
@@ -96,14 +92,10 @@ export const createShapeLayerShapeGroup = (
 				name: PropertyName.Opacity,
 				valueType: ValueType.Number,
 				value: fillOpacity,
-				min: 0,
-				max: 1,
-				valueFormat: ValueFormat.Percentage,
 				id: opts.createId(),
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 		];
@@ -135,7 +127,6 @@ export const createShapeLayerShapeGroup = (
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 			{
@@ -143,12 +134,10 @@ export const createShapeLayerShapeGroup = (
 				name: PropertyName.StrokeWidth,
 				valueType: ValueType.Number,
 				value: strokeWidth,
-				min: 0,
 				id: opts.createId(),
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 			{
@@ -156,14 +145,10 @@ export const createShapeLayerShapeGroup = (
 				name: PropertyName.Opacity,
 				valueType: ValueType.Number,
 				value: 1,
-				min: 0,
-				max: 1,
-				valueFormat: ValueFormat.Percentage,
 				id: opts.createId(),
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 			{
@@ -175,7 +160,6 @@ export const createShapeLayerShapeGroup = (
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 			{
@@ -187,7 +171,6 @@ export const createShapeLayerShapeGroup = (
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 			{
@@ -195,12 +178,10 @@ export const createShapeLayerShapeGroup = (
 				name: PropertyName.MiterLimit,
 				valueType: ValueType.Number,
 				value: miterLimit,
-				min: 1,
 				id: opts.createId(),
 				compositionId,
 				layerId,
 				timelineId: "",
-				color: TimelineColors.Height,
 				compoundPropertyId: "",
 			},
 		];
@@ -236,7 +217,6 @@ export const createShapeLayerShapeGroup = (
 			compositionId,
 			layerId,
 			timelineId: "",
-			color: TimelineColors.Height,
 			compoundPropertyId: "",
 		};
 

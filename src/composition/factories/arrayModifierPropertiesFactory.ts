@@ -5,7 +5,6 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { transformPropertiesFactory } from "~/composition/factories/transformPropertiesFactory";
-import { TimelineColors } from "~/constants";
 import { CompoundPropertyName, PropertyGroupName, PropertyName, ValueType } from "~/types";
 
 export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
@@ -34,7 +33,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		timelineId: "",
 		value: "absolute_for_computed",
 		valueType: ValueType.TransformBehavior,
-		color: TimelineColors.Height,
 		compoundPropertyId: "",
 	};
 
@@ -50,7 +48,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		timelineId: "",
 		value: "relative",
 		valueType: ValueType.OriginBehavior,
-		color: TimelineColors.Height,
 		compoundPropertyId: "",
 	};
 
@@ -66,7 +63,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		timelineId: "",
 		value: 0,
 		valueType: ValueType.Number,
-		color: TimelineColors.Height,
 		compoundPropertyId: "",
 	};
 
@@ -82,7 +78,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		timelineId: "",
 		value: 0,
 		valueType: ValueType.Number,
-		color: TimelineColors.XPosition,
 		compoundPropertyId: "",
 	};
 	const originY: Property = {
@@ -94,7 +89,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		timelineId: "",
 		value: 0,
 		valueType: ValueType.Number,
-		color: TimelineColors.XPosition,
 		compoundPropertyId: "",
 	};
 	const origin: CompoundProperty = {
@@ -121,7 +115,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		timelineId: "",
 		value: 1,
 		valueType: ValueType.Number,
-		color: TimelineColors.Height,
 		compoundPropertyId: "",
 	};
 

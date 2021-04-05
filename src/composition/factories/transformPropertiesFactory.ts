@@ -5,7 +5,7 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { DEFAULT_LAYER_TRANSFORM, TimelineColors } from "~/constants";
+import { DEFAULT_LAYER_TRANSFORM } from "~/constants";
 import {
 	CompoundPropertyName,
 	LayerTransform,
@@ -37,7 +37,6 @@ export const transformPropertiesFactory = (
 		timelineId: "",
 		valueType: ValueType.Number,
 		value: transform.translate.x,
-		color: TimelineColors.XPosition,
 		compoundPropertyId: positionId,
 	};
 	const positionY: Property = {
@@ -49,7 +48,6 @@ export const transformPropertiesFactory = (
 		timelineId: "",
 		valueType: ValueType.Number,
 		value: transform.translate.y,
-		color: TimelineColors.YPosition,
 		compoundPropertyId: positionId,
 	};
 	const position: CompoundProperty = {
@@ -73,7 +71,6 @@ export const transformPropertiesFactory = (
 		timelineId: "",
 		valueType: ValueType.Number,
 		value: transform.anchor.x,
-		color: TimelineColors.XPosition,
 		compoundPropertyId: anchorId,
 	};
 	const anchorY: Property = {
@@ -85,7 +82,6 @@ export const transformPropertiesFactory = (
 		timelineId: "",
 		valueType: ValueType.Number,
 		value: transform.anchor.y,
-		color: TimelineColors.YPosition,
 		compoundPropertyId: anchorId,
 	};
 	const anchor: CompoundProperty = {
@@ -109,7 +105,6 @@ export const transformPropertiesFactory = (
 		timelineId: "",
 		valueType: ValueType.Number,
 		value: transform.scaleX,
-		color: TimelineColors.YPosition,
 		compoundPropertyId: scaleId,
 	};
 	const scaleY: Property = {
@@ -121,7 +116,6 @@ export const transformPropertiesFactory = (
 		timelineId: "",
 		valueType: ValueType.Number,
 		value: transform.scaleY,
-		color: TimelineColors.YPosition,
 		compoundPropertyId: scaleId,
 	};
 	const scale: CompoundProperty = {
@@ -149,7 +143,6 @@ export const transformPropertiesFactory = (
 			timelineId: "",
 			valueType: ValueType.Number,
 			value: transform.rotation,
-			color: TimelineColors.YPosition,
 			compoundPropertyId: "",
 		},
 		{
@@ -161,9 +154,6 @@ export const transformPropertiesFactory = (
 			timelineId: "",
 			valueType: ValueType.Number,
 			value: 1,
-			color: TimelineColors.YPosition,
-			max: 1,
-			min: 0,
 			compoundPropertyId: "",
 		},
 	];

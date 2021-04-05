@@ -5,6 +5,7 @@ import { compositionActions } from "~/composition/compositionReducer";
 import { Composition, CompoundProperty, Property } from "~/composition/compositionTypes";
 import { DiffFactoryFn } from "~/diff/diffFactory";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { getPropertyMaxValue, getPropertyMinValue } from "~/property/propertyConstants";
 import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
 import TimelinePropertyStyles from "~/timeline/property/TimelineProperty.styles";
@@ -232,8 +233,8 @@ const TimelineNumberValueComponent: React.FC<Props> = (props) => {
 					</button>
 				)}
 			<NumberInput
-				min={property.min}
-				max={property.max}
+				min={getPropertyMinValue(property.name)}
+				max={getPropertyMaxValue(property.name)}
 				onChange={onValueChange}
 				onChangeEnd={onValueChangeEnd}
 				value={props.rawValue}

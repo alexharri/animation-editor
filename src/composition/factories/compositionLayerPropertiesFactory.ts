@@ -4,7 +4,6 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { TimelineColors } from "~/constants";
 import { PropertyGroupName, PropertyName, ValueType } from "~/types";
 
 const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
@@ -19,9 +18,7 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			name: PropertyName.Width,
 			timelineId: "",
 			valueType: ValueType.Number,
-			color: TimelineColors.Width,
 			value: 100,
-			min: 0,
 			compoundPropertyId: "",
 		},
 		{
@@ -32,9 +29,7 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			name: PropertyName.Height,
 			timelineId: "",
 			valueType: ValueType.Number,
-			color: TimelineColors.Height,
 			value: 100,
-			min: 0,
 			compoundPropertyId: "",
 		},
 	];

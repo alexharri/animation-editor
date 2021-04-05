@@ -11,7 +11,6 @@ import {
 	RGBAColor,
 	RGBColor,
 	TransformBehavior,
-	ValueFormat,
 	ValueType,
 } from "~/types";
 
@@ -92,11 +91,7 @@ export type Property = {
 	layerId: string;
 	compositionId: string;
 	name: PropertyName;
-	valueFormat?: ValueFormat;
 	timelineId: string;
-	color?: string;
-	min?: number;
-	max?: number;
 	compoundPropertyId: string;
 } & (
 	| {

@@ -89,7 +89,7 @@ const performRequestedAction = (
 		onComplete();
 
 		const diffsToPerform = reverseDiffs.length ? reverseDiffs : [...allDiffs].reverse();
-		sendDiffsToSubscribers(diffsToPerform, "backward");
+		sendDiffsToSubscribers(getActionState(), diffsToPerform, "backward");
 	};
 
 	store.dispatch(historyActions.startAction(actionId));
@@ -166,7 +166,7 @@ const performRequestedAction = (
 			}
 
 			if (diffs.length) {
-				sendDiffsToSubscribers(diffs);
+				sendDiffsToSubscribers(getActionState(), diffs);
 			}
 
 			const modifiedKeys: string[] = [];
@@ -227,7 +227,7 @@ const performRequestedAction = (
 			const result = fn(diffFactory);
 			const diffsToPerform = Array.isArray(result) ? result : [result];
 			allDiffs.push(...diffsToPerform);
-			sendDiffsToSubscribers(diffsToPerform);
+			sendDiffsToSubscribers(getActionState(), diffsToPerform);
 		},
 
 		addReverseDiff: (fn) => {

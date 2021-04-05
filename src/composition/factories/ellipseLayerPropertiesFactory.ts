@@ -4,7 +4,6 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { TimelineColors } from "~/constants";
 import { PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
 
 export interface EllipseProperties {
@@ -30,9 +29,7 @@ const structureProperties = (
 			name: PropertyName.OuterRadius,
 			timelineId: "",
 			valueType: ValueType.Number,
-			color: TimelineColors.Width,
 			value: radius,
-			min: 0,
 			compoundPropertyId: "",
 		},
 		{
@@ -43,9 +40,7 @@ const structureProperties = (
 			name: PropertyName.InnerRadius,
 			timelineId: "",
 			valueType: ValueType.Number,
-			color: TimelineColors.Width,
 			value: 0,
-			min: 0,
 			compoundPropertyId: "",
 		},
 	];
@@ -81,9 +76,7 @@ const contentProperties = (
 			name: PropertyName.Fill,
 			timelineId: "",
 			valueType: ValueType.RGBAColor,
-			color: TimelineColors.Width,
 			value: fill,
-			min: 0,
 			compoundPropertyId: "",
 		},
 		{
@@ -94,9 +87,7 @@ const contentProperties = (
 			name: PropertyName.StrokeWidth,
 			timelineId: "",
 			valueType: ValueType.Number,
-			color: TimelineColors.Height,
 			value: strokeWidth,
-			min: 0,
 			compoundPropertyId: "",
 		},
 		{
@@ -107,9 +98,7 @@ const contentProperties = (
 			name: PropertyName.StrokeColor,
 			timelineId: "",
 			valueType: ValueType.RGBAColor,
-			color: TimelineColors.Height,
 			value: strokeColor,
-			min: 0,
 			compoundPropertyId: "",
 		},
 	];

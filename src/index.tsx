@@ -7,6 +7,7 @@ import { addListener } from "~/listener/addListener";
 import { sendDiffsToSubscribers } from "~/listener/diffListener";
 import { isKeyCodeOf, isKeyDown } from "~/listener/keyboard";
 import { historyActions } from "~/state/history/historyActions";
+import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
 import "~/svg";
 import { App } from "./App";
@@ -24,7 +25,7 @@ document.addEventListener("contextmenu", (e) => e.preventDefault(), false);
 
 window.addEventListener("resize", () => {
 	requestAnimationFrame(() => {
-		sendDiffsToSubscribers([{ type: DiffType.ResizeAreas }]);
+		sendDiffsToSubscribers(getActionState(), [{ type: DiffType.ResizeAreas }]);
 	});
 });
 
@@ -44,16 +45,20 @@ addListener.repeated("keydown", { modifierKeys: ["Command"] }, (e) => {
 			return;
 		}
 
-		const next = state.flowState.list[state.flowState.index + 1];
-		store.dispatch(historyActions.moveHistoryIndex(state.flowState.index + 1));
-		sendDiffsToSubscribers(next.diffs);
+		const nextIndex = state.flowState.index + 1;
+		const nextActionState = getActionStateFromApplicationState(store.getState(), nextIndex);
+		const next = state.flowState.list[nextIndex];
+		store.dispatch(historyActions.moveHistoryIndex(nextIndex));
+		sendDiffsToSubscribers(nextActionState, next.diffs, "forward");
 		return;
 	}
 
 	if (state.flowState.index > 0) {
 		// Attempted undo
 		const curr = state.flowState.list[state.flowState.index];
-		store.dispatch(historyActions.moveHistoryIndex(state.flowState.index - 1));
-		sendDiffsToSubscribers(curr.diffs, "backward");
+		const nextIndex = state.flowState.index - 1;
+		const nextActionState = getActionStateFromApplicationState(store.getState(), nextIndex);
+		store.dispatch(historyActions.moveHistoryIndex(nextIndex));
+		sendDiffsToSubscribers(nextActionState, curr.diffs, "backward");
 	}
 });

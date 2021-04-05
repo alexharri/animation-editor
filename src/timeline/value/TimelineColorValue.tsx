@@ -107,6 +107,10 @@ export const TimelinePropertyColorValue: React.FC<ColorProps> = (props) => {
 		});
 	};
 
+	if (!value) {
+		return null;
+	}
+
 	return (
 		<div className={s("value")}>
 			<button
