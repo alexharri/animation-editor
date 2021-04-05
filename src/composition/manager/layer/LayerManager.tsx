@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { getLayerDimensions } from "~/composition/arrayModifier";
+import { getArrayModifierLayerDimensions } from "~/composition/arrayModifier";
 import {
 	createLayerInstances,
 	updateLayerInstanceTransforms,
@@ -395,7 +395,7 @@ export class LayerManager {
 			this.propertyManager.getPropertyValue,
 		);
 
-		const layerDimensions = getLayerDimensions(
+		const layerDimensions = getArrayModifierLayerDimensions(
 			layerId,
 			actionState,
 			this.layerPropertyMapMap[layerId],

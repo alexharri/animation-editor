@@ -80,7 +80,7 @@ export const getDimensionsAndMatrices = (
 	return { dimensions, matrices };
 };
 
-export const getLayerDimensions = (
+export const getArrayModifierLayerDimensions = (
 	layerId: string,
 	actionState: ActionState,
 	layerPropertyMap: LayerPropertyMap,
