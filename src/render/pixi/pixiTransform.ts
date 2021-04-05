@@ -73,6 +73,7 @@ export function createLayerPIXITransforms(
 		switch (items[j].type) {
 			case "array":
 			case "array_with_graph":
+			case "array_with_graph_recursive":
 				return dIndices[j];
 			case "parent":
 				return dIndices[j] + 1;
@@ -86,6 +87,7 @@ export function createLayerPIXITransforms(
 				return Array.from({ length: item.count }).map(() => item.matrix);
 			}
 			case "array_with_graph":
+			case "array_with_graph_recursive":
 				return item.matrices;
 		}
 	};

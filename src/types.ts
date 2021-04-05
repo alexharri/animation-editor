@@ -210,17 +210,13 @@ export type LayerDimension =
 			matrix: PIXI.Matrix;
 	  }
 	| {
+			type: "array_with_graph_recursive";
+			count: number;
+			matrices: PIXI.Matrix[];
+	  }
+	| {
 			type: "array_with_graph";
 			count: number;
 			matrices: PIXI.Matrix[];
 			absoluteMatrices: PIXI.Matrix[];
-			absolute: {
-				positionX: boolean;
-				positionY: boolean;
-				anchorX: boolean;
-				anchorY: boolean;
-				scaleX: boolean;
-				scaleY: boolean;
-				rotation: boolean;
-			};
 	  };
