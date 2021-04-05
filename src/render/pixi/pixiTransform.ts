@@ -83,10 +83,10 @@ export function createLayerPIXITransforms(
 		const item = items[j];
 		switch (item.type) {
 			case "array":
-			case "parent": {
+			case "parent":
+			case "array_with_graph": {
 				return Array.from({ length: item.count }).map(() => item.matrix);
 			}
-			case "array_with_graph":
 			case "array_with_graph_recursive":
 				return item.matrices;
 		}

@@ -210,13 +210,13 @@ export type LayerDimension =
 			matrix: PIXI.Matrix;
 	  }
 	| {
+			type: "array_with_graph";
+			count: number;
+			matrix: PIXI.Matrix;
+			absoluteMatrices: PIXI.Matrix[];
+	  }
+	| {
 			type: "array_with_graph_recursive";
 			count: number;
 			matrices: PIXI.Matrix[];
-	  }
-	| {
-			type: "array_with_graph";
-			count: number;
-			matrices: PIXI.Matrix[];
-			absoluteMatrices: PIXI.Matrix[];
 	  };
