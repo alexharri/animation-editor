@@ -4,8 +4,7 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { TimelineColors } from "~/constants";
-import { PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
+import { PropertyGroupName, PropertyName, RGBAColor } from "~/types";
 
 export interface RectProperties {
 	fill: RGBAColor;
@@ -30,10 +29,7 @@ const dimensionProperties = (
 			compositionId,
 			name: PropertyName.Width,
 			timelineId: "",
-			valueType: ValueType.Number,
-			color: TimelineColors.Width,
 			value: width,
-			min: 0,
 			compoundPropertyId: "",
 		},
 		{
@@ -43,10 +39,7 @@ const dimensionProperties = (
 			compositionId,
 			name: PropertyName.Height,
 			timelineId: "",
-			valueType: ValueType.Number,
-			color: TimelineColors.Height,
 			value: height,
-			min: 0,
 			compoundPropertyId: "",
 		},
 	];
@@ -81,10 +74,7 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.Fill,
 			timelineId: "",
-			valueType: ValueType.RGBAColor,
-			color: TimelineColors.Width,
 			value: fill,
-			min: 0,
 			compoundPropertyId: "",
 		},
 		{
@@ -94,10 +84,7 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeWidth,
 			timelineId: "",
-			valueType: ValueType.Number,
-			color: TimelineColors.Height,
 			value: strokeWidth,
-			min: 0,
 			compoundPropertyId: "",
 		},
 		{
@@ -107,10 +94,7 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeColor,
 			timelineId: "",
-			valueType: ValueType.RGBAColor,
-			color: TimelineColors.Height,
 			value: strokeColor,
-			min: 0,
 			compoundPropertyId: "",
 		},
 		{
@@ -120,10 +104,7 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.BorderRadius,
 			timelineId: "",
-			valueType: ValueType.Number,
-			color: TimelineColors.Height,
 			value: 0,
-			min: 0,
 			compoundPropertyId: "",
 		},
 	];

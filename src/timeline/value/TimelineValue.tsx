@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Property } from "~/composition/compositionTypes";
+import { getPropertyValueType } from "~/property/propertyConstants";
 import { connectActionState } from "~/state/stateUtils";
 import { TimelinePropertyStoreContext } from "~/timeline/context/TimelineValueContext";
 import { TimelinePropertyColorValue } from "~/timeline/value/TimelineColorValue";
@@ -125,7 +126,7 @@ const mapState: MapActionState<StateProps, OwnProps> = (
 	{ compositionState: compositions },
 	{ propertyId },
 ) => ({
-	valueType: (compositions.properties[propertyId] as Property).valueType,
+	valueType: getPropertyValueType((compositions.properties[propertyId] as Property).name),
 });
 
 export const TimelineValue = connectActionState(mapState)(TimelineValueComponent);

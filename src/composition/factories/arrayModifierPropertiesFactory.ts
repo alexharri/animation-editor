@@ -5,8 +5,7 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { transformPropertiesFactory } from "~/composition/factories/transformPropertiesFactory";
-import { TimelineColors } from "~/constants";
-import { CompoundPropertyName, PropertyGroupName, PropertyName, ValueType } from "~/types";
+import { CompoundPropertyName, PropertyGroupName, PropertyName } from "~/types";
 
 export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 	const propertyId = opts.createId();
@@ -33,8 +32,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		name: PropertyName.ArrayModifier_TransformBehavior,
 		timelineId: "",
 		value: "absolute_for_computed",
-		valueType: ValueType.TransformBehavior,
-		color: TimelineColors.Height,
 		compoundPropertyId: "",
 	};
 
@@ -49,8 +46,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		name: PropertyName.ArrayModifier_OriginBehavior,
 		timelineId: "",
 		value: "relative",
-		valueType: ValueType.OriginBehavior,
-		color: TimelineColors.Height,
 		compoundPropertyId: "",
 	};
 
@@ -65,8 +60,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		name: PropertyName.ArrayModifier_RotationCorrection,
 		timelineId: "",
 		value: 0,
-		valueType: ValueType.Number,
-		color: TimelineColors.Height,
 		compoundPropertyId: "",
 	};
 
@@ -81,8 +74,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		name: PropertyName.ArrayModifier_OriginX,
 		timelineId: "",
 		value: 0,
-		valueType: ValueType.Number,
-		color: TimelineColors.XPosition,
 		compoundPropertyId: "",
 	};
 	const originY: Property = {
@@ -93,8 +84,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		name: PropertyName.ArrayModifier_OriginY,
 		timelineId: "",
 		value: 0,
-		valueType: ValueType.Number,
-		color: TimelineColors.XPosition,
 		compoundPropertyId: "",
 	};
 	const origin: CompoundProperty = {
@@ -120,8 +109,6 @@ export const arrayModifierPropertiesFactory = (opts: CreatePropertyOptions) => {
 		name: PropertyName.ArrayModifier_Count,
 		timelineId: "",
 		value: 1,
-		valueType: ValueType.Number,
-		color: TimelineColors.Height,
 		compoundPropertyId: "",
 	};
 

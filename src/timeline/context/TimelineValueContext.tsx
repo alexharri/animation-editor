@@ -26,8 +26,7 @@ export const TimelinePropertyStoreProvider: React.FC<Props> = (props) => {
 	}
 
 	useEffect(() => {
-		const id = subscribeToDiffs((diffs, direction) => {
-			const actionState = getActionState();
+		const id = subscribeToDiffs((actionState, diffs, direction) => {
 			propertyManagerDiffHandler(
 				compositionId,
 				propertyManager,

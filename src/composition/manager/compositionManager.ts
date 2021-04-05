@@ -203,8 +203,7 @@ export const manageTopLevelComposition = (
 	app.stage.addChild(compContainer);
 	app.stage.addChild(interactionContainer);
 
-	const diffToken = subscribeToDiffs((diffs, direction) => {
-		const actionState = getActionState();
+	const diffToken = subscribeToDiffs((actionState, diffs, direction) => {
 		ctx.onDiffs(actionState, diffs, direction);
 
 		for (const diff of diffs) {

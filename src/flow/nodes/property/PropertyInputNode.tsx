@@ -12,6 +12,7 @@ import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
 import { PropertyNodeSelectProperty } from "~/flow/nodes/property/PropertyNodeSelectProperty";
 import { flowActions } from "~/flow/state/flowActions";
 import { requestAction } from "~/listener/requestAction";
+import { getPropertyValueType } from "~/property/propertyConstants";
 import { connectActionState, getActionState } from "~/state/stateUtils";
 import { ValueType } from "~/types";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -105,7 +106,7 @@ function PropertyInputNodeComponent(props: Props) {
 
 					return {
 						name: getLayerPropertyLabel(property.name),
-						type: property.valueType,
+						type: getPropertyValueType(property.name),
 					};
 				});
 

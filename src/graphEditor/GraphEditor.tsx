@@ -2,13 +2,14 @@ import React, { useRef } from "react";
 import { CompoundProperty } from "~/composition/compositionTypes";
 import { reduceCompProperties } from "~/composition/compositionUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
-import { AreaType, TimelineColors } from "~/constants";
+import { AreaType } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { openGraphEditorContextMenu } from "~/graphEditor/graphEditorContextMenu";
 import { graphEditorHandlers } from "~/graphEditor/graphEditorHandlers";
 import { renderGraphEditor } from "~/graphEditor/renderGraphEditor";
 import { useGraphEditorCursor } from "~/graphEditor/useGraphEditorCursor";
 import { useTickedRendering } from "~/hook/useTickedRendering";
+import { getPropertyTimelineColor } from "~/property/propertyConstants";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import {
 	applyTimelineIndexAndValueShifts,
@@ -85,8 +86,9 @@ export const GraphEditor: React.FC<Props> = (props) => {
 								compositionSelection.properties[compoundProperty.id])
 						) {
 							acc.timelineIds.push(property.timelineId);
-							acc.colors[property.timelineId] =
-								property.color || TimelineColors.XPosition;
+							acc.colors[property.timelineId] = getPropertyTimelineColor(
+								property.name,
+							);
 						}
 
 						return acc;

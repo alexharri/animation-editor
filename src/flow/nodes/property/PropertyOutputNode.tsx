@@ -13,6 +13,7 @@ import { PropertyNodeSelectProperty } from "~/flow/nodes/property/PropertyNodeSe
 import { flowActions } from "~/flow/state/flowActions";
 import { useMemoActionState } from "~/hook/useActionState";
 import { requestAction } from "~/listener/requestAction";
+import { getPropertyValueType } from "~/property/propertyConstants";
 import { connectActionState, getActionState } from "~/state/stateUtils";
 import { PropertyGroupName, ValueType } from "~/types";
 import { separateLeftRightMouse } from "~/util/mouse";
@@ -85,7 +86,7 @@ function PropertyOutputNodeComponent(props: Props) {
 
 					return {
 						name: getLayerPropertyLabel(property.name),
-						type: property.valueType,
+						type: getPropertyValueType(property.name),
 						pointer: null,
 						value: null,
 					};

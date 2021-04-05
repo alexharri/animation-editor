@@ -1,13 +1,14 @@
 import { Diff } from "~/diff/diffs";
 
-const diffSubscribers: Array<{
-	id: string;
-	fn: (diffs: Diff[], direction: "forward" | "backward") => void;
-}> = [];
+type SubscribeFn = (
+	actionState: ActionState,
+	diffs: Diff[],
+	direction: "forward" | "backward",
+) => void;
 
-export const subscribeToDiffs = (
-	fn: (diffs: Diff[], direction: "forward" | "backward") => void,
-): string => {
+const diffSubscribers: Array<{ id: string; fn: SubscribeFn }> = [];
+
+export const subscribeToDiffs = (fn: SubscribeFn): string => {
 	const id = (Math.max(0, ...diffSubscribers.map((item) => parseInt(item.id))) + 1).toString();
 	diffSubscribers.push({ id, fn });
 	return id;
@@ -23,10 +24,11 @@ export const unsubscribeToDiffs = (id: string) => {
 };
 
 export const sendDiffsToSubscribers = (
+	actionState: ActionState,
 	diffs: Diff[],
 	direction: "forward" | "backward" = "forward",
 ) => {
 	for (const { fn } of diffSubscribers) {
-		fn(diffs, direction);
+		fn(actionState, diffs, direction);
 	}
 };

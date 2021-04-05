@@ -12,6 +12,7 @@ import {
 } from "~/composition/util/compositionPropertyUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { requestAction } from "~/listener/requestAction";
+import { getPropertyValueType } from "~/property/propertyConstants";
 import { connectActionState } from "~/state/stateUtils";
 import styles from "~/timeline/property/TimelineProperty.styles";
 import { createTimelineContextMenu } from "~/timeline/timelineContextMenu";
@@ -267,6 +268,8 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 		);
 	}
 
+	const valueType = getPropertyValueType(property.name);
+
 	return (
 		<div
 			className={s("container")}
@@ -281,8 +284,7 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 							timelineHandlers.onPropertyKeyframeIconMouseDown(e, property.id),
 					})}
 					style={
-						property.valueType === ValueType.RGBAColor ||
-						property.valueType === ValueType.RGBColor
+						valueType === ValueType.RGBAColor || valueType === ValueType.RGBColor
 							? { pointerEvents: "none", opacity: "0" }
 							: {}
 					}

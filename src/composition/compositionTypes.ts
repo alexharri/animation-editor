@@ -1,18 +1,9 @@
 import {
 	CompoundPropertyName,
-	FillRule,
 	KeySelectionMap,
 	LayerType,
-	LineCap,
-	LineJoin,
-	OriginBehavior,
 	PropertyGroupName,
 	PropertyName,
-	RGBAColor,
-	RGBColor,
-	TransformBehavior,
-	ValueFormat,
-	ValueType,
 } from "~/types";
 
 export interface Composition {
@@ -92,62 +83,10 @@ export type Property = {
 	layerId: string;
 	compositionId: string;
 	name: PropertyName;
-	valueFormat?: ValueFormat;
 	timelineId: string;
-	color?: string;
-	min?: number;
-	max?: number;
 	compoundPropertyId: string;
-} & (
-	| {
-			valueType: ValueType.Any;
-			value: any;
-	  }
-	| {
-			valueType: ValueType.RGBAColor;
-			value: RGBAColor;
-	  }
-	| {
-			valueType: ValueType.RGBColor;
-			value: RGBColor;
-	  }
-	| {
-			valueType: ValueType.Number;
-			value: number;
-	  }
-	| {
-			valueType: ValueType.Rect;
-			value: Rect;
-	  }
-	| {
-			valueType: ValueType.Vec2;
-			value: Vec2;
-	  }
-	| {
-			valueType: ValueType.TransformBehavior;
-			value: TransformBehavior;
-	  }
-	| {
-			valueType: ValueType.OriginBehavior;
-			value: OriginBehavior;
-	  }
-	| {
-			valueType: ValueType.Path;
-			value: string;
-	  }
-	| {
-			valueType: ValueType.FillRule;
-			value: FillRule;
-	  }
-	| {
-			valueType: ValueType.LineCap;
-			value: LineCap;
-	  }
-	| {
-			valueType: ValueType.LineJoin;
-			value: LineJoin;
-	  }
-);
+	value: any;
+};
 
 export interface CreatePropertyOptions {
 	createId: () => string;
