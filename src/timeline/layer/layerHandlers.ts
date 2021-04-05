@@ -54,7 +54,7 @@ export const layerHandlers = {
 				const op = createOperation(params);
 				layerOperations.setLayerParentLayer(op, getActionState(), layerId, target.layerId);
 
-				params.dispatch(op.actions);
+				op.submit();
 				params.dispatchToAreaState(
 					areaId,
 					timelineAreaActions.setFields({

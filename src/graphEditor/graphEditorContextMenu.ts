@@ -27,7 +27,7 @@ export const openGraphEditorContextMenu = (position: Vec2, opts: Options) => {
 				default: true,
 				onSelect: () => {
 					timelineOperations.removeSelectedKeyframes(op, timelineIds, compositionId);
-					params.dispatch(op.actions);
+					op.submit();
 					params.submitAction("Remove selected keyframes");
 				},
 			});

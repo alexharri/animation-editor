@@ -126,7 +126,7 @@ function g(ctx: CompositionFromSvgContext, _node: SVGNode) {
 			svgLayerFactory[child.tagName]!(ctx, child);
 		}
 
-		ctx.params.dispatch(ctx.op.actions);
+		ctx.op.submit();
 		ctx.op.clear();
 		ctx.compositionState = getActionState().compositionState;
 	}

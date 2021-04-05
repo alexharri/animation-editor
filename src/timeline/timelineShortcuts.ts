@@ -30,7 +30,7 @@ const timelineShortcuts = {
 		const op = createOperation(params);
 		timelineOperations.removeSelectedKeyframes(op, timelineIds, compositionId);
 
-		params.dispatch(op.actions);
+		op.submit();
 	},
 
 	easeEaseSelectedKeyframes: (areaId: string, params: RequestActionParams) => {
@@ -39,7 +39,7 @@ const timelineShortcuts = {
 		const op = createOperation(params);
 		timelineOperations.easyEaseSelectedKeyframes(op, timelineIds);
 
-		params.dispatch(op.actions);
+		op.submit();
 	},
 };
 
