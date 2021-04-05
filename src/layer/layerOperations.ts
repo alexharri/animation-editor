@@ -1,12 +1,14 @@
 import * as PIXI from "pixi.js";
 import { compositionActions } from "~/composition/compositionReducer";
+import { findLayerTopLevelPropertyGroup } from "~/composition/compositionUtils";
 import { constructLayerPropertyMap } from "~/composition/layer/layerPropertyMap";
 import { createPropertyManager } from "~/composition/manager/property/propertyManager";
 import { RAD_TO_DEG_FAC } from "~/constants";
+import { propertyOperations } from "~/property/propertyOperations";
 import { getRealPixiLayerMatrix } from "~/render/pixi/pixiLayerTransform";
 import { adjustPIXITransformToParent } from "~/render/pixi/pixiTransform";
 import { getActionState } from "~/state/stateUtils";
-import { Operation, PropertyName } from "~/types";
+import { Operation, PropertyGroupName, PropertyName } from "~/types";
 
 const setLayerParentLayer = (
 	op: Operation,
@@ -45,6 +47,7 @@ const setLayerParentLayer = (
 		compositionActions.setLayerParentLayerId(layerId, parentId),
 	);
 };
+
 const removeLayerParentLayer = (op: Operation, actionState: ActionState, layerId: string): void => {
 	const { compositionState } = getActionState();
 	const layer = compositionState.layers[layerId];
@@ -71,7 +74,30 @@ const removeLayerParentLayer = (op: Operation, actionState: ActionState, layerId
 	);
 };
 
+const removeArrayModifier = (op: Operation, propertyId: string): void => {
+	const { compositionState } = op.state;
+	const arrayModifierGroup = compositionState.properties[propertyId];
+
+	if (arrayModifierGroup.name !== PropertyGroupName.ArrayModifier) {
+		throw new Error(`Property '${propertyId}' is not an Array Modifier group.`);
+	}
+
+	const modifiersGroup = findLayerTopLevelPropertyGroup(
+		arrayModifierGroup.layerId,
+		compositionState,
+		PropertyGroupName.Modifiers,
+	);
+
+	propertyOperations.removePropertyFromGroupRecursive(
+		op,
+		modifiersGroup.id,
+		arrayModifierGroup.id,
+	);
+	op.addDiff((diff) => diff.propertyStructure(modifiersGroup.layerId));
+};
+
 export const layerOperations = {
+	removeArrayModifier,
 	setLayerParentLayer,
 	removeLayerParentLayer,
 };

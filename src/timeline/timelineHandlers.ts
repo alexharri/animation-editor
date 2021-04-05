@@ -31,6 +31,7 @@ import {
 } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
+import { timelineOperations } from "~/timeline/operations/timelineOperations";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
 import { timelineAreaActions } from "~/timeline/timelineAreaReducer";
 import { createTimelineContextMenu } from "~/timeline/timelineContextMenu";
@@ -348,7 +349,7 @@ export const timelineHandlers = {
 		}
 
 		requestAction({ history: true }, (params) => {
-			const { dispatch, submitAction } = params;
+			const { submitAction } = params;
 			const op = createOperation(params);
 
 			for (const property of properties) {
@@ -383,7 +384,7 @@ export const timelineHandlers = {
 				);
 			}
 
-			dispatch(op.actions);
+			op.submit();
 
 			if (anyHasTimeline) {
 				submitAction("Remove timelines from properties");
@@ -393,42 +394,22 @@ export const timelineHandlers = {
 		});
 	},
 
-	onPropertyKeyframeIconMouseDown: (
-		e: React.MouseEvent,
-		compositionId: string,
-		propertyId: string,
-	): void => {
+	onPropertyKeyframeIconMouseDown: (e: React.MouseEvent, propertyId: string): void => {
 		e.stopPropagation();
 
-		const {
-			compositionState,
-			timelineState,
-			timelineSelectionState: timelineSelection,
-		} = getActionState();
+		const { compositionState } = getActionState();
 
-		const composition = compositionState.compositions[compositionId];
 		const property = compositionState.properties[propertyId] as Property;
 		const { timelineId } = property;
-		const layer = compositionState.layers[property.layerId];
 
 		if (timelineId) {
 			// Delete timeline and make the value of the timeline at the current time
 			// the value of the property
-			const timeline = timelineState[timelineId];
-			const value = getTimelineValueAtIndex({
-				timeline,
-				frameIndex: composition.frameIndex,
-				layerIndex: layer.index,
-				selection: timelineSelection[timeline.id],
-			});
 
 			requestAction({ history: true }, (params) => {
-				params.dispatch(
-					timelineActions.removeTimeline(timelineId),
-					compositionActions.setPropertyValue(propertyId, value),
-					compositionActions.setPropertyTimelineId(propertyId, ""),
-				);
-				params.addDiff((diff) => diff.togglePropertyAnimated(propertyId));
+				const op = createOperation(params);
+				timelineOperations.removeTimelineFromProperty(op, propertyId);
+				op.submit();
 				params.submitAction("Remove timeline from property");
 			});
 			return;
@@ -436,15 +417,9 @@ export const timelineHandlers = {
 
 		// Create timeline with a single keyframe at the current time
 		requestAction({ history: true }, (params) => {
-			const timeline = createTimelineForLayerProperty(
-				property.value,
-				composition.frameIndex - layer.index,
-			);
-			params.dispatch(
-				timelineActions.setTimeline(timeline.id, timeline),
-				compositionActions.setPropertyTimelineId(propertyId, timeline.id),
-			);
-			params.addDiff((diff) => diff.togglePropertyAnimated(propertyId));
+			const op = createOperation(params);
+			timelineOperations.addTimelineToProperty(op, propertyId);
+			op.submit();
 			params.submitAction("Add timeline to property");
 		});
 	},

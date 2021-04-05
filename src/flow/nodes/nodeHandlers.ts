@@ -138,7 +138,7 @@ export const nodeHandlers = {
 				} else if (!selection.nodes[nodeId]) {
 					// If the current node is not selected, we clear the node selectction state
 					// and add the clicked node to the selection.
-					dispatch(flowSelectionActions.clear(graphId));
+					dispatch(flowSelectionActions.removeGraph(graphId));
 					dispatch(flowSelectionActions.addNode(graphId, nodeId));
 				}
 
@@ -168,7 +168,7 @@ export const nodeHandlers = {
 						submitAction("Move selection", { allowIndexShift: true });
 					} else {
 						if (!shiftKeyDownAtMouseDown) {
-							dispatch(flowSelectionActions.clear(graphId));
+							dispatch(flowSelectionActions.removeGraph(graphId));
 							dispatch(flowSelectionActions.addNode(graphId, nodeId));
 						}
 						submitAction("Modify selection");

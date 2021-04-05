@@ -1,44 +1,46 @@
 import { compositionActions } from "~/composition/compositionReducer";
 import { Property, PropertyGroup } from "~/composition/compositionTypes";
-import { findCompProperty } from "~/composition/compositionUtils";
+import { reduceCompProperties } from "~/composition/compositionUtils";
 import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { isKeyDown } from "~/listener/keyboard";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions } from "~/timeline/timelineActions";
 import { TimelineKeyframeControlPoint } from "~/timeline/timelineTypes";
-import { getTimelineValueAtIndex, timelineSelectionFromState } from "~/timeline/timelineUtils";
+import {
+	createTimelineForLayerProperty,
+	getTimelineValueAtIndex,
+	timelineSelectionFromState,
+} from "~/timeline/timelineUtils";
 import { CompoundPropertyName, Operation, PropertyGroupName, PropertyName } from "~/types";
 import { areSetsEqual } from "~/util/setUtils";
 
-const removeTimeline = (op: Operation, timelineId: string, compositionId: string): void => {
-	const { compositionState, timelineState } = getActionState();
-
-	const timeline = timelineState[timelineId];
-	const composition = compositionState.compositions[compositionId];
-	const { frameIndex } = composition;
-	const property = findCompProperty(compositionId, compositionState, (property) => {
-		return property.timelineId === timelineId;
-	})!;
-	const { index } = compositionState.layers[property.layerId];
-
-	const value = getTimelineValueAtIndex({ frameIndex, layerIndex: index, timeline });
-	op.add(compositionActions.setPropertyValue(property.id, value));
-
-	// Find all properties that reference timeline ID
-
-	const propertyIds = Object.keys(compositionState.properties);
-
-	for (const propertyId of propertyIds) {
-		const property = compositionState.properties[propertyId];
-
-		if (property.type !== "property" || property.timelineId !== timelineId) {
-			continue;
-		}
-
-		op.add(compositionActions.setPropertyTimelineId(propertyId, ""));
-	}
-
+const removeTimeline = (op: Operation, timelineId: string): void => {
 	op.add(timelineActions.removeTimeline(timelineId));
+};
+
+const removeTimelineFromProperty = (op: Operation, propertyId: string) => {
+	const { compositionState, timelineState, timelineSelectionState } = op.state;
+	const property = compositionState.properties[propertyId] as Property;
+	const layer = compositionState.layers[property.layerId];
+	const composition = compositionState.compositions[property.compositionId];
+	const { timelineId } = property;
+
+	// Delete timeline and make the value of the timeline at the current time
+	// the value of the property
+	const timeline = timelineState[timelineId];
+	const value = getTimelineValueAtIndex({
+		timeline,
+		frameIndex: composition.frameIndex,
+		layerIndex: layer.index,
+		selection: timelineSelectionState[timeline.id],
+	});
+
+	op.add(
+		timelineActions.removeTimeline(property.timelineId),
+		compositionActions.setPropertyValue(propertyId, value),
+		compositionActions.setPropertyTimelineId(propertyId, ""),
+	);
+	op.addDiff((diff) => diff.togglePropertyAnimated(propertyId));
 };
 
 const removeSelectedKeyframes = (
@@ -46,7 +48,22 @@ const removeSelectedKeyframes = (
 	timelineIds: string[],
 	compositionId: string,
 ): void => {
-	const { timelineState, timelineSelectionState } = getActionState();
+	const { compositionState, timelineState, timelineSelectionState } = getActionState();
+
+	const timelineToPropertyId = reduceCompProperties<{
+		[timelineId: string]: string;
+	}>(
+		compositionId,
+		compositionState,
+		(obj, property) => {
+			if (property.timelineId) {
+				obj[property.timelineId] = property.id;
+			}
+
+			return obj;
+		},
+		{},
+	);
 
 	for (const timelineId of timelineIds) {
 		const timeline = timelineState[timelineId];
@@ -63,7 +80,7 @@ const removeSelectedKeyframes = (
 
 		if (allKeyframesSelected) {
 			// Timeline should be removed
-			removeTimeline(op, timelineId, compositionId);
+			removeTimelineFromProperty(op, timelineToPropertyId[timelineId]);
 			continue;
 		}
 
@@ -269,7 +286,26 @@ const viewAnimatedProperties = (op: Operation, compositionId: string): void => {
 	}
 };
 
+const addTimelineToProperty = (op: Operation, propertyId: string) => {
+	const { compositionState } = op.state;
+	const property = compositionState.properties[propertyId] as Property;
+	const composition = compositionState.compositions[property.compositionId];
+	const layer = compositionState.layers[property.layerId];
+
+	const timeline = createTimelineForLayerProperty(
+		property.value,
+		composition.frameIndex - layer.index,
+	);
+	op.add(
+		timelineActions.setTimeline(timeline.id, timeline),
+		compositionActions.setPropertyTimelineId(propertyId, timeline.id),
+	);
+	op.addDiff((diff) => diff.togglePropertyAnimated(propertyId));
+};
+
 export const timelineOperations = {
+	addTimelineToProperty,
+	removeTimelineFromProperty,
 	removeTimeline,
 	removeSelectedKeyframes,
 	easyEaseSelectedKeyframes,

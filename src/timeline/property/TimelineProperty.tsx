@@ -278,11 +278,7 @@ const TimelineLayerPropertyComponent: React.FC<Props> = (props) => {
 					className={s("timelineIcon", { active: !!property.timelineId })}
 					onMouseDown={separateLeftRightMouse({
 						left: (e) =>
-							timelineHandlers.onPropertyKeyframeIconMouseDown(
-								e,
-								props.compositionId,
-								property.id,
-							),
+							timelineHandlers.onPropertyKeyframeIconMouseDown(e, property.id),
 					})}
 					style={
 						property.valueType === ValueType.RGBAColor ||

@@ -19,6 +19,12 @@ const removeSelectedNodesInGraph = (op: Operation, graphId: string): void => {
 	}
 };
 
+const removeGraph = (op: Operation, graphId: string): void => {
+	op.add(flowActions.removeGraph(graphId));
+	op.add(flowSelectionActions.removeGraph(graphId));
+};
+
 export const flowOperations = {
 	removeSelectedNodesInGraph,
+	removeGraph,
 };

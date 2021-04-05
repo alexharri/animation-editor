@@ -9,11 +9,11 @@ import {
 	SelectOneContextMenuProps,
 } from "~/contextMenu/selectOne/SelectOneContextMenu";
 import { cssVariables } from "~/cssVariables";
+import { layerOperations } from "~/layer/layerOperations";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { createOperation } from "~/state/operation";
 import { connectActionState, getActionState } from "~/state/stateUtils";
 import { layerHandlers } from "~/timeline/layer/layerHandlers";
-import { layerOperations } from "~/timeline/layer/layerOperations";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 

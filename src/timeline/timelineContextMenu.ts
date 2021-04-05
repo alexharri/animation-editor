@@ -9,6 +9,7 @@ import { ContextMenuOption } from "~/contextMenu/contextMenuReducer";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNodeType } from "~/flow/flowTypes";
 import { flowActions } from "~/flow/state/flowActions";
+import { layerOperations } from "~/layer/layerOperations";
 import { requestAction } from "~/listener/requestAction";
 import { shapeActions } from "~/shape/shapeReducer";
 import { shapeSelectionActions } from "~/shape/shapeSelectionReducer";
@@ -16,7 +17,7 @@ import { getShapeLayerPathIds } from "~/shape/shapeUtils";
 import { createOperation } from "~/state/operation";
 import { getActionState } from "~/state/stateUtils";
 import { timelineActions, timelineSelectionActions } from "~/timeline/timelineActions";
-import { LayerType } from "~/types";
+import { LayerType, PropertyGroupName } from "~/types";
 import { createGenMapIdFn, createMapNumberId } from "~/util/mapUtils";
 
 interface Options {
@@ -93,6 +94,20 @@ export const createTimelineContextMenu = (
 			let compoundProperty: CompoundProperty | null = null;
 
 			const property = compositionState.properties[propertyId];
+
+			if (property.name === PropertyGroupName.ArrayModifier) {
+				options.push({
+					label: "Remove Array Modifier",
+					onSelect: () => {
+						const op = createOperation(params);
+						layerOperations.removeArrayModifier(op, propertyId);
+						op.submit();
+						params.dispatch(contextMenuActions.closeContextMenu());
+						params.submitAction("Remove array modifier");
+					},
+				});
+			}
+
 			if (property.type === "compound") {
 				compoundProperty = property;
 			} else if (property.type === "property") {

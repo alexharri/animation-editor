@@ -3,6 +3,7 @@ import { compSelectionActions } from "~/composition/compositionSelectionReducer"
 import { Property, PropertyGroup } from "~/composition/compositionTypes";
 import {
 	findLayerProperty,
+	findLayerTopLevelPropertyGroup,
 	getChildPropertyIdsRecursive,
 	getParentPropertyInLayer,
 	reduceLayerPropertiesAndGroups,
@@ -12,6 +13,7 @@ import { compSelectionFromState } from "~/composition/util/compSelectionUtils";
 import { AreaType } from "~/constants";
 import { isKeyDown } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
+import { propertyOperations } from "~/property/propertyOperations";
 import { shapeActions } from "~/shape/shapeReducer";
 import { shapeSelectionActions } from "~/shape/shapeSelectionReducer";
 import {
@@ -34,6 +36,7 @@ import {
 	getShapeSelectionFromState,
 	pathIdToCurves,
 } from "~/shape/shapeUtils";
+import { createOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { LayerType, PropertyGroupName, PropertyName, ToDispatch } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
@@ -1035,14 +1038,14 @@ export const penToolHandlers = {
 
 	removeNode: (ctx: PenToolContext, nodeId: string) => {
 		requestAction({ history: true }, (params) => {
-			const toDispatch: ToDispatch = [];
+			const op = createOperation(params);
 
 			const { compositionState } = getActionState();
 			const { shapeState } = ctx;
 			const node = shapeState.nodes[nodeId];
 			const { shapeId } = node;
 
-			toDispatch.push(shapeActions.removeNode(shapeId, nodeId));
+			op.add(shapeActions.removeNode(shapeId, nodeId));
 
 			// Find all paths that reference the node
 			const pathIds = Object.keys(shapeState.paths);
@@ -1079,7 +1082,7 @@ export const penToolHandlers = {
 						const e1nWhich = item0.nodeId === e1.n0 ? "n0" : "n1";
 						const e1cpWhich = e1nWhich === "n0" ? "cp0" : "cp1";
 
-						toDispatch.push(
+						op.add(
 							shapeActions.removeControlPoint(item0.left.controlPointId),
 							shapeActions.removeControlPoint(item0.right.controlPointId),
 							shapeActions.removeNode(shapeId, item0.nodeId),
@@ -1110,10 +1113,10 @@ export const penToolHandlers = {
 					const cp1 = shapeState.controlPoints[cp1Id];
 					if (cp1) {
 						const cp1New = { ...cp1, edgeId: left.right.edgeId };
-						toDispatch.push(shapeActions.setControlPoint(cp1New));
+						op.add(shapeActions.setControlPoint(cp1New));
 					}
 
-					toDispatch.push(
+					op.add(
 						shapeActions.removeControlPoint(mid.left.controlPointId),
 						shapeActions.removeControlPoint(mid.right.controlPointId),
 						shapeActions.removeEdge(shapeId, rightEdgeId),
@@ -1172,15 +1175,25 @@ export const penToolHandlers = {
 						...getChildPropertyIdsRecursive(shapeProperty.id, compositionState),
 					];
 
-					toDispatch.push(
+					op.add(
 						shapeActions.removePath(pathId),
 						shapeActions.removeShape(shapeId),
 						shapeSelectionActions.clearShapeSelection(shapeId),
-						compositionActions.removeProperty(shapeProperty.id),
 						compSelectionActions.removePropertiesFromSelection(
 							ctx.compositionId,
 							propertiesToDeselect,
 						),
+					);
+
+					const contentGroup = findLayerTopLevelPropertyGroup(
+						layer.id,
+						compositionState,
+						PropertyGroupName.Content,
+					);
+					propertyOperations.removePropertyFromGroupRecursive(
+						op,
+						contentGroup.id,
+						shapeProperty.id,
 					);
 					break;
 				}
@@ -1192,14 +1205,14 @@ export const penToolHandlers = {
 					const item = path.items[0];
 
 					if (item.left) {
-						toDispatch.push(
+						op.add(
 							shapeActions.removeControlPoint(item.left.controlPointId),
 							shapeActions.removeEdge(shapeId, item.left.edgeId),
 						);
 					}
 
 					if (item.right) {
-						toDispatch.push(shapeActions.removeControlPoint(item.right.controlPointId));
+						op.add(shapeActions.removeControlPoint(item.right.controlPointId));
 
 						const edge = shapeState.edges[item.right.edgeId];
 						const whichOtherNode = edge.n0 === item.nodeId ? "n1" : "n0";
@@ -1207,9 +1220,9 @@ export const penToolHandlers = {
 						const whichCp = whichOtherNode === "n0" ? "cp1" : "cp0";
 
 						if (!edge[whichOtherNode]) {
-							toDispatch.push(shapeActions.removeEdge(shapeId, edge.id));
+							op.add(shapeActions.removeEdge(shapeId, edge.id));
 						} else {
-							toDispatch.push(
+							op.add(
 								shapeActions.setEdge(shapeId, {
 									...edge,
 									[whichNode]: "",
@@ -1219,20 +1232,20 @@ export const penToolHandlers = {
 						}
 					}
 
-					toDispatch.push(shapeActions.removePathItem(pathId, 0));
+					op.add(shapeActions.removePathItem(pathId, 0));
 				} else if (path.items[path.items.length - 1].nodeId === nodeId) {
 					// Last item in path is selected
 					const item = path.items[path.items.length - 1];
 
 					if (item.right) {
-						toDispatch.push(
+						op.add(
 							shapeActions.removeControlPoint(item.right.controlPointId),
 							shapeActions.removeEdge(shapeId, item.right.edgeId),
 						);
 					}
 
 					if (item.left) {
-						toDispatch.push(shapeActions.removeControlPoint(item.left.controlPointId));
+						op.add(shapeActions.removeControlPoint(item.left.controlPointId));
 
 						const edge = shapeState.edges[item.left.edgeId];
 						const whichOtherNode = edge.n0 === item.nodeId ? "n1" : "n0";
@@ -1240,9 +1253,9 @@ export const penToolHandlers = {
 						const whichCp = whichOtherNode === "n0" ? "cp1" : "cp0";
 
 						if (!edge[whichOtherNode]) {
-							toDispatch.push(shapeActions.removeEdge(shapeId, edge.id));
+							op.add(shapeActions.removeEdge(shapeId, edge.id));
 						} else {
-							toDispatch.push(
+							op.add(
 								shapeActions.setEdge(shapeId, {
 									...edge,
 									[whichNode]: "",
@@ -1252,7 +1265,7 @@ export const penToolHandlers = {
 						}
 					}
 
-					toDispatch.push(shapeActions.removePathItem(pathId, path.items.length - 1));
+					op.add(shapeActions.removePathItem(pathId, path.items.length - 1));
 				} else {
 					// Item in a non-circular path, not first or last item.
 					//
@@ -1277,10 +1290,10 @@ export const penToolHandlers = {
 					const cp1 = shapeState.controlPoints[cp1Id];
 					if (cp1) {
 						const cp1New = { ...cp1, edgeId: left.right.edgeId };
-						toDispatch.push(shapeActions.setControlPoint(cp1New));
+						op.add(shapeActions.setControlPoint(cp1New));
 					}
 
-					toDispatch.push(
+					op.add(
 						shapeActions.removeControlPoint(mid.left.controlPointId),
 						shapeActions.removeControlPoint(mid.right.controlPointId),
 						shapeActions.removeEdge(shapeId, rightEdgeId),
@@ -1302,7 +1315,7 @@ export const penToolHandlers = {
 				}
 			}
 
-			params.dispatch(toDispatch);
+			op.submit();
 			params.addDiff((diff) => diff.modifyLayer(ctx.layerId));
 			params.submitAction("Remove node");
 		});

@@ -19,7 +19,7 @@ export const flowSelectionActions = {
 		return (graphId: string, nodeIds: string[]) => action({ graphId, nodeIds });
 	}),
 
-	clear: createAction("flowSelection/CLEAR_SELECTION", (action) => {
+	removeGraph: createAction("flowSelection/CLEAR_SELECTION", (action) => {
 		return (graphId: string) => action({ graphId });
 	}),
 };
@@ -87,7 +87,7 @@ function singleFlowGraphSelectionReducer(
 			return { ...state, nodes };
 		}
 
-		case getType(flowSelectionActions.clear): {
+		case getType(flowSelectionActions.removeGraph): {
 			return _emptySelection;
 		}
 

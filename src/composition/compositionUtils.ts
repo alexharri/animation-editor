@@ -384,6 +384,23 @@ export const findLayerProperty = <T extends Property | CompoundProperty | Proper
 	return null;
 };
 
+export const findLayerTopLevelPropertyGroup = (
+	layerId: string,
+	compositionState: CompositionState,
+	name: PropertyGroupName,
+): PropertyGroup => {
+	const layer = compositionState.layers[layerId];
+
+	for (const propertyId of layer.properties) {
+		const property = compositionState.properties[propertyId];
+		if (property.name === name) {
+			return property;
+		}
+	}
+
+	throw new Error(`Could not find group with name '${name}' on layer '${layerId}'.`);
+};
+
 export const getChildPropertyIdsRecursive = (
 	propertyId: string,
 	compositionState: CompositionState,

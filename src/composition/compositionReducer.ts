@@ -8,8 +8,6 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import {
-	findLayerProperty,
-	getChildPropertyIdsRecursive,
 	reduceCompPropertiesAndGroups,
 	reduceLayerPropertiesAndGroups,
 } from "~/composition/compositionUtils";
@@ -162,6 +160,10 @@ export const compositionActions = {
 
 	removeProperty: createAction("comp/REMOVE_PROPERTY", (action) => {
 		return (propertyId: string) => action({ propertyId });
+	}),
+
+	removePropertyFromGroup: createAction("comp/REMOVE_PROPERTY_FROM_GROUP", (action) => {
+		return (groupId: string, propertyId: string) => action({ groupId, propertyId });
 	}),
 
 	setLayerName: createAction("comp/SET_LAYER_NAME", (action) => {
@@ -619,40 +621,22 @@ export const compositionReducer = (
 
 		case getType(compositionActions.removeProperty): {
 			const { propertyId } = action.payload;
+			return {
+				...state,
+				properties: removeKeysFromMap(state.properties, [propertyId]),
+			};
+		}
 
-			const property = state.properties[propertyId];
-			const layer = state.layers[property.layerId];
-
-			const propertyIdsToRemove = [
-				property.id,
-				...getChildPropertyIdsRecursive(propertyId, state),
-			];
-
-			if (layer.properties.indexOf(propertyId) !== -1) {
-				// Layer contains property directly, no need to find parent property
-				return {
-					...state,
-					layers: modifyItemsInMap(state.layers, [layer.id], (layer) => ({
-						...layer,
-						properties: layer.properties.filter((id) => propertyId !== id),
-					})),
-					properties: removeKeysFromMap(state.properties, propertyIdsToRemove),
-				};
-			}
-
-			// Property is not contained by layer directly, find parent property.
-			const parentProperty = findLayerProperty(layer.id, state, (group) => {
-				return group.type === "group" && group.properties.indexOf(propertyId) !== -1;
-			});
-
+		case getType(compositionActions.removePropertyFromGroup): {
+			const { groupId, propertyId } = action.payload;
 			return {
 				...state,
 				properties: modifyItemsInUnionMap(
-					removeKeysFromMap(state.properties, propertyIdsToRemove),
-					parentProperty!.id,
+					state.properties,
+					groupId,
 					(group: PropertyGroup) => ({
 						...group,
-						properties: group.properties.filter((id) => propertyId !== id),
+						properties: group.properties.filter((id) => id !== propertyId),
 					}),
 				),
 			};

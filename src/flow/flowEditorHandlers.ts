@@ -41,7 +41,7 @@ export const flowEditorHandlers = {
 			},
 			mouseUp: (params, hasMoved) => {
 				if (!hasMoved) {
-					params.dispatch(flowSelectionActions.clear(graphId));
+					params.dispatch(flowSelectionActions.removeGraph(graphId));
 					params.submitAction("Modify selection");
 					return;
 				}

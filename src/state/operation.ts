@@ -20,7 +20,7 @@ export const createOperation = (params: RequestActionParams): Operation => {
 		submit: () => {
 			params.dispatch(self.actions);
 			diffsToPerform.forEach(params.performDiff);
-			diffsToAdd.forEach(params.addDiff);
+			diffsToAdd.forEach((diff) => params.addDiff(diff));
 			self.state = getActionState();
 			self.actions.length = 0;
 			diffsToAdd.length = 0;
