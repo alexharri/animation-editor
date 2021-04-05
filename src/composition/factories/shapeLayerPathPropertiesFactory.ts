@@ -5,15 +5,7 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { transformPropertiesFactory } from "~/composition/factories/transformPropertiesFactory";
-import {
-	FillRule,
-	LineCap,
-	LineJoin,
-	PropertyGroupName,
-	PropertyName,
-	RGBAColor,
-	ValueType,
-} from "~/types";
+import { FillRule, LineCap, LineJoin, PropertyGroupName, PropertyName, RGBAColor } from "~/types";
 
 interface Options {
 	fill: RGBAColor;
@@ -68,7 +60,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.RGBAColor,
-				valueType: ValueType.RGBAColor,
 				value: fill,
 				id: opts.createId(),
 				compositionId,
@@ -79,7 +70,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.FillRule,
-				valueType: ValueType.FillRule,
 				value: fillRule,
 				id: opts.createId(),
 				compositionId,
@@ -90,7 +80,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.Opacity,
-				valueType: ValueType.Number,
 				value: fillOpacity,
 				id: opts.createId(),
 				compositionId,
@@ -121,7 +110,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.RGBAColor,
-				valueType: ValueType.RGBAColor,
 				value: strokeColor,
 				id: opts.createId(),
 				compositionId,
@@ -132,7 +120,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.StrokeWidth,
-				valueType: ValueType.Number,
 				value: strokeWidth,
 				id: opts.createId(),
 				compositionId,
@@ -143,7 +130,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.Opacity,
-				valueType: ValueType.Number,
 				value: 1,
 				id: opts.createId(),
 				compositionId,
@@ -154,7 +140,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.LineCap,
-				valueType: ValueType.LineCap,
 				value: lineCap,
 				id: opts.createId(),
 				compositionId,
@@ -165,7 +150,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.LineJoin,
-				valueType: ValueType.LineJoin,
 				value: lineJoin,
 				id: opts.createId(),
 				compositionId,
@@ -176,7 +160,6 @@ export const createShapeLayerShapeGroup = (
 			{
 				type: "property",
 				name: PropertyName.MiterLimit,
-				valueType: ValueType.Number,
 				value: miterLimit,
 				id: opts.createId(),
 				compositionId,
@@ -211,7 +194,6 @@ export const createShapeLayerShapeGroup = (
 		const path: Property = {
 			type: "property",
 			name: PropertyName.ShapeLayer_Path,
-			valueType: ValueType.Path,
 			value: pathId,
 			id: opts.createId(),
 			compositionId,

@@ -4,7 +4,7 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { PropertyGroupName, PropertyName, ValueType } from "~/types";
+import { PropertyGroupName, PropertyName } from "~/types";
 
 const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGroup => {
 	const { compositionId, createId, layerId } = opts;
@@ -17,7 +17,6 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			compositionId,
 			name: PropertyName.Width,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: 100,
 			compoundPropertyId: "",
 		},
@@ -28,7 +27,6 @@ const dimensionProperties = (opts: CreatePropertyOptions): CreateLayerPropertyGr
 			compositionId,
 			name: PropertyName.Height,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: 100,
 			compoundPropertyId: "",
 		},

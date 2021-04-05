@@ -4,7 +4,7 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { LineCap, PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
+import { LineCap, PropertyGroupName, PropertyName, RGBAColor } from "~/types";
 
 export interface LineProperties {
 	strokeColor: RGBAColor;
@@ -28,7 +28,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.Width,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: width,
 			compoundPropertyId: "",
 		},
@@ -39,7 +38,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeWidth,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: strokeWidth,
 			compoundPropertyId: "",
 		},
@@ -50,7 +48,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeColor,
 			timelineId: "",
-			valueType: ValueType.RGBAColor,
 			value: strokeColor,
 			compoundPropertyId: "",
 		},
@@ -61,7 +58,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.LineCap,
 			timelineId: "",
-			valueType: ValueType.LineCap,
 			value: lineCap,
 			compoundPropertyId: "",
 		},

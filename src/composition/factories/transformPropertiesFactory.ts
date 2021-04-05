@@ -6,13 +6,7 @@ import {
 	PropertyGroup,
 } from "~/composition/compositionTypes";
 import { DEFAULT_LAYER_TRANSFORM } from "~/constants";
-import {
-	CompoundPropertyName,
-	LayerTransform,
-	PropertyGroupName,
-	PropertyName,
-	ValueType,
-} from "~/types";
+import { CompoundPropertyName, LayerTransform, PropertyGroupName, PropertyName } from "~/types";
 
 export const transformPropertiesFactory = (
 	opts: CreatePropertyOptions,
@@ -35,7 +29,6 @@ export const transformPropertiesFactory = (
 		compositionId,
 		name: PropertyName.PositionX,
 		timelineId: "",
-		valueType: ValueType.Number,
 		value: transform.translate.x,
 		compoundPropertyId: positionId,
 	};
@@ -46,7 +39,6 @@ export const transformPropertiesFactory = (
 		compositionId,
 		name: PropertyName.PositionY,
 		timelineId: "",
-		valueType: ValueType.Number,
 		value: transform.translate.y,
 		compoundPropertyId: positionId,
 	};
@@ -69,7 +61,6 @@ export const transformPropertiesFactory = (
 		compositionId,
 		name: PropertyName.AnchorX,
 		timelineId: "",
-		valueType: ValueType.Number,
 		value: transform.anchor.x,
 		compoundPropertyId: anchorId,
 	};
@@ -80,7 +71,6 @@ export const transformPropertiesFactory = (
 		compositionId,
 		name: PropertyName.AnchorY,
 		timelineId: "",
-		valueType: ValueType.Number,
 		value: transform.anchor.y,
 		compoundPropertyId: anchorId,
 	};
@@ -103,7 +93,6 @@ export const transformPropertiesFactory = (
 		compositionId,
 		name: PropertyName.ScaleX,
 		timelineId: "",
-		valueType: ValueType.Number,
 		value: transform.scaleX,
 		compoundPropertyId: scaleId,
 	};
@@ -114,7 +103,6 @@ export const transformPropertiesFactory = (
 		compositionId,
 		name: PropertyName.ScaleY,
 		timelineId: "",
-		valueType: ValueType.Number,
 		value: transform.scaleY,
 		compoundPropertyId: scaleId,
 	};
@@ -141,7 +129,6 @@ export const transformPropertiesFactory = (
 			compositionId,
 			name: PropertyName.Rotation,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: transform.rotation,
 			compoundPropertyId: "",
 		},
@@ -152,7 +139,6 @@ export const transformPropertiesFactory = (
 			compositionId,
 			name: PropertyName.Opacity,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: 1,
 			compoundPropertyId: "",
 		},

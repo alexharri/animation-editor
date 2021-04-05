@@ -4,7 +4,7 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
+import { PropertyGroupName, PropertyName, RGBAColor } from "~/types";
 
 export interface RectProperties {
 	fill: RGBAColor;
@@ -29,7 +29,6 @@ const dimensionProperties = (
 			compositionId,
 			name: PropertyName.Width,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: width,
 			compoundPropertyId: "",
 		},
@@ -40,7 +39,6 @@ const dimensionProperties = (
 			compositionId,
 			name: PropertyName.Height,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: height,
 			compoundPropertyId: "",
 		},
@@ -76,7 +74,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.Fill,
 			timelineId: "",
-			valueType: ValueType.RGBAColor,
 			value: fill,
 			compoundPropertyId: "",
 		},
@@ -87,7 +84,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeWidth,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: strokeWidth,
 			compoundPropertyId: "",
 		},
@@ -98,7 +94,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeColor,
 			timelineId: "",
-			valueType: ValueType.RGBAColor,
 			value: strokeColor,
 			compoundPropertyId: "",
 		},
@@ -109,7 +104,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.BorderRadius,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: 0,
 			compoundPropertyId: "",
 		},

@@ -4,7 +4,7 @@ import {
 	Property,
 	PropertyGroup,
 } from "~/composition/compositionTypes";
-import { PropertyGroupName, PropertyName, RGBAColor, ValueType } from "~/types";
+import { PropertyGroupName, PropertyName, RGBAColor } from "~/types";
 
 export interface EllipseProperties {
 	fill: RGBAColor;
@@ -28,7 +28,6 @@ const structureProperties = (
 			compositionId,
 			name: PropertyName.OuterRadius,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: radius,
 			compoundPropertyId: "",
 		},
@@ -39,7 +38,6 @@ const structureProperties = (
 			compositionId,
 			name: PropertyName.InnerRadius,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: 0,
 			compoundPropertyId: "",
 		},
@@ -75,7 +73,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.Fill,
 			timelineId: "",
-			valueType: ValueType.RGBAColor,
 			value: fill,
 			compoundPropertyId: "",
 		},
@@ -86,7 +83,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeWidth,
 			timelineId: "",
-			valueType: ValueType.Number,
 			value: strokeWidth,
 			compoundPropertyId: "",
 		},
@@ -97,7 +93,6 @@ const contentProperties = (
 			compositionId,
 			name: PropertyName.StrokeColor,
 			timelineId: "",
-			valueType: ValueType.RGBAColor,
 			value: strokeColor,
 			compoundPropertyId: "",
 		},
