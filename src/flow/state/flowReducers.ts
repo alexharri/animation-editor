@@ -40,6 +40,11 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
 			return { ...state, nodes: { ...state.nodes, [node.id]: node } };
 		}
 
+		case getType(actions.setNodePosition): {
+			const { nodeId, position } = action.payload;
+			return { ...state, nodes: mergeItemInMap(state.nodes, nodeId, () => ({ position })) };
+		}
+
 		case getType(actions.removeGraph): {
 			const { graphId } = action.payload;
 			return {

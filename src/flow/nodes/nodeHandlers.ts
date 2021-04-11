@@ -57,75 +57,59 @@ export const nodeHandlers = {
 	},
 
 	mouseDown: (e: React.MouseEvent, areaId: string, graphId: string, nodeId: string) => {
-		const didMoveVectorChange = (prevState: ActionState, nextState: ActionState): boolean => {
-			return (
-				prevState.flowState.graphs[graphId].moveVector !==
-				nextState.flowState.graphs[graphId].moveVector
-			);
-		};
-
+		const { flowState } = getActionState();
 		const { pan, scale } = getAreaActionState<AreaType.FlowEditor>(areaId);
 		const viewport = getAreaViewport(areaId, AreaType.FlowEditor);
-		const transformMousePosition = (mousePosition: Vec2) =>
-			flowEditorGlobalToNormal(mousePosition, viewport, scale, pan);
-		const shiftKeyDownAtMouseDown = isKeyDown("Shift");
-		const { flowSelectionState } = getActionState();
 
-		const initialMousePos = transformMousePosition(Vec2.fromEvent(e));
+		const globalToNormal = (vec: Vec2) => flowEditorGlobalToNormal(vec, viewport, scale, pan);
 
-		requestAction(
-			{
-				history: true,
-				shouldAddToStack: [didFlowSelectionChange(graphId), didMoveVectorChange],
-			},
-			({ submitAction, dispatch, addListener }) => {
-				const selection = flowSelectionFromState(graphId, flowSelectionState);
+		const graph = flowState.graphs[graphId];
+		const graphNodePositions = graph.nodes.reduce<Record<string, Vec2>>((obj, nodeId) => {
+			const pos = flowState.nodes[nodeId].position;
+			obj[nodeId] = pos;
+			return obj;
+		}, {});
 
-				// If the shift key is down, we modify the selection state immediately by
-				// toggling the selection state of the node that was clicked.
-				if (shiftKeyDownAtMouseDown) {
-					dispatch(flowSelectionActions.toggleNode(graphId, nodeId));
+		const additiveSelection = isKeyDown("Shift");
+		let selection = flowSelectionFromState(graphId, getActionState().flowSelectionState);
+
+		mouseDownMoveAction(e, {
+			keys: [],
+			translate: globalToNormal,
+			beforeMove: (params) => {
+				if (additiveSelection) {
+					params.dispatch(flowSelectionActions.toggleNode(graphId, nodeId));
 				} else if (!selection.nodes[nodeId]) {
-					// If the current node is not selected, we clear the node selectction state
-					// and add the clicked node to the selection.
-					dispatch(flowSelectionActions.removeGraph(graphId));
-					dispatch(flowSelectionActions.addNode(graphId, nodeId));
+					performOperation(params, (op) => flowOperations.selectNode(op, nodeId));
+				}
+				selection = flowSelectionFromState(graphId, getActionState().flowSelectionState);
+			},
+			mouseMove: (params, { moveVector }) => {
+				const selectedNodeIds = Object.keys(selection.nodes);
+
+				const op = createOperation(params);
+				for (const nodeId of selectedNodeIds) {
+					op.add(
+						flowActions.setNodePosition(
+							nodeId,
+							graphNodePositions[nodeId].add(moveVector.normal),
+						),
+					);
+				}
+				// Node position diff can be added here, if required.
+				op.submit();
+			},
+			mouseUp: (params, hasMoved) => {
+				if (!hasMoved) {
+					params.submitAction("Modify graph selection", {
+						shouldAddToStack: didFlowSelectionChange(graphId),
+					});
+					return;
 				}
 
-				let hasMoved = false;
-
-				addListener.repeated("mousemove", (e) => {
-					const mousePos = transformMousePosition(Vec2.fromEvent(e));
-					if (!hasMoved) {
-						// We don't consider the mouse to be "moved" until the mouse has moved at least
-						// 5px from where it was initially.
-						if (getDistance(initialMousePos, mousePos) > 5 / scale) {
-							hasMoved = true;
-						} else {
-							return;
-						}
-					}
-
-					const moveVector = mousePos.sub(initialMousePos).round();
-					dispatch(flowActions.setMoveVector(graphId, moveVector));
-				});
-
-				addListener.once("mouseup", () => {
-					const { flowSelectionState } = getActionState();
-					const selection = flowSelectionFromState(graphId, flowSelectionState);
-					if (hasMoved) {
-						dispatch(flowActions.applyMoveVector(graphId, selection));
-						submitAction("Move selection", { allowIndexShift: true });
-					} else {
-						if (!shiftKeyDownAtMouseDown) {
-							dispatch(flowSelectionActions.removeGraph(graphId));
-							dispatch(flowSelectionActions.addNode(graphId, nodeId));
-						}
-						submitAction("Modify selection");
-					}
-				});
+				params.submitAction("Move nodes in graph.");
 			},
-		);
+		});
 	},
 
 	onOutputMouseDown: (

@@ -28,6 +28,9 @@ export const flowActions = {
 	setNode: createAction("flowGraph/SET_NODE", (action) => {
 		return (node: FlowNode) => action({ node });
 	}),
+	setNodePosition: createAction("flowGraph/SET_NODE_POSITION", (action) => {
+		return (nodeId: string, position: Vec2) => action({ nodeId, position });
+	}),
 
 	/**
 	 * Add node
