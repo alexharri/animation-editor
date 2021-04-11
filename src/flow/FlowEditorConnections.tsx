@@ -33,7 +33,7 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 	public render() {
 		const { props } = this;
 
-		const { areaState, graph, selection, width, height, left, top, nodes } = props;
+		const { areaState, graph, width, height, left, top, nodes } = props;
 		const { pan, scale } = areaState;
 		const opts = { viewport: { width, height, left, top }, pan, scale };
 
@@ -49,38 +49,6 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 			lines.push(<line key={key} x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y} style={style} />);
 		}
 
-		if (graph._dragInputTo) {
-			const { fromInput, wouldConnectToOutput } = graph._dragInputTo;
-			const inputNode = nodes[fromInput.nodeId];
-			const inputIndex = fromInput.inputIndex;
-			const inputPos = calculateNodeInputPosition(inputNode, inputIndex).apply((vec) =>
-				flowEditorPositionToViewport(vec, opts),
-			);
-
-			let position = graph._dragInputTo.position;
-
-			if (wouldConnectToOutput) {
-				const targetNode = nodes[wouldConnectToOutput.nodeId];
-				position = calculateNodeOutputPosition(
-					targetNode,
-					wouldConnectToOutput.outputIndex,
-				);
-			}
-
-			const targetPos = flowEditorPositionToViewport(position, opts);
-
-			lines.push(
-				<line
-					key="drag-output-to"
-					x1={inputPos.x}
-					y1={inputPos.y}
-					x2={targetPos.x}
-					y2={targetPos.y}
-					style={{ stroke: COLOR, strokeWidth: LINE_WIDTH * areaState.scale }}
-				/>,
-			);
-		}
-
 		const nodeIds = graph.nodes;
 		for (let i = 0; i < nodeIds.length; i += 1) {
 			const node = nodes[nodeIds[i]];
@@ -94,17 +62,14 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 
 				const targetNode = nodes[pointer.nodeId];
 
-				const targetPos = calculateNodeOutputPosition(targetNode, pointer.outputIndex)
-					.apply((vec) =>
-						selection.nodes[targetNode.id] ? vec.add(props.graph.moveVector) : vec,
-					)
-					.apply((vec) => flowEditorPositionToViewport(vec, opts));
+				const targetPos = calculateNodeOutputPosition(
+					targetNode,
+					pointer.outputIndex,
+				).apply((vec) => flowEditorPositionToViewport(vec, opts));
 
-				const nodePos = calculateNodeInputPosition(node, j)
-					.apply((vec) =>
-						selection.nodes[node.id] ? vec.add(props.graph.moveVector) : vec,
-					)
-					.apply((vec) => flowEditorPositionToViewport(vec, opts));
+				const nodePos = calculateNodeInputPosition(node, j).apply((vec) =>
+					flowEditorPositionToViewport(vec, opts),
+				);
 
 				lines.push(
 					<line
