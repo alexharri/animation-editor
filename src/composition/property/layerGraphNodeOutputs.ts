@@ -6,6 +6,8 @@ import { flowNodeArg } from "~/flow/flowArgs";
 import { computeNodeOutputsFromInputArgs } from "~/flow/flowComputeNode";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
+import { parseTypedValue } from "~/flow/flowValueConversion";
+import { ValueType } from "~/types";
 
 export const getGraphNodeOutputs = (
 	type: "layer" | "array_modifier",
@@ -113,7 +115,15 @@ export const computeLayerGraphNodeOutputs = (
 				return obj;
 			}, {}),
 			...node.inputs.reduce<{ [key: string]: any }>((obj, input, i) => {
-				obj[input.name] = inputs[i].value;
+				let v: any = inputs[i].value;
+
+				switch (inputs[i].type) {
+					case ValueType.Vec2:
+						v = mathjs.matrix([v.x, v.y]);
+						break;
+				}
+
+				obj[input.name] = v;
 				return obj;
 			}, {}),
 		};
@@ -121,7 +131,7 @@ export const computeLayerGraphNodeOutputs = (
 		const expression = layerGraphs.expressions[node.id];
 		expression.evaluate(scope);
 
-		const resolve = (res: any): FlowComputeNodeArg => {
+		const resolve = (res: any): unknown => {
 			switch (mathjs.typeOf(res)) {
 				case "Matrix": {
 					const data = res._data as any[];
@@ -130,20 +140,40 @@ export const computeLayerGraphNodeOutputs = (
 							throw new Error("Matrices may only contain numbers.");
 						}
 					}
-					return flowNodeArg.any(data);
+					return data;
 				}
 				case "number":
-					return flowNodeArg.number(res);
+					return res;
 				case "boolean":
 				case "string":
 				case "Object":
-					return flowNodeArg.any(res);
+					return res;
 				default:
 					throw new Error(`Unknown type '${mathjs.typeOf(res)}'`);
 			}
 		};
 
-		return node.outputs.map((output) => resolve(scope[output.name]));
+		return node.outputs.map((output) => {
+			const value = resolve(scope[output.name]);
+
+			const parsed = parseTypedValue(ValueType.Any, output.type, value);
+
+			if (typeof parsed === "undefined") {
+				switch (output.type) {
+					case ValueType.Number:
+						return flowNodeArg.number(0);
+					case ValueType.Vec2:
+						return flowNodeArg.vec2(Vec2.new(0, 0));
+				}
+			}
+
+			switch (output.type) {
+				case ValueType.Number:
+					return flowNodeArg.number(parsed);
+				case ValueType.Vec2:
+					return flowNodeArg.vec2(parsed);
+			}
+		});
 	}
 	return computeNodeOutputsFromInputArgs(node.type, inputs);
 };

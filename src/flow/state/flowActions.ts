@@ -8,6 +8,7 @@ import {
 	FlowNodeOutput,
 	FlowNodeType,
 } from "~/flow/flowTypes";
+import { ValueType } from "~/types";
 
 export const flowActions = {
 	/**
@@ -114,6 +115,14 @@ export const flowActions = {
 	setNodeInputs: createAction("flowGraph/SET_INPUTS", (action) => {
 		return (graphId: string, nodeId: string, inputs: FlowNodeInput[]) =>
 			action({ graphId, nodeId, inputs });
+	}),
+	setNodeInputType: createAction("flowGraph/SET_INPUT_TYPE", (action) => {
+		return (nodeId: string, inputIndex: number, valueType: ValueType) =>
+			action({ nodeId, inputIndex, valueType });
+	}),
+	setNodeOutputType: createAction("flowGraph/SET_OUTPUT_TYPE", (action) => {
+		return (nodeId: string, outputIndex: number, valueType: ValueType) =>
+			action({ nodeId, outputIndex, valueType });
 	}),
 	setNodeOutputs: createAction("flowGraph/SET_OUTPUTS", (action) => {
 		return (graphId: string, nodeId: string, outputs: FlowNodeOutput[]) =>

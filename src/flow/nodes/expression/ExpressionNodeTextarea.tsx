@@ -133,7 +133,7 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 				flowActions.addNodeInput(graphId, nodeId, {
 					name: input,
 					pointer: null,
-					type: ValueType.Any,
+					type: ValueType.Number,
 					value: 0,
 				}),
 			);
@@ -142,7 +142,7 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 			toDispatch.push(
 				flowActions.addNodeOutput(graphId, nodeId, {
 					name: output,
-					type: ValueType.Any,
+					type: ValueType.Number,
 				}),
 			);
 		});

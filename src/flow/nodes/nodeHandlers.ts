@@ -22,6 +22,7 @@ import { isKeyDown } from "~/listener/keyboard";
 import { requestAction } from "~/listener/requestAction";
 import { createOperation, performOperation } from "~/state/operation";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
+import { ValueType } from "~/types";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { getDistance } from "~/util/math";
 
@@ -401,6 +402,54 @@ export const nodeHandlers = {
 
 				submitAction("Resize node width");
 			});
+		});
+	},
+
+	onExpressionNodeChangeInputType: (
+		inputNodeId: string,
+		inputIndex: number,
+		valueType: ValueType,
+	) => {
+		requestAction({ history: true }, (params) => {
+			const { flowState } = getActionState();
+			const node = flowState.nodes[inputNodeId];
+			const input = node.inputs[inputIndex];
+
+			if (input.type === valueType) {
+				// Nothing to be done
+				params.cancelAction();
+				return;
+			}
+
+			performOperation(params, (op) => {
+				flowOperations.setInputValueType(op, inputNodeId, inputIndex, valueType);
+			});
+
+			params.submitAction("Change input value type");
+		});
+	},
+
+	onExpressionNodeChangeOutputType: (
+		outputNodeId: string,
+		outputIndex: number,
+		valueType: ValueType,
+	) => {
+		requestAction({ history: true }, (params) => {
+			const { flowState } = getActionState();
+			const node = flowState.nodes[outputNodeId];
+			const output = node.outputs[outputIndex];
+
+			if (output.type === valueType) {
+				// Nothing to be done
+				params.cancelAction();
+				return;
+			}
+
+			performOperation(params, (op) => {
+				flowOperations.setOutputValueType(op, outputNodeId, outputIndex, valueType);
+			});
+
+			params.submitAction("Change output value type");
 		});
 	},
 };

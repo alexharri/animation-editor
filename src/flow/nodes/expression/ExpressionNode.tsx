@@ -1,6 +1,8 @@
 import React from "react";
 import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps } from "~/flow/flowTypes";
+import { ExpressionNodeInput } from "~/flow/nodes/expression/ExpressionNodeInput";
+import { ExpressionNodeOutput } from "~/flow/nodes/expression/ExpressionNodeOutput";
 import { ExpressionNodeTextarea } from "~/flow/nodes/expression/ExpressionNodeTextarea";
 import NodeStyles from "~/flow/nodes/Node.styles";
 import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
@@ -45,7 +47,12 @@ function ExpressionNodeComponent(props: Props) {
 								)
 							}
 						/>
-						<div className={s("output__name")}>{output.name}</div>
+						<ExpressionNodeOutput
+							nodeId={nodeId}
+							label={output.name}
+							outputIndex={i}
+							valueType={output.type}
+						/>
 					</div>
 				);
 			})}
@@ -81,7 +88,13 @@ function ExpressionNodeComponent(props: Props) {
 											),
 							})}
 						/>
-						<div className={s("input__name")}>{input.name}</div>
+						<ExpressionNodeInput
+							inputIndex={i}
+							label={input.name}
+							nodeId={nodeId}
+							value={input.value}
+							valueType={input.type}
+						/>
 					</div>
 				);
 			})}
