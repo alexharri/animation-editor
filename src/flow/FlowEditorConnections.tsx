@@ -39,34 +39,14 @@ class FlowEditorConnectionsComponent extends React.Component<Props> {
 
 		const lines: React.ReactNode[] = [];
 
-		if (graph._dragOutputTo) {
-			const { fromOutput, wouldConnectToInput } = graph._dragOutputTo;
-			const fromNode = nodes[fromOutput.nodeId];
-			const outputIndex = fromOutput.outputIndex;
-			const outputPos = flowEditorPositionToViewport(
-				calculateNodeOutputPosition(fromNode, outputIndex),
-				opts,
+		if (areaState.dragPreview) {
+			const [p0, p1] = areaState.dragPreview.map((vec) =>
+				flowEditorPositionToViewport(vec, opts),
 			);
 
-			let position = graph._dragOutputTo.position;
-
-			if (wouldConnectToInput) {
-				const targetNode = nodes[wouldConnectToInput.nodeId];
-				position = calculateNodeInputPosition(targetNode, wouldConnectToInput.inputIndex);
-			}
-
-			const targetPos = flowEditorPositionToViewport(position, opts);
-
-			lines.push(
-				<line
-					key="drag-output-to"
-					x1={outputPos.x}
-					y1={outputPos.y}
-					x2={targetPos.x}
-					y2={targetPos.y}
-					style={{ stroke: COLOR, strokeWidth: LINE_WIDTH * areaState.scale }}
-				/>,
-			);
+			const style = { stroke: COLOR, strokeWidth: LINE_WIDTH * areaState.scale };
+			const key = "dragPreviw";
+			lines.push(<line key={key} x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y} style={style} />);
 		}
 
 		if (graph._dragInputTo) {

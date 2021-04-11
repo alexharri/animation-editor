@@ -3,11 +3,11 @@ import { Property } from "~/composition/compositionTypes";
 import { LayerGraphsInfo } from "~/composition/layer/layerComputePropertiesOrder";
 import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { flowNodeArg } from "~/flow/flowArgs";
-import { computeNodeOutputsFromInputArgs } from "~/flow/flowComputeNodeNew";
+import { computeNodeOutputsFromInputArgs } from "~/flow/flowComputeNode";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 
-export const getLayerGraphNodeOutputs = (
+export const getGraphNodeOutputs = (
 	type: "layer" | "array_modifier",
 	actionState: ActionState,
 	compositionId: string,

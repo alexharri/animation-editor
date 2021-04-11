@@ -64,6 +64,15 @@ export const flowActions = {
 		return (graphId: string) => action({ graphId });
 	}),
 
+	connectInputToOutput: createAction("flowGraph/CONNECT_INPUT_TO_OUTPUT", (action) => {
+		return (
+			outputNodeId: string,
+			outputIndex: number,
+			inputNodeId: string,
+			inputIndex: number,
+		) => action({ outputNodeId, outputIndex, inputNodeId, inputIndex });
+	}),
+
 	clearDragOutputTo: createAction("flowGraph/CLEAR_DRAG_OUTPUT_TO", (action) => {
 		return (graphId: string) => action({ graphId });
 	}),
@@ -95,8 +104,7 @@ export const flowActions = {
 	 * Pointer
 	 */
 	removeInputPointer: createAction("flowGraph/REMOVE_INPUT_POINTER", (action) => {
-		return (graphId: string, nodeId: string, inputIndex: number) =>
-			action({ graphId, nodeId, inputIndex });
+		return (nodeId: string, inputIndex: number) => action({ nodeId, inputIndex });
 	}),
 
 	/**

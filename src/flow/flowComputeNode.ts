@@ -206,63 +206,6 @@ const computeFnMap: Record<Type, (args: FlowComputeNodeArg[]) => FlowComputeNode
 
 	[Type.expr]: () => {
 		throw new Error("Not implemented");
-		// if (!ctx.expressionCache[node.id]) {
-		// 	ctx.expressionCache[node.id] = mathjs.compile(state.expression);
-		// }
-
-		// const expression = ctx.expressionCache[node.id];
-
-		// const scope = {
-		// 	...node.outputs.reduce<{ [key: string]: any }>((obj, output) => {
-		// 		obj[output.name] = null;
-		// 		return obj;
-		// 	}, {}),
-		// 	...node.inputs.reduce<{ [key: string]: any }>((obj, input, i) => {
-		// 		obj[input.name] = args[i].value;
-		// 		return obj;
-		// 	}, {}),
-		// };
-
-		// expression.evaluate(scope);
-
-		// const resolve = (res: any): FlowComputeNodeArg => {
-		// 	switch (mathjs.typeOf(res)) {
-		// 		case "Matrix": {
-		// 			const data = res._data as any[];
-		// 			for (let i = 0; i < data.length; i++) {
-		// 				if (mathjs.typeOf(data[i]) !== "number") {
-		// 					throw new Error("Matrices may only contain numbers.");
-		// 				}
-		// 			}
-		// 			return flowNodeArg.any(data);
-		// 		}
-
-		// 		case "number": {
-		// 			return flowNodeArg.number(res);
-		// 		}
-
-		// 		case "boolean": {
-		// 			return flowNodeArg.any(res);
-		// 		}
-
-		// 		case "string": {
-		// 			return flowNodeArg.any(res);
-		// 		}
-
-		// 		case "Object": {
-		// 			return flowNodeArg.any(res);
-		// 		}
-
-		// 		default:
-		// 			throw new Error(`Unknown type '${mathjs.typeOf(res)}'`);
-		// 	}
-		// };
-
-		// const outputs = node.outputs.map((output) => {
-		// 	return resolve(scope[output.name]);
-		// });
-
-		// return outputs;
 	},
 
 	[Type.composition]: (args) => args,

@@ -272,8 +272,8 @@ export const resolveCompositionLayerGraphs = (
 				continue;
 			}
 			arrayModifierGroupToCount[modifierGroupId] = countId;
+			const toComputeStartIndex = toCompute.length;
 			onGraphId(group.graphId);
-			const graph = flowState.graphs[group.graphId];
 
 			// When the count of an array modifier updates, every single node in the
 			// respective array modifier graph must be updated.
@@ -284,7 +284,7 @@ export const resolveCompositionLayerGraphs = (
 			// Optimally, we would only store a list of N values for the nodes who are
 			// downstream from an `array_modifier_index` nodes. Other nodes do not need
 			// to be computed more than once.
-			propertyIdToAffectedInputNodes[countId] = [...graph.nodes];
+			propertyIdToAffectedInputNodes[countId] = toCompute.slice(toComputeStartIndex);
 		}
 	}
 

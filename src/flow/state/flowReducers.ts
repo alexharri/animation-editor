@@ -176,6 +176,21 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
 			};
 		}
 
+		case getType(actions.connectInputToOutput): {
+			const { outputNodeId, outputIndex, inputNodeId, inputIndex } = action.payload;
+
+			return {
+				...state,
+				nodes: mergeItemInMap(state.nodes, inputNodeId, (node) => ({
+					inputs: node.inputs.map<FlowNodeInput>((input, i) =>
+						i === inputIndex
+							? { ...input, pointer: { nodeId: outputNodeId, outputIndex } }
+							: input,
+					),
+				})),
+			};
+		}
+
 		case getType(actions.submitDragOutputTo): {
 			const { graphId } = action.payload;
 			const graph = state.graphs[graphId];
