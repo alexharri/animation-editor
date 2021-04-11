@@ -65,16 +65,12 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 	{ flowState, flowSelectionState },
 	{ graphId, nodeId },
 ) => {
-	const graph = flowState.graphs[graphId];
 	const selection = flowSelectionFromState(graphId, flowSelectionState);
 
 	const { type, width, position } = flowState.nodes[nodeId];
 	const selected = !!selection.nodes[nodeId];
 
-	const { x: left, y: top } =
-		selected && (graph.moveVector.x !== 0 || graph.moveVector.y !== 0)
-			? position.add(graph.moveVector)
-			: position;
+	const { x: left, y: top } = position;
 	return { selected, left, top, type, width };
 };
 

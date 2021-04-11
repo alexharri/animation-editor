@@ -8,10 +8,7 @@ import { ValueType } from "~/types";
 
 const _graphBase: FlowGraph = {
 	_addNodeOfTypeOnClick: null,
-	_dragInputTo: null,
-	_dragOutputTo: null,
 	_dragSelectRect: null,
-	moveVector: Vec2.new(0, 0),
 	type: "layer_graph",
 	id: "0",
 	layerId: "",

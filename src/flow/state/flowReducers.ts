@@ -40,38 +40,16 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
 			return { ...state, nodes: { ...state.nodes, [node.id]: node } };
 		}
 
+		case getType(actions.setNodePosition): {
+			const { nodeId, position } = action.payload;
+			return { ...state, nodes: mergeItemInMap(state.nodes, nodeId, () => ({ position })) };
+		}
+
 		case getType(actions.removeGraph): {
 			const { graphId } = action.payload;
 			return {
 				...state,
 				graphs: removeKeysFromMap(state.graphs, [graphId]),
-			};
-		}
-
-		case getType(actions.setMoveVector): {
-			const { graphId, moveVector } = action.payload;
-			return {
-				...state,
-				graphs: modifyItemsInMap(state.graphs, graphId, (graph) => ({
-					...graph,
-					moveVector,
-				})),
-			};
-		}
-
-		case getType(actions.applyMoveVector): {
-			const { selection, graphId } = action.payload;
-			const { moveVector } = state.graphs[graphId];
-			return {
-				...state,
-				graphs: modifyItemsInMap(state.graphs, graphId, (graph) => ({
-					...graph,
-					moveVector: Vec2.new(0, 0),
-				})),
-				nodes: modifyItemsInMap(state.nodes, Object.keys(selection.nodes), (node) => ({
-					...node,
-					position: node.position.add(moveVector),
-				})),
 			};
 		}
 
@@ -151,41 +129,8 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
 			};
 		}
 
-		case getType(actions.initDragOutputTo): {
-			const { graphId, position, fromOutput } = action.payload;
-			return {
-				...state,
-				graphs: mergeItemInMap(state.graphs, graphId, () => ({
-					_dragOutputTo: { position, fromOutput, wouldConnectToInput: null },
-				})),
-			};
-		}
-
-		case getType(actions.setDragOutputTo): {
-			const { graphId, position, wouldConnectToInput } = action.payload;
-
-			if (!state.graphs[graphId]._dragOutputTo) {
-				return state;
-			}
-
-			return {
-				...state,
-				graphs: mergeItemInMap(state.graphs, graphId, (graph) => ({
-					_dragOutputTo: { ...graph._dragOutputTo!, position, wouldConnectToInput },
-				})),
-			};
-		}
-
-		case getType(actions.submitDragOutputTo): {
-			const { graphId } = action.payload;
-			const graph = state.graphs[graphId];
-
-			if (!graph._dragOutputTo?.wouldConnectToInput) {
-				return state;
-			}
-
-			const { outputIndex, nodeId: outputNodeId } = graph._dragOutputTo.fromOutput;
-			const { inputIndex, nodeId: inputNodeId } = graph._dragOutputTo.wouldConnectToInput;
+		case getType(actions.connectInputToOutput): {
+			const { outputNodeId, outputIndex, inputNodeId, inputIndex } = action.payload;
 
 			return {
 				...state,
@@ -196,65 +141,6 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
 							: input,
 					),
 				})),
-				graphs: mergeItemInMap(state.graphs, graphId, () => ({ _dragOutputTo: null })),
-			};
-		}
-
-		case getType(actions.initDragInputTo): {
-			const { graphId, position, fromInput } = action.payload;
-			return {
-				...state,
-				graphs: mergeItemInMap(state.graphs, graphId, () => ({
-					_dragInputTo: { position, fromInput, wouldConnectToOutput: null },
-				})),
-			};
-		}
-
-		case getType(actions.setDragInputTo): {
-			const { graphId, position, wouldConnectToOutput } = action.payload;
-
-			const graph = state.graphs[graphId];
-			if (!graph._dragInputTo) {
-				return state;
-			}
-
-			return {
-				...state,
-				graphs: mergeItemInMap(state.graphs, graphId, () => ({
-					_dragInputTo: { ...graph._dragInputTo!, position, wouldConnectToOutput },
-				})),
-			};
-		}
-
-		case getType(actions.submitDragInputTo): {
-			const { graphId } = action.payload;
-			const graph = state.graphs[graphId];
-
-			if (!graph._dragInputTo?.wouldConnectToOutput) {
-				return state;
-			}
-
-			const { inputIndex, nodeId: inputNodeId } = graph._dragInputTo.fromInput;
-			const { outputIndex, nodeId: outputNodeId } = graph._dragInputTo.wouldConnectToOutput;
-
-			return {
-				...state,
-				nodes: mergeItemInMap(state.nodes, inputNodeId, (node) => ({
-					inputs: node.inputs.map<FlowNodeInput>((input, i) =>
-						i === inputIndex
-							? { ...input, pointer: { nodeId: outputNodeId, outputIndex } }
-							: input,
-					),
-				})),
-				graphs: mergeItemInMap(state.graphs, graphId, () => ({ _dragInputTo: null })),
-			};
-		}
-
-		case getType(actions.clearDragOutputTo): {
-			const { graphId } = action.payload;
-			return {
-				...state,
-				graphs: mergeItemInMap(state.graphs, graphId, () => ({ _dragOutputTo: null })),
 			};
 		}
 

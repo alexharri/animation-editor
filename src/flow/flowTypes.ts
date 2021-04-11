@@ -49,26 +49,9 @@ export interface FlowGraph {
 	layerId: string;
 	propertyId: string;
 	id: string;
-	moveVector: Vec2;
 	nodes: string[];
 	_addNodeOfTypeOnClick: { type: FlowNodeType; io?: FlowNodeIO } | null;
 	_dragSelectRect: Rect | null;
-	_dragOutputTo: {
-		position: Vec2;
-		fromOutput: { nodeId: string; outputIndex: number };
-		wouldConnectToInput: {
-			nodeId: string;
-			inputIndex: number;
-		} | null;
-	} | null;
-	_dragInputTo: {
-		position: Vec2;
-		fromInput: { nodeId: string; inputIndex: number };
-		wouldConnectToOutput: {
-			nodeId: string;
-			outputIndex: number;
-		} | null;
-	} | null;
 }
 
 export interface FlowNode<T extends FlowNodeType = FlowNodeType> {

@@ -8,7 +8,6 @@ import {
 	FlowNodeOutput,
 	FlowNodeType,
 } from "~/flow/flowTypes";
-import { FlowGraphSelection } from "~/flow/state/flowSelectionReducer";
 
 export const flowActions = {
 	/**
@@ -28,6 +27,9 @@ export const flowActions = {
 	setNode: createAction("flowGraph/SET_NODE", (action) => {
 		return (node: FlowNode) => action({ node });
 	}),
+	setNodePosition: createAction("flowGraph/SET_NODE_POSITION", (action) => {
+		return (nodeId: string, position: Vec2) => action({ nodeId, position });
+	}),
 
 	/**
 	 * Add node
@@ -41,62 +43,20 @@ export const flowActions = {
 		return (graphId: string, position: Vec2) => action({ graphId, position });
 	}),
 
-	/**
-	 * Drag output to
-	 */
-	initDragOutputTo: createAction("flowGraph/INIT_DRAG_OUTPUT_TO", (action) => {
+	connectInputToOutput: createAction("flowGraph/CONNECT_INPUT_TO_OUTPUT", (action) => {
 		return (
-			graphId: string,
-			position: Vec2,
-			fromOutput: { nodeId: string; outputIndex: number },
-		) => action({ graphId, position, fromOutput });
-	}),
-
-	setDragOutputTo: createAction("flowGraph/SET_DRAG_OUTPUT_TO", (action) => {
-		return (
-			graphId: string,
-			position: Vec2,
-			wouldConnectToInput: { nodeId: string; inputIndex: number } | null,
-		) => action({ graphId, position, wouldConnectToInput });
-	}),
-
-	submitDragOutputTo: createAction("flowGraph/SUBMIT_DRAG_OUTPUT_TO", (action) => {
-		return (graphId: string) => action({ graphId });
-	}),
-
-	clearDragOutputTo: createAction("flowGraph/CLEAR_DRAG_OUTPUT_TO", (action) => {
-		return (graphId: string) => action({ graphId });
-	}),
-
-	/**
-	 * Drag input to
-	 */
-	initDragInputTo: createAction("flowGraph/INIT_DRAG_INPUT_TO", (action) => {
-		return (
-			graphId: string,
-			position: Vec2,
-			fromInput: { nodeId: string; inputIndex: number },
-		) => action({ graphId, position, fromInput });
-	}),
-
-	setDragInputTo: createAction("flowGraph/SET_DRAG_INPUT_TO", (action) => {
-		return (
-			graphId: string,
-			position: Vec2,
-			wouldConnectToOutput: { nodeId: string; outputIndex: number } | null,
-		) => action({ graphId, position, wouldConnectToOutput });
-	}),
-
-	submitDragInputTo: createAction("flowGraph/SUBMIT_DRAG_INPUT_TO", (action) => {
-		return (graphId: string) => action({ graphId });
+			outputNodeId: string,
+			outputIndex: number,
+			inputNodeId: string,
+			inputIndex: number,
+		) => action({ outputNodeId, outputIndex, inputNodeId, inputIndex });
 	}),
 
 	/**
 	 * Pointer
 	 */
 	removeInputPointer: createAction("flowGraph/REMOVE_INPUT_POINTER", (action) => {
-		return (graphId: string, nodeId: string, inputIndex: number) =>
-			action({ graphId, nodeId, inputIndex });
+		return (nodeId: string, inputIndex: number) => action({ nodeId, inputIndex });
 	}),
 
 	/**
@@ -109,17 +69,6 @@ export const flowActions = {
 	submitDragSelectRect: createAction("flowGraph/SUBMIT_DRAG_SELECT", (action) => {
 		return (graphId: string, additiveSelection: boolean) =>
 			action({ graphId, additiveSelection });
-	}),
-
-	/**
-	 * Move node
-	 */
-	setMoveVector: createAction("flowGraph/SET_MOVE_VECTOR", (action) => {
-		return (graphId: string, moveVector: Vec2) => action({ graphId, moveVector });
-	}),
-
-	applyMoveVector: createAction("flowGraph/APPLY_MOVE_VECTOR", (action) => {
-		return (graphId: string, selection: FlowGraphSelection) => action({ graphId, selection });
 	}),
 
 	/**

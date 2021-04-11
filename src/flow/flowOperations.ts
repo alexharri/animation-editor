@@ -49,8 +49,30 @@ const removeGraph = (op: Operation, graphId: string): void => {
 	op.add(flowSelectionActions.removeGraph(graphId));
 };
 
+const connectOutputToInput = (
+	op: Operation,
+	outputNodeId: string,
+	outputIndex: number,
+	inputNodeId: string,
+	inputIndex: number,
+): void => {
+	op.add(flowActions.connectInputToOutput(outputNodeId, outputIndex, inputNodeId, inputIndex));
+	op.addDiff((diff) => diff.updateNodeConnection([outputNodeId, inputNodeId]));
+};
+
+const removeInputPointer = (op: Operation, inputNodeId: string, inputIndex: number): void => {
+	const { flowState } = op.state;
+	const node = flowState.nodes[inputNodeId];
+	const { nodeId: outputNodeId } = node.inputs[inputIndex].pointer!;
+
+	op.add(flowActions.removeInputPointer(inputNodeId, inputIndex));
+	op.addDiff((diff) => diff.updateNodeConnection([outputNodeId, inputNodeId]));
+};
+
 export const flowOperations = {
 	selectNode,
 	removeSelectedNodesInGraph,
 	removeGraph,
+	connectOutputToInput,
+	removeInputPointer,
 };

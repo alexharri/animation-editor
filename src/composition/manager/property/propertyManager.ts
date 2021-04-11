@@ -4,7 +4,7 @@ import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { getPropertyIdsAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
 import {
 	computeLayerGraphNodeOutputs,
-	getLayerGraphNodeOutputs,
+	getGraphNodeOutputs,
 } from "~/composition/property/layerGraphNodeOutputs";
 import { createPropertyInfoRegistry } from "~/composition/property/propertyInfoMap";
 import { updateRawValuesForPropertyIds } from "~/composition/property/propertyRawValues";
@@ -69,7 +69,7 @@ export const createPropertyManager = (
 			const count = propertyStore.getPropertyValue(countPropertyId);
 
 			arrayModifierGraphNodeOutputMap[node.id] = Array.from({ length: count }).map((_, i) => {
-				const inputs = getLayerGraphNodeOutputs(
+				const inputs = getGraphNodeOutputs(
 					"array_modifier",
 					actionState,
 					compositionId,
@@ -92,7 +92,7 @@ export const createPropertyManager = (
 			return;
 		}
 
-		const inputs = getLayerGraphNodeOutputs(
+		const inputs = getGraphNodeOutputs(
 			"layer",
 			actionState,
 			compositionId,
