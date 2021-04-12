@@ -45,6 +45,7 @@ export interface CompositionManager {
 	properties: PropertyManager;
 	hitTest: HitTestManager;
 	onDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
+	setErrors: (errors: Error[]) => void;
 
 	/**
 	 * The state after the last call to `onDiffs`.
@@ -62,6 +63,7 @@ interface ManageCompositionOptions {
 	initialScale?: number;
 	depth: number;
 	dimensions?: LayerDimension[];
+	setErrors: (errors: Error[]) => void;
 }
 
 export const manageComposition = (options: ManageCompositionOptions): CompositionManager => {
@@ -113,6 +115,7 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 		interactions: interactionManager,
 		hitTest: hitTestManager,
 		properties: propertyManager,
+		setErrors: options.setErrors,
 		onDiffs: (actionState, diffs, direction) =>
 			passDiffsToManagers(ctx, actionState, diffs, direction),
 		prevState: getActionState(),
@@ -122,6 +125,8 @@ export const manageComposition = (options: ManageCompositionOptions): Compositio
 		},
 	};
 
+	options.setErrors(propertyManager.getErrors());
+
 	return ctx;
 };
 
@@ -129,6 +134,7 @@ export const manageTopLevelComposition = (
 	compositionId: string,
 	areaId: string,
 	canvas: HTMLCanvasElement,
+	setErrors: (errors: Error[]) => void,
 ) => {
 	let prevState = getActionStateFromApplicationState(store.getState());
 
@@ -180,6 +186,7 @@ export const manageTopLevelComposition = (
 		initialScale,
 		areaId,
 		depth: 0,
+		setErrors,
 	});
 
 	registerCompositionManagerByAreaId(areaId, ctx);

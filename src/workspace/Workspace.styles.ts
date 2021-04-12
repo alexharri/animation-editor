@@ -86,4 +86,14 @@ export default ({ css }: StyleParams) => ({
 	svg: css`
 		transform: translate(-50%, -50%);
 	`,
+
+	errors: css`
+		position: absolute;
+		bottom: ${FOOTER_HEIGHT}px;
+		left: 0;
+		right: 0;
+		background: rgba(120, 0, 0, 0.7);
+		color: white;
+		padding: 8px 16px;
+	`,
 });

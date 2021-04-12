@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useCompositionPlayback } from "~/composition/compositionPlayback";
 import { manageTopLevelComposition } from "~/composition/manager/compositionManager";
 import { Tool } from "~/constants";
@@ -6,6 +6,7 @@ import { cssCursors, cssVariables } from "~/cssVariables";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
 import { getActionState } from "~/state/stateUtils";
 import { AreaComponentProps } from "~/types/areaTypes";
+import { isArrayShallowEqual } from "~/util/arrayUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 import { moveToolHandlers } from "~/workspace/moveTool/moveTool";
@@ -64,6 +65,10 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 		};
 	}, [containerRef.current]);
 
+	const [errors, setErrors] = useState<string[]>([]);
+	const errorsRef = useRef(errors);
+	errorsRef.current = errors;
+
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) {
@@ -74,6 +79,14 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 			props.areaState.compositionId,
 			props.areaId,
 			canvas,
+			(nextErrors) => {
+				console.log(nextErrors);
+				const errorMessages = nextErrors.map((error) => error.message);
+				if (isArrayShallowEqual(errorsRef.current, errorMessages)) {
+					return;
+				}
+				setErrors(errorMessages);
+			},
 		);
 		return unsubscribe;
 	}, []);
@@ -143,6 +156,12 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 				})}
 			/>
 			<WorkspaceFooter compositionId={props.areaState.compositionId} />
+			{errors.length > 0 && (
+				<div className={s("errors")}>
+					{errors.length > 1 && <>1/{errors.length}:&nbsp;</>}
+					{errors[0]}
+				</div>
+			)}
 		</div>
 	);
 };

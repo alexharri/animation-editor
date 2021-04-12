@@ -84,7 +84,6 @@ const setInputValueType = (
 
 	const affectedNodeIds = [inputNodeId];
 	const compatibleOutputValueTypes = getValueTypesThatCanConvertToValueType(valueType);
-	console.log(valueType, getValueTypesThatCanConvertToValueType(valueType));
 
 	const pointer = node.inputs[inputIndex].pointer;
 	if (pointer) {

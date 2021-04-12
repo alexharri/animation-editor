@@ -1,11 +1,11 @@
 import { PropertyStore } from "~/composition/manager/property/propertyStore";
-import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
+import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
 
 export const recomputePropertyValuesAffectedByNode = (
 	node: FlowNode<FlowNodeType.property_output>,
 	actionState: ActionState,
 	propertyStore: PropertyStore,
-	nodeOutputMap: Record<string, FlowComputeNodeArg[]>,
+	nodeOutputMap: Record<string, unknown[]>,
 ) => {
 	const { compositionState } = actionState;
 	const state = node.state;
@@ -39,7 +39,7 @@ export const recomputePropertyValuesAffectedByNode = (
 		const propertyId = propertyIds[i];
 		const property = compositionState.properties[propertyId];
 
-		let { value } = outputs[i];
+		let value = outputs[i];
 
 		if (property.type === "compound") {
 			if (typeof value === "number") {
@@ -66,7 +66,7 @@ export const recomputePropertyValueArraysAffectedByNode = (
 	node: FlowNode<FlowNodeType.property_output>,
 	actionState: ActionState,
 	propertyStore: PropertyStore,
-	nodeOutputMap: Record<string, FlowComputeNodeArg[][]>,
+	nodeOutputMap: Record<string, unknown[][]>,
 ) => {
 	const { compositionState } = actionState;
 	const state = node.state;
@@ -100,15 +100,14 @@ export const recomputePropertyValueArraysAffectedByNode = (
 		const propertyId = propertyIds[i];
 		const property = compositionState.properties[propertyId];
 
-		const values = outputs.map((output) => output[i].value);
-		if (values.length === 0) {
+		if (outputs.length === 0) {
 			continue;
 		}
 
-		const firstValue = values[0];
+		const firstValue = outputs[0];
 
 		if (property.type === "compound") {
-			const vec2Arr = values.map((value) => {
+			const vec2Arr = outputs.map((value: any) => {
 				if (typeof firstValue === "number") {
 					// If the value provided to a compound property (Vec2) is a number
 					// then we case it to Vec2(N, N).
@@ -132,7 +131,7 @@ export const recomputePropertyValueArraysAffectedByNode = (
 				vec2Arr.map((vec) => vec.y),
 			);
 		} else {
-			propertyStore.setComputedValueArray(propertyId, values);
+			propertyStore.setComputedValueArray(propertyId, outputs);
 		}
 	}
 };

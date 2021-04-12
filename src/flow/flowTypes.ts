@@ -1,3 +1,4 @@
+import { FlowNodeError } from "~/flow/FlowNodeError";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { ValueType } from "~/types";
 
@@ -39,11 +40,6 @@ export interface FlowNodeProps {
 	zIndex: number;
 }
 
-export type FlowComputeNodeArg = {
-	type: ValueType;
-	value: any;
-};
-
 export interface FlowGraph {
 	type: "layer_graph" | "array_modifier_graph";
 	layerId: string;
@@ -84,3 +80,13 @@ export interface FlowNodeIO {
 	inputs: FlowNodeInput[];
 	outputs: FlowNodeOutput[];
 }
+
+export type ComputeFlowNodeResult =
+	| {
+			status: "ok";
+			results: unknown[];
+	  }
+	| {
+			status: "error";
+			errors: FlowNodeError[];
+	  };

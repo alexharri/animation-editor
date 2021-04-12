@@ -2,17 +2,15 @@ import * as mathjs from "mathjs";
 import { resolveCompositionLayerGraphs } from "~/composition/layer/layerComputePropertiesOrder";
 import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { getPropertyIdsAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
-import {
-	computeLayerGraphNodeOutputs,
-	getGraphNodeOutputs,
-} from "~/composition/property/layerGraphNodeOutputs";
 import { createPropertyInfoRegistry } from "~/composition/property/propertyInfoMap";
 import { updateRawValuesForPropertyIds } from "~/composition/property/propertyRawValues";
 import {
 	recomputePropertyValueArraysAffectedByNode,
 	recomputePropertyValuesAffectedByNode,
 } from "~/composition/property/recomputePropertyValuesAffectedByNode";
-import { FlowComputeNodeArg, FlowNode, FlowNodeType } from "~/flow/flowTypes";
+import { FlowNodeError } from "~/flow/FlowNodeError";
+import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
+import { computeLayerGraphNodeOutputs, getGraphNodeInputs } from "~/flow/graphNodeOutputs";
 import { Performable } from "~/types";
 
 type LayerPerformables = { layerId: string; performables: Performable[] };
@@ -42,23 +40,29 @@ export interface PropertyManager {
 		options: GetActionsToPerformOptions,
 	) => LayerPerformables[];
 	getActionsToPerformOnFrameIndexChange: () => LayerPerformables[];
+	getErrors: () => Error[];
 }
 
 export const createPropertyManager = (
 	compositionId: string,
 	actionState: ActionState,
 ): PropertyManager => {
+	let errors: FlowNodeError[] = [];
+
 	let layerGraphs = resolveCompositionLayerGraphs(compositionId, actionState);
 	const propertyStore = new PropertyStore();
-	let layerGraphNodeOutputMap: Record<string, FlowComputeNodeArg[]> = {};
-	let arrayModifierGraphNodeOutputMap: Record<string, FlowComputeNodeArg[][]> = {};
+	let layerGraphNodeOutputMap: Record<string, unknown[]> = {};
+	let arrayModifierGraphNodeOutputMap: Record<string, unknown[][]> = {};
 	let propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 
+	/**
+	 * @returns true if computed successfully, false otherwise
+	 */
 	function computeNode(
 		actionState: ActionState,
 		nodeId: string,
 		options: { frameIndex: number },
-	) {
+	): boolean {
 		const { flowState } = actionState;
 		const { frameIndex } = options;
 		const node = flowState.nodes[nodeId];
@@ -68,8 +72,10 @@ export const createPropertyManager = (
 			const countPropertyId = layerGraphs.arrayModifierGroupToCount[graph.propertyId];
 			const count = propertyStore.getPropertyValue(countPropertyId);
 
-			arrayModifierGraphNodeOutputMap[node.id] = Array.from({ length: count }).map((_, i) => {
-				const inputs = getGraphNodeOutputs(
+			const resultsList: unknown[][] = [];
+
+			for (let i = 0; i < count; i++) {
+				const inputs = getGraphNodeInputs(
 					"array_modifier",
 					actionState,
 					compositionId,
@@ -79,8 +85,17 @@ export const createPropertyManager = (
 					node,
 					{ frameIndex, arrayModifierIndex: i },
 				);
-				return computeLayerGraphNodeOutputs(node, inputs, layerGraphs);
-			});
+
+				const result = computeLayerGraphNodeOutputs(node, inputs, layerGraphs);
+				if (result.status === "error") {
+					errors = result.errors;
+					return false;
+				}
+				resultsList.push(result.results);
+			}
+
+			arrayModifierGraphNodeOutputMap[node.id] = resultsList;
+
 			if (node.type === FlowNodeType.property_output) {
 				recomputePropertyValueArraysAffectedByNode(
 					node as FlowNode<FlowNodeType.property_output>,
@@ -89,10 +104,10 @@ export const createPropertyManager = (
 					arrayModifierGraphNodeOutputMap,
 				);
 			}
-			return;
+			return true;
 		}
 
-		const inputs = getGraphNodeOutputs(
+		const outputs = getGraphNodeInputs(
 			"layer",
 			actionState,
 			compositionId,
@@ -102,7 +117,14 @@ export const createPropertyManager = (
 			node,
 			{ frameIndex, arrayModifierIndex: -1 },
 		);
-		layerGraphNodeOutputMap[node.id] = computeLayerGraphNodeOutputs(node, inputs, layerGraphs);
+		const result = computeLayerGraphNodeOutputs(node, outputs, layerGraphs);
+
+		if (result.status === "error") {
+			errors = result.errors;
+			return false;
+		}
+
+		layerGraphNodeOutputMap[node.id] = result.results;
 
 		if (node.type === FlowNodeType.property_output) {
 			recomputePropertyValuesAffectedByNode(
@@ -112,7 +134,18 @@ export const createPropertyManager = (
 				layerGraphNodeOutputMap,
 			);
 		}
+		return true;
 	}
+
+	const computeNodeList = (actionState: ActionState, toCompute: string[], frameIndex: number) => {
+		errors = [];
+		for (const nodeId of toCompute) {
+			const computedSuccessfully = computeNode(actionState, nodeId, { frameIndex });
+			if (!computedSuccessfully) {
+				return;
+			}
+		}
+	};
 
 	const reset = (actionState: ActionState) => {
 		layerGraphs = resolveCompositionLayerGraphs(compositionId, actionState);
@@ -120,10 +153,8 @@ export const createPropertyManager = (
 		propertyStore.reset(actionState, compositionId);
 		layerGraphNodeOutputMap = {};
 
-		for (const nodeId of layerGraphs.toCompute) {
-			const { frameIndex } = actionState.compositionState.compositions[compositionId];
-			computeNode(actionState, nodeId, { frameIndex });
-		}
+		const { frameIndex } = actionState.compositionState.compositions[compositionId];
+		computeNodeList(actionState, layerGraphs.toCompute, frameIndex);
 	};
 
 	reset(actionState);
@@ -138,6 +169,14 @@ export const createPropertyManager = (
 		if (typeof frameIndex === "undefined") {
 			const composition = actionState.compositionState.compositions[compositionId];
 			frameIndex = composition.frameIndex;
+		}
+
+		// If errors are present, we compute the entire graph from
+		// start to finish.
+		if (errors.length > 0) {
+			errors = [];
+			computeNodeList(actionState, layerGraphs.toCompute, frameIndex);
+			return;
 		}
 
 		const nodeIdsToUpdate = new Set<string>();
@@ -155,10 +194,8 @@ export const createPropertyManager = (
 		for (const nodeId of nodeIds) {
 			dfs(nodeId);
 		}
-		const toUpdate = [...nodeIdsToUpdate].sort(layerGraphs.compareNodeIds);
-		for (const nodeId of toUpdate) {
-			computeNode(actionState, nodeId, { frameIndex });
-		}
+		const toCompute = [...nodeIdsToUpdate].sort(layerGraphs.compareNodeIds);
+		computeNodeList(actionState, toCompute, frameIndex);
 	};
 
 	const self: PropertyManager = {
@@ -288,6 +325,8 @@ export const createPropertyManager = (
 
 			return layerPerformables;
 		},
+
+		getErrors: () => errors,
 	};
 	return self;
 };

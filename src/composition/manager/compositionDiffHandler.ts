@@ -44,4 +44,6 @@ export const passDiffsToManagers = (
 
 	ctx.layers.sendDiffs(actionState, diffs, direction);
 	ctx.prevState = getActionStateFromApplicationState(store.getState());
+
+	ctx.setErrors(ctx.properties.getErrors());
 };
