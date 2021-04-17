@@ -1,5 +1,4 @@
 import React from "react";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps } from "~/flow/flowTypes";
 import { NodeNumberInput } from "~/flow/inputs/NodeNumberInput";
 import { NodeTValueInput } from "~/flow/inputs/NodeTValueInput";
@@ -25,7 +24,7 @@ function NumberLerpNodeComponent(props: Props) {
 	const baseProps = { areaId, graphId, nodeId, zIndex };
 
 	return (
-		<FlowNodeBody {...baseProps}>
+		<>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -48,7 +47,7 @@ function NumberLerpNodeComponent(props: Props) {
 			<NodeNumberInput {...baseProps} index={0} />
 			<NodeNumberInput {...baseProps} index={1} />
 			<NodeTValueInput {...baseProps} index={2} />
-		</FlowNodeBody>
+		</>
 	);
 }
 

@@ -1,6 +1,5 @@
-import { FlowNodeError } from "~/flow/FlowNodeError";
 import { FlowNodeState } from "~/flow/flowNodeState";
-import { ValueType } from "~/types";
+import { CompositionError, ValueType } from "~/types";
 
 export enum FlowNodeType {
 	empty = "empty",
@@ -88,5 +87,5 @@ export type ComputeFlowNodeResult =
 	  }
 	| {
 			status: "error";
-			errors: FlowNodeError[];
+			errors: CompositionError[];
 	  };

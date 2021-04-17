@@ -204,7 +204,7 @@ const Block: React.FC<{ rgb: RGBColor; hue: number; onRgbChange: (rgb: RGBColor)
 interface Props {
 	rgbColor: RGBColor;
 	onChange: (rgbColor: RGBColor) => void;
-	onSubmit: () => void;
+	onSubmit?: () => void;
 }
 
 export const ColorPicker: React.FC<Props> = (props) => {
@@ -242,9 +242,11 @@ export const ColorPicker: React.FC<Props> = (props) => {
 						marginBottom: 16,
 					}}
 				/>
-				<button onClick={props.onSubmit} style={{ display: "block", width: "100%" }}>
-					OK
-				</button>
+				{props.onSubmit && (
+					<button onClick={props.onSubmit} style={{ display: "block", width: "100%" }}>
+						OK
+					</button>
+				)}
 			</div>
 		</div>
 	);

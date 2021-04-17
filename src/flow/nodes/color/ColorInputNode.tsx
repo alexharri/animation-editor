@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import { ColorPicker } from "~/components/colorPicker/ColorPicker";
 import { contextMenuActions } from "~/contextMenu/contextMenuActions";
 import { ContextMenuBaseProps, OpenCustomContextMenuOptions } from "~/contextMenu/contextMenuTypes";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeNumberInput } from "~/flow/components/FlowNodeNumberInput";
 import { FlowNodeTValueInput } from "~/flow/components/FlowNodeTValueInput";
 import { FlowNodeState } from "~/flow/flowNodeState";
@@ -32,7 +31,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const ColorInputNodeComponent: React.FC<Props> = (props) => {
-	const { areaId, graphId, nodeId, outputs, state, zIndex } = props;
+	const { graphId, nodeId, outputs, state } = props;
 
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const getButtonRect = useGetRefRectFn(buttonRef);
@@ -128,7 +127,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 	};
 
 	return (
-		<FlowNodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
+		<>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -180,7 +179,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 					horizontalPadding
 				/>
 			))}
-		</FlowNodeBody>
+		</>
 	);
 };
 

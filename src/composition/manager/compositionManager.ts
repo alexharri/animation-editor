@@ -17,7 +17,7 @@ import { Diff, DiffType } from "~/diff/diffs";
 import { subscribeToDiffs, unsubscribeToDiffs } from "~/listener/diffListener";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
-import { LayerDimension } from "~/types";
+import { CompositionError, LayerDimension } from "~/types";
 import { Area } from "~/types/areaTypes";
 
 const compositionManagersByAreaId: Partial<Record<string, CompositionManager>> = {};
@@ -45,7 +45,7 @@ export interface CompositionManager {
 	properties: PropertyManager;
 	hitTest: HitTestManager;
 	onDiffs: (actionState: ActionState, diffs: Diff[], direction: "forward" | "backward") => void;
-	setErrors: (errors: Error[]) => void;
+	setErrors: (errors: CompositionError[]) => void;
 
 	/**
 	 * The state after the last call to `onDiffs`.
@@ -63,7 +63,7 @@ interface ManageCompositionOptions {
 	initialScale?: number;
 	depth: number;
 	dimensions?: LayerDimension[];
-	setErrors: (errors: Error[]) => void;
+	setErrors: (errors: CompositionError[]) => void;
 }
 
 export const manageComposition = (options: ManageCompositionOptions): CompositionManager => {
@@ -134,7 +134,7 @@ export const manageTopLevelComposition = (
 	compositionId: string,
 	areaId: string,
 	canvas: HTMLCanvasElement,
-	setErrors: (errors: Error[]) => void,
+	setErrors: (errors: CompositionError[]) => void,
 ) => {
 	let prevState = getActionStateFromApplicationState(store.getState());
 

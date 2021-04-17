@@ -1,5 +1,4 @@
 import React from "react";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps } from "~/flow/flowTypes";
 import { NodeTValueInput } from "~/flow/inputs/NodeTValueInput";
 import { NodeVec2Input } from "~/flow/inputs/NodeVec2Input";
@@ -25,7 +24,7 @@ function Vec2LerpNodeComponent(props: Props) {
 	const baseProps = { areaId, graphId, nodeId, zIndex };
 
 	return (
-		<FlowNodeBody {...baseProps}>
+		<>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -48,7 +47,7 @@ function Vec2LerpNodeComponent(props: Props) {
 			<NodeVec2Input {...baseProps} index={0} />
 			<NodeVec2Input {...baseProps} index={1} />
 			<NodeTValueInput {...baseProps} index={2} />
-		</FlowNodeBody>
+		</>
 	);
 }
 

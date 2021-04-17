@@ -4,7 +4,6 @@ import {
 	getLayerCompoundPropertyLabel,
 	getLayerPropertyLabel,
 } from "~/composition/util/compositionPropertyUtils";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps, FlowNodeType } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
@@ -35,15 +34,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function PropertyInputNodeComponent(props: Props) {
-	const {
-		areaId,
-		graphId,
-		nodeId,
-		outputs,
-		compositionLayerIds,
-		layerPropertyIds,
-		zIndex,
-	} = props;
+	const { outputs, compositionLayerIds, layerPropertyIds } = props;
 
 	const onSelectLayer = (layerId: string) => {
 		requestAction({ history: true }, (params) => {
@@ -124,7 +115,7 @@ function PropertyInputNodeComponent(props: Props) {
 	};
 
 	return (
-		<FlowNodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
+		<>
 			<PropertyNodeSelectProperty
 				selectFromLayerIds={compositionLayerIds}
 				selectFromPropertyIds={layerPropertyIds}
@@ -152,7 +143,7 @@ function PropertyInputNodeComponent(props: Props) {
 					</div>
 				);
 			})}
-		</FlowNodeBody>
+		</>
 	);
 }
 

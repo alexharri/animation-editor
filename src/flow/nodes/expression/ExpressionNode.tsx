@@ -1,5 +1,4 @@
 import React from "react";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps } from "~/flow/flowTypes";
 import { ExpressionNodeInput } from "~/flow/nodes/expression/ExpressionNodeInput";
 import { ExpressionNodeOutput } from "~/flow/nodes/expression/ExpressionNodeOutput";
@@ -22,16 +21,10 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function ExpressionNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, inputs, zIndex } = props;
+	const { graphId, nodeId, outputs, inputs } = props;
 
 	return (
-		<FlowNodeBody
-			areaId={areaId}
-			graphId={graphId}
-			nodeId={nodeId}
-			allowResize={false}
-			zIndex={zIndex}
-		>
+		<>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -98,7 +91,7 @@ function ExpressionNodeComponent(props: Props) {
 					</div>
 				);
 			})}
-		</FlowNodeBody>
+		</>
 	);
 }
 

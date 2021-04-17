@@ -3,11 +3,10 @@ import { Property } from "~/composition/compositionTypes";
 import { LayerGraphsInfo } from "~/composition/layer/layerComputePropertiesOrder";
 import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { computeNodeOutputsFromInputArgs } from "~/flow/flowComputeNode";
-import { FlowNodeError } from "~/flow/FlowNodeError";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { ComputeFlowNodeResult, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { parseTypedValue } from "~/flow/flowValueConversion";
-import { ValueType } from "~/types";
+import { CompositionError, CompositionErrorType, ValueType } from "~/types";
 
 const resolvePropertyInputNode = (
 	actionState: ActionState,
@@ -134,11 +133,18 @@ const resolveExpressionNodeOutputs = (
 	} catch (e) {
 		return {
 			status: "error",
-			errors: [e || new FlowNodeError("Expression evaluation failed", { graphId, nodeId })],
+			errors: [
+				{
+					type: CompositionErrorType.FlowNode,
+					graphId,
+					nodeId,
+					error: e || new Error("Expression evaluation failed"),
+				},
+			],
 		};
 	}
 
-	const resolve = (res: any): [FlowNodeError | null, unknown] => {
+	const resolve = (res: any): [CompositionError | null, unknown] => {
 		switch (mathjs.typeOf(res)) {
 			case "Matrix": {
 				const data = res._data as any[];
@@ -157,14 +163,19 @@ const resolveExpressionNodeOutputs = (
 				return [null, res];
 			default:
 				return [
-					new FlowNodeError(`Unknown type '${mathjs.typeOf(res)}'`, { graphId, nodeId }),
+					{
+						type: CompositionErrorType.FlowNode,
+						graphId,
+						nodeId,
+						error: new Error(`Unknown type '${mathjs.typeOf(res)}'`),
+					},
 					null,
 				];
 		}
 	};
 
 	const results: unknown[] = [];
-	const errors: FlowNodeError[] = [];
+	const errors: CompositionError[] = [];
 
 	for (const output of node.outputs) {
 		const [error, value] = resolve(scope[output.name]);
@@ -176,12 +187,12 @@ const resolveExpressionNodeOutputs = (
 		const parsed = parseTypedValue(ValueType.Any, output.type, value);
 
 		if (typeof parsed === "undefined") {
-			errors.push(
-				new FlowNodeError(`Failed to compute '${output.name}' of type '${output.type}'.`, {
-					nodeId,
-					graphId,
-				}),
-			);
+			errors.push({
+				type: CompositionErrorType.FlowNode,
+				nodeId,
+				graphId,
+				error: new Error(`Failed to compute '${output.name}' of type '${output.type}'.`),
+			});
 			continue;
 		}
 

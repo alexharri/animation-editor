@@ -1,5 +1,8 @@
 import * as mathjs from "mathjs";
-import { resolveCompositionLayerGraphs } from "~/composition/layer/layerComputePropertiesOrder";
+import {
+	LayerGraphsInfo,
+	resolveCompositionLayerGraphs,
+} from "~/composition/layer/layerComputePropertiesOrder";
 import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { getPropertyIdsAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
 import { createPropertyInfoRegistry } from "~/composition/property/propertyInfoMap";
@@ -8,10 +11,9 @@ import {
 	recomputePropertyValueArraysAffectedByNode,
 	recomputePropertyValuesAffectedByNode,
 } from "~/composition/property/recomputePropertyValuesAffectedByNode";
-import { FlowNodeError } from "~/flow/FlowNodeError";
 import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { computeLayerGraphNodeOutputs, getGraphNodeInputs } from "~/flow/graphNodeOutputs";
-import { Performable } from "~/types";
+import { CompositionError, Performable } from "~/types";
 
 type LayerPerformables = { layerId: string; performables: Performable[] };
 
@@ -40,16 +42,16 @@ export interface PropertyManager {
 		options: GetActionsToPerformOptions,
 	) => LayerPerformables[];
 	getActionsToPerformOnFrameIndexChange: () => LayerPerformables[];
-	getErrors: () => Error[];
+	getErrors: () => CompositionError[];
 }
 
 export const createPropertyManager = (
 	compositionId: string,
 	actionState: ActionState,
 ): PropertyManager => {
-	let errors: FlowNodeError[] = [];
+	let errors: CompositionError[] = [];
 
-	let layerGraphs = resolveCompositionLayerGraphs(compositionId, actionState);
+	let layerGraphs!: LayerGraphsInfo;
 	const propertyStore = new PropertyStore();
 	let layerGraphNodeOutputMap: Record<string, unknown[]> = {};
 	let arrayModifierGraphNodeOutputMap: Record<string, unknown[][]> = {};
@@ -148,7 +150,14 @@ export const createPropertyManager = (
 	};
 
 	const reset = (actionState: ActionState) => {
-		layerGraphs = resolveCompositionLayerGraphs(compositionId, actionState);
+		const layerGraphsResult = resolveCompositionLayerGraphs(compositionId, actionState);
+
+		if (layerGraphsResult.status === "error") {
+			errors = layerGraphsResult.errors;
+			return;
+		}
+
+		layerGraphs = layerGraphsResult.info;
 		propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 		propertyStore.reset(actionState, compositionId);
 		layerGraphNodeOutputMap = {};

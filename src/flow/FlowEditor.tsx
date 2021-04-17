@@ -1,31 +1,23 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPropertyManager } from "~/composition/manager/property/propertyManager";
+import { propertyManagerDiffHandler } from "~/composition/manager/property/propertyManagerDiffHandler";
 import { cssCursors, cssZIndex } from "~/cssVariables";
+import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowEditorDragSelect } from "~/flow/dragSelect/FlowEditorDragSelect";
 import styles from "~/flow/FlowEditor.styles";
 import { FlowEditorConnections } from "~/flow/FlowEditorConnections";
 import { flowEditorHandlers } from "~/flow/flowEditorHandlers";
-import { FlowGraph, FlowNode, FlowNodeType } from "~/flow/flowTypes";
+import { getFlowNodeComponent } from "~/flow/flowNodeComponents";
+import { FlowGraph, FlowNode } from "~/flow/flowTypes";
 import { flowEditorGlobalToNormal } from "~/flow/flowUtils";
-import { ArrayModifierIndexNode } from "~/flow/nodes/arrayModifier/ArrayModifierIndexNode";
-import { CapNumberNode } from "~/flow/nodes/CapNumberNode";
-import { ColorInputNode } from "~/flow/nodes/color/ColorInputNode";
-import { DegToRadNode } from "~/flow/nodes/DegToRadNode";
-import { ExpressionNode } from "~/flow/nodes/expression/ExpressionNode";
-import { Node } from "~/flow/nodes/Node";
 import { NodePreview } from "~/flow/nodes/NodePreview";
-import { NumberInputNode } from "~/flow/nodes/NumberInputNode";
-import { NumberLerpNode } from "~/flow/nodes/NumberLerpNode";
-import { PropertyInputNode } from "~/flow/nodes/property/PropertyInputNode";
-import { PropertyOutputNode } from "~/flow/nodes/property/PropertyOutputNode";
-import { RadToDegNode } from "~/flow/nodes/RadToDegNode";
-import { Vec2AddNode } from "~/flow/nodes/vec2/Vec2AddNode";
-import { Vec2FactorsNode } from "~/flow/nodes/vec2/Vec2FactorsNode";
-import { Vec2InputNode } from "~/flow/nodes/vec2/Vec2InputNode";
-import { Vec2LerpNode } from "~/flow/nodes/vec2/Vec2LerpNode";
 import { FlowAreaState } from "~/flow/state/flowAreaReducer";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
-import { connectActionState } from "~/state/stateUtils";
+import { subscribeToDiffs, unsubscribeToDiffs } from "~/listener/diffListener";
+import { connectActionState, getActionState } from "~/state/stateUtils";
+import { CompositionError, CompositionErrorType } from "~/types";
 import { AreaComponentProps } from "~/types/areaTypes";
+import { isArrayShallowEqual } from "~/util/arrayUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
@@ -119,6 +111,70 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 
 	const nodeIds = graph.nodes;
 
+	const compositionId = useMemo(() => {
+		const actionState = getActionState();
+		let compositionId: string;
+
+		switch (graph.type) {
+			case "layer_graph":
+				compositionId = actionState.compositionState.layers[graph.layerId].compositionId;
+				break;
+			case "array_modifier_graph":
+				compositionId =
+					actionState.compositionState.properties[graph.propertyId].compositionId;
+				break;
+			default:
+				throw new Error(`Unexpected graph type '${graph.type}'.`);
+		}
+		return compositionId;
+	}, []);
+
+	const propertyManager = useMemo(() => {
+		return createPropertyManager(compositionId, getActionState());
+	}, []);
+
+	const [errors, setErrors] = useState(() => propertyManager.getErrors());
+
+	useEffect(() => {
+		let prevState = getActionState();
+
+		const token = subscribeToDiffs((actionState, diffs, direction) => {
+			propertyManagerDiffHandler(
+				compositionId,
+				propertyManager,
+				actionState,
+				diffs,
+				direction,
+				prevState,
+			);
+			prevState = actionState;
+
+			const nextErrors = propertyManager.getErrors();
+			if (!isArrayShallowEqual(nextErrors, errors)) {
+				setErrors(nextErrors);
+			}
+		});
+
+		return () => {
+			unsubscribeToDiffs(token);
+		};
+	}, []);
+
+	const errorsByNodeId = useMemo(() => {
+		const map: Partial<Record<string, CompositionError[]>> = {};
+		for (const error of errors) {
+			if (error.type !== CompositionErrorType.FlowNode) {
+				continue;
+			}
+			const { nodeId } = error;
+			if (!map[nodeId]) {
+				map[nodeId] = [];
+			}
+			map[nodeId]!.push(error);
+		}
+		return map;
+	}, [errors]);
+
 	return (
 		<>
 			<div
@@ -168,92 +224,24 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 						}}
 					>
 						{nodeIds.map((nodeId, i) => {
-							let NodeComponent: React.ComponentType<{
-								areaId: string;
-								graphId: string;
-								nodeId: string;
-								zIndex: number;
-							}> = Node;
-
-							switch (props.nodes[nodeId].type) {
-								case FlowNodeType.expr: {
-									NodeComponent = ExpressionNode;
-									break;
-								}
-
-								case FlowNodeType.num_lerp: {
-									NodeComponent = NumberLerpNode;
-									break;
-								}
-
-								case FlowNodeType.property_input: {
-									NodeComponent = PropertyInputNode;
-									break;
-								}
-
-								case FlowNodeType.num_cap: {
-									NodeComponent = CapNumberNode;
-									break;
-								}
-
-								case FlowNodeType.property_output: {
-									NodeComponent = PropertyOutputNode;
-									break;
-								}
-
-								case FlowNodeType.color_input: {
-									NodeComponent = ColorInputNode;
-									break;
-								}
-
-								case FlowNodeType.num_input: {
-									NodeComponent = NumberInputNode;
-									break;
-								}
-
-								case FlowNodeType.deg_to_rad: {
-									NodeComponent = DegToRadNode;
-									break;
-								}
-
-								case FlowNodeType.rad_to_deg: {
-									NodeComponent = RadToDegNode;
-									break;
-								}
-
-								case FlowNodeType.vec2_add: {
-									NodeComponent = Vec2AddNode;
-									break;
-								}
-
-								case FlowNodeType.vec2_lerp: {
-									NodeComponent = Vec2LerpNode;
-									break;
-								}
-
-								case FlowNodeType.vec2_factors: {
-									NodeComponent = Vec2FactorsNode;
-									break;
-								}
-
-								case FlowNodeType.vec2_input: {
-									NodeComponent = Vec2InputNode;
-									break;
-								}
-
-								case FlowNodeType.array_modifier_index:
-									NodeComponent = ArrayModifierIndexNode;
-									break;
-							}
-
+							const NodeComponent = getFlowNodeComponent(props.nodes[nodeId].type);
 							return (
-								<NodeComponent
+								<FlowNodeBody
+									scale={scale}
 									key={nodeId}
 									nodeId={nodeId}
 									areaId={props.areaId}
 									graphId={props.areaState.graphId}
+									errors={errorsByNodeId[nodeId] || []}
 									zIndex={i}
-								/>
+								>
+									<NodeComponent
+										nodeId={nodeId}
+										areaId={props.areaId}
+										graphId={props.areaState.graphId}
+										zIndex={i}
+									/>
+								</FlowNodeBody>
 							);
 						})}
 

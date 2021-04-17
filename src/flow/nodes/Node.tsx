@@ -1,5 +1,4 @@
 import React from "react";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
 import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
@@ -18,10 +17,10 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function NodeComponent(props: Props) {
-	const { nodeId, areaId, graphId, outputs, inputs, zIndex } = props;
+	const { outputs, inputs } = props;
 
 	return (
-		<FlowNodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
+		<>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -70,7 +69,7 @@ function NodeComponent(props: Props) {
 					</div>
 				);
 			})}
-		</FlowNodeBody>
+		</>
 	);
 }
 

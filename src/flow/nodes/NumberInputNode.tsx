@@ -1,5 +1,4 @@
 import React from "react";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeNumberInput } from "~/flow/components/FlowNodeNumberInput";
 import { FlowNodeSelect } from "~/flow/components/FlowNodeSelect";
 import { FlowNodeTValueInput } from "~/flow/components/FlowNodeTValueInput";
@@ -24,7 +23,7 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function NumberInputNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, state, zIndex } = props;
+	const { graphId, nodeId, outputs, state } = props;
 
 	const { onChange, onChangeEnd } = useNumberInputAction({
 		onChange: (value, params) => {
@@ -53,7 +52,7 @@ function NumberInputNodeComponent(props: Props) {
 	};
 
 	return (
-		<FlowNodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
+		<>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -104,7 +103,7 @@ function NumberInputNodeComponent(props: Props) {
 					horizontalPadding
 				/>
 			)}
-		</FlowNodeBody>
+		</>
 	);
 }
 

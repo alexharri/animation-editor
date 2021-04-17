@@ -80,8 +80,7 @@ const WorkspaceComponent: React.FC<Props> = (props) => {
 			props.areaId,
 			canvas,
 			(nextErrors) => {
-				console.log(nextErrors);
-				const errorMessages = nextErrors.map((error) => error.message);
+				const errorMessages = nextErrors.map((error) => error.error.message);
 				if (isArrayShallowEqual(errorsRef.current, errorMessages)) {
 					return;
 				}
