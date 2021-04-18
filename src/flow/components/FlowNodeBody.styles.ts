@@ -58,8 +58,8 @@ export default ({ css }: StyleParams) => ({
 		position: absolute;
 		top: calc(100% + 8px);
 		left: 0;
-		background: ${cssVariables.gray500};
-		border: 1px solid ${cssVariables.light200};
+		background: ${cssVariables.dark800};
+		border: 1px solid red;
 		color: ${cssVariables.light500};
 		width: 320px;
 		transform-origin: 0 0;
