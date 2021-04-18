@@ -8,6 +8,7 @@ import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
 import { findGraphOutputNodes } from "~/flow/graph/graphOutputNodes";
+import { CompositionError, CompositionErrorType } from "~/types";
 
 function propertyOutputNodeHasAffectedProperty(
 	findPropertyId: string,
@@ -83,10 +84,20 @@ export interface LayerGraphsInfo {
 	arrayModifierGroupToCount: Record<string, string>;
 }
 
+type Result =
+	| {
+			status: "ok";
+			info: LayerGraphsInfo;
+	  }
+	| {
+			status: "error";
+			errors: CompositionError[];
+	  };
+
 export const resolveCompositionLayerGraphs = (
 	compositionId: string,
 	actionState: ActionState,
-): LayerGraphsInfo => {
+): Result => {
 	const { compositionState, flowState } = actionState;
 
 	const composition = compositionState.compositions[compositionId];
@@ -120,17 +131,34 @@ export const resolveCompositionLayerGraphs = (
 	const expressions: Record<string, EvalFunction> = {};
 
 	// Populate `nodeToNext` and `expressions`
-	for (const graphId of graphIds) {
-		const graph = flowState.graphs[graphId];
-		for (const nodeId of graph.nodes) {
-			nodeToNext[nodeId] = [];
+	{
+		const errors: CompositionError[] = [];
 
-			const node = flowState.nodes[nodeId];
-			if (node.type === FlowNodeType.expr) {
-				const state = node.state as FlowNodeState<FlowNodeType.expr>;
-				const evalFn = mathjs.compile(state.expression);
-				expressions[node.id] = evalFn;
+		for (const graphId of graphIds) {
+			const graph = flowState.graphs[graphId];
+			for (const nodeId of graph.nodes) {
+				nodeToNext[nodeId] = [];
+
+				const node = flowState.nodes[nodeId];
+				if (node.type === FlowNodeType.expr) {
+					try {
+						const state = node.state as FlowNodeState<FlowNodeType.expr>;
+						const evalFn = mathjs.compile(state.expression);
+						expressions[node.id] = evalFn;
+					} catch (e) {
+						errors.push({
+							type: CompositionErrorType.FlowNode,
+							graphId,
+							nodeId,
+							error: e || new Error("Failed to compile expression"),
+						});
+					}
+				}
 			}
+		}
+
+		if (errors.length > 0) {
+			return { status: "error", errors };
 		}
 	}
 
@@ -320,13 +348,16 @@ export const resolveCompositionLayerGraphs = (
 	}, {});
 
 	return {
-		toCompute,
-		nodeToNext,
-		expressions,
-		propertyIdToAffectedInputNodes,
-		nodeIdsThatEmitFrameIndex,
-		arrayModifierGroupToCount,
-		propertyIdsAffectedByFrameIndexByLayer,
-		compareNodeIds: (a, b) => nodeToIndex[a] - nodeToIndex[b],
+		status: "ok",
+		info: {
+			toCompute,
+			nodeToNext,
+			expressions,
+			propertyIdToAffectedInputNodes,
+			nodeIdsThatEmitFrameIndex,
+			arrayModifierGroupToCount,
+			propertyIdsAffectedByFrameIndexByLayer,
+			compareNodeIds: (a, b) => nodeToIndex[a] - nodeToIndex[b],
+		},
 	};
 };

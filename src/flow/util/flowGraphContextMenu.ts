@@ -8,7 +8,6 @@ import { flowActions } from "~/flow/state/flowActions";
 import { RequestActionParams } from "~/listener/requestAction";
 import { getActionState, getAreaActionState } from "~/state/stateUtils";
 import { PropertyGroupName } from "~/types";
-import { createMapNumberId } from "~/util/mapUtils";
 
 interface Options {
 	graphId: string;
@@ -63,10 +62,9 @@ export const getFlowGraphContextMenuOptions = (options: Options) => {
 			if (!e) {
 				return;
 			}
-			const expectedNodeId = createMapNumberId(getActionState().flowState.nodes);
 			const pos = flowEditorGlobalToNormal(Vec2.fromEvent(e), viewport, scale, pan);
 			params.dispatch(flowActions.submitAddNode(graphId, pos));
-			params.addDiff((diff) => diff.addFlowNode(expectedNodeId));
+			params.addDiff((diff) => diff.propertyStructure(layerId));
 			params.submitAction("Add node");
 		};
 		setClickCapture({ fn });

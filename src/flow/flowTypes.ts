@@ -1,5 +1,5 @@
 import { FlowNodeState } from "~/flow/flowNodeState";
-import { ValueType } from "~/types";
+import { CompositionError, ValueType } from "~/types";
 
 export enum FlowNodeType {
 	empty = "empty",
@@ -38,11 +38,6 @@ export interface FlowNodeProps {
 	nodeId: string;
 	zIndex: number;
 }
-
-export type FlowComputeNodeArg = {
-	type: ValueType;
-	value: any;
-};
 
 export interface FlowGraph {
 	type: "layer_graph" | "array_modifier_graph";
@@ -84,3 +79,13 @@ export interface FlowNodeIO {
 	inputs: FlowNodeInput[];
 	outputs: FlowNodeOutput[];
 }
+
+export type ComputeFlowNodeResult =
+	| {
+			status: "ok";
+			results: unknown[];
+	  }
+	| {
+			status: "error";
+			errors: CompositionError[];
+	  };

@@ -1,9 +1,7 @@
 import { FlowState } from "~/flow/state/flowReducers";
-import { getExpressionIO } from "~/util/math/expressions";
+import { ExpressionIO } from "~/util/math/expressions";
 
-export const getExpressionUpdateIO = (expression: string, flowState: FlowState, nodeId: string) => {
-	const io = getExpressionIO(expression);
-
+export const getExpressionUpdateIO = (io: ExpressionIO, flowState: FlowState, nodeId: string) => {
 	const node = flowState.nodes[nodeId];
 	const graph = flowState.graphs[node.graphId];
 

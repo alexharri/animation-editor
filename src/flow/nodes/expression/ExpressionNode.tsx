@@ -1,6 +1,7 @@
 import React from "react";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps } from "~/flow/flowTypes";
+import { ExpressionNodeInput } from "~/flow/nodes/expression/ExpressionNodeInput";
+import { ExpressionNodeOutput } from "~/flow/nodes/expression/ExpressionNodeOutput";
 import { ExpressionNodeTextarea } from "~/flow/nodes/expression/ExpressionNodeTextarea";
 import NodeStyles from "~/flow/nodes/Node.styles";
 import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
@@ -20,19 +21,16 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function ExpressionNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, inputs, zIndex } = props;
+	const { graphId, nodeId, outputs, inputs } = props;
 
 	return (
-		<FlowNodeBody
-			areaId={areaId}
-			graphId={graphId}
-			nodeId={nodeId}
-			allowResize={false}
-			zIndex={zIndex}
-		>
+		<>
 			{outputs.map((output, i) => {
 				return (
-					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
+					<div
+						className={s("output", { noPadding: true, last: i === outputs.length - 1 })}
+						key={i}
+					>
 						<div
 							className={s("output__circle")}
 							onMouseDown={(e) =>
@@ -45,7 +43,11 @@ function ExpressionNodeComponent(props: Props) {
 								)
 							}
 						/>
-						<div className={s("output__name")}>{output.name}</div>
+						<ExpressionNodeOutput
+							nodeId={nodeId}
+							outputIndex={i}
+							valueType={output.type}
+						/>
 					</div>
 				);
 			})}
@@ -58,7 +60,7 @@ function ExpressionNodeComponent(props: Props) {
 			</div>
 			{inputs.map((input, i) => {
 				return (
-					<div className={s("input")} key={i}>
+					<div className={s("input", { noPadding: true })} key={i}>
 						<div
 							className={s("input__circle")}
 							onMouseDown={separateLeftRightMouse({
@@ -81,11 +83,16 @@ function ExpressionNodeComponent(props: Props) {
 											),
 							})}
 						/>
-						<div className={s("input__name")}>{input.name}</div>
+						<ExpressionNodeInput
+							inputIndex={i}
+							nodeId={nodeId}
+							value={input.value}
+							valueType={input.type}
+						/>
 					</div>
 				);
 			})}
-		</FlowNodeBody>
+		</>
 	);
 }
 

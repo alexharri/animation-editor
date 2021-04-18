@@ -13,9 +13,10 @@ export class PropertyStore {
 	> = {};
 	private computedValueArrays: Partial<Record<string, any[]>> = {};
 
-	constructor() {
+	constructor(actionState: ActionState, compositionId: string) {
 		this.getPropertyValue = this.getPropertyValue.bind(this);
 		this.getPropertyValueAtIndex = this.getPropertyValueAtIndex.bind(this);
+		this.reset(actionState, compositionId);
 	}
 
 	public getPropertyValue(propertyId: string): any {

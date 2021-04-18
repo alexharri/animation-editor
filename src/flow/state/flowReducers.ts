@@ -3,7 +3,11 @@ import { DEFAULT_FLOW_NODE_WIDTH } from "~/constants";
 import { getFlowNodeDefaultInputs, getFlowNodeDefaultOutputs } from "~/flow/flowIO";
 import { getFlowNodeDefaultState } from "~/flow/flowNodeState";
 import { FlowGraph, FlowNode, FlowNodeInput } from "~/flow/flowTypes";
-import { removeFlowNodeAndReferencesToIt, removeReferencesToFlowNode } from "~/flow/flowUtils";
+import {
+	getExpressionNodeInputDefaultValue,
+	removeFlowNodeAndReferencesToIt,
+	removeReferencesToFlowNode,
+} from "~/flow/flowUtils";
 import { flowActions as actions } from "~/flow/state/flowActions";
 import {
 	createMapNumberId,
@@ -164,6 +168,45 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
 		case getType(actions.setNodeInputs): {
 			const { nodeId, inputs } = action.payload;
 			return { ...state, nodes: mergeItemInMap(state.nodes, nodeId, () => ({ inputs })) };
+		}
+
+		case getType(actions.setNodeInputType): {
+			const { nodeId, inputIndex, valueType } = action.payload;
+
+			return {
+				...state,
+				nodes: mergeItemInMap(state.nodes, nodeId, (node) => ({
+					inputs: node.inputs.map((input, i) => {
+						if (i !== inputIndex) {
+							return input;
+						}
+						return {
+							...input,
+							type: valueType,
+							value: getExpressionNodeInputDefaultValue(valueType),
+						};
+					}),
+				})),
+			};
+		}
+
+		case getType(actions.setNodeOutputType): {
+			const { nodeId, outputIndex, valueType } = action.payload;
+
+			return {
+				...state,
+				nodes: mergeItemInMap(state.nodes, nodeId, (node) => ({
+					outputs: node.outputs.map((input, i) => {
+						if (i !== outputIndex) {
+							return input;
+						}
+						return {
+							...input,
+							type: valueType,
+						};
+					}),
+				})),
+			};
 		}
 
 		case getType(actions.addNodeOutput): {

@@ -40,6 +40,4 @@ export class GraphicManager {
 			delete this.layerToGraphic[layerId];
 		}
 	}
-
-	public onArrayModifierChange(actionState: ActionState, layer: Layer) {}
 }

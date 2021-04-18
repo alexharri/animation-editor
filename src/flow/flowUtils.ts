@@ -2,6 +2,7 @@ import { CompositionState } from "~/composition/compositionReducer";
 import { FlowNodeType } from "~/flow/flowTypes";
 import { FlowState } from "~/flow/state/flowReducers";
 import { FlowGraphSelection, FlowSelectionState } from "~/flow/state/flowSelectionReducer";
+import { ValueType } from "~/types";
 import { isMapShallowEqual, mergeItemInMap, removeKeysFromMap } from "~/util/mapUtils";
 
 const flowNodeTypeToLabel: Record<FlowNodeType, string> = {
@@ -218,4 +219,24 @@ export const getFlowNodeAssociatedCompositionId = (
 	}
 
 	return undefined;
+};
+
+export const getExpressionNodeInputDefaultValue = (valueType: ValueType) => {
+	switch (valueType) {
+		case ValueType.Any:
+			return undefined;
+		case ValueType.Number:
+			return 0;
+		case ValueType.Vec2:
+			return Vec2.new(0, 0);
+		case ValueType.Rect:
+			return {
+				left: 0,
+				top: 0,
+				width: 0,
+				height: 0,
+			};
+		default:
+			throw new Error(`Invalid value type '${valueType}'`);
+	}
 };

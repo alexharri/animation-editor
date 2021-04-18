@@ -1,5 +1,4 @@
 import React from "react";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps } from "~/flow/flowTypes";
 import { NodeNumberInput } from "~/flow/inputs/NodeNumberInput";
 import NodeStyles from "~/flow/nodes/Node.styles";
@@ -24,7 +23,7 @@ function RadToDegNodeComponent(props: Props) {
 	const baseProps = { areaId, graphId, nodeId, zIndex };
 
 	return (
-		<FlowNodeBody {...baseProps}>
+		<>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -45,7 +44,7 @@ function RadToDegNodeComponent(props: Props) {
 				);
 			})}
 			<NodeNumberInput {...baseProps} index={0} tick={0.1} decimalPlaces={2} />
-		</FlowNodeBody>
+		</>
 	);
 }
 

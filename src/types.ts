@@ -219,3 +219,24 @@ export type LayerDimension =
 			count: number;
 			matrices: PIXI.Matrix[];
 	  };
+
+interface _ErrorBase {
+	error: Error;
+}
+
+export enum CompositionErrorType {
+	FlowNode,
+	General,
+}
+
+interface IFlowNodeError extends _ErrorBase {
+	type: CompositionErrorType.FlowNode;
+	graphId: string;
+	nodeId: string;
+}
+
+interface IGeneralError extends _ErrorBase {
+	type: CompositionErrorType.General;
+}
+
+export type CompositionError = IFlowNodeError | IGeneralError;

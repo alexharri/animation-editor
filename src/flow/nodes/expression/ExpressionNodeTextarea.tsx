@@ -16,6 +16,7 @@ import { isKeyCodeOf } from "~/listener/keyboard";
 import { requestAction, RequestActionParams } from "~/listener/requestAction";
 import { connectActionState, getActionState } from "~/state/stateUtils";
 import { ValueType } from "~/types";
+import { getExpressionIO } from "~/util/math/expressions";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
@@ -118,10 +119,19 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 				expression,
 			}),
 		);
+		params.addDiff((diff) => diff.flowNodeExpression(nodeId));
 
 		const { flowState } = getActionState();
 
-		const toUpdate = getExpressionUpdateIO(expression, flowState, nodeId);
+		const [err, io] = getExpressionIO(expression);
+
+		if (err) {
+			// The expression is not valid. We cannot compute the IO of the expression.
+			params.submitAction("Modify expression");
+			return;
+		}
+
+		const toUpdate = getExpressionUpdateIO(io, flowState, nodeId);
 
 		const toDispatch: any[] = [
 			flowActions.removeNodeInputs(graphId, nodeId, toUpdate.inputIndicesToRemove),
@@ -133,7 +143,7 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 				flowActions.addNodeInput(graphId, nodeId, {
 					name: input,
 					pointer: null,
-					type: ValueType.Any,
+					type: ValueType.Number,
 					value: 0,
 				}),
 			);
@@ -142,13 +152,12 @@ const ExpressionNodeTextareaComponent: React.FC<Props> = (props) => {
 			toDispatch.push(
 				flowActions.addNodeOutput(graphId, nodeId, {
 					name: output,
-					type: ValueType.Any,
+					type: ValueType.Number,
 				}),
 			);
 		});
 
 		params.dispatch(toDispatch);
-		params.addDiff((diff) => diff.flowNodeExpression(nodeId));
 		params.submitAction("Modify expression");
 	};
 

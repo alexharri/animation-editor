@@ -1,5 +1,4 @@
 import React from "react";
-import { FlowNodeBody } from "~/flow/components/FlowNodeBody";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNodeOutput, FlowNodeProps, FlowNodeType } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
@@ -19,10 +18,10 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 function ArrayModifierIndexNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, zIndex } = props;
+	const { outputs } = props;
 
 	return (
-		<FlowNodeBody areaId={areaId} graphId={graphId} nodeId={nodeId} zIndex={zIndex}>
+		<>
 			{outputs.map((output, i) => {
 				return (
 					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
@@ -42,7 +41,7 @@ function ArrayModifierIndexNodeComponent(props: Props) {
 					</div>
 				);
 			})}
-		</FlowNodeBody>
+		</>
 	);
 }
 

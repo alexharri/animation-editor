@@ -36,6 +36,9 @@ const toVec2: Partial<Record<ValueType, (value: unknown) => Vec2 | undefined>> =
 		if (v instanceof Vec2) {
 			return v;
 		}
+		if (typeof v === "number") {
+			return Vec2.new(v, v);
+		}
 		if (typeof v !== "object" || !v) {
 			return undefined;
 		}
@@ -154,7 +157,7 @@ export const parseTypedValue = <
 		return value as T;
 	}
 
-	const converter = valueTypeToConverter[from]?.[to];
+	const converter = valueTypeToConverter[to]?.[from];
 	if (converter) {
 		return converter(value) as T;
 	}
@@ -197,5 +200,5 @@ export const getValueTypeCanConvertToValueTypes = (valueType: ValueType): Set<Va
 };
 
 export const getValueTypesThatCanConvertToValueType = (valueType: ValueType): Set<ValueType> => {
-	return canConvertToValueTypesMap[valueType];
+	return valueTypesThatCanConvertToMap[valueType];
 };
