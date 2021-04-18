@@ -58,7 +58,7 @@ export default ({ css }: StyleParams) => ({
 		position: absolute;
 		top: calc(100% + 8px);
 		left: 0;
-		background: ${cssVariables.dark800};
+		background: ${hexToRGBAString(cssVariables.gray500, 0.85)};
 		border: 1px solid red;
 		color: ${cssVariables.light500};
 		width: 320px;
