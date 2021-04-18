@@ -16,7 +16,6 @@ interface OwnProps {
 	graphId: string;
 	nodeId: string;
 	zIndex: number;
-	allowResize?: boolean;
 	children: React.ReactNode;
 	errors: CompositionError[];
 	scale: number;
@@ -31,10 +30,12 @@ interface StateProps {
 type Props = OwnProps & StateProps;
 
 const FlowNodeBodyComponent: React.FC<Props> = (props) => {
-	const { nodeId, top, left, width, type, errors, allowResize = true, zIndex, scale } = props;
+	const { nodeId, top, left, width, type, errors, zIndex, scale } = props;
 	const { selected } = props;
 
 	const hasError = errors.length > 0;
+
+	const allowResize = type !== FlowNodeType.expr;
 
 	return (
 		<>

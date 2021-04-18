@@ -1,15 +1,16 @@
 import React from "react";
-import { FLOW_NODE_H_PADDING_ADDITIONAL } from "~/constants";
+import { FLOW_NODE_H_PADDING_ADDITIONAL, FLOW_NODE_H_PADDING_BASE } from "~/constants";
 import { cssVariables } from "~/cssVariables";
 import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
 import { ValueType } from "~/types";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
+import { getValueTypeLabel } from "~/value/valueLabels";
 
 const s = compileStylesheetLabelled(({ css }) => ({
 	container: css`
 		height: 20px;
-		padding: 2px 0;
+		padding: 2px ${FLOW_NODE_H_PADDING_BASE}px;
 	`,
 
 	select: css`
@@ -28,7 +29,6 @@ const s = compileStylesheetLabelled(({ css }) => ({
 }));
 
 interface Props {
-	label: string;
 	valueType: ValueType;
 	nodeId: string;
 	outputIndex: number;
@@ -56,7 +56,7 @@ export const ExpressionNodeOutput: React.FC<Props> = (props) => {
 			>
 				{valueTypes.map((valueType) => (
 					<option key={valueType} value={valueType}>
-						{valueType}
+						{getValueTypeLabel(valueType)}
 					</option>
 				))}
 			</select>

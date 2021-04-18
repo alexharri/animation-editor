@@ -257,6 +257,11 @@ export const createPropertyManager = (
 		},
 
 		onNodeExpressionChange: (nodeId, actionState) => {
+			if (compilationErrors.length > 0) {
+				reset(actionState);
+				return;
+			}
+
 			// Attempt to update the expression in-place.
 			try {
 				// Get expression and update the expression map
@@ -278,7 +283,7 @@ export const createPropertyManager = (
 
 			const propertyIds = [...(options.propertyIds || [])];
 
-			if (options.nodeIds) {
+			if (options.nodeIds && compilationErrors.length === 0) {
 				propertyIds.push(
 					...getPropertyIdsAffectedByNodes(
 						actionState,

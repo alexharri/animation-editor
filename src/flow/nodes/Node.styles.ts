@@ -45,6 +45,10 @@ export default ({ css }: StyleParams) => ({
 		&--last {
 			margin-bottom: 8px;
 		}
+
+		&--noPadding {
+			padding-right: 0;
+		}
 	`,
 
 	output__circle: css`

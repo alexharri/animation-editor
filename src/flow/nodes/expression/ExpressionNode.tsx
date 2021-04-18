@@ -27,7 +27,10 @@ function ExpressionNodeComponent(props: Props) {
 		<>
 			{outputs.map((output, i) => {
 				return (
-					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
+					<div
+						className={s("output", { noPadding: true, last: i === outputs.length - 1 })}
+						key={i}
+					>
 						<div
 							className={s("output__circle")}
 							onMouseDown={(e) =>
@@ -42,7 +45,6 @@ function ExpressionNodeComponent(props: Props) {
 						/>
 						<ExpressionNodeOutput
 							nodeId={nodeId}
-							label={output.name}
 							outputIndex={i}
 							valueType={output.type}
 						/>
@@ -58,7 +60,7 @@ function ExpressionNodeComponent(props: Props) {
 			</div>
 			{inputs.map((input, i) => {
 				return (
-					<div className={s("input")} key={i}>
+					<div className={s("input", { noPadding: true })} key={i}>
 						<div
 							className={s("input__circle")}
 							onMouseDown={separateLeftRightMouse({
@@ -83,7 +85,6 @@ function ExpressionNodeComponent(props: Props) {
 						/>
 						<ExpressionNodeInput
 							inputIndex={i}
-							label={input.name}
 							nodeId={nodeId}
 							value={input.value}
 							valueType={input.type}
