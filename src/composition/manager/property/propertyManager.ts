@@ -49,10 +49,11 @@ export const createPropertyManager = (
 	compositionId: string,
 	actionState: ActionState,
 ): PropertyManager => {
-	let errors: CompositionError[] = [];
+	let compilationErrors: CompositionError[] = [];
+	let runtimeErrors: CompositionError[] = [];
 
 	let layerGraphs!: LayerGraphsInfo;
-	const propertyStore = new PropertyStore();
+	const propertyStore = new PropertyStore(actionState, compositionId);
 	let layerGraphNodeOutputMap: Record<string, unknown[]> = {};
 	let arrayModifierGraphNodeOutputMap: Record<string, unknown[][]> = {};
 	let propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
@@ -90,7 +91,7 @@ export const createPropertyManager = (
 
 				const result = computeLayerGraphNodeOutputs(node, inputs, layerGraphs);
 				if (result.status === "error") {
-					errors = result.errors;
+					runtimeErrors = result.errors;
 					return false;
 				}
 				resultsList.push(result.results);
@@ -122,7 +123,7 @@ export const createPropertyManager = (
 		const result = computeLayerGraphNodeOutputs(node, outputs, layerGraphs);
 
 		if (result.status === "error") {
-			errors = result.errors;
+			runtimeErrors = result.errors;
 			return false;
 		}
 
@@ -140,7 +141,7 @@ export const createPropertyManager = (
 	}
 
 	const computeNodeList = (actionState: ActionState, toCompute: string[], frameIndex: number) => {
-		errors = [];
+		runtimeErrors = [];
 		for (const nodeId of toCompute) {
 			const computedSuccessfully = computeNode(actionState, nodeId, { frameIndex });
 			if (!computedSuccessfully) {
@@ -153,13 +154,14 @@ export const createPropertyManager = (
 		const layerGraphsResult = resolveCompositionLayerGraphs(compositionId, actionState);
 
 		if (layerGraphsResult.status === "error") {
-			errors = layerGraphsResult.errors;
+			compilationErrors = layerGraphsResult.errors;
 			return;
 		}
+		compilationErrors = [];
 
-		layerGraphs = layerGraphsResult.info;
 		propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 		propertyStore.reset(actionState, compositionId);
+		layerGraphs = layerGraphsResult.info;
 		layerGraphNodeOutputMap = {};
 
 		const { frameIndex } = actionState.compositionState.compositions[compositionId];
@@ -173,6 +175,11 @@ export const createPropertyManager = (
 		nodeIds: string[],
 		options: { frameIndex?: number },
 	) => {
+		if (compilationErrors.length > 0) {
+			runtimeErrors = [];
+			return;
+		}
+
 		let frameIndex = options.frameIndex;
 
 		if (typeof frameIndex === "undefined") {
@@ -182,8 +189,8 @@ export const createPropertyManager = (
 
 		// If errors are present, we compute the entire graph from
 		// start to finish.
-		if (errors.length > 0) {
-			errors = [];
+		if (runtimeErrors.length > 0) {
+			runtimeErrors = [];
 			computeNodeList(actionState, layerGraphs.toCompute, frameIndex);
 			return;
 		}
@@ -219,6 +226,10 @@ export const createPropertyManager = (
 		onPropertyIdsChanged: (propertyIds, actionState, frameIndex) => {
 			updateRawValuesForPropertyIds(actionState, propertyIds, propertyStore, frameIndex);
 
+			if (compilationErrors.length > 0) {
+				return;
+			}
+
 			const nodeIds: string[] = [];
 			for (const propertyId of propertyIds) {
 				const affected = layerGraphs.propertyIdToAffectedInputNodes[propertyId];
@@ -233,6 +244,11 @@ export const createPropertyManager = (
 		onFrameIndexChanged: (actionState, frameIndex) => {
 			const animatedPropertyIds = propertyInfo.getAnimatedPropertyIds();
 			self.onPropertyIdsChanged(animatedPropertyIds, actionState, frameIndex);
+
+			if (compilationErrors.length > 0) {
+				return;
+			}
+
 			recomputeNodeRefs(actionState, layerGraphs.nodeIdsThatEmitFrameIndex, { frameIndex });
 		},
 
@@ -241,12 +257,19 @@ export const createPropertyManager = (
 		},
 
 		onNodeExpressionChange: (nodeId, actionState) => {
-			// Get expression and update the expression map
-			const node = actionState.flowState.nodes[nodeId] as FlowNode<FlowNodeType.expr>;
-			layerGraphs.expressions[node.id] = mathjs.compile(node.state.expression);
+			// Attempt to update the expression in-place.
+			try {
+				// Get expression and update the expression map
+				const node = actionState.flowState.nodes[nodeId] as FlowNode<FlowNodeType.expr>;
+				layerGraphs.expressions[node.id] = mathjs.compile(node.state.expression);
 
-			// Recompute the expression node and subsequent nodes
-			self.onNodeStateChange(nodeId, actionState);
+				// Recompute the expression node and subsequent nodes
+				self.onNodeStateChange(nodeId, actionState);
+			} catch (e) {
+				// Updating the expression failed, that means that the expression syntax
+				// is invalid.
+				reset(actionState);
+			}
 		},
 
 		getActionsToPerform: (actionState, options) => {
@@ -313,11 +336,13 @@ export const createPropertyManager = (
 					}
 				}
 
-				for (const propertyId of layerGraphs.propertyIdsAffectedByFrameIndexByLayer[
-					layerId
-				] || []) {
-					const info = propertyInfo.properties[propertyId];
-					performableSet.add(info.performable);
+				if (compilationErrors.length === 0) {
+					for (const propertyId of layerGraphs.propertyIdsAffectedByFrameIndexByLayer[
+						layerId
+					] || []) {
+						const info = propertyInfo.properties[propertyId];
+						performableSet.add(info.performable);
+					}
 				}
 
 				if (performableSet.has(Performable.UpdateTransform)) {
@@ -335,7 +360,7 @@ export const createPropertyManager = (
 			return layerPerformables;
 		},
 
-		getErrors: () => errors,
+		getErrors: () => (compilationErrors.length > 0 ? compilationErrors : runtimeErrors),
 	};
 	return self;
 };

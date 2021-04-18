@@ -112,7 +112,12 @@ type Node =
 	| RelationalNode
 	| SymbolNode;
 
-export const getExpressionIO = (expression: string) => {
+export interface ExpressionIO {
+	inputs: string[];
+	outputs: string[];
+}
+
+export const getExpressionIO = (expression: string): [e: Error | null, io: ExpressionIO] => {
 	const hasBeenAssigned = new Set<string>();
 	const inputs = new Set<string>();
 	const outputs = new Set<string>();
@@ -223,15 +228,19 @@ export const getExpressionIO = (expression: string) => {
 		}
 	};
 
-	const res = parse(expression);
+	try {
+		const res = parse(expression);
 
-	if (res.type === "BlockNode") {
-		for (let i = 0; i < (res as any).blocks.length; i += 1) {
-			crawl((res as any).blocks[i].node, {});
+		if (res.type === "BlockNode") {
+			for (let i = 0; i < (res as any).blocks.length; i += 1) {
+				crawl((res as any).blocks[i].node, {});
+			}
+		} else {
+			crawl(res as any, {});
 		}
-	} else {
-		crawl(res as any, {});
-	}
 
-	return { inputs: [...inputs], outputs: [...outputs] };
+		return [null, { inputs: [...inputs], outputs: [...outputs] }];
+	} catch (e) {
+		return [e, null!];
+	}
 };
