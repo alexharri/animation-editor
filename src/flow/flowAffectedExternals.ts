@@ -12,7 +12,7 @@ export function getFlowNodeAffectedExternals(
 			const state = node.state as FlowNodeState<FlowNodeType.property_output>;
 
 			if (!state.propertyId) {
-				return { propertyIds: [] };
+				return { propertyIds: [], potentialPropertyIds: [] };
 			}
 
 			const targetProperty = compositionState.properties[state.propertyId];
@@ -46,9 +46,12 @@ export function getFlowNodeAffectedExternals(
 				}
 			}
 
+			const potentialPropertyIds: string[] = [];
 			const propertyIds: string[] = [];
 
 			for (let i = 0; i < node.inputs.length; i++) {
+				potentialPropertyIds.push(...propertyIdsByInput[i]);
+
 				if (!node.inputs[i].pointer) {
 					continue;
 				}
@@ -56,9 +59,9 @@ export function getFlowNodeAffectedExternals(
 				propertyIds.push(...propertyIdsByInput[i]);
 			}
 
-			return { propertyIds };
+			return { propertyIds, potentialPropertyIds };
 		}
 		default:
-			return { propertyIds: [] };
+			return { propertyIds: [], potentialPropertyIds: [] };
 	}
 }

@@ -12,6 +12,7 @@ export function createFlowCompiledNodes(actionState: ActionState, graphId: strin
 			id: node.id,
 			next: [],
 			affectedExternals: getFlowNodeAffectedExternals(actionState, node),
+			computeIndex: -1,
 		};
 		obj[nodeId] = compiledNode;
 
@@ -19,6 +20,8 @@ export function createFlowCompiledNodes(actionState: ActionState, graphId: strin
 	}, {});
 
 	const visited = new Set<string>();
+
+	let computeIndex = -1;
 
 	function dfs(node: FlowNode, visitedInTrip: Set<string>) {
 		if (visited.has(node.id)) {
@@ -44,11 +47,13 @@ export function createFlowCompiledNodes(actionState: ActionState, graphId: strin
 			}
 
 			const compiledNode = compiledNodes[input.pointer.nodeId];
-			compiledNode.next.push({ nodeId: node.id });
+			compiledNode.next.push(compiledNodes[node.id]);
 
 			const nextNode = flowState.nodes[input.pointer.nodeId];
 			dfs(nextNode, new Set(visitedInTrip));
 		}
+
+		compiledNodes[node.id].computeIndex = ++computeIndex;
 	}
 
 	for (const nodeId of graph.nodes) {

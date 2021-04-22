@@ -1,3 +1,4 @@
+import { EvalFunction } from "mathjs";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { CompositionError, ValueType } from "~/types";
 
@@ -90,7 +91,11 @@ export type ComputeFlowNodeResult =
 			errors: CompositionError[];
 	  };
 
-export interface CompiledFlowGraph {
+/**
+ * Can be the compiled version of a single flow graph, or the composite of
+ * multiple flow graphs.
+ */
+export interface CompiledFlow {
 	nodes: Record<string, CompiledFlowNode>;
 
 	/**
@@ -98,13 +103,33 @@ export interface CompiledFlowGraph {
 	 */
 	toCompute: CompiledFlowNode[];
 
+	/**
+	 * A map from externals (such as frame index) to the nodes whose output
+	 * is affected by their value.
+	 */
 	externals: FlowGraphExternals;
+
+	/**
+	 * A map from expression node ids to a compiled eval function that is used
+	 * to perform the expression of the node.
+	 */
+	expressions: Record<string, EvalFunction>;
 }
 
 export interface CompiledFlowNode {
 	id: string;
-	next: Array<{ nodeId: string }>;
+	next: CompiledFlowNode[];
 	affectedExternals: FlowNodeAffectedExternals;
+	computeIndex: number;
+}
+
+/**
+ * Currently nodes can only affect the value of certain properties via
+ * the `property_output` node.
+ */
+export interface FlowNodeAffectedExternals {
+	propertyIds: string[];
+	potentialPropertyIds: string[];
 }
 
 export interface FlowGraphExternals {
@@ -113,8 +138,4 @@ export interface FlowGraphExternals {
 	propertyValue: {
 		[propertyId: string]: CompiledFlowNode[];
 	};
-}
-
-export interface FlowNodeAffectedExternals {
-	propertyIds: string[];
 }

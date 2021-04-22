@@ -2,9 +2,8 @@ import * as mathjs from "mathjs";
 import { EvalFunction } from "mathjs";
 import { CompositionState } from "~/composition/compositionReducer";
 import { PropertyGroup } from "~/composition/compositionTypes";
-import { getPropertyIdsAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
+import { getPropertyIdsPotentiallyAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
 import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUtils";
-import { compileFlowGraph } from "~/flow/compileFlowGraph";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
@@ -109,10 +108,6 @@ export const resolveCompositionLayerGraphs = (
 	for (const layerId of composition.layers) {
 		const layer = compositionState.layers[layerId];
 		layer.graphId && layerGraphIds.push(layer.graphId);
-
-		if (layer.graphId) {
-			compileFlowGraph(actionState, layer.graphId);
-		}
 
 		for (const { modifierGroupId } of getLayerArrayModifiers(layerId, compositionState)) {
 			const group = compositionState.properties[modifierGroupId] as PropertyGroup;
@@ -339,7 +334,7 @@ export const resolveCompositionLayerGraphs = (
 		return acc;
 	}, {});
 
-	const propertyIdsAffectedByFrameIndexByLayer = getPropertyIdsAffectedByNodes(
+	const propertyIdsAffectedByFrameIndexByLayer = getPropertyIdsPotentiallyAffectedByNodes(
 		actionState,
 		nodeIdsThatEmitFrameIndex,
 		nodeToNext,

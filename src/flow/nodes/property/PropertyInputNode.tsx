@@ -48,6 +48,7 @@ function PropertyInputNodeComponent(props: Props) {
 				flowActions.setNodeOutputs(props.graphId, props.nodeId, []),
 			);
 
+			params.addDiff((diff) => diff.propertyStructure(layerId));
 			params.submitAction("Update selected PropertyInputNode property");
 		});
 	};
@@ -110,6 +111,7 @@ function PropertyInputNodeComponent(props: Props) {
 				flowActions.removeReferencesToNodeInGraph(props.graphId, props.nodeId),
 				flowActions.setNodeOutputs(props.graphId, props.nodeId, outputs),
 			);
+			params.addDiff((diff) => diff.propertyStructure(property.layerId));
 			params.submitAction("Update selected PropertyInputNode property");
 		});
 	};

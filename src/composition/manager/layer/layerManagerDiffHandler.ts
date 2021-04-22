@@ -103,7 +103,7 @@ export const layerManagerDiffHandler = (
 
 			layerManager.onFrameIndexChanged(actionState, diff.frameIndex);
 
-			const actions = propertyManager.getActionsToPerformOnFrameIndexChange();
+			const actions = propertyManager.getActionsToPerformOnFrameIndexChange(actionState);
 			for (const { layerId, performables } of actions) {
 				for (const performable of performables) {
 					layerManager.executePerformable(actionState, layerId, performable);
@@ -174,6 +174,7 @@ export const layerManagerDiffHandler = (
 			layerManager.onUpdateLayerParent(actionState, layerId);
 		},
 		[DiffType.PropertyStructure]: (diff: PropertyStructureDiff) => {
+			console.log("property structure");
 			const { layerId } = diff;
 			if (layerDoesNotAffectComposition(layerId)) {
 				return;
