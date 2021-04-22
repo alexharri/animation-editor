@@ -89,3 +89,32 @@ export type ComputeFlowNodeResult =
 			status: "error";
 			errors: CompositionError[];
 	  };
+
+export interface CompiledFlowGraph {
+	nodes: Record<string, CompiledFlowNode>;
+
+	/**
+	 * All node ids in the graph and the order to compute them in.
+	 */
+	toCompute: CompiledFlowNode[];
+
+	externals: FlowGraphExternals;
+}
+
+export interface CompiledFlowNode {
+	id: string;
+	next: Array<{ nodeId: string }>;
+	affectedExternals: FlowNodeAffectedExternals;
+}
+
+export interface FlowGraphExternals {
+	arrayModifierIndex: CompiledFlowNode[];
+	frameIndex: CompiledFlowNode[];
+	propertyValue: {
+		[propertyId: string]: CompiledFlowNode[];
+	};
+}
+
+export interface FlowNodeAffectedExternals {
+	propertyIds: string[];
+}
