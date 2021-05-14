@@ -1,9 +1,6 @@
-import { CompiledFlow, CompiledFlowNode } from "~/flow/flowTypes";
+import { CompiledFlowNode } from "~/flow/flowTypes";
 
-export function getPropertyIdsPotentiallyAffectedByNodes(
-	flow: CompiledFlow,
-	nodeIds: string[],
-): string[] {
+export function getPropertyIdsPotentiallyAffectedByNodes(nodes: CompiledFlowNode[]): string[] {
 	const visited = new Set<string>();
 	const propertyIdSet = new Set<string>();
 
@@ -19,17 +16,9 @@ export function getPropertyIdsPotentiallyAffectedByNodes(
 
 		const propertyIds = node.affectedExternals.potentialPropertyIds;
 		propertyIds.forEach((propertyId) => propertyIdSet.add(propertyId));
-
-		for (const propertyId of propertyIds) {
-			if (flow.externals.propertyValue[propertyId]) {
-				for (const node of flow.externals.propertyValue[propertyId]) {
-					dfs(node);
-				}
-			}
-		}
 	}
-	for (const nodeId of nodeIds) {
-		dfs(flow.nodes[nodeId]);
+	for (const node of nodes) {
+		dfs(node);
 	}
 	return [...propertyIdSet];
 }

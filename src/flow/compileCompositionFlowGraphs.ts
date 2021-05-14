@@ -91,6 +91,20 @@ export function compileCompositionFlow(
 			node.computeIndex += len;
 		}
 		compositionFlow.toCompute.push(...compiled.toCompute);
+
+		// Resolve externals that have become internal by adding externals as node.next.
+		for (const nodeId of Object.keys(compositionFlow.nodes)) {
+			const node = compositionFlow.nodes[nodeId];
+
+			for (const propertyId of node.affectedExternals.potentialPropertyIds) {
+				const nextNodes = compositionFlow.externals.propertyValue[propertyId];
+				for (const nextNode of nextNodes || []) {
+					if (!node.next.includes(nextNode)) {
+						node.next.push(nextNode);
+					}
+				}
+			}
+		}
 	}
 
 	return { status: "ok", flow: compositionFlow };
