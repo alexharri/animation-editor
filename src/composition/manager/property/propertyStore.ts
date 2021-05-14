@@ -8,9 +8,8 @@ type ListenerFn = (computedValue: any, rawValue: any) => void;
 export class PropertyStore {
 	private rawValues: Record<string, any> = {};
 	private computedValues: Partial<Record<string, any>> = {};
-	private listenersByPropertyId: Partial<
-		Record<string, Array<{ id: string; fn: ListenerFn }>>
-	> = {};
+	private listenersByPropertyId: Partial<Record<string, Array<{ id: string; fn: ListenerFn }>>> =
+		{};
 	private computedValueArrays: Partial<Record<string, any[]>> = {};
 
 	constructor(actionState: ActionState, compositionId: string) {

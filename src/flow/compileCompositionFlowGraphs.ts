@@ -64,7 +64,7 @@ export function compileCompositionFlow(
 		toCompute: [],
 	};
 
-	for (const graphId of toCompute) {
+	for (const graphId of [...toCompute, ...arrayModifierGraphIds]) {
 		const compiled = compiledGraphMap[graphId];
 
 		compositionFlow.nodes = { ...compositionFlow.nodes, ...compiled.nodes };

@@ -206,17 +206,10 @@ export const createPropertyManager = (
 				return;
 			}
 			nodeIdsToUpdate.add(nodeId);
-
-			const compiledNode = flow.nodes[nodeId];
-			const nextNodes: CompiledFlowNode[] = [];
-
-			nextNodes.push(...compiledNode.next);
-			for (const propertyId of compiledNode.affectedExternals.propertyIds) {
-				const next = flow.externals.propertyValue[propertyId] || [];
-				nextNodes.push(...next);
+			if (!flow.nodes[nodeId]) {
+				console.log(nodeId, flow);
 			}
-
-			for (const next of nextNodes) {
+			for (const next of flow.nodes[nodeId].next) {
 				dfs(next.id);
 			}
 		}

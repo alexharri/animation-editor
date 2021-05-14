@@ -104,10 +104,12 @@ export const recomputePropertyValueArraysAffectedByNode = (
 			continue;
 		}
 
-		const firstValue = outputs[0];
+		const firstValue = outputs[0][i];
 
 		if (property.type === "compound") {
-			const vec2Arr = outputs.map((value: any) => {
+			const vec2Arr = outputs.map((row) => {
+				let value: any = row[i];
+
 				if (typeof firstValue === "number") {
 					// If the value provided to a compound property (Vec2) is a number
 					// then we case it to Vec2(N, N).
@@ -131,7 +133,10 @@ export const recomputePropertyValueArraysAffectedByNode = (
 				vec2Arr.map((vec) => vec.y),
 			);
 		} else {
-			propertyStore.setComputedValueArray(propertyId, outputs);
+			propertyStore.setComputedValueArray(
+				propertyId,
+				outputs.map((x) => x[i]),
+			);
 		}
 	}
 };
