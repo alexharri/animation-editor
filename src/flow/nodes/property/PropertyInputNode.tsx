@@ -6,17 +6,13 @@ import {
 } from "~/composition/util/compositionPropertyUtils";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { FlowNodeInput, FlowNodeOutput, FlowNodeProps, FlowNodeType } from "~/flow/flowTypes";
-import NodeStyles from "~/flow/nodes/Node.styles";
-import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { NodeOutputs } from "~/flow/nodes/NodeOutputs";
 import { PropertyNodeSelectProperty } from "~/flow/nodes/property/PropertyNodeSelectProperty";
 import { flowActions } from "~/flow/state/flowActions";
 import { requestAction } from "~/listener/requestAction";
 import { getPropertyValueType } from "~/property/propertyConstants";
 import { connectActionState, getActionState } from "~/state/stateUtils";
 import { ValueType } from "~/types";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
-
-const s = compileStylesheetLabelled(NodeStyles);
 
 type OwnProps = FlowNodeProps;
 interface StateProps {
@@ -27,14 +23,13 @@ interface StateProps {
 	layerPropertyIds?: string[];
 
 	inputs: FlowNodeInput[];
-	outputs: FlowNodeOutput[];
 	state: FlowNodeState<FlowNodeType.property_input>;
 }
 
 type Props = OwnProps & StateProps;
 
 function PropertyInputNodeComponent(props: Props) {
-	const { outputs, compositionLayerIds, layerPropertyIds } = props;
+	const { nodeId, compositionLayerIds, layerPropertyIds } = props;
 
 	const onSelectLayer = (layerId: string) => {
 		requestAction({ history: true }, (params) => {
@@ -126,25 +121,7 @@ function PropertyInputNodeComponent(props: Props) {
 				selectedPropertyId={props.state.propertyId}
 				selectedLayerId={props.state.layerId}
 			/>
-			{outputs.map((output, i) => {
-				return (
-					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
-						<div
-							className={s("output__circle")}
-							onMouseDown={(e) =>
-								nodeHandlers.onOutputMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									i,
-								)
-							}
-						/>
-						<div className={s("output__name")}>{output.name}</div>
-					</div>
-				);
-			})}
+			<NodeOutputs nodeId={nodeId} />
 		</>
 	);
 }
@@ -181,7 +158,6 @@ const mapStateToProps: MapActionState<StateProps, OwnProps> = (
 		layerPropertyIds,
 
 		inputs: node.inputs,
-		outputs: node.outputs,
 		state,
 	};
 };

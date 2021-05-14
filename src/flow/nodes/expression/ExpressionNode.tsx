@@ -5,6 +5,7 @@ import { ExpressionNodeOutput } from "~/flow/nodes/expression/ExpressionNodeOutp
 import { ExpressionNodeTextarea } from "~/flow/nodes/expression/ExpressionNodeTextarea";
 import NodeStyles from "~/flow/nodes/Node.styles";
 import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { NodeOutputCircle } from "~/flow/nodes/NodeOutputCircle";
 import { connectActionState } from "~/state/stateUtils";
 import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
@@ -31,20 +32,10 @@ function ExpressionNodeComponent(props: Props) {
 						className={s("output", { noPadding: true, last: i === outputs.length - 1 })}
 						key={i}
 					>
-						<div
-							className={s("output__circle")}
-							onMouseDown={(e) =>
-								nodeHandlers.onOutputMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									i,
-								)
-							}
-						/>
+						<NodeOutputCircle nodeId={nodeId} index={i} valueType={output.type} />
 						<ExpressionNodeOutput
 							nodeId={nodeId}
+							name={output.name}
 							outputIndex={i}
 							valueType={output.type}
 						/>
@@ -86,6 +77,7 @@ function ExpressionNodeComponent(props: Props) {
 						<ExpressionNodeInput
 							inputIndex={i}
 							nodeId={nodeId}
+							name={input.name}
 							value={input.value}
 							valueType={input.type}
 						/>

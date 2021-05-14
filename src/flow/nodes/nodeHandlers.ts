@@ -116,7 +116,6 @@ export const nodeHandlers = {
 	onOutputMouseDown: (
 		e: React.MouseEvent,
 		areaId: string,
-		graphId: string,
 		outputNodeId: string,
 		outputIndex: number,
 	) => {
@@ -126,11 +125,12 @@ export const nodeHandlers = {
 
 		const globalToNormal = (vec: Vec2) => flowEditorGlobalToNormal(vec, viewport, scale, pan);
 
-		const fromPos = calculateNodeOutputPosition(flowState.nodes[outputNodeId], outputIndex);
+		const outputNode = flowState.nodes[outputNodeId];
+		const fromPos = calculateNodeOutputPosition(outputNode, outputIndex);
 
 		const availableInputs = getFlowGraphAvailableInputs(
 			flowState,
-			graphId,
+			outputNode.graphId,
 			outputNodeId,
 			outputIndex,
 		);

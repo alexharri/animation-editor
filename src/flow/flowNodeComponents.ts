@@ -1,6 +1,5 @@
 import React from "react";
 import { FlowNodeType } from "~/flow/flowTypes";
-import { ArrayModifierIndexNode } from "~/flow/nodes/arrayModifier/ArrayModifierIndexNode";
 import { CapNumberNode } from "~/flow/nodes/CapNumberNode";
 import { ColorInputNode } from "~/flow/nodes/color/ColorInputNode";
 import { DegToRadNode } from "~/flow/nodes/DegToRadNode";
@@ -51,8 +50,6 @@ export const getFlowNodeComponent = (
 			return Vec2FactorsNode;
 		case FlowNodeType.vec2_input:
 			return Vec2InputNode;
-		case FlowNodeType.array_modifier_index:
-			return ArrayModifierIndexNode;
 		default:
 			return Node;
 	}
