@@ -167,6 +167,7 @@ export class LayerManager {
 					...this.getCompositionLayerParentDimensions(actionState, layerId),
 				],
 				depth: this.options.depth + 1,
+				setErrors: () => {},
 			});
 			this.subCompositions[layerId] = { manager, layerId: layerId };
 		}

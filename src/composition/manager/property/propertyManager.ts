@@ -153,15 +153,16 @@ export const createPropertyManager = (
 	};
 
 	const reset = (actionState: ActionState) => {
-		// const layerGraphsResult = resolveCompositionLayerGraphs(compositionId, actionState);
-
-		// if (layerGraphsResult.status === "error") {
-		// 	compilationErrors = layerGraphsResult.errors;
-		// 	return;
-		// }
 		compilationErrors = [];
 
-		flow = compileCompositionFlow(actionState, compositionId);
+		const flowResult = compileCompositionFlow(actionState, compositionId);
+
+		if (flowResult.status === "error") {
+			compilationErrors = flowResult.errors;
+			return;
+		}
+
+		flow = flowResult.flow;
 		arrayModifierGroupToCountId = getArrayModifierGroupToCountId(actionState, compositionId);
 		propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 		propertyStore.reset(actionState, compositionId);

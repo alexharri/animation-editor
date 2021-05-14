@@ -3,11 +3,12 @@ import { getLayerArrayModifiers } from "~/composition/util/compositionPropertyUt
 import { compileFlowGraph } from "~/flow/compileFlowGraph";
 import { getLayerFlowGraphOrder } from "~/flow/flowGraphOrder";
 import { CompiledFlow } from "~/flow/flowTypes";
+import { CompositionError } from "~/types";
 
 export function compileCompositionFlow(
 	actionState: ActionState,
 	compositionId: string,
-): CompiledFlow {
+): { status: "ok"; flow: CompiledFlow } | { status: "error"; errors: CompositionError[] } {
 	const { compositionState } = actionState;
 
 	const composition = compositionState.compositions[compositionId];
@@ -30,16 +31,27 @@ export function compileCompositionFlow(
 		compileFlowGraph(actionState, graphId),
 	);
 
+	const errors: CompositionError[] = [];
+	for (const item of [...layerFlows, ...arrayModifierFlows]) {
+		errors.push(...item.errors);
+	}
+	if (errors.length > 0) {
+		return { status: "error", errors };
+	}
+
 	const compiledGraphMap: Record<string, CompiledFlow> = {};
 
 	for (const [i, graphId] of layerGraphIds.entries()) {
-		compiledGraphMap[graphId] = layerFlows[i];
+		compiledGraphMap[graphId] = layerFlows[i].flow;
 	}
 	for (const [i, graphId] of arrayModifierGraphIds.entries()) {
-		compiledGraphMap[graphId] = arrayModifierFlows[i];
+		compiledGraphMap[graphId] = arrayModifierFlows[i].flow;
 	}
 
-	const toCompute = getLayerFlowGraphOrder(layerGraphIds, layerFlows);
+	const toCompute = getLayerFlowGraphOrder(
+		layerGraphIds,
+		layerFlows.map((x) => x.flow),
+	);
 
 	const compositionFlow: CompiledFlow = {
 		nodes: {},
@@ -81,5 +93,5 @@ export function compileCompositionFlow(
 		compositionFlow.toCompute.push(...compiled.toCompute);
 	}
 
-	return compositionFlow;
+	return { status: "ok", flow: compositionFlow };
 }
