@@ -286,9 +286,7 @@ export const createPropertyManager = (
 
 			if (options.nodeIds && compilationErrors.length === 0) {
 				propertyIds.push(
-					...getPropertyIdsPotentiallyAffectedByNodes(
-						options.nodeIds.map((nodeId) => flow.nodes[nodeId]),
-					),
+					...getPropertyIdsPotentiallyAffectedByNodes(flow, options.nodeIds),
 				);
 			}
 

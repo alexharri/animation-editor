@@ -129,6 +129,11 @@ export interface CompiledFlowNode {
  */
 export interface FlowNodeAffectedExternals {
 	propertyIds: string[];
+
+	/**
+	 * When connecting/disconnecting nodes, the `propertyIds` may not contain
+	 * the recently disconnected node.
+	 */
 	potentialPropertyIds: string[];
 }
 

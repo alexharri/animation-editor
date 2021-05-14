@@ -262,7 +262,6 @@ export class LayerManager {
 	}
 
 	public updatePropertyStructure(actionState: ActionState, layerId: string) {
-		console.log({ layerId });
 		this.executePerformable(actionState, layerId, Performable.DrawLayer);
 		this.executePerformable(actionState, layerId, Performable.UpdateTransform);
 		this.executePerformable(actionState, layerId, Performable.UpdateArrayModifierTransform);
