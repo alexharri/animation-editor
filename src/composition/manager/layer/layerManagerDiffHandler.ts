@@ -174,7 +174,6 @@ export const layerManagerDiffHandler = (
 			layerManager.onUpdateLayerParent(actionState, layerId);
 		},
 		[DiffType.PropertyStructure]: (diff: PropertyStructureDiff) => {
-			console.log("property structure");
 			const { layerId } = diff;
 			if (layerDoesNotAffectComposition(layerId)) {
 				return;
