@@ -1,37 +1,24 @@
-import { FlowNodeState } from "~/flow/flowNodeState";
-import { FlowNodeType } from "~/flow/flowTypes";
-import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
+import { CompiledFlowNode } from "~/flow/flowTypes";
 
-export function getPropertyIdsAffectedByNodes(
-	actionState: ActionState,
-	nodeIds: string[],
-	nodeToNext: Record<string, string[]>,
-): string[] {
-	const found = new Set<string>();
+export function getPropertyIdsPotentiallyAffectedByNodes(nodes: CompiledFlowNode[]): string[] {
+	const visited = new Set<string>();
 	const propertyIdSet = new Set<string>();
 
-	function dfs(nodeId: string) {
-		if (found.has(nodeId)) {
+	function dfs(node: CompiledFlowNode) {
+		if (visited.has(node.id)) {
 			return;
 		}
-		found.add(nodeId);
-		const next = nodeToNext[nodeId];
-		for (const nodeId of next) {
-			dfs(nodeId);
+		visited.add(node.id);
+
+		for (const nextNode of node.next) {
+			dfs(nextNode);
 		}
 
-		const node = actionState.flowState.nodes[nodeId];
-		if (node.type === FlowNodeType.property_output) {
-			const state = node.state as FlowNodeState<FlowNodeType.property_output>;
-			const propertyIds = getFlowPropertyNodeReferencedPropertyIds(
-				actionState.compositionState,
-				state.propertyId,
-			);
-			propertyIds.forEach((propertyId) => propertyIdSet.add(propertyId));
-		}
+		const propertyIds = node.affectedExternals.potentialPropertyIds;
+		propertyIds.forEach((propertyId) => propertyIdSet.add(propertyId));
 	}
-	for (const nodeId of nodeIds) {
-		dfs(nodeId);
+	for (const node of nodes) {
+		dfs(node);
 	}
 	return [...propertyIdSet];
 }

@@ -1,10 +1,9 @@
 import * as mathjs from "mathjs";
 import { Property } from "~/composition/compositionTypes";
-import { LayerGraphsInfo } from "~/composition/layer/layerComputePropertiesOrder";
 import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { computeNodeOutputsFromInputArgs } from "~/flow/flowComputeNode";
 import { FlowNodeState } from "~/flow/flowNodeState";
-import { ComputeFlowNodeResult, FlowNode, FlowNodeType } from "~/flow/flowTypes";
+import { CompiledFlow, ComputeFlowNodeResult, FlowNode, FlowNodeType } from "~/flow/flowTypes";
 import { parseTypedValue } from "~/flow/flowValueConversion";
 import { CompositionError, CompositionErrorType, ValueType } from "~/types";
 
@@ -25,13 +24,14 @@ const resolvePropertyInputNode = (
 
 	switch (property.type) {
 		case "property":
-			return [propertyStore.getRawPropertyValue(property.id)];
+			console.log();
+			return [propertyStore.getPropertyValue(property.id)];
 		case "compound": {
 			if (property.properties.length !== 2) {
 				throw new Error("Expected compound property to have 2 sub-properties.");
 			}
 			const [x, y] = property.properties.map((propertyId) =>
-				propertyStore.getRawPropertyValue(propertyId),
+				propertyStore.getPropertyValue(propertyId),
 			);
 			return [Vec2.new(x, y), x, y];
 		}
@@ -42,13 +42,13 @@ const resolvePropertyInputNode = (
 				switch (property.type) {
 					case "compound": {
 						const [x, y] = property.properties.map((propertyId) =>
-							propertyStore.getRawPropertyValue(propertyId),
+							propertyStore.getPropertyValue(propertyId),
 						);
 						result.push(Vec2.new(x, y));
 						break;
 					}
 					case "property": {
-						result.push(propertyStore.getRawPropertyValue(property.id));
+						result.push(propertyStore.getPropertyValue(property.id));
 						break;
 					}
 				}
@@ -107,7 +107,7 @@ export const getGraphNodeInputs = (
 const resolveExpressionNodeOutputs = (
 	node: FlowNode,
 	inputs: unknown[],
-	layerGraphs: LayerGraphsInfo,
+	flow: CompiledFlow,
 ): ComputeFlowNodeResult => {
 	const { id: nodeId, graphId } = node;
 
@@ -126,7 +126,7 @@ const resolveExpressionNodeOutputs = (
 		}, {}),
 	};
 
-	const expression = layerGraphs.expressions[node.id];
+	const expression = flow.expressions[node.id];
 
 	try {
 		expression.evaluate(scope);
@@ -208,10 +208,10 @@ const resolveExpressionNodeOutputs = (
 export const computeLayerGraphNodeOutputs = (
 	node: FlowNode,
 	inputs: unknown[],
-	layerGraphs: LayerGraphsInfo,
+	flow: CompiledFlow,
 ): ComputeFlowNodeResult => {
 	if (node.type === FlowNodeType.expr) {
-		return resolveExpressionNodeOutputs(node, inputs, layerGraphs);
+		return resolveExpressionNodeOutputs(node, inputs, flow);
 	}
 
 	/**

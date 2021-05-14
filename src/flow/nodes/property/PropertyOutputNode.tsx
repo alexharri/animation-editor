@@ -99,6 +99,7 @@ function PropertyOutputNodeComponent(props: Props) {
 				),
 				flowActions.setNodeInputs(props.graphId, props.nodeId, inputs),
 			);
+			params.addDiff((diff) => diff.propertyStructure(property.layerId));
 			params.submitAction("Update selected PropertyOutputNode property");
 		});
 	};

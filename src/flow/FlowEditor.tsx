@@ -134,6 +134,8 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 	}, []);
 
 	const [errors, setErrors] = useState(() => propertyManager.getErrors());
+	const errorsRef = useRef(errors);
+	errorsRef.current = errors;
 
 	useEffect(() => {
 		let prevState = getActionState();
@@ -150,7 +152,7 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 			prevState = actionState;
 
 			const nextErrors = propertyManager.getErrors();
-			if (!isArrayShallowEqual(nextErrors, errors)) {
+			if (!isArrayShallowEqual(nextErrors, errorsRef.current)) {
 				setErrors(nextErrors);
 			}
 		});

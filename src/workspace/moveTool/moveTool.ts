@@ -149,8 +149,8 @@ export const moveToolHandlers = {
 			return constructLayerPropertyMap(layerId, compositionState);
 		});
 
+		const propertyManager = createPropertyManager(compositionId, actionState);
 		const createGlobalToNormal = (layerId: string) => {
-			const propertyManager = createPropertyManager(compositionId, actionState);
 			const matrices = createParentLayerViewportMatrices(
 				actionState,
 				propertyManager.getPropertyValue,

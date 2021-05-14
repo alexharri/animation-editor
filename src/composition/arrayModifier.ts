@@ -245,3 +245,24 @@ export const getArrayModifierLayerDimensions = (
 
 	return layerDimensions;
 };
+
+export function getArrayModifierGroupToCountId(actionState: ActionState, compositionId: string) {
+	const { compositionState } = actionState;
+
+	const composition = compositionState.compositions[compositionId];
+	const arrayModifierGroupToCount: Record<string, string> = {};
+
+	for (const layerId of composition.layers) {
+		const arrayModifiers = getLayerArrayModifiers(layerId, compositionState);
+		for (const arrayModifier of arrayModifiers) {
+			const { modifierGroupId, countId } = arrayModifier;
+			const group = compositionState.properties[modifierGroupId] as PropertyGroup;
+			if (!group.graphId) {
+				continue;
+			}
+			arrayModifierGroupToCount[modifierGroupId] = countId;
+		}
+	}
+
+	return arrayModifierGroupToCount;
+}

@@ -1,3 +1,4 @@
+import { EvalFunction } from "mathjs";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { CompositionError, ValueType } from "~/types";
 
@@ -89,3 +90,57 @@ export type ComputeFlowNodeResult =
 			status: "error";
 			errors: CompositionError[];
 	  };
+
+/**
+ * Can be the compiled version of a single flow graph, or the composite of
+ * multiple flow graphs.
+ */
+export interface CompiledFlow {
+	nodes: Record<string, CompiledFlowNode>;
+
+	/**
+	 * All node ids in the graph and the order to compute them in.
+	 */
+	toCompute: CompiledFlowNode[];
+
+	/**
+	 * A map from externals (such as frame index) to the nodes whose output
+	 * is affected by their value.
+	 */
+	externals: FlowGraphExternals;
+
+	/**
+	 * A map from expression node ids to a compiled eval function that is used
+	 * to perform the expression of the node.
+	 */
+	expressions: Record<string, EvalFunction>;
+}
+
+export interface CompiledFlowNode {
+	id: string;
+	next: CompiledFlowNode[];
+	affectedExternals: FlowNodeAffectedExternals;
+	computeIndex: number;
+}
+
+/**
+ * Currently nodes can only affect the value of certain properties via
+ * the `property_output` node.
+ */
+export interface FlowNodeAffectedExternals {
+	propertyIds: string[];
+
+	/**
+	 * When connecting/disconnecting nodes, the `propertyIds` may not contain
+	 * the recently disconnected node.
+	 */
+	potentialPropertyIds: string[];
+}
+
+export interface FlowGraphExternals {
+	arrayModifierIndex: CompiledFlowNode[];
+	frameIndex: CompiledFlowNode[];
+	propertyValue: {
+		[propertyId: string]: CompiledFlowNode[];
+	};
+}
