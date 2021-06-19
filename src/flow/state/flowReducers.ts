@@ -108,12 +108,12 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
 		}
 
 		case getType(actions.updateNodeState): {
-			const { nodeId, state: nodeState } = action.payload;
+			const { nodeId } = action.payload;
 			return {
 				...state,
 				nodes: modifyItemsInMap(state.nodes, nodeId, (node) => ({
 					...node,
-					state: { ...node.state, ...(nodeState as any) },
+					state: { ...node.state, ...(action.payload.state as any) },
 				})),
 			};
 		}

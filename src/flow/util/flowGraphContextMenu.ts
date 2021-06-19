@@ -157,6 +157,14 @@ export const getFlowGraphContextMenuOptions = (options: Options) => {
 					type: FlowNodeType.color_to_rgba_factors,
 					label: "To RGBA Factors",
 				}),
+				createAddNodeOption({
+					type: FlowNodeType.color_from_hsl_factors,
+					label: "From HSL Factors",
+				}),
+				createAddNodeOption({
+					type: FlowNodeType.color_to_hsl_factors,
+					label: "To HSL Factors",
+				}),
 			],
 		},
 		{

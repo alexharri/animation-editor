@@ -36,6 +36,8 @@ type FlowNodeStateMap = {
 	[FlowNodeType.color_input]: { color: RGBAColor };
 	[FlowNodeType.color_from_rgba_factors]: {};
 	[FlowNodeType.color_to_rgba_factors]: {};
+	[FlowNodeType.color_from_hsl_factors]: {};
+	[FlowNodeType.color_to_hsl_factors]: {};
 	[FlowNodeType.composition]: {};
 	[FlowNodeType.array_modifier_index]: {};
 	[FlowNodeType.property_input]: { layerId: string; propertyId: string };

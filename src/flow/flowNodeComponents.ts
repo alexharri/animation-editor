@@ -1,6 +1,7 @@
 import React from "react";
 import { FlowNodeType } from "~/flow/flowTypes";
 import { CapNumberNode } from "~/flow/nodes/CapNumberNode";
+import { ColorFromHSLNode } from "~/flow/nodes/color/ColorFromHSLNode";
 import { ColorInputNode } from "~/flow/nodes/color/ColorInputNode";
 import { DegToRadNode } from "~/flow/nodes/DegToRadNode";
 import { ExpressionNode } from "~/flow/nodes/expression/ExpressionNode";
@@ -50,6 +51,8 @@ export const getFlowNodeComponent = (
 			return Vec2FactorsNode;
 		case FlowNodeType.vec2_input:
 			return Vec2InputNode;
+		case FlowNodeType.color_from_hsl_factors:
+			return ColorFromHSLNode;
 		default:
 			return Node;
 	}

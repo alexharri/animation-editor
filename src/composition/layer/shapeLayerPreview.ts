@@ -22,7 +22,6 @@ const selectedCpGraphic = new PIXI.Graphics();
 
 const primaryColor = rgbToBinary(hexToRGB(cssVariables.primary500));
 const white = rgbToBinary([255, 255, 255]);
-const gray = rgbToBinary([120, 120, 120]);
 
 {
 	pathNotSelectedNodeGraphic.beginFill(primaryColor);
@@ -77,13 +76,8 @@ export const shapeLayerPreview = (
 	mousePosition: Vec2,
 	normalToViewport: TransformVec2,
 ) => {
-	const {
-		compositionState,
-		compositionSelectionState,
-		shapeState,
-		shapeSelectionState,
-		tool,
-	} = actionState;
+	const { compositionState, compositionSelectionState, shapeState, shapeSelectionState, tool } =
+		actionState;
 
 	if (tool.selected !== Tool.pen) {
 		return;
