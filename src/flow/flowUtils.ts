@@ -7,9 +7,11 @@ import { isMapShallowEqual, mergeItemInMap, removeKeysFromMap } from "~/util/map
 
 const flowNodeTypeToLabel: Record<FlowNodeType, string> = {
 	[FlowNodeType.array_modifier_index]: "Index",
-	[FlowNodeType.color_from_rgba_factors]: "Color from RGBA",
 	[FlowNodeType.color_input]: "Color Input",
+	[FlowNodeType.color_from_rgba_factors]: "Color from RGBA",
 	[FlowNodeType.color_to_rgba_factors]: "RGBA from Color",
+	[FlowNodeType.color_from_hsl_factors]: "Color from HSL",
+	[FlowNodeType.color_to_hsl_factors]: "HSL from Color",
 	[FlowNodeType.composition]: "Composition",
 	[FlowNodeType.deg_to_rad]: "Degrees to Radians",
 	[FlowNodeType.empty]: "Empty",
@@ -144,19 +146,17 @@ export const flowSelectionFromState = (
 
 export const didFlowSelectionChange: (
 	graphId: string,
-) => (prevState: ActionState, nextState: ActionState) => boolean = (graphId) => (
-	prevState,
-	nextState,
-) => {
-	const a = flowSelectionFromState(graphId, prevState.flowSelectionState);
-	const b = flowSelectionFromState(graphId, nextState.flowSelectionState);
+) => (prevState: ActionState, nextState: ActionState) => boolean =
+	(graphId) => (prevState, nextState) => {
+		const a = flowSelectionFromState(graphId, prevState.flowSelectionState);
+		const b = flowSelectionFromState(graphId, nextState.flowSelectionState);
 
-	if (!isMapShallowEqual(a.nodes, b.nodes)) {
-		return true;
-	}
+		if (!isMapShallowEqual(a.nodes, b.nodes)) {
+			return true;
+		}
 
-	return false;
-};
+		return false;
+	};
 
 export function getFlowPropertyNodeReferencedPropertyIds(
 	compositionState: CompositionState,

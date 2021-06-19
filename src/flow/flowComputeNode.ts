@@ -1,7 +1,8 @@
 import { DEG_TO_RAD_FAC, RAD_TO_DEG_FAC } from "~/constants";
 import { FlowNode, FlowNodeType as Type } from "~/flow/flowTypes";
 import { RGBAColor } from "~/types";
-import { interpolate } from "~/util/math";
+import { hslToRGB, rgbToHSL } from "~/util/color/convertColor";
+import { capToRange, interpolate } from "~/util/math";
 
 const computeFnMap: Record<Type, (args: unknown[]) => unknown[]> = {
 	[Type.deg_to_rad]: (args) => {
@@ -75,6 +76,27 @@ const computeFnMap: Record<Type, (args: unknown[]) => unknown[]> = {
 	[Type.color_to_rgba_factors]: (args) => {
 		const rgba = args[0] as RGBAColor;
 		return rgba;
+	},
+
+	[Type.color_from_hsl_factors]: (args) => {
+		let [h, s, l, a] = args as number[];
+		h %= 360;
+		if (h < 0) {
+			h += 360;
+		}
+		s = capToRange(0, 100, s);
+		l = capToRange(0, 100, l);
+
+		const [r, g, b] = hslToRGB([h, s, l]);
+		const rgba: RGBAColor = [r, g, b, a];
+
+		return [rgba];
+	},
+
+	[Type.color_to_hsl_factors]: (args) => {
+		const [r, g, b, a] = args[0] as RGBAColor;
+		const [h, s, l] = rgbToHSL([r, g, b]);
+		return [h, s, l, a];
 	},
 
 	[Type.expr]: () => {

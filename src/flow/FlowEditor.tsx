@@ -252,6 +252,7 @@ const FlowEditorComponent: React.FC<Props> = (props) => {
 								position={clickCapturePos}
 								type={props.graph._addNodeOfTypeOnClick.type}
 								io={props.graph._addNodeOfTypeOnClick.io}
+								scale={scale}
 							/>
 						)}
 					</div>

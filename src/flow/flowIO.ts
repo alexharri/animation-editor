@@ -160,40 +160,28 @@ export const getFlowNodeDefaultInputs = (type: FlowNodeType): FlowNodeInput[] =>
 
 		case FlowNodeType.color_from_rgba_factors:
 			return [
-				{
-					type: ValueType.Number,
-					name: "R",
-					value: 0,
-					pointer: null,
-				},
-				{
-					type: ValueType.Number,
-					name: "G",
-					value: 0,
-					pointer: null,
-				},
-				{
-					type: ValueType.Number,
-					name: "B",
-					value: 0,
-					pointer: null,
-				},
-				{
-					type: ValueType.Number,
-					name: "A",
-					value: 1,
-					pointer: null,
-				},
+				{ type: ValueType.Number, name: "R", value: 0, pointer: null },
+				{ type: ValueType.Number, name: "G", value: 0, pointer: null },
+				{ type: ValueType.Number, name: "B", value: 0, pointer: null },
+				{ type: ValueType.Number, name: "A", value: 1, pointer: null },
 			];
 
 		case FlowNodeType.color_to_rgba_factors:
 			return [
-				{
-					type: ValueType.RGBAColor,
-					name: "Color",
-					value: 0,
-					pointer: null,
-				},
+				{ type: ValueType.RGBAColor, name: "Color", value: [0, 0, 0, 1], pointer: null },
+			];
+
+		case FlowNodeType.color_from_hsl_factors:
+			return [
+				{ type: ValueType.Number, name: "H", value: 0, pointer: null },
+				{ type: ValueType.Number, name: "S", value: 0, pointer: null },
+				{ type: ValueType.Number, name: "L", value: 0, pointer: null },
+				{ type: ValueType.Number, name: "A", value: 1, pointer: null },
+			];
+
+		case FlowNodeType.color_to_hsl_factors:
+			return [
+				{ type: ValueType.RGBAColor, name: "Color", value: [0, 0, 0, 1], pointer: null },
 			];
 
 		case FlowNodeType.composition:
@@ -309,32 +297,27 @@ export const getFlowNodeDefaultOutputs = (type: FlowNodeType): FlowNodeOutput[] 
 					name: "Color",
 				},
 			];
+
 		case FlowNodeType.color_from_rgba_factors:
-			return [
-				{
-					type: ValueType.RGBAColor,
-					name: "Color",
-				},
-			];
+			return [{ type: ValueType.RGBAColor, name: "Color" }];
 
 		case FlowNodeType.color_to_rgba_factors:
 			return [
-				{
-					type: ValueType.Number,
-					name: "R",
-				},
-				{
-					type: ValueType.Number,
-					name: "G",
-				},
-				{
-					type: ValueType.Number,
-					name: "B",
-				},
-				{
-					type: ValueType.Number,
-					name: "A",
-				},
+				{ type: ValueType.Number, name: "R" },
+				{ type: ValueType.Number, name: "G" },
+				{ type: ValueType.Number, name: "B" },
+				{ type: ValueType.Number, name: "A" },
+			];
+
+		case FlowNodeType.color_from_hsl_factors:
+			return [{ type: ValueType.RGBAColor, name: "Color" }];
+
+		case FlowNodeType.color_to_hsl_factors:
+			return [
+				{ type: ValueType.Number, name: "H" },
+				{ type: ValueType.Number, name: "S" },
+				{ type: ValueType.Number, name: "L" },
+				{ type: ValueType.Number, name: "A" },
 			];
 
 		case FlowNodeType.composition:

@@ -21,6 +21,8 @@ export enum FlowNodeType {
 
 	expr = "expr",
 
+	color_from_hsl_factors = "color_from_hsl_factors",
+	color_to_hsl_factors = "color_to_hsl_factors",
 	color_from_rgba_factors = "color_from_rgba_factors",
 	color_to_rgba_factors = "color_to_rgba_factors",
 	color_input = "color_input",
