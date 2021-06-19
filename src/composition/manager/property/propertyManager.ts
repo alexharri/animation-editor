@@ -256,18 +256,21 @@ export const createPropertyManager = (
 
 			const nodeIds: string[] = [];
 			for (const propertyId of propertyIds) {
-				const affected = flow.externals.propertyValue[propertyId];
-				if (affected) {
-					nodeIds.push(...affected.map((node) => node.id));
+				const affectedByPropertyValue = flow.externals.propertyValue[propertyId];
+				if (affectedByPropertyValue) {
+					nodeIds.push(...affectedByPropertyValue.map((node) => node.id));
 				}
 
 				if (
 					propertyInfo.properties[propertyId].performable ===
 					Performable.UpdateArrayModifierCount
 				) {
-					nodeIds.push(
-						...flow.externals.arrayModifierCount[propertyId].map((node) => node.id),
-					);
+					// `affectedByCount` will be present if the Array Modifier has an
+					// associated Array Modifier Graph.
+					const affectedByCount = flow.externals.arrayModifierCount[propertyId];
+					if (affectedByCount) {
+						nodeIds.push(...affectedByCount.map((node) => node.id));
+					}
 				}
 			}
 
