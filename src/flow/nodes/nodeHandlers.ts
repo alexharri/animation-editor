@@ -191,21 +191,28 @@ export const nodeHandlers = {
 	onInputMouseDown: (
 		e: React.MouseEvent,
 		areaId: string,
-		graphId: string,
 		inputNodeId: string,
 		inputIndex: number,
 	) => {
 		const { flowState } = getActionState();
+		const node = flowState.nodes[inputNodeId];
+		const input = node.inputs[inputIndex];
+
+		if (input.pointer) {
+			nodeHandlers.onInputWithPointerMouseDown(e, areaId, inputNodeId, inputIndex);
+			return;
+		}
+
 		const { pan, scale } = getAreaActionState<AreaType.FlowEditor>(areaId);
 		const viewport = getAreaViewport(areaId, AreaType.FlowEditor);
 
 		const globalToNormal = (vec: Vec2) => flowEditorGlobalToNormal(vec, viewport, scale, pan);
 
-		const fromPos = calculateNodeInputPosition(flowState.nodes[inputNodeId], inputIndex);
+		const fromPos = calculateNodeInputPosition(node, inputIndex);
 
 		const availableOutputs = getFlowGraphAvailableOutputs(
 			flowState,
-			graphId,
+			node.graphId,
 			inputNodeId,
 			inputIndex,
 		);
@@ -266,7 +273,6 @@ export const nodeHandlers = {
 	onInputWithPointerMouseDown: (
 		e: React.MouseEvent,
 		areaId: string,
-		graphId: string,
 		nodeId: string,
 		inputIndex: number,
 	) => {
@@ -283,7 +289,7 @@ export const nodeHandlers = {
 
 		const availableInputs = getFlowGraphAvailableInputs(
 			flowState,
-			graphId,
+			node.graphId,
 			outputNodeId,
 			outputIndex,
 		);

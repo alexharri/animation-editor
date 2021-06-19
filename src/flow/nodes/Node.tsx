@@ -1,10 +1,9 @@
 import React from "react";
 import { FlowNodeInput, FlowNodeProps } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
-import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { NodeInputCircle } from "~/flow/nodes/NodeInputCircle";
 import { NodeOutputs } from "~/flow/nodes/NodeOutputs";
 import { connectActionState } from "~/state/stateUtils";
-import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
@@ -22,31 +21,10 @@ function NodeComponent(props: Props) {
 	return (
 		<>
 			<NodeOutputs nodeId={nodeId} />
-			{inputs.map((input, i) => {
+			{inputs.map((input, index) => {
 				return (
-					<div className={s("input")} key={i}>
-						<div
-							className={s("input__circle")}
-							onMouseDown={separateLeftRightMouse({
-								left: input.pointer
-									? (e) =>
-											nodeHandlers.onInputWithPointerMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											)
-									: (e) =>
-											nodeHandlers.onInputMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											),
-							})}
-						/>
+					<div className={s("input")} key={index}>
+						<NodeInputCircle nodeId={nodeId} valueType={input.type} index={index} />
 						<div className={s("input__name")}>{input.name}</div>
 					</div>
 				);

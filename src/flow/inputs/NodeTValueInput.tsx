@@ -2,11 +2,10 @@ import React from "react";
 import { FlowNodeTValueInput } from "~/flow/components/FlowNodeTValueInput";
 import { FlowNodeInput } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
-import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { NodeInputCircle } from "~/flow/nodes/NodeInputCircle";
 import { flowActions } from "~/flow/state/flowActions";
 import { useNumberInputAction } from "~/hook/useNumberInputAction";
 import { connectActionState } from "~/state/stateUtils";
-import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
@@ -38,28 +37,7 @@ const NodeTValueInputComponent: React.FC<Props> = (props) => {
 
 	return (
 		<div className={s("input", { noPadding: !input.pointer })}>
-			<div
-				className={s("input__circle")}
-				onMouseDown={separateLeftRightMouse({
-					left: input.pointer
-						? (e) =>
-								nodeHandlers.onInputWithPointerMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									index,
-								)
-						: (e) =>
-								nodeHandlers.onInputMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									index,
-								),
-				})}
-			/>
+			<NodeInputCircle nodeId={nodeId} valueType={input.type} index={index} />
 			{input.pointer ? (
 				<div className={s("input__name")}>{input.name}</div>
 			) : (

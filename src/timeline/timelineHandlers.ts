@@ -351,6 +351,7 @@ export const timelineHandlers = {
 		requestAction({ history: true }, (params) => {
 			const { submitAction } = params;
 			const op = createOperation(params);
+			op.addDiff((diff) => diff.propertyStructure(layer.id));
 
 			for (const property of properties) {
 				if (anyHasTimeline) {
@@ -410,6 +411,7 @@ export const timelineHandlers = {
 				const op = createOperation(params);
 				timelineOperations.removeTimelineFromProperty(op, propertyId);
 				op.submit();
+				params.addDiff((diff) => diff.propertyStructure(property.layerId));
 				params.submitAction("Remove timeline from property");
 			});
 			return;
@@ -420,6 +422,7 @@ export const timelineHandlers = {
 			const op = createOperation(params);
 			timelineOperations.addTimelineToProperty(op, propertyId);
 			op.submit();
+			params.addDiff((diff) => diff.propertyStructure(property.layerId));
 			params.submitAction("Add timeline to property");
 		});
 	},

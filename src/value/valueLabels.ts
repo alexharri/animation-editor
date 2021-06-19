@@ -16,8 +16,8 @@ const valueTypeToLabel: Record<ValueType, string> = {
 };
 
 const valueTypeToColor: Partial<Record<ValueType, string>> = {
-	[ValueType.Number]: "#57DA41",
-	[ValueType.Vec2]: "#3894EA",
+	[ValueType.Number]: "#5189BD",
+	[ValueType.Vec2]: "#56BA45",
 	[ValueType.Rect]: "#F8C43E",
 	[ValueType.RGBAColor]: "#EA3878",
 	[ValueType.RGBColor]: "#EA3878",
