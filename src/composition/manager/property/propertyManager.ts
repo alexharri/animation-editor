@@ -1,4 +1,4 @@
-import { getArrayModifierGroupToCountId } from "~/composition/arrayModifier";
+import { getCompositionArrayModifierGroupToCountId } from "~/composition/arrayModifier";
 import { reduceCompProperties } from "~/composition/compositionUtils";
 import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { getPropertyIdsPotentiallyAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
@@ -176,7 +176,10 @@ export const createPropertyManager = (
 			},
 			[],
 		);
-		arrayModifierGroupToCountId = getArrayModifierGroupToCountId(actionState, compositionId);
+		arrayModifierGroupToCountId = getCompositionArrayModifierGroupToCountId(
+			actionState,
+			compositionId,
+		);
 		propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 		propertyStore.reset(actionState, compositionId);
 		layerGraphNodeOutputMap = {};
@@ -256,6 +259,15 @@ export const createPropertyManager = (
 				const affected = flow.externals.propertyValue[propertyId];
 				if (affected) {
 					nodeIds.push(...affected.map((node) => node.id));
+				}
+
+				if (
+					propertyInfo.properties[propertyId].performable ===
+					Performable.UpdateArrayModifierCount
+				) {
+					nodeIds.push(
+						...flow.externals.arrayModifierCount[propertyId].map((node) => node.id),
+					);
 				}
 			}
 

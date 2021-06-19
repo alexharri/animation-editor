@@ -138,6 +138,9 @@ export interface FlowNodeAffectedExternals {
 }
 
 export interface FlowGraphExternals {
+	arrayModifierCount: {
+		[arrayModifierCountPropertyId: string]: CompiledFlowNode[];
+	};
 	arrayModifierIndex: CompiledFlowNode[];
 	frameIndex: CompiledFlowNode[];
 	propertyValue: {

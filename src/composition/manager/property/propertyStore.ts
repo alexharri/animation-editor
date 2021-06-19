@@ -28,7 +28,12 @@ export class PropertyStore {
 		return this.rawValues[propertyId];
 	}
 	public getPropertyValueAtIndex(propertyId: string, index: number): any {
-		if (typeof this.computedValueArrays[propertyId]?.[index] !== "undefined") {
+		if (Array.isArray(this.computedValueArrays[propertyId])) {
+			if (typeof this.computedValueArrays[propertyId]![index] === "undefined") {
+				console.warn(
+					`Property '${propertyId}' does not have a computed value at index '${index}'.`,
+				);
+			}
 			return this.computedValueArrays[propertyId]![index];
 		}
 		return this.getPropertyValue(propertyId);
