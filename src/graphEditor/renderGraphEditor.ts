@@ -278,7 +278,7 @@ export const renderGraphEditor = (options: RenderOptions): void => {
 		if (options.dragSelectRect) {
 			const rect = translateRectAsVec(options.dragSelectRect, toViewport);
 			renderRect(ctx, rect, {
-				strokeColor: "red",
+				strokeColor: cssVariables.red500,
 				strokeWidth: 1,
 				fillColor: "rgba(255, 0, 0, .1)",
 			});

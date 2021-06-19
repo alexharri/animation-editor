@@ -4,9 +4,9 @@ import { ExpressionNodeInput } from "~/flow/nodes/expression/ExpressionNodeInput
 import { ExpressionNodeOutput } from "~/flow/nodes/expression/ExpressionNodeOutput";
 import { ExpressionNodeTextarea } from "~/flow/nodes/expression/ExpressionNodeTextarea";
 import NodeStyles from "~/flow/nodes/Node.styles";
-import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { NodeInputCircle } from "~/flow/nodes/NodeInputCircle";
+import { NodeOutputCircle } from "~/flow/nodes/NodeOutputCircle";
 import { connectActionState } from "~/state/stateUtils";
-import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
@@ -31,20 +31,10 @@ function ExpressionNodeComponent(props: Props) {
 						className={s("output", { noPadding: true, last: i === outputs.length - 1 })}
 						key={i}
 					>
-						<div
-							className={s("output__circle")}
-							onMouseDown={(e) =>
-								nodeHandlers.onOutputMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									i,
-								)
-							}
-						/>
+						<NodeOutputCircle nodeId={nodeId} index={i} valueType={output.type} />
 						<ExpressionNodeOutput
 							nodeId={nodeId}
+							name={output.name}
 							outputIndex={i}
 							valueType={output.type}
 						/>
@@ -58,34 +48,14 @@ function ExpressionNodeComponent(props: Props) {
 					nodeWidth={props.nodeWidth}
 				/>
 			</div>
-			{inputs.map((input, i) => {
+			{inputs.map((input, index) => {
 				return (
-					<div className={s("input", { noPadding: true })} key={i}>
-						<div
-							className={s("input__circle")}
-							onMouseDown={separateLeftRightMouse({
-								left: input.pointer
-									? (e) =>
-											nodeHandlers.onInputWithPointerMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											)
-									: (e) =>
-											nodeHandlers.onInputMouseDown(
-												e,
-												props.areaId,
-												props.graphId,
-												props.nodeId,
-												i,
-											),
-							})}
-						/>
+					<div className={s("input", { noPadding: true })} key={index}>
+						<NodeInputCircle nodeId={nodeId} valueType={input.type} index={index} />
 						<ExpressionNodeInput
-							inputIndex={i}
+							inputIndex={index}
 							nodeId={nodeId}
+							name={input.name}
 							value={input.value}
 							valueType={input.type}
 						/>

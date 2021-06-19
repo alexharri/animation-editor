@@ -1,3 +1,4 @@
+import { getArrayModifierInfo } from "~/composition/util/compositionPropertyUtils";
 import { FlowNodeState } from "~/flow/flowNodeState";
 import { CompiledFlowNode, FlowGraphExternals, FlowNodeType } from "~/flow/flowTypes";
 import { getFlowPropertyNodeReferencedPropertyIds } from "~/flow/flowUtils";
@@ -11,12 +12,21 @@ export function getFlowGraphExternals(
 	const graph = flowState.graphs[graphId];
 
 	const externals: FlowGraphExternals = {
+		arrayModifierCount: {},
 		arrayModifierIndex: [],
 		frameIndex: [],
 		propertyValue: {},
 	};
 
 	for (const nodeId of graph.nodes) {
+		if (graph.type === "array_modifier_graph") {
+			const { propertyId } = graph;
+			const { countId } = getArrayModifierInfo(propertyId, compositionState);
+			externals.arrayModifierCount[countId] = graph.nodes.map(
+				(nodeId) => compiledNodes[nodeId],
+			);
+		}
+
 		const compiledNode = compiledNodes[nodeId];
 		const node = flowState.nodes[nodeId];
 

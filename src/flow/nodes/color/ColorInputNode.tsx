@@ -5,9 +5,9 @@ import { ContextMenuBaseProps, OpenCustomContextMenuOptions } from "~/contextMen
 import { FlowNodeNumberInput } from "~/flow/components/FlowNodeNumberInput";
 import { FlowNodeTValueInput } from "~/flow/components/FlowNodeTValueInput";
 import { FlowNodeState } from "~/flow/flowNodeState";
-import { FlowNodeOutput, FlowNodeProps, FlowNodeType } from "~/flow/flowTypes";
+import { FlowNodeProps, FlowNodeType } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
-import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { NodeOutputs } from "~/flow/nodes/NodeOutputs";
 import { flowActions } from "~/flow/state/flowActions";
 import { NODE_HEIGHT_CONSTANTS } from "~/flow/util/flowNodeHeight";
 import { useKeyDownEffect } from "~/hook/useKeyDown";
@@ -24,14 +24,13 @@ const labels = ["Red", "Green", "Blue", "Alpha"];
 
 type OwnProps = FlowNodeProps;
 interface StateProps {
-	outputs: FlowNodeOutput[];
 	state: FlowNodeState<FlowNodeType.color_input>;
 }
 
 type Props = OwnProps & StateProps;
 
 const ColorInputNodeComponent: React.FC<Props> = (props) => {
-	const { graphId, nodeId, outputs, state } = props;
+	const { graphId, nodeId, state } = props;
 
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const getButtonRect = useGetRefRectFn(buttonRef);
@@ -128,25 +127,7 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 
 	return (
 		<>
-			{outputs.map((output, i) => {
-				return (
-					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
-						<div
-							className={s("output__circle")}
-							onMouseDown={(e) =>
-								nodeHandlers.onOutputMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									i,
-								)
-							}
-						/>
-						<div className={s("output__name")}>{output.name}</div>
-					</div>
-				);
-			})}
+			<NodeOutputs nodeId={nodeId} />
 			<button
 				className={s("colorInput__colorValue")}
 				style={{
@@ -186,7 +167,6 @@ const ColorInputNodeComponent: React.FC<Props> = (props) => {
 const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ flowState }, { nodeId }) => {
 	const node = flowState.nodes[nodeId];
 	return {
-		outputs: node.outputs,
 		state: node.state as StateProps["state"],
 	};
 };

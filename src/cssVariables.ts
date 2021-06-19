@@ -7,6 +7,7 @@ export const cssVariables = {
 	primary600: "#418dff",
 	primary700: "#4babff",
 
+	red300: "#B4281E",
 	red500: "#c21f13",
 
 	white500: "#f3f3f3",

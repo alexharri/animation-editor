@@ -2,11 +2,10 @@ import React from "react";
 import { FlowNodeVec2Input } from "~/flow/components/FlowNodeVec2Input";
 import { FlowNodeInput } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
-import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
+import { NodeInputCircle } from "~/flow/nodes/NodeInputCircle";
 import { flowActions } from "~/flow/state/flowActions";
 import { useNumberInputAction } from "~/hook/useNumberInputAction";
 import { connectActionState } from "~/state/stateUtils";
-import { separateLeftRightMouse } from "~/util/mouse";
 import { compileStylesheetLabelled } from "~/util/stylesheets";
 
 const s = compileStylesheetLabelled(NodeStyles);
@@ -54,28 +53,7 @@ const NodeVec2InputComponent: React.FC<Props> = (props) => {
 	return (
 		<>
 			<div className={s("input")}>
-				<div
-					className={s("input__circle")}
-					onMouseDown={separateLeftRightMouse({
-						left: input.pointer
-							? (e) =>
-									nodeHandlers.onInputWithPointerMouseDown(
-										e,
-										props.areaId,
-										props.graphId,
-										props.nodeId,
-										index,
-									)
-							: (e) =>
-									nodeHandlers.onInputMouseDown(
-										e,
-										props.areaId,
-										props.graphId,
-										props.nodeId,
-										index,
-									),
-					})}
-				/>
+				<NodeInputCircle nodeId={nodeId} valueType={input.type} index={index} />
 				<div className={s("input__name")}>{input.name}</div>
 			</div>
 			{!input.pointer && (

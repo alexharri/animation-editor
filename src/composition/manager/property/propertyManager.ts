@@ -1,4 +1,5 @@
-import { getArrayModifierGroupToCountId } from "~/composition/arrayModifier";
+import { getCompositionArrayModifierGroupToCountId } from "~/composition/arrayModifier";
+import { reduceCompProperties } from "~/composition/compositionUtils";
 import { PropertyStore } from "~/composition/manager/property/propertyStore";
 import { getPropertyIdsPotentiallyAffectedByNodes } from "~/composition/property/getPropertyIdsAffectedByNodes";
 import { createPropertyInfoRegistry } from "~/composition/property/propertyInfoMap";
@@ -50,6 +51,7 @@ export const createPropertyManager = (
 	let runtimeErrors: CompositionError[] = [];
 
 	let flow: CompiledFlow;
+	let animatedPropertyIds: string[];
 	let arrayModifierGroupToCountId!: Record<string, string>;
 	const propertyStore = new PropertyStore(actionState, compositionId);
 	let layerGraphNodeOutputMap: Record<string, unknown[]> = {};
@@ -163,7 +165,21 @@ export const createPropertyManager = (
 		}
 
 		flow = flowResult.flow;
-		arrayModifierGroupToCountId = getArrayModifierGroupToCountId(actionState, compositionId);
+		animatedPropertyIds = reduceCompProperties<string[]>(
+			compositionId,
+			actionState.compositionState,
+			(acc, property) => {
+				if (property.timelineId) {
+					acc.push(property.id);
+				}
+				return acc;
+			},
+			[],
+		);
+		arrayModifierGroupToCountId = getCompositionArrayModifierGroupToCountId(
+			actionState,
+			compositionId,
+		);
 		propertyInfo = createPropertyInfoRegistry(actionState, compositionId);
 		propertyStore.reset(actionState, compositionId);
 		layerGraphNodeOutputMap = {};
@@ -240,9 +256,21 @@ export const createPropertyManager = (
 
 			const nodeIds: string[] = [];
 			for (const propertyId of propertyIds) {
-				const affected = flow.externals.propertyValue[propertyId];
-				if (affected) {
-					nodeIds.push(...affected.map((node) => node.id));
+				const affectedByPropertyValue = flow.externals.propertyValue[propertyId];
+				if (affectedByPropertyValue) {
+					nodeIds.push(...affectedByPropertyValue.map((node) => node.id));
+				}
+
+				if (
+					propertyInfo.properties[propertyId].performable ===
+					Performable.UpdateArrayModifierCount
+				) {
+					// `affectedByCount` will be present if the Array Modifier has an
+					// associated Array Modifier Graph.
+					const affectedByCount = flow.externals.arrayModifierCount[propertyId];
+					if (affectedByCount) {
+						nodeIds.push(...affectedByCount.map((node) => node.id));
+					}
 				}
 			}
 
@@ -322,6 +350,7 @@ export const createPropertyManager = (
 		getActionsToPerformOnFrameIndexChange: (actionState) => {
 			return self.getActionsToPerform(actionState, {
 				nodeIds: flow.externals.frameIndex.map((node) => node.id),
+				propertyIds: animatedPropertyIds,
 			});
 		},
 

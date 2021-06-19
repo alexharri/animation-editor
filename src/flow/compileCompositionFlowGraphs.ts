@@ -56,6 +56,7 @@ export function compileCompositionFlow(
 	const compositionFlow: CompiledFlow = {
 		nodes: {},
 		externals: {
+			arrayModifierCount: {},
 			arrayModifierIndex: [],
 			frameIndex: [],
 			propertyValue: {},
@@ -69,6 +70,10 @@ export function compileCompositionFlow(
 
 		compositionFlow.nodes = { ...compositionFlow.nodes, ...compiled.nodes };
 		compositionFlow.expressions = { ...compositionFlow.expressions, ...compiled.expressions };
+		compositionFlow.externals.arrayModifierCount = {
+			...compositionFlow.externals.arrayModifierCount,
+			...compiled.externals.arrayModifierCount,
+		};
 		compositionFlow.externals.arrayModifierIndex = [
 			...compositionFlow.externals.arrayModifierIndex,
 			...compiled.externals.arrayModifierIndex,

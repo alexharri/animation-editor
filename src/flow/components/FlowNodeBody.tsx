@@ -29,7 +29,7 @@ interface StateProps {
 }
 type Props = OwnProps & StateProps;
 
-const FlowNodeBodyComponent: React.FC<Props> = (props) => {
+export const FlowNodeBodyComponent: React.FC<Props> = (props) => {
 	const { nodeId, top, left, width, type, errors, zIndex, scale } = props;
 	const { selected } = props;
 

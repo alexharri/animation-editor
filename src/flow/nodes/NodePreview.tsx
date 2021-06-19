@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useContext } from "react";
+import { AreaIdContext } from "~/area/util/AreaIdContext";
 import { DEFAULT_FLOW_NODE_WIDTH } from "~/constants";
+import { FlowNodeBodyComponent } from "~/flow/components/FlowNodeBody";
 import { getFlowNodeDefaultInputs, getFlowNodeDefaultOutputs } from "~/flow/flowIO";
 import { FlowNodeIO, FlowNodeType } from "~/flow/flowTypes";
 import NodeStyles from "~/flow/nodes/Node.styles";
@@ -11,13 +13,15 @@ interface OwnProps {
 	type: FlowNodeType;
 	io?: FlowNodeIO;
 	position: Vec2;
+	scale: number;
 }
 
 type Props = OwnProps;
 
 export function NodePreview(props: Props) {
-	const { io } = props;
+	const { io, scale } = props;
 	const { x: left, y: top } = props.position;
+	const areaId = useContext(AreaIdContext);
 
 	const type = props.type as FlowNodeType.empty;
 
@@ -25,11 +29,19 @@ export function NodePreview(props: Props) {
 	const outputs = io?.outputs || getFlowNodeDefaultOutputs(type);
 
 	return (
-		<div
-			className={s("container")}
-			style={{ left, top, width: DEFAULT_FLOW_NODE_WIDTH, opacity: 0.5 }}
+		<FlowNodeBodyComponent
+			nodeId="-1"
+			areaId={areaId}
+			errors={[]}
+			graphId={""}
+			left={left}
+			top={top}
+			scale={scale}
+			selected
+			type={type}
+			width={DEFAULT_FLOW_NODE_WIDTH}
+			zIndex={999999}
 		>
-			<div className={s("header")}>{type}</div>
 			{outputs.map((output, i) => {
 				return (
 					<div key={i} className={s("output", { last: i === outputs.length - 1 })}>
@@ -46,6 +58,6 @@ export function NodePreview(props: Props) {
 					</div>
 				);
 			})}
-		</div>
+		</FlowNodeBodyComponent>
 	);
 }

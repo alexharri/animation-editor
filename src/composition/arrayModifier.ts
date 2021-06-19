@@ -246,7 +246,10 @@ export const getArrayModifierLayerDimensions = (
 	return layerDimensions;
 };
 
-export function getArrayModifierGroupToCountId(actionState: ActionState, compositionId: string) {
+export function getCompositionArrayModifierGroupToCountId(
+	actionState: ActionState,
+	compositionId: string,
+) {
 	const { compositionState } = actionState;
 
 	const composition = compositionState.compositions[compositionId];

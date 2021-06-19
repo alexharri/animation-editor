@@ -1,63 +1,20 @@
 import React from "react";
-import { FlowNodeInput, FlowNodeOutput, FlowNodeProps } from "~/flow/flowTypes";
+import { FlowNodeProps } from "~/flow/flowTypes";
 import { NodeTValueInput } from "~/flow/inputs/NodeTValueInput";
 import { NodeVec2Input } from "~/flow/inputs/NodeVec2Input";
-import NodeStyles from "~/flow/nodes/Node.styles";
-import { nodeHandlers } from "~/flow/nodes/nodeHandlers";
-import { connectActionState } from "~/state/stateUtils";
-import { compileStylesheetLabelled } from "~/util/stylesheets";
+import { NodeOutputs } from "~/flow/nodes/NodeOutputs";
 
-const s = compileStylesheetLabelled(NodeStyles);
-
-type OwnProps = FlowNodeProps;
-interface StateProps {
-	inputs: FlowNodeInput[];
-	outputs: FlowNodeOutput[];
-	width: number;
-}
-
-type Props = OwnProps & StateProps;
-
-function Vec2LerpNodeComponent(props: Props) {
-	const { areaId, graphId, nodeId, outputs, zIndex } = props;
+export function Vec2LerpNode(props: FlowNodeProps) {
+	const { areaId, graphId, nodeId, zIndex } = props;
 
 	const baseProps = { areaId, graphId, nodeId, zIndex };
 
 	return (
 		<>
-			{outputs.map((output, i) => {
-				return (
-					<div className={s("output", { last: i === outputs.length - 1 })} key={i}>
-						<div
-							className={s("output__circle")}
-							onMouseDown={(e) =>
-								nodeHandlers.onOutputMouseDown(
-									e,
-									props.areaId,
-									props.graphId,
-									props.nodeId,
-									i,
-								)
-							}
-						/>
-						<div className={s("output__name")}>{output.name}</div>
-					</div>
-				);
-			})}
+			<NodeOutputs nodeId={nodeId} />
 			<NodeVec2Input {...baseProps} index={0} />
 			<NodeVec2Input {...baseProps} index={1} />
 			<NodeTValueInput {...baseProps} index={2} />
 		</>
 	);
 }
-
-const mapStateToProps: MapActionState<StateProps, OwnProps> = ({ flowState }, { nodeId }) => {
-	const node = flowState.nodes[nodeId];
-	return {
-		inputs: node.inputs,
-		outputs: node.outputs,
-		width: node.width,
-	};
-};
-
-export const Vec2LerpNode = connectActionState(mapStateToProps)(Vec2LerpNodeComponent);

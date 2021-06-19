@@ -11,7 +11,7 @@ import {
 } from "~/flow/util/flowNodeHeight";
 import { connectActionState } from "~/state/stateUtils";
 
-const COLOR = cssVariables.red500;
+const COLOR = cssVariables.red300;
 const LINE_WIDTH = 1.5;
 
 interface OwnProps {

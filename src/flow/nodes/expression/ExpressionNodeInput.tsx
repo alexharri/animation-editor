@@ -10,7 +10,28 @@ import { getValueTypeLabel } from "~/value/valueLabels";
 const s = compileStylesheetLabelled(({ css }) => ({
 	container: css`
 		height: 20px;
-		padding: 2px ${FLOW_NODE_H_PADDING_BASE}px;
+		padding: 1px ${FLOW_NODE_H_PADDING_BASE}px;
+		position: relative;
+	`,
+
+	name: css`
+		position: absolute;
+		top: 1px;
+		height: 18px;
+		left: ${FLOW_NODE_H_PADDING_BASE + FLOW_NODE_H_PADDING_ADDITIONAL}px;
+		line-height: 18px;
+		right: ${FLOW_NODE_H_PADDING_BASE + FLOW_NODE_H_PADDING_ADDITIONAL}px;
+		white-space: nowrap;
+		color: ${cssVariables.white500};
+		overflow: hidden;
+		text-overflow: ellipsis;
+		pointer-events: none;
+		font-size: 12px;
+		font-family: ${cssVariables.fontFamily};
+	`,
+
+	type: css`
+		color: ${cssVariables.light500};
 	`,
 
 	select: css`
@@ -19,7 +40,7 @@ const s = compileStylesheetLabelled(({ css }) => ({
 		font-family: ${cssVariables.fontFamily};
 		background: ${cssVariables.dark600};
 		width: 100%;
-		color: ${cssVariables.light500};
+		color: transparent;
 		border-radius: 4px;
 		padding: 0 ${FLOW_NODE_H_PADDING_ADDITIONAL}px;
 		border: none;
@@ -29,6 +50,7 @@ const s = compileStylesheetLabelled(({ css }) => ({
 }));
 
 interface Props {
+	name: string;
 	valueType: ValueType;
 	value: number;
 	nodeId: string;
@@ -46,6 +68,10 @@ export const ExpressionNodeInput: React.FC<Props> = (props) => {
 
 	return (
 		<div className={s("container")}>
+			<div className={s("name")}>
+				{props.name}{" "}
+				<span className={s("type")}>({getValueTypeLabel(props.valueType)})</span>
+			</div>
 			<select
 				onChange={(e) => onChange(e.target.value as ValueType)}
 				className={s("select")}
