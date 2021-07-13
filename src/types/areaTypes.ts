@@ -3,6 +3,11 @@ import { FlowAreaState } from "~/flow/state/flowAreaReducer";
 import { TimelineAreaState } from "~/timeline/timelineAreaReducer";
 import { WorkspaceAreaState } from "~/workspace/workspaceAreaReducer";
 
+export interface AreaToOpen {
+	position: Vec2;
+	area: Area;
+}
+
 interface _AreaStates {
 	[AreaType.FlowEditor]: FlowAreaState;
 	[AreaType.Timeline]: TimelineAreaState;
@@ -23,10 +28,12 @@ export interface AreaLayout {
 	id: string;
 }
 
+export type AreaRowOrientation = "horizontal" | "vertical";
+
 export type AreaRowLayout = {
 	type: "area_row";
 	id: string;
-	orientation: "horizontal" | "vertical";
+	orientation: AreaRowOrientation;
 	areas: Array<{ size: number; id: string }>;
 };
 

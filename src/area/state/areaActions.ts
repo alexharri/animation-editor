@@ -1,8 +1,8 @@
 import { createAction } from "typesafe-actions";
-import { CardinalDirection } from "~/types";
-import { AreaType } from "~/constants";
 import { AreaReducerState } from "~/area/state/areaReducer";
-import { AreaState } from "~/types/areaTypes";
+import { AreaType } from "~/constants";
+import { CardinalDirection } from "~/types";
+import { Area, AreaRowOrientation, AreaState } from "~/types/areaTypes";
 
 export const areaActions = {
 	setFields: createAction("area/SET_FIELDS", (action) => {
@@ -20,8 +20,8 @@ export const areaActions = {
 	}),
 
 	insertAreaIntoRow: createAction("area/INSERT_AREA_INTO_ROW", (action) => {
-		return (rowId: string, basedOnId: string, insertIndex: number) =>
-			action({ rowId, basedOnId, insertIndex });
+		return (rowId: string, area: Area, insertIndex: number) =>
+			action({ rowId, area, insertIndex });
 	}),
 
 	convertAreaToRow: createAction("area/CONVERT_AREA_TO_ROW", (action) => {
@@ -34,6 +34,10 @@ export const areaActions = {
 
 	setRowSizes: createAction("area/SET_ROW_SIZES", (action) => {
 		return (rowId: string, sizes: number[]) => action({ rowId, sizes });
+	}),
+
+	wrapAreaInRow: createAction("area/WRAP_AREA_ROW", (action) => {
+		return (areaId: string, orientation: AreaRowOrientation) => action({ areaId, orientation });
 	}),
 
 	setAreaType: createAction("area/SET_TYPE", (action) => {

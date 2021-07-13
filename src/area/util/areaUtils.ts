@@ -1,7 +1,8 @@
+import { AREA_PLACEMENT_TRESHOLD } from "~/area/state/areaConstants";
 import { AreaReducerState } from "~/area/state/areaReducer";
 import { isVecInRect } from "~/util/math";
 
-export const getAreaToOpenTargetId = (
+export const getHoveredAreaId = (
 	position: Vec2,
 	areaState: AreaReducerState,
 	areaToViewport: {
@@ -24,4 +25,39 @@ export const getAreaToOpenTargetId = (
 	}
 
 	return areaId;
+};
+
+export type PlaceArea = "top" | "left" | "right" | "bottom" | "replace";
+
+export const getAreaToOpenPlacementInViewport = (rect: Rect, position: Vec2): PlaceArea => {
+	const w = rect.width;
+	const h = rect.height;
+
+	const x = position.x - rect.left;
+	const y = position.y - rect.top;
+
+	let placement: PlaceArea | undefined;
+	let dist = Infinity;
+
+	const treshold = Math.min(w, h) * AREA_PLACEMENT_TRESHOLD;
+
+	const tests: Array<{ placement: PlaceArea; dist: number }> = [
+		{ placement: "left", dist: x },
+		{ placement: "top", dist: y },
+		{ placement: "right", dist: w - x },
+		{ placement: "bottom", dist: h - y },
+	];
+
+	for (const test of tests) {
+		if (test.dist < treshold && test.dist < dist) {
+			dist = test.dist;
+			placement = test.placement;
+		}
+	}
+
+	if (!placement) {
+		return "replace";
+	}
+
+	return placement;
 };
