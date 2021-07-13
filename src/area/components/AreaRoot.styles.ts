@@ -1,5 +1,6 @@
+import { cssVariables, cssZIndex } from "~/cssVariables";
+import { hexToRGBAString } from "~/util/color/convertColor";
 import { StyleParams } from "~/util/stylesheets";
-import { cssZIndex, cssVariables } from "~/cssVariables";
 
 export default ({ css, keyframes }: StyleParams) => {
 	const areaToOpenContainerAnimation = keyframes`
@@ -39,9 +40,21 @@ export default ({ css, keyframes }: StyleParams) => {
 		areaToOpenTargetOverlay: css`
 			z-index: ${cssZIndex.area.areaToOpenTarget};
 			position: absolute;
-			background: ${cssVariables.primary700};
+			background: ${hexToRGBAString(cssVariables.primary700, 0.07)};
 			border-radius: 8px;
-			opacity: 0.1;
+			opacity: 1;
+			overflow: hidden;
+		`,
+
+		placement: css`
+			line {
+				stroke-width: 1px;
+				stroke: ${hexToRGBAString(cssVariables.primary700, 0.3)};
+			}
+
+			path {
+				fill: ${hexToRGBAString(cssVariables.primary700, 0.15)};
+			}
 		`,
 	};
 };

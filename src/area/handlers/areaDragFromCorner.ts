@@ -123,7 +123,9 @@ export const handleAreaDragFromCorner = (
 			const insertIndex =
 				areaIndex + (directionParts.indexOf(horizontal ? "w" : "n") !== -1 ? 0 : 1);
 
-			params.dispatch(areaActions.insertAreaIntoRow(row.id, areaId, insertIndex));
+			params.dispatch(
+				areaActions.insertAreaIntoRow(row.id, { ...areaState.areas[areaId] }, insertIndex),
+			);
 
 			// The size to share between the area and the new area is the size of the area
 			// before the action.

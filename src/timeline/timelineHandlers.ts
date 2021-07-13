@@ -1,8 +1,6 @@
 import { areaActions } from "~/area/state/areaActions";
 import { areaInitialStates } from "~/area/state/areaInitialStates";
-import { computeAreaToViewport } from "~/area/util/areaToViewport";
-import { getAreaToOpenTargetId } from "~/area/util/areaUtils";
-import { getAreaRootViewport } from "~/area/util/getAreaViewport";
+import { dragOpenArea } from "~/area/util/dragOpenArea";
 import { compositionActions } from "~/composition/compositionReducer";
 import { compSelectionActions } from "~/composition/compositionSelectionReducer";
 import { CompoundProperty, Layer, Property } from "~/composition/compositionTypes";
@@ -45,9 +43,10 @@ import {
 	getTimelineTrackYPositions,
 } from "~/trackEditor/trackEditorUtils";
 import { PropertyGroupName } from "~/types";
+import { Area } from "~/types/areaTypes";
 import { mouseDownMoveAction } from "~/util/action/mouseDownMoveAction";
 import { animate } from "~/util/animation/animate";
-import { capToRange, getDistance, interpolate } from "~/util/math";
+import { capToRange, interpolate } from "~/util/math";
 
 const ZOOM_FAC = 0.4;
 
@@ -747,76 +746,11 @@ export const timelineHandlers = {
 	},
 
 	onOpenGraphInAreaMouseDown: (e: React.MouseEvent, graphId: string): void => {
-		const initialMousePos = Vec2.fromEvent(e);
-
-		requestAction({ history: true }, (params) => {
-			const { dispatch, cancelAction, submitAction, addListener } = params;
-
-			let hasMoved = false;
-			let mousePos!: Vec2;
-
-			addListener.repeated("mousemove", (e) => {
-				mousePos = Vec2.fromEvent(e);
-
-				if (!hasMoved) {
-					if (getDistance(initialMousePos, mousePos) > 5) {
-						hasMoved = true;
-					} else {
-						return;
-					}
-				}
-
-				dispatch(
-					areaActions.setFields({
-						areaToOpen: {
-							position: mousePos,
-							area: {
-								type: AreaType.FlowEditor,
-								state: {
-									...areaInitialStates[AreaType.FlowEditor],
-									graphId,
-								},
-							},
-						},
-					}),
-				);
-			});
-
-			addListener.once("mouseup", () => {
-				if (!hasMoved) {
-					cancelAction();
-					return;
-				}
-
-				// Check whether the mouse is over an area other than the one we started at.
-
-				const areaState = getActionState().area;
-				const viewport = getAreaRootViewport();
-				const areaToViewport = computeAreaToViewport(
-					areaState.layout,
-					areaState.rootId,
-					viewport,
-				);
-
-				let areaId = getAreaToOpenTargetId(mousePos, areaState, areaToViewport);
-
-				if (!areaId) {
-					// Mouse is not over any area, cancel
-
-					cancelAction();
-					return;
-				}
-
-				dispatch(
-					areaActions.setAreaType(areaId, AreaType.FlowEditor, {
-						...areaInitialStates[AreaType.FlowEditor],
-						graphId,
-					}),
-				);
-				dispatch(areaActions.setFields({ areaToOpen: null }));
-				submitAction("Open graph in area");
-			});
-		});
+		const area: Area<AreaType.FlowEditor> = {
+			type: AreaType.FlowEditor,
+			state: { ...areaInitialStates[AreaType.FlowEditor], graphId },
+		};
+		dragOpenArea(e, { area });
 	},
 
 	onPropertyNameMouseDown: (

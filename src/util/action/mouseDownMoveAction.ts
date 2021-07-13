@@ -20,12 +20,17 @@ interface MouseMoveOptions<KeyMap> {
 	firstMove: boolean;
 }
 
+interface MouseMoveActionEndFn {
+	(params: RequestActionParams, hasMoved: boolean): void;
+}
+
 interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
 	params?: RequestActionParams;
 	keys: K[];
 	beforeMove: (params: RequestActionParams, options: { mousePosition: MousePosition }) => void;
 	mouseMove: (params: RequestActionParams, options: MouseMoveOptions<KeyMap>) => void;
-	mouseUp: (params: RequestActionParams, hasMoved: boolean) => void;
+	mouseUp?: MouseMoveActionEndFn;
+	mouseDown?: MouseMoveActionEndFn;
 	translate?: (vec: Vec2) => Vec2;
 	translateX?: (value: number) => number;
 	translateY?: (value: number) => number;
@@ -42,7 +47,7 @@ interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
 
 export const mouseDownMoveAction = <
 	K extends Key,
-	KeyMap extends { [_ in K]: boolean } = { [_ in K]: boolean }
+	KeyMap extends { [_ in K]: boolean } = { [_ in K]: boolean },
 >(
 	eOrInitialPos: React.MouseEvent | MouseEvent | Vec2,
 	options: Options<K, KeyMap>,
@@ -172,10 +177,23 @@ export const mouseDownMoveAction = <
 			}
 		});
 
-		params.addListener.once("mouseup", () => {
-			options.baseDiff && params.addDiff(options.baseDiff);
-			options.mouseUp(params, hasMoved);
-		});
+		if (options.mouseUp) {
+			setTimeout(() => {
+				params.addListener.once("mouseup", () => {
+					options.baseDiff && params.addDiff(options.baseDiff);
+					options.mouseUp!(params, hasMoved);
+				});
+			});
+		}
+
+		if (options.mouseDown) {
+			setTimeout(() => {
+				params.addListener.once("mousedown", () => {
+					options.baseDiff && params.addDiff(options.baseDiff);
+					options.mouseDown!(params, hasMoved);
+				});
+			});
+		}
 	};
 
 	if (options.params) {

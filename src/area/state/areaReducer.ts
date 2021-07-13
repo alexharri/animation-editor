@@ -7,7 +7,7 @@ import { areaToRow } from "~/area/util/areaToRow";
 import { joinAreas } from "~/area/util/joinArea";
 import { AreaType } from "~/constants";
 import { CardinalDirection } from "~/types";
-import { Area, AreaLayout, AreaRowLayout } from "~/types/areaTypes";
+import { Area, AreaLayout, AreaRowLayout, AreaToOpen } from "~/types/areaTypes";
 
 type AreaAction = ActionType<typeof actions>;
 
@@ -25,10 +25,7 @@ export interface AreaReducerState {
 	areas: {
 		[key: string]: Area;
 	};
-	areaToOpen: null | {
-		position: Vec2;
-		area: Area;
-	};
+	areaToOpen: null | AreaToOpen;
 }
 
 export const initialAreaState: AreaReducerState = {
@@ -151,7 +148,7 @@ export const areaReducer = (state: AreaReducerState, action: AreaAction): AreaRe
 		}
 
 		case getType(areaActions.insertAreaIntoRow): {
-			const { rowId, basedOnId, insertIndex } = action.payload;
+			const { rowId, area, insertIndex } = action.payload;
 
 			const row = state.layout[rowId] as AreaRowLayout;
 
@@ -166,20 +163,48 @@ export const areaReducer = (state: AreaReducerState, action: AreaAction): AreaRe
 				_id: state._id + 1,
 				layout: {
 					...state.layout,
-					[row.id]: {
-						...row,
-						areas,
-					},
-					[newAreaId]: {
-						type: "area",
-						id: newAreaId,
-					},
+					[row.id]: { ...row, areas },
+					[newAreaId]: { type: "area", id: newAreaId },
 				},
-				areas: {
-					...state.areas,
-					[newAreaId]: {
-						...state.areas[basedOnId],
-					},
+				areas: { ...state.areas, [newAreaId]: area },
+			};
+		}
+
+		case getType(areaActions.wrapAreaInRow): {
+			const { areaId, orientation } = action.payload;
+
+			const areaToParentRow = computeAreaToParentRow(state);
+
+			const parentRowId = areaToParentRow[areaId];
+
+			if (!parentRowId) {
+				// Is top-level area.
+				throw new Error("Not implemented.");
+			}
+
+			const parentRow = { ...(state.layout[parentRowId] as AreaRowLayout) };
+
+			const newRow: AreaRowLayout = {
+				type: "area_row",
+				id: (state._id + 1).toString(),
+				areas: [{ size: 1, id: areaId }],
+				orientation,
+			};
+
+			parentRow.areas = parentRow.areas.map((area) => {
+				if (area.id === areaId) {
+					return { ...area, id: newRow.id };
+				}
+				return area;
+			});
+
+			return {
+				...state,
+				_id: state._id + 1,
+				layout: {
+					...state.layout,
+					[newRow.id]: newRow,
+					[parentRow.id]: parentRow,
 				},
 			};
 		}
