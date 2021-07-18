@@ -14,6 +14,8 @@ import { PixiWorkspace } from "~/workspace/Workspace";
 import { compositionWorkspaceAreaReducer } from "~/workspace/workspaceAreaReducer";
 import { workspaceKeyboardShortcuts } from "~/workspace/workspaceShortcuts";
 
+console.log(FlowEditor);
+
 export const areaComponentRegistry: {
 	[T in AreaType]: React.ComponentType<AreaComponentProps<AreaState<T>>>;
 } = {
