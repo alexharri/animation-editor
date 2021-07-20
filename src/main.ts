@@ -32,10 +32,6 @@ const createWindow = (): void => {
 	// and load the index.html of the app.
 	mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-	// mainWindow.loadFile("static/css/base.css")
-	// mainWindow.loadFile("static/css/fonts.css")
-	// mainWindow.loadFile("static/js/clipper.js")
-
 	// Open the DevTools.
 	if (isDevelopment) {
 		mainWindow.webContents.openDevTools();
