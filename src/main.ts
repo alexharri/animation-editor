@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow } from "electron";
 import fs from "fs";
 import path from "path";
 
@@ -8,39 +8,40 @@ import path from "path";
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
-  app.quit();
+if (require("electron-squirrel-startup")) {
+	// eslint-disable-line global-require
+	app.quit();
 }
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 const createWindow = (): void => {
-  const initPath = path.join(app.getPath("userData"), "init.json");
+	const initPath = path.join(app.getPath("userData"), "init.json");
 	let data;
 	try {
 		data = JSON.parse(fs.readFileSync(initPath, "utf8"));
 	} catch (e) {}
 
 	const bounds = data && data.bounds ? data.bounds : { width: 800, height: 600 };
-  
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    ...bounds
-  });
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+	// Create the browser window.
+	const mainWindow = new BrowserWindow({
+		...bounds,
+	});
 
-  // mainWindow.loadFile("static/css/base.css")
-  // mainWindow.loadFile("static/css/fonts.css")
-  // mainWindow.loadFile("static/js/clipper.js")
+	// and load the index.html of the app.
+	mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  // Open the DevTools.
-  if (isDevelopment) {
+	// mainWindow.loadFile("static/css/base.css")
+	// mainWindow.loadFile("static/css/fonts.css")
+	// mainWindow.loadFile("static/js/clipper.js")
+
+	// Open the DevTools.
+	if (isDevelopment) {
 		mainWindow.webContents.openDevTools();
 	}
 
-  mainWindow.on("close", () => {
+	mainWindow.on("close", () => {
 		const data = { bounds: mainWindow.getBounds() };
 		fs.writeFileSync(initPath, JSON.stringify(data));
 	});
@@ -49,23 +50,23 @@ const createWindow = (): void => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
+app.on("ready", createWindow);
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+app.on("window-all-closed", () => {
+	if (process.platform !== "darwin") {
+		app.quit();
+	}
 });
 
-app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+app.on("activate", () => {
+	// On OS X it's common to re-create a window in the app when the
+	// dock icon is clicked and there are no other windows open.
+	if (BrowserWindow.getAllWindows().length === 0) {
+		createWindow();
+	}
 });
 
 // In this file you can include the rest of your app's specific main process

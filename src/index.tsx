@@ -17,7 +17,7 @@ const Root = () => (
 	</Provider>
 );
 
-ReactDOM.render(<Root />, document.getElementById("root") || document.body);
+ReactDOM.render(<Root />, document.getElementById("root"));
 
 // Disable right click context menu
 document.addEventListener("contextmenu", (e) => e.preventDefault(), false);

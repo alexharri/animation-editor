@@ -108,7 +108,6 @@
     "@typescript-eslint/eslint-plugin": "^4.5.0",
     "@vercel/webpack-asset-relocator-loader": "1.6.0",
     "copy-webpack-plugin": "^5.1.2",
-    "css-loader": "^6.0.0",
     "electron": "13.1.7",
     "eslint": "^7.12.0",
     "eslint-config-airbnb-typescript": "^12.0.0",
@@ -121,7 +120,6 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "fork-ts-checker-webpack-plugin": "^6.0.1",
     "node-loader": "^2.0.0",
-    "style-loader": "^3.0.0",
     "ts-loader": "^9.2.2",
     "typescript": "^4.3.5"
   }
