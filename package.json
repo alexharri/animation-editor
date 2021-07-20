@@ -19,7 +19,10 @@
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "name": "Animation Editor",
+        "icon": "files/app-icon.icns"
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
