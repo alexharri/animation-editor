@@ -9,7 +9,6 @@ import { isKeyCodeOf, isKeyDown } from "~/listener/keyboard";
 import { historyActions } from "~/state/history/historyActions";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
-import "~/svg";
 import { App } from "./App";
 
 const Root = () => (
@@ -18,7 +17,7 @@ const Root = () => (
 	</Provider>
 );
 
-ReactDOM.render(<Root />, document.getElementById("root"));
+ReactDOM.render(<Root />, document.getElementById("root") || document.body);
 
 // Disable right click context menu
 document.addEventListener("contextmenu", (e) => e.preventDefault(), false);
