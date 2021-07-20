@@ -9,7 +9,6 @@ import { isKeyCodeOf, isKeyDown } from "~/listener/keyboard";
 import { historyActions } from "~/state/history/historyActions";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
-import "~/svg";
 import { App } from "./App";
 
 const Root = () => (
