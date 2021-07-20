@@ -28,7 +28,7 @@ export default ({ css }: StyleParams) => ({
 			left: 50%;
 			width: 14px;
 			height: 14px;
-			fill: ${cssVariables.red300};
+			fill: ${cssVariables.light300};
 			transform: translate(-50%, -50%);
 		}
 
