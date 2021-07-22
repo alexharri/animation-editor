@@ -1,13 +1,11 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { ElectronICP } from "~/types";
+import { ElectronGlobal } from "~/types";
 
 let _onUndo: () => void;
 let _onRedo: () => void;
 
-contextBridge.exposeInMainWorld("electron", <ElectronICP>{
-	onDoubleClickDragArea: () => {
-		ipcRenderer.send("double-click-drag-area");
-	},
+contextBridge.exposeInMainWorld("electron", <ElectronGlobal>{
+	onDoubleClickDragArea: () => ipcRenderer.send("double-click-drag-area"),
 	registerUndo: (fn) => {
 		_onUndo = fn;
 	},
@@ -16,9 +14,5 @@ contextBridge.exposeInMainWorld("electron", <ElectronICP>{
 	},
 });
 
-ipcRenderer.on("undo", () => {
-	_onUndo();
-});
-ipcRenderer.on("redo", () => {
-	_onRedo();
-});
+ipcRenderer.on("undo", () => _onUndo());
+ipcRenderer.on("redo", () => _onRedo());

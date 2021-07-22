@@ -240,3 +240,9 @@ interface IGeneralError extends _ErrorBase {
 }
 
 export type CompositionError = IFlowNodeError | IGeneralError;
+
+export interface ElectronGlobal {
+	onDoubleClickDragArea: () => void;
+	registerUndo: (fn: () => void) => void;
+	registerRedo: (fn: () => void) => void;
+}

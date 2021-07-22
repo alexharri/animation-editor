@@ -1,9 +1,5 @@
-import "~/types";
+import { ElectronGlobal } from "~/types";
 
 declare global {
-	const electron: {
-		onDoubleClickDragArea: () => void;
-		registerUndo: (fn: () => void) => void;
-		registerRedo: (fn: () => void) => void;
-	};
+	const electron: ElectronGlobal;
 }
