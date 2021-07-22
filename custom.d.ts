@@ -1,9 +1,9 @@
-import { ElectronICP } from "~/types";
+import "~/types";
 
 declare global {
-	const electron: ElectronICP;
-
-	export interface Window {
-		electron: ElectronICP;
-	}
+	const electron: {
+		onDoubleClickDragArea: () => void;
+		registerUndo: (fn: () => void) => void;
+		registerRedo: (fn: () => void) => void;
+	};
 }
