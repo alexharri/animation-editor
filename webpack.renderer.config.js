@@ -7,6 +7,7 @@ module.exports = {
 	module: {
 		rules,
 	},
+	devtool: "nosources-source-map",
 	plugins: [
 		...plugins,
 		new CopyWebpackPlugin([

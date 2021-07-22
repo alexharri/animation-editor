@@ -1,5 +1,5 @@
-import { StyleParams } from "~/util/stylesheets";
 import { cssVariables, cssZIndex } from "~/cssVariables";
+import { StyleParams } from "~/util/stylesheets";
 
 export default ({ css }: StyleParams) => ({
 	container: css`
@@ -7,11 +7,23 @@ export default ({ css }: StyleParams) => ({
 		top: 0;
 		left: 0;
 		right: 0;
-		height: 32px;
-		padding: 0 32px;
+		display: flex;
+		height: ${cssVariables.toolbarHeight}px;
 		background: ${cssVariables.dark500};
 		overflow: visible;
 		z-index: ${cssZIndex.toolbar};
+	`,
+
+	dragArea: css`
+		-webkit-app-region: drag;
+
+		&--left {
+			min-width: 80px;
+		}
+		&--right {
+			flex-basis: 0;
+			flex-grow: 1;
+		}
 	`,
 
 	list: css`
@@ -20,7 +32,7 @@ export default ({ css }: StyleParams) => ({
 
 	group: css`
 		position: relative;
-		height: 32px;
+		height: ${cssVariables.toolbarHeight}px;
 		width: 48px;
 		min-width: 48px;
 
@@ -75,7 +87,7 @@ export default ({ css }: StyleParams) => ({
 			width: 16px;
 			height: 16px;
 			position: absolute;
-			top: 8px;
+			top: 12px;
 			left: 10px;
 		}
 	`,
@@ -145,7 +157,7 @@ export default ({ css }: StyleParams) => ({
 
 	icon: css`
 		width: 34px;
-		height: 32px;
+		height: 40px;
 		display: inline-block;
 		position: relative;
 		padding: 0 9px;
