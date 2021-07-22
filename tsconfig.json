@@ -25,10 +25,14 @@
     "noEmit": true,
     "baseUrl": "./src",
     "paths": {
-      "~/*": ["./*"]
+      "~/*": [
+        "./*"
+      ]
     },
     "types": [
       "jest",
+      "./index",
+      "./custom",
     ]
   },
   "exclude": [

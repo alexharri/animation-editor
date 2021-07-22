@@ -54,7 +54,10 @@
                 {
                   "html": "./src/index.html",
                   "js": "./src/renderer.ts",
-                  "name": "main_window"
+                  "name": "main_window",
+                  "preload": {
+                    "js": "./src/preload.ts"
+                  }
                 }
               ]
             }
@@ -65,6 +68,7 @@
   },
   "dependencies": {
     "@pixi/app": "^5.3.3",
+    "@pixi/unsafe-eval": "^5.3.10",
     "@types/svg-parser": "^2.0.1",
     "bezier-easing": "^2.1.0",
     "bezier-js": "^4.0.3",

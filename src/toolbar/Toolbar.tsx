@@ -76,6 +76,7 @@ const ToolbarComponent: React.FC<Props> = (props) => {
 
 	return (
 		<div className={s("container")}>
+			<div className={s("dragArea", { left: true })} />
 			<div className={s("list")}>
 				{toolGroups.map((tools, i) => {
 					const active = props.toolState.selected === props.toolState.selectedInGroup[i];
@@ -127,6 +128,10 @@ const ToolbarComponent: React.FC<Props> = (props) => {
 					);
 				})}
 			</div>
+			<div
+				className={s("dragArea", { right: true })}
+				onDoubleClick={() => electron.onDoubleClickDragArea()}
+			/>
 		</div>
 	);
 };
