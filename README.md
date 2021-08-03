@@ -46,7 +46,7 @@ Compositions also contain any number of layers. Right now five types of layers a
 -   Line
 -   Composition
 
-The first four are relatively straightforward. They are the primite building blocks that are used to create more complex graphics.
+The first four are relatively straightforward. They are the primitive building blocks that are used to create more complex graphics.
 
 But composition layers allow us to create reusable compositions. Compositions can be nested within one another.
 
