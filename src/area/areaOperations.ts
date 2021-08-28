@@ -61,6 +61,7 @@ function dragArea(op: Operation, area: Area, targetAreaId: string, placement: Pl
 	const newRowId = (areaState._id + 1).toString();
 	op.add(areaActions.insertAreaIntoRow(newRowId, area, iOff));
 	op.add(areaActions.setRowSizes(newRowId, [1, 1]));
+	op.addDiff((diff) => diff.resizeAreas());
 }
 
 export const areaOperations = {
