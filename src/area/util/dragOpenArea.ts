@@ -43,6 +43,7 @@ export const dragOpenArea = (e: React.MouseEvent, options: Options) => {
 
 	mouseDownMoveAction(e, {
 		keys: [],
+		history: false,
 		beforeMove: (_params, { mousePosition }) => {
 			position = mousePosition.global;
 		},

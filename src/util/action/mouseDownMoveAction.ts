@@ -26,6 +26,7 @@ interface MouseMoveActionEndFn {
 
 interface Options<K extends Key, KeyMap extends { [_ in K]: boolean }> {
 	params?: RequestActionParams;
+	history?: boolean;
 	keys: K[];
 	beforeMove: (params: RequestActionParams, options: { mousePosition: MousePosition }) => void;
 	mouseMove: (params: RequestActionParams, options: MouseMoveOptions<KeyMap>) => void;
@@ -201,5 +202,6 @@ export const mouseDownMoveAction = <
 		return;
 	}
 
-	requestAction({ history: true, shouldAddToStack: options.shouldAddToStack }, fn);
+	const { history = true } = options;
+	requestAction({ history, shouldAddToStack: options.shouldAddToStack }, fn);
 };
