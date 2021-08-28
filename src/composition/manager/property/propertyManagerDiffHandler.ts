@@ -127,7 +127,10 @@ export const propertyManagerDiffHandler = (
 			properties.updateStructure(actionState);
 		},
 		[DiffType.ModifyMultipleLayerProperties]: (diff: ModifyMultipleLayerPropertiesDiff) => {
-			properties.onPropertyIdsChanged(diff.propertyIds, actionState);
+			const propertyIds = diff.propertyIds.filter(
+				(propertyId) => !propertyDoesNotAffectComposition(propertyId),
+			);
+			properties.onPropertyIdsChanged(propertyIds, actionState);
 		},
 		[DiffType.LayerParent]: (diff: LayerParentDiff) => {
 			if (layerDoesNotAffectComposition(diff.layerId)) {
