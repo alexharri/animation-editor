@@ -9,17 +9,21 @@ export const adjustDiffsToChildComposition = (
 	const layer = compositionState.layers[compositionLayerId];
 	const compositionId = compositionState.compositionLayerIdToComposition[compositionLayerId];
 
-	const diffs = [..._diffs];
+	const diffs = [];
 
-	for (let i = 0; i < diffs.length; i++) {
-		const diff = diffs[i];
-
-		if (diff.type === DiffType.FrameIndex) {
-			diffs[i] = {
-				...diff,
-				compositionId,
-				frameIndex: diff.frameIndex - layer.playbackStartsAtIndex,
-			};
+	for (const diff of _diffs) {
+		switch (diff.type) {
+			case DiffType.FrameIndex: {
+				diffs.push({
+					...diff,
+					compositionId,
+					frameIndex: diff.frameIndex - layer.playbackStartsAtIndex,
+				});
+				break;
+			}
+			default:
+				diffs.push(diff);
+				break;
 		}
 	}
 

@@ -14,6 +14,7 @@ import {
 } from "~/composition/manager/property/propertyManager";
 import { AreaType } from "~/constants";
 import { Diff, DiffType } from "~/diff/diffs";
+import { filterIncomingTopLevelDiff } from "~/diff/filterIncomingTopLevelDiff";
 import { subscribeToDiffs, unsubscribeToDiffs } from "~/listener/diffListener";
 import { getActionState, getActionStateFromApplicationState } from "~/state/stateUtils";
 import { store } from "~/state/store";
@@ -211,6 +212,8 @@ export const manageTopLevelComposition = (
 	app.stage.addChild(interactionContainer);
 
 	const diffToken = subscribeToDiffs((actionState, diffs, direction) => {
+		diffs = diffs.filter((diff) => filterIncomingTopLevelDiff(diff, compositionId));
+
 		ctx.onDiffs(actionState, diffs, direction);
 
 		for (const diff of diffs) {
