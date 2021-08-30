@@ -26,7 +26,7 @@ Not much yet.
 
 The core of the editor and its main features are approaching stability, but the project is still incredibly inaccessible. The learning curve is very steep and there is no way to save your changes permanently.
 
-What I can offer you is a glimpse into the future. Take a look at the features below and marvel at the feature you may, or may not, be able to use months and years from now!
+What I can offer you is a glimpse into the future. Take a look below and marvel at the features you may, or may not, be able to use months or years from now!
 
 # Main features
 
