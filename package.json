@@ -112,7 +112,7 @@
     "@typescript-eslint/eslint-plugin": "^4.5.0",
     "@vercel/webpack-asset-relocator-loader": "1.6.0",
     "copy-webpack-plugin": "^5.1.2",
-    "electron": "13.3.0",
+    "electron": "13.6.6",
     "eslint": "^7.12.0",
     "eslint-config-airbnb-typescript": "^12.0.0",
     "eslint-config-prettier": "^6.14.0",
